@@ -1,0 +1,10 @@
+<ParaViewFilters>
+  <Category
+    name="HACCTools"
+    menu_label="&amp;HACCTools"
+    show_in_toolbar="1"
+    preserve_order="1">
+
+    <Filter name="DensityProfile" />
+  </Category>
+</ParaViewFilters>

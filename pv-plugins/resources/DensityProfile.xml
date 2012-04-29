@@ -1,0 +1,61 @@
+<ServerManagerConfiguration>
+  <ProxyGroup name="filters">
+    <SourceProxy name="DensityProfile"
+                 class="vtkCosmoDensityProfile"
+                 label="DensityProfile">
+      <Documentation
+         long_help="Computes density profile at user-supplie region."
+         short_help="Density Profile">
+      </Documentation>
+
+      <InputProperty
+        name="Input"
+        command="SetInputConnection">
+         <ProxyGroupDomain name="groups">
+           <Group name="sources"/>
+           <Group name="filters"/>
+         </ProxyGroupDomain>
+         <DataTypeDomain name="input_type">
+           <DataType value="vtkUnstructuredGrid"/>
+         </DataTypeDomain>
+         <Documentation>
+           This property specifies the input for this filter.
+         </Documentation>
+     </InputProperty>
+
+      <DoubleVectorProperty
+         name="Center"
+         label="Center"
+         command="SetCenter"
+         number_of_elements="3"
+         animateable="1"
+         default_values="0.5 0.5 0.5" >
+      </DoubleVectorProperty>
+
+      <IntVectorProperty
+        name="NumberOfPoints"
+        command="SetNumberOfPoints"
+        number_of_elements="1"
+        default_values="2" >
+        <IntRangeDomain name="range" min="2" max="25" />
+        <Documentation>
+          Set the number of points to generate between the center and the radius.
+        </Documentation>
+      </IntVectorProperty>
+
+      <IntVectorProperty
+        name="Radius"
+        command="SetRadius"
+        number_of_elements="1"
+        default_values="5" >
+        <IntRangeDomain name="range" min="5" max="25" />
+        <Documentation>
+          Set the radius of the sphere.
+        </Documentation>
+      </IntVectorProperty>
+
+    </SourceProxy>
+    <!-- End vtkCosmoDensityFilter -->
+  </ProxyGroup>
+  <!-- End Filters Group -->
+</ServerManagerConfiguration>
