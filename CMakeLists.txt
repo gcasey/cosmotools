@@ -56,6 +56,9 @@ endif()
 
 ## Loop thrhough all package directories and provide an option for which
 ## package to be enabled, i.e., set to ON. All enabled packages will be built.
+set(isOptionalPackage 0)
+set(isNotAGitDirectory 0)
+
 set(subdirs)
 file(GLOB pkgs *)
 foreach(pkgpath ${pkgs})
@@ -66,15 +69,17 @@ foreach(pkgpath ${pkgs})
   list(GET pkglist 0 pkg)
 
   string(COMPARE NOTEQUAL ${pkg} "common" isOptionalPackage)
-  if( ${isOptionalPackage} )
+  string(COMPARE NOTEQUAL ${pkg} ".git" isNotAGitDirectory)
+  if( ${isOptionalPackage} AND ${isNotAGitDirectory} )
     option(BUILD_${pkg} "Build ${pkg}." OFF)
     if(BUILD_${pkg})
-        list(APPEND subdirs ${pkg})
+      list(APPEND subdirs ${pkg})
     endif() # end BUILD_${pkg}
   endif() # end is optional package
  endif() # end is_directory
 endforeach(pkgpath)
 
+## common is always added
 add_subdirectory(common)
 
 ## Add each package
