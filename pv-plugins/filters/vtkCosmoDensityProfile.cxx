@@ -92,10 +92,10 @@ int vtkCosmoDensityProfile::RequestData(
   // STEP 0: Get input object
   vtkInformation *input = inputVector[0]->GetInformationObject( 0 );
   assert("pre: input information object is NULL" && (input != NULL) );
-  vtkUnstructuredGrid *particles =
-      vtkUnstructuredGrid::SafeDowncast(
-          input->Get( vtkDataObject::DATA_OBJECT() ) );
-  assert("pre: input particles is NULL!" && (particles != NULL) );
+//  vtkUnstructuredGrid *particles =
+//      vtkUnstructuredGrid::SafeDowncast(
+//          input->Get( vtkDataObject::DATA_OBJECT() ) );
+//  assert("pre: input particles is NULL!" && (particles != NULL) );
 
   // STEP 1: Get the 1st output
   vtkInformation *output = outputVector->GetInformationObject( 0 );
