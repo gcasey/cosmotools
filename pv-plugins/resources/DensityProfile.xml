@@ -33,13 +33,14 @@
       </DoubleVectorProperty>
 
       <IntVectorProperty
-        name="NumberOfPoints"
-        command="SetNumberOfPoints"
+        name="NumberOfSpheres"
+        command="SetNumberOfSpheres"
         number_of_elements="1"
         default_values="2" >
         <IntRangeDomain name="range" min="2" max="25" />
         <Documentation>
-          Set the number of points to generate between the center and the radius.
+          Set the number of points to generate between the center
+          and the radius.
         </Documentation>
       </IntVectorProperty>
 
@@ -53,6 +54,12 @@
           Set the radius of the sphere.
         </Documentation>
       </IntVectorProperty>
+
+       <Hints>
+        <PropertyGroup type="PointSource" >
+          <Property function="WorldPosition"  name="Center" />
+        </PropertyGroup>
+      </Hints>
 
     </SourceProxy>
     <!-- End vtkCosmoDensityFilter -->

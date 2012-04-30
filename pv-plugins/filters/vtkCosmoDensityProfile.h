@@ -31,18 +31,22 @@
 #ifndef VTKCOSMODENSITYPROFILE_H_
 #define VTKCOSMODENSITYPROFILE_H_
 
-#include "vtkPolyDataAlgorithm.h"
+#include "vtkMultiBlockDataSetAlgorithm.h"
+#include <vector> // For STL vector
+#include <list> // For STL list
 
 class vtkIndent;
 class vtkMultiProcessController;
 class vtkInformation;
 class vtkInformationVector;
+class vtkUnstructuredGrid;
+class vtkSphere;
 
-class VTK_EXPORT vtkCosmoDensityProfile : public vtkPolyDataAlgorithm
+class VTK_EXPORT vtkCosmoDensityProfile : public vtkMultiBlockDataSetAlgorithm
 {
 public:
   static vtkCosmoDensityProfile* New();
-  vtkTypeMacro(vtkCosmoDensityProfile,vtkPolyDataAlgorithm);
+  vtkTypeMacro(vtkCosmoDensityProfile,vtkMultiBlockDataSetAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);
 
   // Description:
@@ -52,8 +56,8 @@ public:
 
   // Description:
   // Set/Get the number of points.
-  vtkSetMacro(NumberOfPoints,int);
-  vtkGetMacro(NumberOfPoints,int);
+  vtkSetMacro(NumberOfSpheres,int);
+  vtkGetMacro(NumberOfSpheres,int);
 
   // Description:
   // Set/Get the center
@@ -78,13 +82,30 @@ protected:
   virtual int FillOutputPortInformation( int port, vtkInformation *info );
 
   // Description:
-  // Generate spheres
-  void GenerateSpheres();
+  // Generate con-centric spheres
+  void GenerateSpheres(vtkMultiBlockDataSet *output);
 
-  int NumberOfPoints;
+  // Description:
+  // Computes the density, i.e., the number of particles within each sphere
+  // at the user-supplied region.
+  void ComputeDensity(vtkUnstructuredGrid* particles);
+
+  // Description:
+  // Finds all the particles that are within the given sphere
+  void FindParticlesInSphere(
+      const int sphereIdx,
+      vtkUnstructuredGrid* particles,
+      std::list< vtkIdType > &particleIds);
+
+  int NumberOfSpheres;
   int Radius;
   double Center[3];
   vtkMultiProcessController *Controller;
+
+  //BTX
+  std::vector<double> ConcentricRadii;
+  std::vector<int> NumParticlesInSphere;
+  //ETX
 
 private:
   vtkCosmoDensityProfile(const vtkCosmoDensityProfile&); // Not implemented
