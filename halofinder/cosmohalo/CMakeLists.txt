@@ -24,8 +24,8 @@ set(Cosmo_LIBS  ${MPI_LIBRARIES})
 ## List of executables
 set(Cosmo_PROGRAMS
   BinHalos.cxx
-#  ForceRandom.cxx
-#  ForceSpeed.cxx
+  ForceRandom.cxx
+  ForceSpeed.cxx
   NToN.cxx
   OneToN.cxx
   )
@@ -64,10 +64,11 @@ if(BUILD_SHARED_LIBS)
 else()
  add_library(cosmohalo STATIC ${Cosmo_SOURCES})
 endif()
+target_link_libraries(cosmohalo ${MPI_LIBRARIES})
 
 ## Compile each program
 foreach(prgm ${Cosmo_PROGRAMS})
   get_filename_component(appName ${prgm} NAME_WE)
   add_executable( ${appName} ${prgm} )
-  target_link_libraries(${appName} ${Cosmo_LIBS} cosmohalo)
+  target_link_libraries(${appName} ${Cosmo_LIBS} cosmohalo ${MPI_LIBRARIES})
 endforeach()

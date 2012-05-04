@@ -4,6 +4,7 @@
 #include <math.h>
 
 #include <time.h>
+#include <ctime>
 
 #include <mpi.h>
 

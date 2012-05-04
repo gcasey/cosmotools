@@ -1,45 +1,45 @@
 /*=========================================================================
-                                                                                
+
 Copyright (c) 2007, Los Alamos National Security, LLC
 
 All rights reserved.
 
-Copyright 2007. Los Alamos National Security, LLC. 
-This software was produced under U.S. Government contract DE-AC52-06NA25396 
-for Los Alamos National Laboratory (LANL), which is operated by 
-Los Alamos National Security, LLC for the U.S. Department of Energy. 
-The U.S. Government has rights to use, reproduce, and distribute this software. 
+Copyright 2007. Los Alamos National Security, LLC.
+This software was produced under U.S. Government contract DE-AC52-06NA25396
+for Los Alamos National Laboratory (LANL), which is operated by
+Los Alamos National Security, LLC for the U.S. Department of Energy.
+The U.S. Government has rights to use, reproduce, and distribute this software.
 NEITHER THE GOVERNMENT NOR LOS ALAMOS NATIONAL SECURITY, LLC MAKES ANY WARRANTY,
-EXPRESS OR IMPLIED, OR ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.  
-If software is modified to produce derivative works, such modified software 
-should be clearly marked, so as not to confuse it with the version available 
+EXPRESS OR IMPLIED, OR ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.
+If software is modified to produce derivative works, such modified software
+should be clearly marked, so as not to confuse it with the version available
 from LANL.
- 
-Additionally, redistribution and use in source and binary forms, with or 
-without modification, are permitted provided that the following conditions 
+
+Additionally, redistribution and use in source and binary forms, with or
+without modification, are permitted provided that the following conditions
 are met:
--   Redistributions of source code must retain the above copyright notice, 
-    this list of conditions and the following disclaimer. 
+-   Redistributions of source code must retain the above copyright notice,
+    this list of conditions and the following disclaimer.
 -   Redistributions in binary form must reproduce the above copyright notice,
     this list of conditions and the following disclaimer in the documentation
-    and/or other materials provided with the distribution. 
+    and/or other materials provided with the distribution.
 -   Neither the name of Los Alamos National Security, LLC, Los Alamos National
     Laboratory, LANL, the U.S. Government, nor the names of its contributors
-    may be used to endorse or promote products derived from this software 
-    without specific prior written permission. 
+    may be used to endorse or promote products derived from this software
+    without specific prior written permission.
 
 THIS SOFTWARE IS PROVIDED BY LOS ALAMOS NATIONAL SECURITY, LLC AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
-THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
-ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL SECURITY, LLC OR 
-CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, 
-EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, 
-PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; 
-OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, 
-WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR 
-OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF 
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL SECURITY, LLC OR
+CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-                                                                                
+
 =========================================================================*/
 
 /*=========================================================================
@@ -324,30 +324,30 @@ const POSVEL_T sphdesign<14>::z[] = {
 
 template <int TDPTS>
 RCBForceTree<TDPTS>::RCBForceTree(
-			 POSVEL_T* minLoc,
-			 POSVEL_T* maxLoc,
-			 POSVEL_T* minForceLoc,
-			 POSVEL_T* maxForceLoc,
-			 ID_T count,
-			 POSVEL_T* xLoc,
-			 POSVEL_T* yLoc,
-			 POSVEL_T* zLoc,
-			 POSVEL_T* xVel,
-			 POSVEL_T* yVel,
-			 POSVEL_T* zVel,
-			 POSVEL_T* ms,
+       POSVEL_T* minLoc,
+       POSVEL_T* maxLoc,
+       POSVEL_T* minForceLoc,
+       POSVEL_T* maxForceLoc,
+       ID_T count,
+       POSVEL_T* xLoc,
+       POSVEL_T* yLoc,
+       POSVEL_T* zLoc,
+       POSVEL_T* xVel,
+       POSVEL_T* yVel,
+       POSVEL_T* zVel,
+       POSVEL_T* ms,
                          POSVEL_T* phiLoc,
                          ID_T *idLoc,
                          MASK_T *maskLoc,
-			 POSVEL_T avgMass,
+       POSVEL_T avgMass,
                          POSVEL_T fsm,
                          POSVEL_T r,
                          POSVEL_T oa,
                          ID_T nd,
                          ID_T ds,
                          ID_T tmin,
-			 ForceLaw *fl,
-			 float fcoeff,
+       ForceLaw *fl,
+       float fcoeff,
                          POSVEL_T ppc)
 {
   // Extract the contiguous data block from a vector pointer
@@ -428,15 +428,15 @@ RCBForceTree<TDPTS>::RCBForceTree(
 #define THE_CLOCK CLOCK_THREAD_CPUTIME_ID
 #endif
 
-  timespec b_start, b_end;
-  clock_gettime(THE_CLOCK, &b_start);
+//  timespec b_start, b_end;
+//  clock_gettime(THE_CLOCK, &b_start);
   // Create the recursive RCB tree from the particle locations
   createRCBForceTree();
-  clock_gettime(THE_CLOCK, &b_end);
-  double b_time = (b_end.tv_sec - b_start.tv_sec);
-  b_time += 1e-9*(b_end.tv_nsec - b_start.tv_nsec);
-
-  printStats(b_time);
+//  clock_gettime(THE_CLOCK, &b_end);
+//  double b_time = (b_end.tv_sec - b_start.tv_sec);
+//  b_time += 1e-9*(b_end.tv_nsec - b_start.tv_nsec);
+//
+//  printStats(b_time);
 
   // Interaction lists.
   inx.resize(nthreads);
@@ -1105,7 +1105,7 @@ void RCBForceTree<TDPTS>::calcInternodeForce(ID_T tl,
     POSVEL_T sz = tree[tln].xmax[2]-tree[tln].xmin[2];
     POSVEL_T l2 = std::min(sx*sx, std::min(sy*sy, sz*sz)); // under-estimate
 
-    POSVEL_T dtt2 = dist2*tanOpeningAngle*tanOpeningAngle; 
+    POSVEL_T dtt2 = dist2*tanOpeningAngle*tanOpeningAngle;
     bool looksBig;
     // l2/dist2 is really tan^2 theta, for small theta, tan(theta) ~ theta
     if (l2 > dtt2) {
@@ -1123,11 +1123,11 @@ void RCBForceTree<TDPTS>::calcInternodeForce(ID_T tl,
         POSVEL_T x1 = (i == 0 ? tree[tln].xmin : tree[tln].xmax)[0] - tree[tl].xc[0];
         POSVEL_T y1 = (j == 0 ? tree[tln].xmin : tree[tln].xmax)[1] - tree[tl].xc[1];
         POSVEL_T z1 = tree[tln].xmin[2] - tree[tl].xc[2];
-  
+
         POSVEL_T x2 = (i == 0 ? tree[tln].xmax : tree[tln].xmin)[0] - tree[tl].xc[0];
         POSVEL_T y2 = (j == 0 ? tree[tln].xmax : tree[tln].xmin)[1] - tree[tl].xc[1];
         POSVEL_T z2 = tree[tln].xmax[2] - tree[tl].xc[2];
- 
+
         const bool useRealOA = false;
         if (useRealOA) {
           // |a x b| = a*b*sin(theta)
