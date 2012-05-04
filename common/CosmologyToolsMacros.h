@@ -1,11 +1,18 @@
-#ifndef HACCTOOLSMACROS_H_
-#define HACCTOOLSMACROS_H_
+#ifndef COSMOLOGYTOOLSMACROS_H_
+#define COSMOLOGYTOOLSMACROS_H_
 
 #ifdef USE_DOUBLE_PRECISION
  #define REAL double
 #else
  #define REAL float
 #endif
+
+//#include <cstdint>
+//#ifdef USEINT64
+// #define INTEGER int32_t
+//#else
+// #define INTEGER int64_t
+//#endif
 
 /**
  * @brief A macro to disable the copy constructor and assignment of a class.

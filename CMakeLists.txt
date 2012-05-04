@@ -53,6 +53,11 @@ if(${DOUBLE_PRECISION})
  add_definitions(-DUSE_DOUBLE_PRECISION)
 endif()
 
+## Choose whether to use int64 or int32
+option(USEINT64 "Use int64 or int32" OFF)
+if( ${USEINT64} )
+ add_definitions(-DUSEINT64 )
+endif()
 
 ## Loop thrhough all package directories and provide an option for which
 ## package to be enabled, i.e., set to ON. All enabled packages will be built.
