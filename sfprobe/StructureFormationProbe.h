@@ -5,9 +5,9 @@
 #ifndef STRUCTUREFORMATIONPROBE_H_
 #define STRUCTUREFORMATIONPROBE_H_
 
-#include "HACCToolsMacros.h"
+#include "CosmologyToolsMacros.h"
 
-namespace hacctools {
+namespace cosmologytools {
 
 class StructureFormationProbe
 {

@@ -3,7 +3,7 @@
 
 #include <sstream>
 
-namespace hacctools {
+namespace cosmologytools {
 
 ParallelStructureFormationProbe::ParallelStructureFormationProbe()
 {

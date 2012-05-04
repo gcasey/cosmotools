@@ -13,7 +13,7 @@
 #define KMIN(ext) ext[4]
 #define KMAX(ext) ext[5]
 
-namespace hacctools {
+namespace cosmologytools {
 
 StructureFormationProbe::StructureFormationProbe()
 {

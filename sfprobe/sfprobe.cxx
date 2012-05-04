@@ -3,7 +3,7 @@
 #include <cassert>
 #include <cstdlib>
 
-#include "HACCToolsMacros.h"
+#include "CosmologyToolsMacros.h"
 #include "ExtentPartitioner.h"
 #include "ParallelStructureFormationProbe.h"
 #include "StructureFormationProbe.h"
@@ -73,7 +73,7 @@ int main(int argc, char **argv)
   KMAX(ext) = atoi(argv[6]);
 
   int myext[6];
-  hacctools::ExtentPartitioner partitioner;
+  cosmologytools::ExtentPartitioner partitioner;
   partitioner.SetGlobalExtent( ext );
   partitioner.SetNumberOfPartitions( size );
   partitioner.Partition();
@@ -91,8 +91,8 @@ int main(int argc, char **argv)
   GetParticles(particles, N, myext,origin,h);
   MPI_Barrier( MPI_COMM_WORLD );
 
-  hacctools::ParallelStructureFormationProbe *mySFProbe =
-      new hacctools::ParallelStructureFormationProbe();
+  cosmologytools::ParallelStructureFormationProbe *mySFProbe =
+      new cosmologytools::ParallelStructureFormationProbe();
   mySFProbe->SetCommunicator( MPI_COMM_WORLD );
   mySFProbe->SetWholeExtent( ext );
   mySFProbe->SetParticles( particles );

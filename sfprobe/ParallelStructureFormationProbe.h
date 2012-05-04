@@ -7,11 +7,11 @@
 #define PARALLELSTRUCTUREFORMATIONPROBE_H_
 
 #include "StructureFormationProbe.h"
-#include "HACCToolsMacros.h"
+#include "CosmologyToolsMacros.h"
 
 #include <mpi.h>
 
-namespace hacctools {
+namespace cosmologytools {
 
 class ParallelStructureFormationProbe : public StructureFormationProbe
 {

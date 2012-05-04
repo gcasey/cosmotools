@@ -5,7 +5,7 @@
 #ifndef HALOFINDERS_H_
 #define HALOFINDERS_H_
 
-namespace hacctools {
+namespace cosmologytools {
 
 enum HaloFinders {
   COSMO = 0,

@@ -4,7 +4,7 @@
 #include <cmath>
 #include <queue>
 
-namespace hacctools {
+namespace cosmologytools {
 
 ExtentPartitioner::ExtentPartitioner()
 {

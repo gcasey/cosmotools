@@ -5,10 +5,10 @@
 #ifndef EXTENTPARTITIONER_H_
 #define EXTENTPARTITIONER_H_
 
-#include "HACCToolsMacros.h"
+#include "CosmologyToolsMacros.h"
 #include <vector>
 
-namespace hacctools {
+namespace cosmologytools {
 
 class ExtentPartitioner
 {
