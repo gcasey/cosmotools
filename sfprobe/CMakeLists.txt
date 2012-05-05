@@ -11,6 +11,7 @@ if(BUILD_SHARED_LIBS)
 else()
  add_library(sfprobe STATIC ${SOURCES})
 endif()
+target_link_libraries(sfprobe ${MPI_LIBRARIES})
 
 add_executable(sfprobe.app sfprobe.cxx)
 target_link_libraries(sfprobe.app sfprobe ${MPI_LIBRARIES})
