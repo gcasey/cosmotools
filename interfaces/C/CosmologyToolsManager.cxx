@@ -1,5 +1,5 @@
 #include "CosmologyToolsManager.h"
-#include "HaloFinders.h"
+
 
 namespace cosmologytools
 {
@@ -11,7 +11,7 @@ CosmologyToolsManager::CosmologyToolsManager()
   this->EnableVis             = false;
   this->ArrayStride           = 6;
   this->HaloTrackingFrequency = 5;
-  this->HaloFinder            = cosmologytools::COSMO;
+  this->HaloFinder            = 0;
 }
 
 //-----------------------------------------------------------------------------
