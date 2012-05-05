@@ -54,7 +54,8 @@ void *bigchunk_malloc(size_t sz)
 
 	if (_bigchunk_sz - _bigchunk_used >= sz) {
 		/* this fits in the big chunk */
-		void *r = _bigchunk_ptr + _bigchunk_used;
+		char *myBigChunkPtr = reinterpret_cast<char*>(_bigchunk_ptr);
+		void *r = myBigChunkPtr + _bigchunk_used;
 		_bigchunk_last_alloc = _bigchunk_used;
 		_bigchunk_used += sz;
 		_bigchunk_total += sz;
@@ -83,10 +84,14 @@ void *bigchunk_malloc(size_t sz)
 
 void bigchunk_free(void *ptr)
 {
-	if (ptr < _bigchunk_ptr || ptr >= _bigchunk_ptr + _bigchunk_sz) {
+	// Cast to char* so that we can do pointer arithmetic
+	char *myPtr 		= reinterpret_cast<char*>(ptr);
+	char *myBigChunkPtr = reinterpret_cast<char*>(_bigchunk_ptr);
+
+	if (myPtr < myBigChunkPtr || myPtr >= myBigChunkPtr + _bigchunk_sz) {
 		free(ptr);
 	} else if (_bigchunk_last_alloc != (size_t) -1 &&
-                   ptr == _bigchunk_ptr + _bigchunk_last_alloc) {
+             myPtr == myBigChunkPtr + _bigchunk_last_alloc) {
 		/* this is the last allocation, so we can undo that easily... */
 		_bigchunk_used = _bigchunk_last_alloc;
 		_bigchunk_last_alloc = (size_t) -1;
