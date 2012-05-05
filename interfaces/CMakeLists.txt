@@ -5,8 +5,6 @@ project(interfaces)
 ## since that's where the mangled header used in the Fortran interface defined.
 include_directories(${PROJECT_BINARY_DIR}/C)
 
-message("Including: " ${PROJECT_BINARY_DIR}/C)
-
 ## We always build the C-interface
 add_subdirectory(C)
 

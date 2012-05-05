@@ -7,10 +7,14 @@
 
 namespace cosmologytools {
 
-enum HaloFinders {
+class HaloFinders {
+public:
+  enum
+  {
   COSMO = 0,
-
   NUMBER_OF_HALO_FINDERS
+  }
+
 };
 
 } /* end namespace hacctools */

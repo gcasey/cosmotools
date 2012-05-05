@@ -1,4 +1,5 @@
 set(SOURCES
+ CosmologyToolsManager.cxx
  CosmologyTools.cxx
  )
 

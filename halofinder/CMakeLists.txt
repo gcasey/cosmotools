@@ -1,5 +1,5 @@
 project(halofinder)
-
+include_directories(${PROJECT_SOURCE_DIR})
 option(BUILD_COSMO "Build the cosmo halo-finder." OFF)
 if( ${BUILD_COSMO} )
   add_subdirectory(cosmohalo)
