@@ -35,6 +35,7 @@
 #include <vector> // For STL vector
 #include <list> // For STL list
 
+// Forward declarations
 class vtkIndent;
 class vtkMultiProcessController;
 class vtkInformation;
@@ -65,6 +66,12 @@ public:
   vtkGetVector3Macro(Center,double);
 
   // Description:
+  // Set/Get the UseFOFCenters flag -- a flag that indicates whether FOF halos
+  // are computed internally, and the halo centers will be used for the
+  vtkSetMacro(UseFOFCenters,int);
+  vtkGetMacro(UseFOFCenters,int);
+
+  // Description:
   // Set & Get the multi-process controller.
   vtkGetMacro(Controller,vtkMultiProcessController*);
   vtkSetMacro(Controller,vtkMultiProcessController*);
@@ -83,29 +90,51 @@ protected:
 
   // Description:
   // Generate con-centric spheres
-  void GenerateSpheres(vtkMultiBlockDataSet *output);
+  void GenerateSpheres(
+       const int sphereIdx,
+      double center[3],
+      vtkMultiBlockDataSet *output);
 
   // Description:
   // Computes the density, i.e., the number of particles within each sphere
   // at the user-supplied region.
-  void ComputeDensity(vtkUnstructuredGrid* particles);
+  void ComputeDensity(
+      const int sphereIdx,
+      double center[3],
+      vtkUnstructuredGrid* particles);
 
   // Description:
   // Finds all the particles that are within the given sphere
   void FindParticlesInSphere(
-      const int sphereIdx,
+      const int radiusIdx,
+      double center[3],
       vtkUnstructuredGrid* particles,
       std::list< vtkIdType > &particleIds);
 
-  int NumberOfSpheres;
-  int Radius;
-  double Center[3];
-  vtkMultiProcessController *Controller;
+  // Description:
+  // Computes the Halo FOF centers. Set the NumberOfSphereCenters equal to the
+  // number of halos and populates the SphereCenters with the FOF centers array.
+  void GetHaloFOFCenters();
 
-  //BTX
-  std::vector<double> ConcentricRadii;
-  std::vector<int> NumParticlesInSphere;
-  //ETX
+  // Description:
+  // Computes a density profile at the given sphere center.
+  void ProcessSphereCenter(
+      int sphereIdx,
+      vtkUnstructuredGrid *particles,
+      vtkMultiBlockDataSet *spheres );
+
+  int NumberOfSpheres; // The number of concentric spheres
+  int Radius;          // The radius to use from the sphere center
+  double Center[3];    // The sphere center to use when in interactive mode
+  int NumberOfSphereCenters; // The number of sphere centers to process
+  int UseFOFCenters; // A flag that indicates whether or not to process FOFs
+  vtkMultiProcessController *Controller; // The controller used in parallel
+
+//BTX
+  std::vector<double> SphereCenters; // The list of sphere-centers to process
+  std::vector<double> ConcentricRadii; // The radii of the concentric spheres
+  std::vector<int> NumParticlesInSphere; // The density of each sphere.
+//ETX
 
 private:
   vtkCosmoDensityProfile(const vtkCosmoDensityProfile&); // Not implemented

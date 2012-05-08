@@ -79,6 +79,7 @@ class vtkVectorSumOperator : public vtkCommunicator::Operation
 
 }
 
+//------------------------------------------------------------------------------
 vtkStandardNewMacro(vtkCosmoDensityProfile);
 
 //------------------------------------------------------------------------------
@@ -88,6 +89,7 @@ vtkCosmoDensityProfile::vtkCosmoDensityProfile()
   this->Center[0]  = this->Center[1] = this->Center[2] = 0.0;
   this->Radius     = 5.0;
   this->NumberOfSpheres = 0;
+  this->UseFOFCenters   = 0;
   this->SetNumberOfInputPorts( 1 );
   this->SetNumberOfOutputPorts( 2 );
 }
@@ -134,44 +136,40 @@ int vtkCosmoDensityProfile::FillOutputPortInformation(
 }
 
 //------------------------------------------------------------------------------
-void vtkCosmoDensityProfile::GenerateSpheres(vtkMultiBlockDataSet *mbds)
+void vtkCosmoDensityProfile::GenerateSpheres(
+    int sphereIdx,
+    double center[3],
+    vtkMultiBlockDataSet *spheres)
 {
-  assert("pre: output multi-block dataset is NULL" && (mbds != NULL) );
-
-  mbds->SetNumberOfBlocks( this->NumberOfSpheres );
-
-  this->NumParticlesInSphere.resize( this->NumberOfSpheres,0 );
-  this->ConcentricRadii.resize( this->NumberOfSpheres );
-  double h = static_cast<double>( this->Radius/this->NumberOfSpheres );
-
+  assert("pre: output multi-block dataset is NULL" && (spheres != NULL) );
 
   for( int i=0; i < this->NumberOfSpheres; ++i )
     {
-    this->ConcentricRadii[ i ] = (i+1)*h;
-
+    vtkIdType blockIdx = sphereIdx*this->NumberOfSpheres+i;
     vtkSphereSource *sphereGenerator = vtkSphereSource::New();
-    sphereGenerator->SetCenter( this->Center );
+    sphereGenerator->SetCenter( center );
     sphereGenerator->SetRadius( this->ConcentricRadii[ i ] );
     sphereGenerator->Update();
-    mbds->SetBlock( i, sphereGenerator->GetOutput() );
+    spheres->SetBlock( blockIdx, sphereGenerator->GetOutput() );
     sphereGenerator->Delete();
-    }
+    } // END for all concentric spheres
 
 }
 
 //------------------------------------------------------------------------------
 void vtkCosmoDensityProfile::FindParticlesInSphere(
-    const int sphereIdx,
+    const int radiusIdx,
+    double center[3],
     vtkUnstructuredGrid* particles,
     std::list< vtkIdType > &particleIds )
 {
-  double r = this->ConcentricRadii[ sphereIdx ];
+  double r = this->ConcentricRadii[ radiusIdx ];
   vtkSphere *mySphere = vtkSphere::New();
-  mySphere->SetCenter( this->Center );
+  mySphere->SetCenter( center);
   mySphere->SetRadius( r );
 
   double pnt[3];
-  if( sphereIdx == this->NumberOfSpheres-1 )
+  if( radiusIdx == this->NumberOfSpheres-1 )
     {
     for( vtkIdType idx=0; idx < particles->GetNumberOfPoints(); ++idx )
       {
@@ -207,18 +205,19 @@ void vtkCosmoDensityProfile::FindParticlesInSphere(
 }
 
 //------------------------------------------------------------------------------
-void vtkCosmoDensityProfile::ComputeDensity(vtkUnstructuredGrid* particles)
+void vtkCosmoDensityProfile::ComputeDensity(
+    const int sphereIdx,
+    double center[3],
+    vtkUnstructuredGrid* particles)
 {
-  int biggestSphereId = this->NumberOfSpheres-1;
-  double pnt[3];
+  int biggestRadiusId = this->NumberOfSpheres-1;
   std::list< vtkIdType > particleIds;
 
-  for( int sphereIdx=biggestSphereId; sphereIdx >= 0; --sphereIdx )
+  for( int radiusIdx=biggestRadiusId; radiusIdx >= 0; --radiusIdx )
     {
-    this->FindParticlesInSphere(sphereIdx,particles,particleIds );
-    this->NumParticlesInSphere[ sphereIdx ] =
+    this->FindParticlesInSphere(radiusIdx,center,particles,particleIds );
+    this->NumParticlesInSphere[ sphereIdx*this->NumberOfSpheres+radiusIdx ] =
         static_cast<int>( particleIds.size() );
-
     } // END for all spheres from bigger to smallest
 
   this->Controller->Barrier();
@@ -233,21 +232,53 @@ void vtkCosmoDensityProfile::ComputeDensity(vtkUnstructuredGrid* particles)
     vtkVectorSumOperator vectorSumOperator;
     int rootProcess = 0;
     this->Controller->Reduce(
-      &this->NumParticlesInSphere[0],rcvBuffer,this->NumberOfSpheres,
-      &vectorSumOperator,rootProcess);
+      &this->NumParticlesInSphere[sphereIdx*this->NumberOfSpheres],
+      rcvBuffer,
+      this->NumberOfSpheres,
+      &vectorSumOperator,
+      rootProcess);
 
     if( this->Controller->GetLocalProcessId() == rootProcess )
       {
       for( int i=0; i < this->NumberOfSpheres; ++i )
         {
-        this->NumParticlesInSphere[i] = rcvBuffer[i];
+        this->NumParticlesInSphere[sphereIdx*this->NumberOfSpheres+i] =
+            rcvBuffer[i];
         } // END for all spheres
       } // END if rootProcess
 
     delete [] rcvBuffer;
     } // End if more than one process
+}
 
+//------------------------------------------------------------------------------
+void vtkCosmoDensityProfile::ProcessSphereCenter(
+    int sphereIdx,
+    vtkUnstructuredGrid *particles,
+    vtkMultiBlockDataSet *spheres)
+{
+  assert("pre: particles is NULL" && (particles != NULL) );
+  assert("pre: spheres is NULL" && (spheres != NULL));
 
+  // STEP 0: Get the sphere center
+  double cntr[3];
+  for( int i=0; i < 3; ++i )
+    {
+    cntr[i] = this->SphereCenters[ sphereIdx*3+i ];
+    }
+
+  // STEP 1: Generate concentric spheres at the given center
+  this->GenerateSpheres( sphereIdx, cntr,spheres);
+
+  // STEP 2: Compute the density for the given sphere
+  this->ComputeDensity(sphereIdx, cntr, particles);
+}
+
+//------------------------------------------------------------------------------
+void vtkCosmoDensityProfile::GetHaloFOFCenters()
+{
+  this->NumberOfSphereCenters = 0;
+  // TODO: implement this
 }
 
 //------------------------------------------------------------------------------
@@ -276,34 +307,58 @@ int vtkCosmoDensityProfile::RequestData(
   vtkTable *plot = vtkTable::SafeDownCast(
       output2->Get(vtkDataObject::DATA_OBJECT() ) );
 
-  // STEP 3: Generate con-centric spheres
-  this->GenerateSpheres(mbds);
+  // STEP 3: Set sphere centers to be processed
+  if( this->UseFOFCenters == 1 )
+    {
+    this->GetHaloFOFCenters();
+    }
+  else
+    {
+    this->NumberOfSphereCenters = 1;
+    this->SphereCenters.resize( 3 );
+    this->SphereCenters[ 0 ] = this->Center[ 0 ];
+    this->SphereCenters[ 1 ] = this->Center[ 1 ];
+    this->SphereCenters[ 2 ] = this->Center[ 2 ];
+    }
+
+  // STEP 4: Allocate data-structures
+  int Size = this->NumberOfSpheres*this->NumberOfSphereCenters;
+  mbds->SetNumberOfBlocks( Size );
+  this->NumParticlesInSphere.resize( Size );
+  this->ConcentricRadii.resize( this->NumberOfSpheres );
+
+  // STEP 5: Compute concentric radii
+  double h = static_cast<double>(this->Radius/this->NumberOfSpheres );
+  for( int i=0; i < this->NumberOfSpheres; ++i )
+    {
+    this->ConcentricRadii[ i ] = (i+1)*h;
+    } // END for
+
+  // STEP 6: Loop and process each center
+  for( int sphereIdx=0; sphereIdx < this->NumberOfSphereCenters; ++sphereIdx )
+    {
+    this->ProcessSphereCenter(sphereIdx,particles,mbds);
+    } // END for all sphere centers
   this->Controller->Barrier();
 
-  // STEP 4: Compute density (i.e., nunmber of particles in sphere)
-  this->ComputeDensity(particles);
-  this->Controller->Barrier();
-
-  if( this->Controller->GetLocalProcessId() == 0 )
+  // STEP 7: Add Density column to plot
+  if( this->Controller->GetLocalProcessId( ) == 0 )
     {
     vtkIdTypeArray *sphereIds       = vtkIdTypeArray::New();
     sphereIds->SetName( "Sphere ID" );
     vtkIdTypeArray *sphereDensities = vtkIdTypeArray::New();
     sphereDensities->SetName("Density");
 
-    for( int i=0; i < this->NumberOfSpheres; ++i )
+    for( int i=0; i < Size; ++i )
       {
       sphereIds->InsertNextValue( i );
       sphereDensities->InsertNextValue( this->NumParticlesInSphere[i] );
       } // END for all spheres
-
     plot->AddColumn( sphereIds );
     sphereIds->Delete();
-
     plot->AddColumn( sphereDensities );
     sphereDensities->Delete();
     }
   this->Controller->Barrier();
-
   return 1;
 }

@@ -1,7 +1,7 @@
 <ParaViewFilters>
   <Category
-    name="HACCTools"
-    menu_label="&amp;HACCTools"
+    name="CosmologyTools"
+    menu_label="&amp;CosmologyTools"
     show_in_toolbar="1"
     preserve_order="1">
 

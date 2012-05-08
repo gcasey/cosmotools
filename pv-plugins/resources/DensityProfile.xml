@@ -23,6 +23,20 @@
          </Documentation>
      </InputProperty>
 
+     <IntVectorProperty
+        name="UseFOFCenters"
+        command="SetUseFOFCenters"
+        number_of_elements="1"
+        default_values="1">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          Set whether or not the FOF centers will be used to compute the
+          density profile. If UseFOFCenters is true, the filter will compute
+          the halos and FOF centers internally and use that to seed the regions
+          where the density profiles will be computed.
+        </Documentation>
+     </IntVectorProperty>
+
       <DoubleVectorProperty
          name="Center"
          label="Center"
