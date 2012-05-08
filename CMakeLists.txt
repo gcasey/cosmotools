@@ -2,7 +2,7 @@
 cmake_minimum_required(VERSION 2.8)
 
 ## Set the project name and enable C/C++ and Fortran support
-project(HACCTools C CXX Fortran)
+project(CosmologyTools C CXX Fortran)
 
 ## Set the path where all the libraries will be stored
 set(LIBRARY_OUTPUT_PATH

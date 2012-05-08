@@ -6,7 +6,7 @@ find_package(ParaView REQUIRED)
 include(${PARAVIEW_USE_FILE})
 
 ## Set the plugin name and version
-set(PLUGIN_NAME HACCTools)
+set(PLUGIN_NAME CosmologyTools)
 set(PLUGIN_VERSION "1.0")
 
 include_directories(
@@ -28,7 +28,7 @@ set(SMSRC
 
 ## Add the paraview plugin
 ADD_PARAVIEW_PLUGIN(${PLUGIN_NAME} ${PLUGIN_VERSION}
-    GUI_RESOURCE_FILES resources/HACCTools.xml
+    GUI_RESOURCE_FILES resources/CosmologyTools.xml
     SERVER_MANAGER_XML ${SMXML}
     SERVER_MANAGER_SOURCES ${SMSRC}
     )
