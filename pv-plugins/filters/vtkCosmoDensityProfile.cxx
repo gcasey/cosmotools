@@ -294,10 +294,6 @@ void vtkCosmoDensityProfile::GetHaloFOFCenters(vtkUnstructuredGrid *fofCenters)
   this->NumberOfSphereCenters = fofCenters->GetNumberOfPoints();
   this->SphereCenters.resize( 3*this->NumberOfSphereCenters );
 
-  std::cout << "Number of fofCenters: " << this->NumberOfSphereCenters;
-  std::cout << std::endl;
-  std::cout.flush();
-
   double pnt[3];
   for( int i=0; i < this->NumberOfSphereCenters; ++i )
     {
@@ -326,18 +322,10 @@ int vtkCosmoDensityProfile::RequestData(
   vtkInformation *haloFinder = inputVector[1]->GetInformationObject(0);
   if( haloFinder != NULL )
     {
-    std::cout << "USING FOF centers....\n";
-    std::cout.flush();
-
     this->UseFOFCenters = 1;
     fofCenters = vtkUnstructuredGrid::SafeDownCast(
         haloFinder->Get( vtkDataObject::DATA_OBJECT() ) );
     assert("pre: input fof centers is NULL!" && (fofCenters != NULL) );
-    }
-  else
-    {
-    std::cout << "HALO FOFS are not provided...\n";
-    std::cout.flush();
     }
 
   // STEP 2: Get the 1st output object
