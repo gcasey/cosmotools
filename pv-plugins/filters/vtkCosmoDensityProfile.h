@@ -36,6 +36,8 @@
 #include <list> // For STL list
 
 // Forward declarations
+class vtkAlgorithm;
+class vtkAlgorithmOutput;
 class vtkIndent;
 class vtkMultiProcessController;
 class vtkInformation;
@@ -66,15 +68,14 @@ public:
   vtkGetVector3Macro(Center,double);
 
   // Description:
-  // Set/Get the UseFOFCenters flag -- a flag that indicates whether FOF halos
-  // are computed internally, and the halo centers will be used for the
-  vtkSetMacro(UseFOFCenters,int);
-  vtkGetMacro(UseFOFCenters,int);
-
-  // Description:
   // Set & Get the multi-process controller.
   vtkGetMacro(Controller,vtkMultiProcessController*);
   vtkSetMacro(Controller,vtkMultiProcessController*);
+
+  // Description:
+  // Method used by the pipeline to connect the FOF centers output from the
+  // halo-finder to this algorithm.
+  void SetFOFCentersConnection(vtkAlgorithmOutput* algOutput);
 
 protected:
   vtkCosmoDensityProfile();
@@ -114,7 +115,7 @@ protected:
   // Description:
   // Computes the Halo FOF centers. Set the NumberOfSphereCenters equal to the
   // number of halos and populates the SphereCenters with the FOF centers array.
-  void GetHaloFOFCenters();
+  void GetHaloFOFCenters(vtkUnstructuredGrid *fofCenters);
 
   // Description:
   // Computes a density profile at the given sphere center.

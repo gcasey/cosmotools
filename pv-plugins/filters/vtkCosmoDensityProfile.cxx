@@ -25,6 +25,8 @@
 #include "vtkSphereSource.h"
 #include "vtkIdTypeArray.h"
 #include "vtkCommunicator.h"
+#include "vtkAlgorithm.h"
+#include "vtkAlgorithmOutput.h"
 
 #include <set>
 #include <list>
@@ -90,7 +92,7 @@ vtkCosmoDensityProfile::vtkCosmoDensityProfile()
   this->Radius     = 5.0;
   this->NumberOfSpheres = 0;
   this->UseFOFCenters   = 0;
-  this->SetNumberOfInputPorts( 1 );
+  this->SetNumberOfInputPorts( 2 );
   this->SetNumberOfOutputPorts( 2 );
 }
 
@@ -109,11 +111,14 @@ void vtkCosmoDensityProfile::PrintSelf(ostream &os, vtkIndent indent)
 
 //------------------------------------------------------------------------------
 int vtkCosmoDensityProfile::FillInputPortInformation(
-                      int vtkNotUsed(port),vtkInformation *info)
+                      int port,vtkInformation *info)
 {
   assert("pre: input information is NULL!" && (info != NULL) );
-  info->Set(
-      vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkUnstructuredGrid");
+  info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkUnstructuredGrid");
+  if( port == 1 )
+    {
+    info->Set(vtkAlgorithm::INPUT_IS_OPTIONAL(),1);
+    }
   return 1;
 }
 
@@ -133,6 +138,15 @@ int vtkCosmoDensityProfile::FillOutputPortInformation(
       vtkErrorMacro("Undefined port!" << port );
     }
   return 1;
+}
+
+//------------------------------------------------------------------------------
+void vtkCosmoDensityProfile::SetFOFCentersConnection(
+    vtkAlgorithmOutput *algOutput)
+{
+  assert( "pre: Cannot connect to a NULL algorithm output!" &&
+          (algOutput!=NULL) );
+  this->SetInputConnection(1, algOutput);
 }
 
 //------------------------------------------------------------------------------
@@ -275,10 +289,23 @@ void vtkCosmoDensityProfile::ProcessSphereCenter(
 }
 
 //------------------------------------------------------------------------------
-void vtkCosmoDensityProfile::GetHaloFOFCenters()
+void vtkCosmoDensityProfile::GetHaloFOFCenters(vtkUnstructuredGrid *fofCenters)
 {
-  this->NumberOfSphereCenters = 0;
-  // TODO: implement this
+  this->NumberOfSphereCenters = fofCenters->GetNumberOfPoints();
+  this->SphereCenters.resize( 3*this->NumberOfSphereCenters );
+
+  std::cout << "Number of fofCenters: " << this->NumberOfSphereCenters;
+  std::cout << std::endl;
+  std::cout.flush();
+
+  double pnt[3];
+  for( int i=0; i < this->NumberOfSphereCenters; ++i )
+    {
+    fofCenters->GetPoint( i, pnt );
+    this->SphereCenters[ i*3 ]   = pnt[0];
+    this->SphereCenters[ i*3+1 ] = pnt[1];
+    this->SphereCenters[ i*3+2 ] = pnt[2];
+    } // END for all sphere centers
 }
 
 //------------------------------------------------------------------------------
@@ -294,23 +321,42 @@ int vtkCosmoDensityProfile::RequestData(
           input->Get( vtkDataObject::DATA_OBJECT() ) );
   assert("pre: input particles is NULL!" && (particles != NULL) );
 
-  // STEP 1: Get the 1st output
+  // STEP 1: Check to see if a second input is provided
+  vtkUnstructuredGrid *fofCenters = NULL;
+  vtkInformation *haloFinder = inputVector[1]->GetInformationObject(0);
+  if( haloFinder != NULL )
+    {
+    std::cout << "USING FOF centers....\n";
+    std::cout.flush();
+
+    this->UseFOFCenters = 1;
+    fofCenters = vtkUnstructuredGrid::SafeDownCast(
+        haloFinder->Get( vtkDataObject::DATA_OBJECT() ) );
+    assert("pre: input fof centers is NULL!" && (fofCenters != NULL) );
+    }
+  else
+    {
+    std::cout << "HALO FOFS are not provided...\n";
+    std::cout.flush();
+    }
+
+  // STEP 2: Get the 1st output object
   vtkInformation *output = outputVector->GetInformationObject( 0 );
   assert( "pre: output information object is NULL" && (output != NULL) );
   vtkMultiBlockDataSet *mbds =
       vtkMultiBlockDataSet::SafeDownCast(
           output->Get( vtkDataObject::DATA_OBJECT() ) );
 
-  // STEP 2: Get the 2nd output
+  // STEP 3: Get the 2nd output object
   vtkInformation *output2 = outputVector->GetInformationObject( 1 );
   assert( "pre: output information object is NULL" && (output2 != NULL) );
   vtkTable *plot = vtkTable::SafeDownCast(
       output2->Get(vtkDataObject::DATA_OBJECT() ) );
 
-  // STEP 3: Set sphere centers to be processed
+  // STEP 4: Set sphere centers to be processed
   if( this->UseFOFCenters == 1 )
     {
-    this->GetHaloFOFCenters();
+    this->GetHaloFOFCenters(fofCenters);
     }
   else
     {
@@ -321,27 +367,27 @@ int vtkCosmoDensityProfile::RequestData(
     this->SphereCenters[ 2 ] = this->Center[ 2 ];
     }
 
-  // STEP 4: Allocate data-structures
+  // STEP 5: Allocate data-structures
   int Size = this->NumberOfSpheres*this->NumberOfSphereCenters;
   mbds->SetNumberOfBlocks( Size );
   this->NumParticlesInSphere.resize( Size );
   this->ConcentricRadii.resize( this->NumberOfSpheres );
 
-  // STEP 5: Compute concentric radii
+  // STEP 6: Compute concentric radii
   double h = static_cast<double>(this->Radius/this->NumberOfSpheres );
   for( int i=0; i < this->NumberOfSpheres; ++i )
     {
     this->ConcentricRadii[ i ] = (i+1)*h;
     } // END for
 
-  // STEP 6: Loop and process each center
+  // STEP 7: Loop and process each center
   for( int sphereIdx=0; sphereIdx < this->NumberOfSphereCenters; ++sphereIdx )
     {
     this->ProcessSphereCenter(sphereIdx,particles,mbds);
     } // END for all sphere centers
   this->Controller->Barrier();
 
-  // STEP 7: Add Density column to plot
+  // STEP 8: Add Density column to plot
   if( this->Controller->GetLocalProcessId( ) == 0 )
     {
     vtkIdTypeArray *sphereIds       = vtkIdTypeArray::New();
