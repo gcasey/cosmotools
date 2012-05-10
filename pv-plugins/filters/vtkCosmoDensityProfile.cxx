@@ -157,6 +157,18 @@ void vtkCosmoDensityProfile::GenerateSpheres(
 {
   assert("pre: output multi-block dataset is NULL" && (spheres != NULL) );
 
+  if( this->Controller->GetLocalProcessId( ) != 0 )
+    {
+    for( int i=0; i < this->NumberOfSpheres; ++i )
+      {
+      vtkIdType blockIdx = sphereIdx*this->NumberOfSpheres+i;
+      vtkPolyData *trivialInput = vtkPolyData::New();
+      spheres->SetBlock( blockIdx, trivialInput );
+      trivialInput->Delete();
+      }
+    return;
+    }
+
   for( int i=0; i < this->NumberOfSpheres; ++i )
     {
     vtkIdType blockIdx = sphereIdx*this->NumberOfSpheres+i;
@@ -289,19 +301,77 @@ void vtkCosmoDensityProfile::ProcessSphereCenter(
 }
 
 //------------------------------------------------------------------------------
-void vtkCosmoDensityProfile::GetHaloFOFCenters(vtkUnstructuredGrid *fofCenters)
+void vtkCosmoDensityProfile::ExchangeFOFCenters(vtkUnstructuredGrid *fofCenters)
 {
-  this->NumberOfSphereCenters = fofCenters->GetNumberOfPoints();
+  assert("pre: input FOF centers is NULL!" && (fofCenters != NULL) );
+
+  int Rank = this->Controller->GetLocalProcessId();
+
+  // STEP 0: Collect the localFOF centers
+  vtkIdType numLocalFOFs    = fofCenters->GetNumberOfPoints();
+  vtkIdType localNumDoubles = 3*numLocalFOFs;
+  double *localFOFs = new double[ 3*numLocalFOFs ];
+  for( vtkIdType i=0; i < numLocalFOFs; ++i )
+    {
+    fofCenters->GetPoint( i, &localFOFs[ i*3 ] );
+    } // END for each FOF
+
+  // STEP 1: Get the number of fofCenters on each process, rcvcounts stores
+  // the number of FOFs on each process.
+  int numRanks = this->Controller->GetNumberOfProcesses();
+  vtkIdType *rcvcounts = new vtkIdType[ numRanks ];
+  this->Controller->AllGather( &localNumDoubles, rcvcounts, 1 );
+
+  // STEP 2: Global number of FOF centers
+  vtkIdType globalFOFSize = rcvcounts[ 0 ];
+  for(int i=1; i < numRanks; globalFOFSize += rcvcounts[i++] );
+  this->NumberOfSphereCenters = globalFOFSize/3;
   this->SphereCenters.resize( 3*this->NumberOfSphereCenters );
 
-  double pnt[3];
-  for( int i=0; i < this->NumberOfSphereCenters; ++i )
+  // STEP 3: Compute off-sets
+  vtkIdType *offset = new vtkIdType[ numRanks ];
+  offset[0] = 0;
+  for( int i=1; i < numRanks; ++i )
     {
-    fofCenters->GetPoint( i, pnt );
-    this->SphereCenters[ i*3 ]   = pnt[0];
-    this->SphereCenters[ i*3+1 ] = pnt[1];
-    this->SphereCenters[ i*3+2 ] = pnt[2];
-    } // END for all sphere centers
+    offset[ i ] = offset[i-1]+rcvcounts[i-1];
+    }
+
+  // STEP 4: AllGatherV the centers
+  this->Controller->AllGatherV(
+      localFOFs,&this->SphereCenters[0],localNumDoubles,rcvcounts,offset);
+
+  // STEP 5: Clean up all dynamically allocated memory
+  delete [] localFOFs;
+  delete [] rcvcounts;
+  delete [] offset;
+}
+
+//------------------------------------------------------------------------------
+void vtkCosmoDensityProfile::GetHaloFOFCenters(vtkUnstructuredGrid *fofCenters)
+{
+
+  if( this->Controller->GetNumberOfProcesses() > 1 )
+    {
+    this->ExchangeFOFCenters( fofCenters );
+    }
+  else
+    {
+    this->NumberOfSphereCenters = fofCenters->GetNumberOfPoints();
+    this->SphereCenters.resize( 3*this->NumberOfSphereCenters );
+
+    double pnt[3];
+    std::vector< double > mySphereCenters;
+    mySphereCenters.resize( fofCenters->GetNumberOfPoints() );
+
+    for( int i=0; i < this->NumberOfSphereCenters; ++i )
+      {
+      fofCenters->GetPoint(i, pnt);
+      this->SphereCenters[ i*3 ]   = pnt[0];
+      this->SphereCenters[ i*3+1 ] = pnt[1];
+      this->SphereCenters[ i*3+2 ] = pnt[2];
+      } // END for all sphere centers
+
+    }
 }
 
 //------------------------------------------------------------------------------
@@ -344,7 +414,7 @@ int vtkCosmoDensityProfile::RequestData(
   // STEP 4: Set sphere centers to be processed
   if( this->UseFOFCenters == 1 )
     {
-    this->GetHaloFOFCenters(fofCenters);
+    this->GetHaloFOFCenters( fofCenters );
     }
   else
     {

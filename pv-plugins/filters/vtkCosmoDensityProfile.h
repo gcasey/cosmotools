@@ -26,7 +26,7 @@
 // used to represent particle datasets.
 //
 // .SECTION See Also
-//  vtkPolyDataAlgorithm
+//  vtkMultiBlockDataSetAlgorithm
 
 #ifndef VTKCOSMODENSITYPROFILE_H_
 #define VTKCOSMODENSITYPROFILE_H_
@@ -111,6 +111,12 @@ protected:
       double center[3],
       vtkUnstructuredGrid* particles,
       std::list< vtkIdType > &particleIds);
+
+  // Description:
+  // Exchanges the FOF centers among processes. This method essentially does
+  // an AllGatherV on the fofCenters, s.t., each process will have all the
+  // the centers.
+  void ExchangeFOFCenters(vtkUnstructuredGrid *fofCenters);
 
   // Description:
   // Computes the Halo FOF centers. Set the NumberOfSphereCenters equal to the
