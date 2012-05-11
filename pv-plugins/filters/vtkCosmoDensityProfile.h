@@ -32,18 +32,22 @@
 #define VTKCOSMODENSITYPROFILE_H_
 
 #include "vtkMultiBlockDataSetAlgorithm.h"
-#include <vector> // For STL vector
+
+// C++ includes
 #include <list> // For STL list
+#include <set> // For STL set
+#include <vector> // For STL vector
 
 // Forward declarations
 class vtkAlgorithm;
 class vtkAlgorithmOutput;
 class vtkIndent;
-class vtkMultiProcessController;
 class vtkInformation;
 class vtkInformationVector;
-class vtkUnstructuredGrid;
+class vtkKdTree;
+class vtkMultiProcessController;
 class vtkSphere;
+class vtkUnstructuredGrid;
 
 class VTK_EXPORT vtkCosmoDensityProfile : public vtkMultiBlockDataSetAlgorithm
 {
@@ -113,6 +117,15 @@ protected:
       std::list< vtkIdType > &particleIds);
 
   // Description:
+  // Loops through all the regions of the k-d tree and for the regions that
+  // intersect with the bounding sphere, it computes the list of particles
+  // that are within the sphere
+  void GetParticlesInBoundingSphere(
+      vtkSphere *s,
+      vtkUnstructuredGrid* particles,
+      std::list< vtkIdType > &particleIds );
+
+  // Description:
   // Exchanges the FOF centers among processes. This method essentially does
   // an AllGatherV on the fofCenters, s.t., each process will have all the
   // the centers.
@@ -130,12 +143,18 @@ protected:
       vtkUnstructuredGrid *particles,
       vtkMultiBlockDataSet *spheres );
 
+  // Description:
+  // Constructs a parallel search tree data-structure for the particles.
+  void ConstructSearchTree(vtkUnstructuredGrid *particles);
+
   int NumberOfSpheres; // The number of concentric spheres
   int Radius;          // The radius to use from the sphere center
   double Center[3];    // The sphere center to use when in interactive mode
   int NumberOfSphereCenters; // The number of sphere centers to process
   int UseFOFCenters; // A flag that indicates whether or not to process FOFs
   vtkMultiProcessController *Controller; // The controller used in parallel
+  vtkKdTree *SearchTree;
+
 
 //BTX
   std::vector<double> SphereCenters; // The list of sphere-centers to process

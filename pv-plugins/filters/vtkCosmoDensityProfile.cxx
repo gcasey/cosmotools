@@ -13,26 +13,31 @@
 
  =========================================================================*/
 #include "vtkCosmoDensityProfile.h"
-#include "vtkObjectFactory.h"
-#include "vtkIndent.h"
-#include "vtkMultiProcessController.h"
-#include "vtkMultiBlockDataSet.h"
-#include "vtkTable.h"
-#include "vtkInformation.h"
-#include "vtkInformationVector.h"
-#include "vtkUnstructuredGrid.h"
-#include "vtkSphere.h"
-#include "vtkSphereSource.h"
-#include "vtkIdTypeArray.h"
-#include "vtkCommunicator.h"
+
+// VTK includes
 #include "vtkAlgorithm.h"
 #include "vtkAlgorithmOutput.h"
+#include "vtkCommunicator.h"
+#include "vtkIdList.h"
+#include "vtkIdTypeArray.h"
+#include "vtkIndent.h"
+#include "vtkInformation.h"
+#include "vtkInformationVector.h"
+#include "vtkKdTree.h"
+#include "vtkMultiBlockDataSet.h"
+#include "vtkMultiProcessController.h"
+#include "vtkObjectFactory.h"
+#include "vtkSphere.h"
+#include "vtkSphereSource.h"
+#include "vtkTable.h"
+#include "vtkUnstructuredGrid.h"
 
-#include <set>
-#include <list>
+// C++ includes
 #include <cassert>
-#include <sstream>
 #include <fstream>
+#include <list>
+#include <set>
+#include <sstream>
 
 namespace {
 
@@ -92,6 +97,8 @@ vtkCosmoDensityProfile::vtkCosmoDensityProfile()
   this->Radius     = 5.0;
   this->NumberOfSpheres = 0;
   this->UseFOFCenters   = 0;
+  this->SearchTree      = NULL;
+
   this->SetNumberOfInputPorts( 2 );
   this->SetNumberOfOutputPorts( 2 );
 }
@@ -101,6 +108,10 @@ vtkCosmoDensityProfile::~vtkCosmoDensityProfile()
 {
   this->ConcentricRadii.clear();
   this->NumParticlesInSphere.clear();
+  if( this->SearchTree != NULL )
+    {
+    this->SearchTree->Delete();
+    }
 }
 
 //------------------------------------------------------------------------------
@@ -183,6 +194,29 @@ void vtkCosmoDensityProfile::GenerateSpheres(
 }
 
 //------------------------------------------------------------------------------
+void vtkCosmoDensityProfile::GetParticlesInBoundingSphere(
+    vtkSphere *s,
+    vtkUnstructuredGrid *particles,
+    std::list< vtkIdType > &particleIds )
+{
+  assert("pre: sphere object is NULL!" && (s != NULL) );
+  assert("pre: search tree object is NULL!" && (this->SearchTree != NULL) );
+
+  vtkIdList *candidatePoints = vtkIdList::New();
+  this->SearchTree->FindPointsWithinRadius(
+      s->GetRadius(), s->GetCenter(), candidatePoints );
+
+  for( vtkIdType idx =0; idx < candidatePoints->GetNumberOfIds(); ++idx )
+    {
+    vtkIdType pntIdx = candidatePoints->GetId( idx );
+    assert("pre: point index out-of-bounds" &&
+            (idx < particles->GetNumberOfPoints()) );
+    particleIds.push_front( pntIdx );
+    } // END for all candidates
+  candidatePoints->Delete();
+}
+
+//------------------------------------------------------------------------------
 void vtkCosmoDensityProfile::FindParticlesInSphere(
     const int radiusIdx,
     double center[3],
@@ -191,20 +225,21 @@ void vtkCosmoDensityProfile::FindParticlesInSphere(
 {
   double r = this->ConcentricRadii[ radiusIdx ];
   vtkSphere *mySphere = vtkSphere::New();
-  mySphere->SetCenter( center);
+  mySphere->SetCenter( center );
   mySphere->SetRadius( r );
 
   double pnt[3];
   if( radiusIdx == this->NumberOfSpheres-1 )
     {
-    for( vtkIdType idx=0; idx < particles->GetNumberOfPoints(); ++idx )
-      {
-      particles->GetPoint( idx, pnt );
-      if( mySphere->EvaluateFunction(pnt) <= 0.0 )
-        {
-        particleIds.push_front( idx );
-        }
-      } // END for all particles
+    this->GetParticlesInBoundingSphere(mySphere,particles,particleIds);
+
+//DEBUG
+//    std::cout << "Number of particles in bounding sphere: ";
+//    std::cout.flush();
+//    std::cout << particleIds.size() << std::endl;
+//    std::cout.flush();
+//END DEBUG
+
     }
   else
     {
@@ -225,6 +260,13 @@ void vtkCosmoDensityProfile::FindParticlesInSphere(
       {
       particleIds.remove( *setIter );
       } // END for all particle ids that are to be erased
+
+// DEBUG
+//    std::cout << "Number of particles in internal sphere: ";
+//    std::cout << particleIds.size() << std::endl;
+//    std::cout.flush();
+// END DEBUG
+
     }
 
   mySphere->Delete();
@@ -375,6 +417,25 @@ void vtkCosmoDensityProfile::GetHaloFOFCenters(vtkUnstructuredGrid *fofCenters)
 }
 
 //------------------------------------------------------------------------------
+void vtkCosmoDensityProfile::ConstructSearchTree(
+      vtkUnstructuredGrid *particles)
+{
+  if( this->SearchTree == NULL )
+    {
+    this->SearchTree = vtkKdTree::New();
+    this->SearchTree->BuildLocatorFromPoints(particles->GetPoints());
+// DEBUG
+//    std::cout << "Number of regions: ";
+//    std::cout << this->SearchTree->GetNumberOfRegions() << std::endl;
+//    std::cout.flush();
+// END DEBUG
+    }
+
+  assert("post: SearchTree is NULL!" && (this->SearchTree != NULL) );
+  this->Controller->Barrier();
+}
+
+//------------------------------------------------------------------------------
 int vtkCosmoDensityProfile::RequestData(
     vtkInformation* vtkNotUsed(request),vtkInformationVector** inputVector,
     vtkInformationVector *outputVector )
@@ -411,7 +472,11 @@ int vtkCosmoDensityProfile::RequestData(
   vtkTable *plot = vtkTable::SafeDownCast(
       output2->Get(vtkDataObject::DATA_OBJECT() ) );
 
-  // STEP 4: Set sphere centers to be processed
+  // STEP 4: Construct the search tree
+  this->ConstructSearchTree( particles );
+  this->Controller->Barrier();
+
+  // STEP 5: Set sphere centers to be processed
   if( this->UseFOFCenters == 1 )
     {
     this->GetHaloFOFCenters( fofCenters );
@@ -425,27 +490,27 @@ int vtkCosmoDensityProfile::RequestData(
     this->SphereCenters[ 2 ] = this->Center[ 2 ];
     }
 
-  // STEP 5: Allocate data-structures
+  // STEP 6: Allocate data-structures
   int Size = this->NumberOfSpheres*this->NumberOfSphereCenters;
   mbds->SetNumberOfBlocks( Size );
   this->NumParticlesInSphere.resize( Size );
   this->ConcentricRadii.resize( this->NumberOfSpheres );
 
-  // STEP 6: Compute concentric radii
+  // STEP 7: Compute concentric radii
   double h = static_cast<double>(this->Radius/this->NumberOfSpheres );
   for( int i=0; i < this->NumberOfSpheres; ++i )
     {
     this->ConcentricRadii[ i ] = (i+1)*h;
     } // END for
 
-  // STEP 7: Loop and process each center
+  // STEP 8: Loop and process each center
   for( int sphereIdx=0; sphereIdx < this->NumberOfSphereCenters; ++sphereIdx )
     {
     this->ProcessSphereCenter(sphereIdx,particles,mbds);
     } // END for all sphere centers
   this->Controller->Barrier();
 
-  // STEP 8: Add Density column to plot
+  // STEP 9: Add Density column to plot
   if( this->Controller->GetLocalProcessId( ) == 0 )
     {
     vtkIdTypeArray *sphereIds       = vtkIdTypeArray::New();
