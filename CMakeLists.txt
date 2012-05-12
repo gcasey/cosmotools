@@ -65,9 +65,13 @@ if(${DOUBLE_PRECISION})
 endif()
 
 ## Choose whether to use int64 or int32
-option(USEINT64 "Use int64 or int32" OFF)
-if( ${USEINT64} )
- add_definitions(-DUSEINT64 )
+option(USECPP0X "Use features from the upcoming ISO C++ standard" OFF)
+if( ${USECPP0X} )
+ add_definitions(-DUSECPP0X --std=c++0x)
+ option(USEINT64 "Use int64 or int32" OFF)
+ if( ${USEINT64} )
+  add_definitions(-DUSEINT64 )
+ endif()
 endif()
 
 ## Loop thrhough all package directories and provide an option for which

@@ -1,18 +1,24 @@
 #ifndef COSMOLOGYTOOLSMACROS_H_
 #define COSMOLOGYTOOLSMACROS_H_
 
+// Select floating point precision
 #ifdef USE_DOUBLE_PRECISION
  #define REAL double
 #else
  #define REAL float
 #endif
 
-//#include <cstdint>
-//#ifdef USEINT64
-// #define INTEGER int32_t
-//#else
-// #define INTEGER int64_t
-//#endif
+// Select integer precision
+#ifdef USECPP0X
+  #include <cstdint>
+  #ifdef USEINT64
+   #define INTEGER int32_t
+  #else
+   #define INTEGER int64_t
+  #endif
+#else
+  #define INTEGER int
+#endif
 
 /**
  * @brief A macro to disable the copy constructor and assignment of a class.
