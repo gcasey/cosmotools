@@ -1,6 +1,13 @@
 cmake_minimum_required(VERSION 2.8)
 project(cosmohalo)
 
+## Move header files to include directory in the build tree
+file(GLOB HEADERS *.h)
+foreach(header ${HEADERS})
+  get_filename_component(headerFile ${header} NAME)
+  file(COPY ${header} DESTINATION ${HEADER_INCLUDES_DIRECTORY})
+endforeach()
+
 ## Choose whether to use int64_t or int32_t
 option(ID64 "Use int64_t for particles and halo ids" ON)
 if( ${ID64} )

@@ -4,6 +4,17 @@ cmake_minimum_required(VERSION 2.8)
 ## Set the project name and enable C/C++ and Fortran support
 project(CosmologyTools C CXX Fortran)
 
+## Set the build type
+set(CMAKE_BUILD_TYPE "Debug" CACHE STRING
+  "one of: Release, Debug, RelWithDebInfo or MinSizeRel")
+
+## Set the path where all the header will be stored
+set(HEADER_INCLUDES_DIRECTORY
+    ${PROJECT_BINARY_DIR}/include
+    CACHE PATH
+    "Directory where all headers will live"
+    )
+
 ## Set the path where all the libraries will be stored
 set(LIBRARY_OUTPUT_PATH
     ${PROJECT_BINARY_DIR}/libs
@@ -78,6 +89,7 @@ foreach(pkgpath ${pkgs})
   if( ${isOptionalPackage} AND ${isNotAGitDirectory} )
     option(BUILD_${pkg} "Build ${pkg}." OFF)
     if(BUILD_${pkg})
+      set(PACKAGE_${pkg}_INCLUDE_DIRS)
       list(APPEND subdirs ${pkg})
     endif() # end BUILD_${pkg}
   endif() # end is optional package
@@ -89,6 +101,7 @@ add_subdirectory(common)
 
 ## Add each package
 foreach(subdir ${subdirs})
+  include_directories(${subdir})
   add_subdirectory(${subdir})
 endforeach()
 
