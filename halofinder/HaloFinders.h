@@ -13,7 +13,7 @@ public:
   {
   COSMO = 0,
   NUMBER_OF_HALO_FINDERS
-  }
+  };
 
 };
 
