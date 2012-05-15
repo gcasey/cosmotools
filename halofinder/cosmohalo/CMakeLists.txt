@@ -19,22 +19,14 @@ foreach(header ${HEADERS})
   file(COPY ${header} DESTINATION ${HEADER_INCLUDES_DIRECTORY})
 endforeach()
 
-## Choose whether to use int64_t or int32_t
-option(ID64 "Use int64_t for particles and halo ids" ON)
-if( ${ID64} )
- add_definitions(-DID_64)
+if( ${USECPP0X} )
+ if( ${USEINT64} )
+  add_definitions(-DID_64)
+ endif()
 endif()
 
-## Choose whether to use double or float for position,velocity and potential
-option(POSVEL64 "Use double precission for position,velocity and potential" ON)
-if( ${POSVEL64} )
- add_definitions(-DPOSVEL_64)
-endif()
-
-## Choose whether to use double or float for grid types
-option(GRID64 "Use double precision for grid types" ON)
-if( ${GRID64} )
- add_definitions(-DGRID_64)
+if(${DOUBLE_PRECISION})
+  add_definitions(-DGRID_64 -DPOSVEL_64)
 endif()
 
 set(Cosmo_LIBS  ${MPI_LIBRARIES})
