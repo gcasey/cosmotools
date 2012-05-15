@@ -39,8 +39,33 @@ void CosmologyEnableVis();
 void CosmologyDisableVis();
 
 /**
+ * @brief Sets the particles at the given timeste/redshift.
+ * @param tstep the current discrete time-step
+ * @param redshift the redshift at the given time-step
+ * @param px x-component of the particles position vector
+ * @param py y-component of the particles position vector
+ * @param pz z-component of the particles position vector
+ * @param vx x-component of the particle velocity vector
+ * @param vy y-component of the particle velocity vector
+ * @param vz z-component of the particle velocity vector
+ * @param GlobalParticlesIds the global IDs of each particle
+ * @param NumberOfParticles the total number of particles
+ */
+void CosmologySetParticles(
+      INTEGER *tstep, REAL *redshift,
+      REAL *px, REAL *py, REAL *pz,
+      REAL *vx, REAL *vy, REAL *vz,
+      INTEGER *GlobalParticlesIds,
+      INTEGER *NumberOfParticles);
+
+/**
  * @brief Sets the memory layout that the interface will be using.
  * @param memoryLayout the memory layout
+ * @note The memory layout is defined as follows:
+ * <ul>
+ *   <li>ROWMAJOR, i.e., xyz xyz xyz...</li>
+ *   <li>COLMAJOR, i.e., xxx...yyy...zzz</li>
+ * </ul>
  */
 void CosmologySetMemoryLayout(int* memoryLayout);
 

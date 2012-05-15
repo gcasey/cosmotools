@@ -7,6 +7,17 @@ module ModCosmologyTools
     use mpi
     implicit none
 
+    save
+
+    !...List of available memory layouts
+    integer :: ROWMAJOR = 0
+    integer :: COLMAJOR = 1
+    integer :: NUMMEMORYLAYOUT = 2
+
+    !...List of available halo-finders
+    integer :: LANLHALOFINDER=0
+    integer :: NUMHALOFINDERS=1
+
 contains
 
 !-------------------------------------------------------------------------------
@@ -57,6 +68,27 @@ contains
       integer :: frequency
       call CosmologySetTrackerFrequency( frequency )
   end subroutine ModCosmologySetTrackerFrequency
+
+!-------------------------------------------------------------------------------
+! Sets the particles at the given timestep/redshift
+! IN tstep    -- the current discrete timestep
+! IN redshift -- the redshift at the given timestep
+! IN x        -- x-component of the particle position vector
+! IN y        -- y-component of the particle position vector
+! IN z        -- z-component of the particle position vector
+! IN vx       -- x-component of the particles velocity vector
+! IN vy       -- y-component of the particles velocity vector
+! IN vz       -- z-component of the particles velocity vector
+! IN ids      -- the global IDs of each particle
+! IN N        -- the total number of particles
+!-------------------------------------------------------------------------------
+  subroutine ModCosmologySetParticles(tstep,redshift,x,y,z,vx,vy,vz,ids,N)
+    implicit none
+    integer :: tstep, N, ids(:)
+    real :: redshift, x(:), y(:), z(:), vx(:), vy(:), vz(:)
+
+    call CosmologySetParticles(tstep,redshift,x,y,z,vx,vy,vz,ids,N)
+  end subroutine ModCosmologySetParticles
 
 !-------------------------------------------------------------------------------
 ! Finalizes the CosmologyTools environment

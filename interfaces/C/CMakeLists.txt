@@ -26,6 +26,7 @@ FortranCInterface_HEADER(
         CosmologyDisableVis
         CosmologySetMemoryLayout
         CosmologySetTrackerFrequency
+        CosmologySetParticles
         CosmologyFinalize
         )
 

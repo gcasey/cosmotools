@@ -42,6 +42,22 @@ void CosmologyDisableVis()
 }
 
 //------------------------------------------------------------------------------
+void CosmologySetParticles(
+    INTEGER *tstep, REAL *redshift,
+    REAL *px, REAL *py, REAL *pz,
+    REAL *vx, REAL *vy, REAL *vz,
+    INTEGER *GlobalParticlesIds,
+    INTEGER *NumberOfParticles)
+{
+  assert("pre: CosmoToolsManager is NULL" && (CosmoToolsManager != NULL) );
+  CosmoToolsManager->SetParticles(
+      *tstep, *redshift,
+      px, py,pz, vx,vy,vz,
+      GlobalParticlesIds,
+      *NumberOfParticles );
+}
+
+//------------------------------------------------------------------------------
 void CosmologySetMemoryLayout(int* memoryLayout)
 {
   assert("pre: CosmoToolsManager is NULL" && (CosmoToolsManager != NULL) );

@@ -11,6 +11,13 @@
 namespace cosmologytools
 {
 
+
+/**
+ * @class MemoryLayout
+ * @brief An object to hold an enum of all available memory layouts for
+ * multi-dimensional arrays. Currently,two layouts are supported: (1) ROWMAJOR,
+ * i.e., a c-style layout, and (2) COLMAJOR, i.e., a FORTRAN-style layout.
+ */
 class MemoryLayout
 {
 public:
@@ -22,6 +29,10 @@ public:
     };
 };
 
+// Forward declarations
+class SimulationParticles;
+
+
 class CosmologyToolsManager
 {
 public:
@@ -32,8 +43,28 @@ public:
   GetNSetMacro(Layout,int);
   GetNSetMacro(Communicator,MPI_Comm);
   GetNSetMacro(EnableVis,bool);
-  GetNSetMacro(ArrayStride,int);
   GetNSetMacro(HaloTrackingFrequency,int);
+  GetMacro(Particles,SimulationParticles*);
+
+  /**
+   * @brief Sets the particles at the given timeste/redshift.
+   * @param tstep the current discrete time-step
+   * @param redshift the redshift at the given time-step
+   * @param px x-component of the particles position vector
+   * @param py y-component of the particles position vector
+   * @param pz z-component of the particles position vector
+   * @param vx x-component of the particle velocity vector
+   * @param vy y-component of the particle velocity vector
+   * @param vz z-component of the particle velocity vector
+   * @param GlobalParticlesIds the global IDs of each particle
+   * @param NumberOfParticles the total number of particles
+   */
+  void SetParticles(
+      INTEGER tstep, REAL redshift,
+      REAL *px, REAL *py, REAL *pz,
+      REAL *vx, REAL *vy, REAL *vz,
+      INTEGER *GlobalParticlesIds,
+      INTEGER NumberOfParticles);
 
   /**
    * @brief Barrier synchronization with all processes.
@@ -44,9 +75,9 @@ protected:
   int HaloFinder;
   int HaloTrackingFrequency;
   int Layout;
-  int ArrayStride;
   MPI_Comm Communicator;
   bool EnableVis;
+  SimulationParticles *Particles;
 
 private:
   DISABLE_COPY_AND_ASSIGNMENT(CosmologyToolsManager);
