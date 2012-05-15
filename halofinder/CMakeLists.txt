@@ -1,5 +1,11 @@
 project(halofinder)
 
+## Append this to the global include directories for this package
+set(PACKAGE_halofinder_INCLUDE_DIRS
+    ${PACKAGE_halofinder_INCLUDE_DIRS}
+    ${PROJECT_SOURCE_DIR}
+    CACHE INTERNAL "package include directories")
+
 ## Move header files to include directory in the build tree
 file(GLOB HEADERS *.h)
 foreach(header ${HEADERS})
@@ -7,8 +13,8 @@ foreach(header ${HEADERS})
   file(COPY ${header} DESTINATION ${HEADER_INCLUDES_DIRECTORY})
 endforeach()
 
+## Append to the include directories
 include_directories(${PROJECT_SOURCE_DIR})
-option(BUILD_COSMO "Build the cosmo halo-finder." OFF)
-if( ${BUILD_COSMO} )
-  add_subdirectory(cosmohalo)
-endif()
+
+## Add halofinder directories
+add_subdirectory(cosmohalo)

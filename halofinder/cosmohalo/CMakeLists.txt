@@ -1,6 +1,17 @@
 cmake_minimum_required(VERSION 2.8)
 project(cosmohalo)
 
+## Specicy global include dirs and global libraries for this project
+## such that, they can be used within other projects.
+set(PACKAGE_halofinder_INCLUDE_DIRS
+    ${PACKAGE_halofinder_INCLUDE_DIRS}
+    ${PROJECT_SOURCE_DIR}
+    CACHE INTERNAL "package include directories")
+set(PACKAGE_halofinder_LIBRARIES
+   ${PACKAGE_halofinder_LIBRARIES}
+   cosmohalo
+   CACHE INTERNAL "package libraries")
+
 ## Move header files to include directory in the build tree
 file(GLOB HEADERS *.h)
 foreach(header ${HEADERS})

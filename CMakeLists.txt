@@ -74,39 +74,26 @@ if( ${USECPP0X} )
  endif()
 endif()
 
-## Loop thrhough all package directories and provide an option for which
-## package to be enabled, i.e., set to ON. All enabled packages will be built.
-set(isOptionalPackage 0)
-set(isNotAGitDirectory 0)
+## Set the list of cosmology packages to be build. Note the order here matters!
+set(cosmopackages
+    common
+    sfprobe
+    halofinder
+    interfaces
+    pv-plugins
+    )
 
-set(subdirs)
-file(GLOB pkgs *)
-foreach(pkgpath ${pkgs})
- if(IS_DIRECTORY ${pkgpath} )
-  ## Extract relative path to directory
-  string(REPLACE "/" ";" pkglist ${pkgpath})
-  list(REVERSE pkglist)
-  list(GET pkglist 0 pkg)
+## Loop through all packages
+set(emptyList)
+foreach(pkg ${cosmopackages})
+  ## These are declared here and populated by each package
+  ## NOTE: These variables must be set before the call to add_subdirectory
+  set(PACKAGE_${pkg}_INCLUDE_DIRS ${emptyList}
+      CACHE INTERNAL "package include directories" FORCE)
+  set(PACKAGE_${pkg}_LIBRARIES ${emptyList}
+      CACHE INTERNAL "package libraries" FORCE)
 
-  string(COMPARE NOTEQUAL ${pkg} "common" isOptionalPackage)
-  string(COMPARE NOTEQUAL ${pkg} ".git" isNotAGitDirectory)
-  if( ${isOptionalPackage} AND ${isNotAGitDirectory} )
-    option(BUILD_${pkg} "Build ${pkg}." OFF)
-    if(BUILD_${pkg})
-      set(PACKAGE_${pkg}_INCLUDE_DIRS)
-      list(APPEND subdirs ${pkg})
-    endif() # end BUILD_${pkg}
-  endif() # end is optional package
- endif() # end is_directory
-endforeach(pkgpath)
+  ## add package to build
+  add_subdirectory(${pkg})
 
-## common is always added
-add_subdirectory(common)
-
-## Add each package
-foreach(subdir ${subdirs})
-  include_directories(${subdir})
-  add_subdirectory(${subdir})
 endforeach()
-
-
