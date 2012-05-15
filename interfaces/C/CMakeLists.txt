@@ -10,6 +10,12 @@ set(SOURCES
  CosmologyTools.cxx
  )
 
+include_directories(${PACKAGE_halofinder_INCLUDE_DIRS})
+
+set(RequiredLibs
+    ${PACKAGE_halofinder_LIBRARIES}
+    ${MPI_LIBRARIES})
+
 ## Setup the fortran mangling
 include(FortranCInterface)
 FortranCInterface_HEADER(
@@ -28,4 +34,4 @@ if(BUILD_SHARED_LIBS)
 else()
   add_library(cCosmologyToolsAPI STATIC ${SOURCES})
 endif()
-target_link_libraries(cCosmologyToolsAPI ${MPI_LIBRARIES})
+target_link_libraries(cCosmologyToolsAPI ${RequiredLibs})

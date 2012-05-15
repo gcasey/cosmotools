@@ -28,15 +28,6 @@ void CosmologyFinit(MPI_Fint *fcomm)
 }
 
 //------------------------------------------------------------------------------
-void CosmologyFinalize()
-{
-  assert("pre: CosmoToolsManager is NULL" && (CosmoToolsManager != NULL) );
-  MPI_Comm comm = CosmoToolsManager->GetCommunicator();
-  delete CosmoToolsManager;
-  MPI_Barrier( comm );
-}
-
-//------------------------------------------------------------------------------
 void CosmologyEnableVis()
 {
   assert("pre: CosmoToolsManager is NULL" && (CosmoToolsManager != NULL) );
@@ -66,4 +57,13 @@ void CosmologySetTrackerFrequency(int *frequency)
 {
   assert("pre: CosmoToolsManager is NULL" && (CosmoToolsManager != NULL) );
   CosmoToolsManager->SetHaloTrackingFrequency( *frequency );
+}
+
+//------------------------------------------------------------------------------
+void CosmologyFinalize()
+{
+  assert("pre: CosmoToolsManager is NULL" && (CosmoToolsManager != NULL) );
+  MPI_Comm comm = CosmoToolsManager->GetCommunicator();
+  delete CosmoToolsManager;
+  MPI_Barrier( comm );
 }
