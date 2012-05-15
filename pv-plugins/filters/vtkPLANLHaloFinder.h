@@ -67,12 +67,11 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef __vtkPLANLHaloFinder_h
 #define __vtkPLANLHaloFinder_h
 
-
 #include "vtkUnstructuredGridAlgorithm.h"
 
 class vtkMultiProcessController;
 
-class VTK_PARALLEL_EXPORT vtkPLANLHaloFinder : public vtkUnstructuredGridAlgorithm
+class VTK_EXPORT vtkPLANLHaloFinder : public vtkUnstructuredGridAlgorithm
 {
  public:
   static vtkPLANLHaloFinder *New();
@@ -147,17 +146,46 @@ class VTK_PARALLEL_EXPORT vtkPLANLHaloFinder : public vtkUnstructuredGridAlgorit
   vtkGetMacro(SODCenterType, int);
 
   // Description:
-  // Specify the scale factor for rho_c (2.77536627e11)
-  // (critical density in (M_sun/h) / (Mpc/h)^3)
-  // (default 1.0)
-  vtkSetMacro(RhoCScale, float);
-  vtkGetMacro(RhoCScale, float);
+  // Specify rho_c (critical density)
+  // (default 2.77536627e11)
+  vtkSetMacro(RhoC, float);
+  vtkGetMacro(RhoC, float);
 
   // Description:
-  // Specify the scale factor for initial SOD mass (1.0e14)
-  // (default 1.0)
-  vtkSetMacro(SODMassScale, float);
-  vtkGetMacro(SODMassScale, float);
+  // Specify the initial SOD mass
+  // (default 1.0e14)
+  vtkSetMacro(SODMass, float);
+  vtkGetMacro(SODMass, float);
+
+  // Description:
+  // Specify the minimum radius factor
+  // (default 0.5)
+  vtkSetMacro(MinRadiusFactor, float);
+  vtkGetMacro(MinRadiusFactor, float);
+
+  // Description:
+  // Specify the maximum radius factor
+  // (default 2.0)
+  vtkSetMacro(MaxRadiusFactor, float);
+  vtkGetMacro(MaxRadiusFactor, float);
+
+  // Description:
+  // Specify the number of bins for SOD finding
+  // (default 20)
+  vtkSetMacro(SODBins, int);
+  vtkGetMacro(SODBins, int);
+
+  // Description:
+  // Specify the minimum FOF size for an SOD halo
+  // (default 1000)
+  vtkSetMacro(MinFOFSize, int);
+  vtkGetMacro(MinFOFSize, int);
+
+  // Description:
+  // Specify the minimum FOF mass for an SOD halo
+  // (default 5.0e12)
+  vtkSetMacro(MinFOFMass, float);
+  vtkGetMacro(MinFOFMass, float);
 
  protected:
   vtkPLANLHaloFinder();
@@ -184,8 +212,14 @@ class VTK_PARALLEL_EXPORT vtkPLANLHaloFinder : public vtkUnstructuredGridAlgorit
 
   int ComputeSOD; // Turn on Spherical OverDensity (SOD) halos
   int SODCenterType; // Set the center finding for SOD halos
-  float RhoCScale; // Scale factor for rho_C (2.77536627e11)
-  float SODMassScale; // Scale factor for initial SOD mass (1.0e14)
+
+  float RhoC; // SOD rho_C (2.77536627e11)
+  float SODMass; // Initial SOD mass (1.0e14)
+  float MinRadiusFactor; // Minimum factor of SOD radius (0.5)
+  float MaxRadiusFactor; // Maximum factor of SOD radius (2.0)
+  int SODBins; // Number of log scale bins for SOD (20)
+  int MinFOFSize; // Minimum FOF size for SOD (1000)
+  float MinFOFMass; // Minimum FOF mass for SOD (5.0e12)
 
  private:
   vtkPLANLHaloFinder(const vtkPLANLHaloFinder&);  // Not implemented.

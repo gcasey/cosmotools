@@ -65,27 +65,29 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "vtkPLANLHaloFinder.h"
 
-#include "vtkPointData.h"
-#include "vtkPoints.h"
+// VTK includes
+#include "vtkDemandDrivenPipeline.h"
+#include "vtkDummyController.h"
 #include "vtkFloatArray.h"
-#include "vtkIntArray.h"
-#include "vtkUnsignedCharArray.h"
-#include "vtkUnstructuredGrid.h"
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
-#include "vtkObjectFactory.h"
+#include "vtkIntArray.h"
 #include "vtkMultiProcessController.h"
+#include "vtkObjectFactory.h"
+#include "vtkPointData.h"
+#include "vtkPoints.h"
 #include "vtkSmartPointer.h"
-#include "vtkDummyController.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
-#include "vtkDemandDrivenPipeline.h"
+#include "vtkUnsignedCharArray.h"
+#include "vtkUnstructuredGrid.h"
 
-#include "CosmoHaloFinderP.h"
+// halofinder includes
+#include "ChainingMesh.h"
 #include "CosmoDefinition.h"
+#include "CosmoHaloFinderP.h"
 #include "FOFHaloProperties.h"
 #include "HaloCenterFinder.h"
 #include "Partition.h"
-#include "ChainingMesh.h"
 #include "SODHalo.h"
 
 vtkStandardNewMacro(vtkPLANLHaloFinder);
@@ -114,8 +116,14 @@ vtkPLANLHaloFinder::vtkPLANLHaloFinder()
 
   this->ComputeSOD = 0;
   this->SODCenterType = 0;
-  this->RhoCScale = 1.0;
-  this->SODMassScale = 1.0;
+
+  this->RhoC = RHO_C;
+  this->SODMass = SOD_MASS;
+  this->MinRadiusFactor = MIN_RADIUS_FACTOR;
+  this->MaxRadiusFactor = MAX_RADIUS_FACTOR;
+  this->SODBins = NUM_SOD_BINS;
+  this->MinFOFSize = MIN_SOD_SIZE;
+  this->MinFOFMass = MIN_SOD_MASS;
 }
 
 /****************************************************************************/
@@ -150,8 +158,14 @@ void vtkPLANLHaloFinder::PrintSelf(ostream& os, vtkIndent indent)
      << endl;
   os << indent << "ComputeSOD: " << this->ComputeSOD << endl;
   os << indent << "SODCenterType: " << this->SODCenterType << endl;
-  os << indent << "RhoCScale: " << this->RhoCScale << endl;
-  os << indent << "SODMassScale: " << this->SODMassScale << endl;
+
+  os << indent << "RhoC: " << this->RhoC << endl;
+  os << indent << "SODMass: " << this->SODMass << endl;
+  os << indent << "MinRadiusFactor: " << this->MinRadiusFactor << endl;
+  os << indent << "MaxRadiusFactor: " << this->MaxRadiusFactor << endl;
+  os << indent << "SODBins: " << this->SODBins << endl;
+  os << indent << "MinFOFSize: " << this->MinFOFSize << endl;
+  os << indent << "MinFOFMass: " << this->MinFOFMass << endl;
 }
 
 //----------------------------------------------------------------------------
@@ -623,8 +637,6 @@ int vtkPLANLHaloFinder::RequestData(
     sodRadius->SetName("sod_radius");
     sodRadius->SetNumberOfTuples(pminHalos);
 
-    float rhoC = this->RhoCScale * RHO_C;
-    float sMass = this->SODMassScale * SOD_MASS;
     ChainingMesh* chain =
       new ChainingMesh(this->RL, this->Overlap, CHAIN_SIZE, xx, yy, zz);
 
@@ -638,12 +650,13 @@ int vtkPLANLHaloFinder::RequestData(
         }
 
       // only calculate the SOD if it is big enough
-      if((*fofMass)[i] >= MIN_SOD_MASS)
+      if((*fofMass)[i] >= this->MinFOFMass ||
+         fofHaloCount[i] >= this->MinFOFSize)
         {
         SODHalo* sod = new SODHalo();
-        sod->setParameters(chain, NUM_SOD_BINS, this->RL, this->NP,
-                           rhoC, sMass, RHO_RATIO,
-                           MIN_RADIUS_FACTOR, MAX_RADIUS_FACTOR);
+        sod->setParameters(chain, this->SODBins, this->RL, this->NP,
+                           this->RhoC, this->SODMass, this->RhoC,
+                           this->MinRadiusFactor, this->MaxRadiusFactor);
         sod->setParticles(xx, yy, zz, vx, vy, vz, mass, tag);
 
         // no minimum potential array like in the sim

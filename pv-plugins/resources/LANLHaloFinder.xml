@@ -165,7 +165,8 @@
       default_values="2.77536627e11" >
      <DoubleRangeDomain name="range" />
        <Documentation>
-       rho_c (critical density) for SOD halo finding.
+        Specify the scale factor for rho_c (critical density) for SOD
+        halo finding.
        </Documentation>
      </DoubleVectorProperty>
 
