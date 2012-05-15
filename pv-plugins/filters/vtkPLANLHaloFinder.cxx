@@ -1,7 +1,7 @@
 /*=========================================================================
 
   Program:   Visualization Toolkit
-  Module:    vtkPCosmoHaloFinder.cxx
+  Module:    vtkPLANLHaloFinder.cxx
 
   Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
   All rights reserved.
@@ -15,7 +15,7 @@
 /*=========================================================================
 
   Program:   VTK/ParaView Los Alamos National Laboratory Modules (PVLANL)
-  Module:    vtkPCosmoHaloFinder.cxx
+  Module:    vtkPLANLHaloFinder.cxx
 
 Copyright (c) 2007, 2009, Los Alamos National Security, LLC
 
@@ -63,7 +63,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define USE_VTK_COSMO
 #endif
 
-#include "vtkPCosmoHaloFinder.h"
+#include "vtkPLANLHaloFinder.h"
 
 #include "vtkPointData.h"
 #include "vtkPoints.h"
@@ -88,10 +88,10 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ChainingMesh.h"
 #include "SODHalo.h"
 
-vtkStandardNewMacro(vtkPCosmoHaloFinder);
+vtkStandardNewMacro(vtkPLANLHaloFinder);
 
 /****************************************************************************/
-vtkPCosmoHaloFinder::vtkPCosmoHaloFinder()
+vtkPLANLHaloFinder::vtkPLANLHaloFinder()
 {
   this->SetNumberOfOutputPorts(2);
 
@@ -119,14 +119,14 @@ vtkPCosmoHaloFinder::vtkPCosmoHaloFinder()
 }
 
 /****************************************************************************/
-vtkPCosmoHaloFinder::~vtkPCosmoHaloFinder()
+vtkPLANLHaloFinder::~vtkPLANLHaloFinder()
 {
   this->SetController(0);
 }
 
 /****************************************************************************/
 
-void vtkPCosmoHaloFinder::PrintSelf(ostream& os, vtkIndent indent)
+void vtkPLANLHaloFinder::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os,indent);
 
@@ -155,7 +155,7 @@ void vtkPCosmoHaloFinder::PrintSelf(ostream& os, vtkIndent indent)
 }
 
 //----------------------------------------------------------------------------
-void vtkPCosmoHaloFinder::SetController(vtkMultiProcessController *c)
+void vtkPLANLHaloFinder::SetController(vtkMultiProcessController *c)
 {
   if(this->Controller == c)
     {
@@ -179,13 +179,13 @@ void vtkPCosmoHaloFinder::SetController(vtkMultiProcessController *c)
   c->Register(this);
 }
 
-vtkMultiProcessController* vtkPCosmoHaloFinder::GetController()
+vtkMultiProcessController* vtkPLANLHaloFinder::GetController()
 {
   return (vtkMultiProcessController*)this->Controller;
 }
 
 //----------------------------------------------------------------------------
-int vtkPCosmoHaloFinder::RequestInformation
+int vtkPLANLHaloFinder::RequestInformation
 (vtkInformation* vtkNotUsed(request),
  vtkInformationVector** inputVector,
  vtkInformationVector* outputVector)
@@ -228,7 +228,7 @@ int vtkPCosmoHaloFinder::RequestInformation
 }
 
 //----------------------------------------------------------------------------
-int vtkPCosmoHaloFinder::RequestData(
+int vtkPLANLHaloFinder::RequestData(
   vtkInformation* request,
   vtkInformationVector** inputVector,
   vtkInformationVector* outputVector)

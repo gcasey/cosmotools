@@ -6,5 +6,6 @@
     preserve_order="1">
 
     <Filter name="DensityProfile" />
+    <Filter name="LANLHaloFinder" />
   </Category>
 </ParaViewFilters>

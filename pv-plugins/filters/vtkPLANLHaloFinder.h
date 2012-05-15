@@ -1,7 +1,7 @@
 /*=========================================================================
 
   Program:   Visualization Toolkit
-  Module:    vtkPCosmoHaloFinder.h
+  Module:    vtkPLANLHaloFinder.h
 
   Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
   All rights reserved.
@@ -15,7 +15,7 @@
 /*=========================================================================
 
   Program:   VTK/ParaView Los Alamos National Laboratory Modules (PVLANL)
-  Module:    vtkPCosmoHaloFinder.h
+  Module:    vtkPLANLHaloFinder.h
 
 Copyright (c) 2007, 2009, Los Alamos National Security, LLC
 
@@ -58,25 +58,26 @@ OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 =========================================================================*/
-// .NAME vtkPCosmoHaloFinder - find halos within a cosmology data file
+// .NAME vtkPLANLHaloFinder - find halos within a cosmology data file
 // .SECTION Description
-// vtkPCosmoHaloFinder is a filter object that operates on the unstructured
+// vtkPLANLHaloFinder is a filter object that operates on the unstructured
 // grid of all particles and assigns each particle a halo id.
 //
 
-#ifndef __vtkPCosmoHaloFinder_h
-#define __vtkPCosmoHaloFinder_h
+#ifndef __vtkPLANLHaloFinder_h
+#define __vtkPLANLHaloFinder_h
+
 
 #include "vtkUnstructuredGridAlgorithm.h"
 
 class vtkMultiProcessController;
 
-class VTK_PARALLEL_EXPORT vtkPCosmoHaloFinder : public vtkUnstructuredGridAlgorithm
+class VTK_PARALLEL_EXPORT vtkPLANLHaloFinder : public vtkUnstructuredGridAlgorithm
 {
  public:
-  static vtkPCosmoHaloFinder *New();
+  static vtkPLANLHaloFinder *New();
 
-  vtkTypeMacro(vtkPCosmoHaloFinder,vtkUnstructuredGridAlgorithm);
+  vtkTypeMacro(vtkPLANLHaloFinder,vtkUnstructuredGridAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);
 
   // Description:
@@ -159,8 +160,8 @@ class VTK_PARALLEL_EXPORT vtkPCosmoHaloFinder : public vtkUnstructuredGridAlgori
   vtkGetMacro(SODMassScale, float);
 
  protected:
-  vtkPCosmoHaloFinder();
-  ~vtkPCosmoHaloFinder();
+  vtkPLANLHaloFinder();
+  ~vtkPLANLHaloFinder();
 
   virtual int RequestInformation(vtkInformation*,
                                  vtkInformationVector**,
@@ -187,9 +188,9 @@ class VTK_PARALLEL_EXPORT vtkPCosmoHaloFinder : public vtkUnstructuredGridAlgori
   float SODMassScale; // Scale factor for initial SOD mass (1.0e14)
 
  private:
-  vtkPCosmoHaloFinder(const vtkPCosmoHaloFinder&);  // Not implemented.
-  void operator=(const vtkPCosmoHaloFinder&);  // Not implemented.
+  vtkPLANLHaloFinder(const vtkPLANLHaloFinder&);  // Not implemented.
+  void operator=(const vtkPLANLHaloFinder&);  // Not implemented.
 
 };
 
-#endif //  __vtkPCosmoHaloFinder_h
+#endif //  __vtkPLANLHaloFinder_h
