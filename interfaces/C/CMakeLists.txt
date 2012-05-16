@@ -32,6 +32,9 @@ FortranCInterface_HEADER(
         CosmologySetTrackerFrequency
         CosmologyTrackHalos
         )
+## Copy the mangled header to the main includes directory
+file(COPY ${PROJECT_BINARY_DIR}/C/CosmologyToolsAPIMangling.h
+      DESTINATION ${HEADER_INCLUDES_DIRECTORY} )
 
 if(BUILD_SHARED_LIBS)
   add_library(cCosmologyToolsAPI SHARED ${SOURCES})
