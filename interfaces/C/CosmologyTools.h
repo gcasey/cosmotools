@@ -76,6 +76,20 @@ void CosmologySetMemoryLayout(int* memoryLayout);
 void CosmologySetTrackerFrequency(int *frequency);
 
 /**
+ * @brief Fills the user-supplied buffer with the halo tags for each particle.
+ * @param haloTags user-supplied buffer to store the halo tags
+ * @note particles that are not inside a halo will have a value of -1.
+ */
+void CosmologyGetHaloIds(INTEGER *haloTags);
+
+/**
+ * @brief Fills the user-supplied buffer with the subhalo tags for each particle.
+ * @param subHaloTags user-supplied buffer to store the sub-halo tags
+ * @note particles that aere not inside a sub-halo will have a valu of -1.
+ */
+void CosmologyGetSubHaloIds(INTEGER *subHaloTags);
+
+/**
  * @brief Sets the halo-finder to use
  * @param haloFinder the halo-finder to use
  * @see HaloFinders.h for a list of halofinders to use.

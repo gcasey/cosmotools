@@ -113,6 +113,34 @@ contains
 
 !-------------------------------------------------------------------------------
 ! Description:
+! Acquires the halotag of each particle. Particles that are not in halos have
+! a tag value of -1. Note, this method is to be used after FindHalos or
+! TrackHalos is called.
+!
+! OUT tags -- user-supplied buffer of halo tags, the buffer must be prealloced.
+!-------------------------------------------------------------------------------
+  subroutine ModCosmologyGetHaloIds(tags)
+    implicit none
+    integer :: tags(:)
+    call CosmologyGetHaloIds( tags )
+  end subroutine ModCosmologyGetHaloIds
+
+!-------------------------------------------------------------------------------
+! Description:
+! Acquires the halotag of each particle. Particles that are not in halos have
+! a tag value of -1. Note, this method is to be used after FindHalos or
+! TrackHalos is called.
+!
+! OUT tags -- user-supplied buffer of halo tags, the buffer must be prealloced.
+!-------------------------------------------------------------------------------
+  subroutine ModCosmologyGetSubHaloIds(tags)
+    implicit none
+    integer :: tags(:)
+    call CosmologyGetSubHaloIds( tags )
+  end subroutine ModCosmologyGetSubHaloIds
+
+!-------------------------------------------------------------------------------
+! Description:
 ! Calls the forward halo-tracker to track the halos at the prescribed frequency
 ! NOTE: this method must be called in combination with ModCosmologySetParticles
 !-------------------------------------------------------------------------------

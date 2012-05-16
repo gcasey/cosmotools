@@ -26,6 +26,8 @@ FortranCInterface_HEADER(
         CosmologyFinalize
         CosmologyFindHalos
         CosmologyFinit
+        CosmologyGetHaloIds
+        CosmologyGetSubHaloIds
         CosmologyInit
         CosmologySetHaloFinder
         CosmologySetMemoryLayout

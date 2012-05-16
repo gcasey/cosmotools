@@ -1,8 +1,11 @@
 #include "CosmologyTools.h"
 
+#include "SimulationParticles.h"
+
 #include <iostream>
 #include <cassert>
 
+class SimulationParticles;
 
 //------------------------------------------------------------------------------
 void CosmologyInit(MPI_Comm *comm)
@@ -55,6 +58,42 @@ void CosmologySetParticles(
       px, py,pz, vx,vy,vz,
       GlobalParticlesIds,
       *NumberOfParticles );
+}
+
+//------------------------------------------------------------------------------
+void CosmologyGetHaloIds(INTEGER *haloTags)
+{
+  assert("pre: CosmoToolsManager is NULL" && (CosmoToolsManager != NULL) );
+  assert("pre: user-supplied haloTags buffer is NULL" && (haloTags != NULL) );
+
+  cosmologytools::SimulationParticles *myParticles =
+      CosmoToolsManager->GetParticles();
+  assert("pre: particle data-structure is NULL!" && (myParticles != NULL) );
+  assert("pre: particles haloTags are NULL!" &&
+          (myParticles->HaloTags != NULL) );
+
+  for( int p=0; p < myParticles->NumParticles; ++p )
+    {
+    haloTags[ p ] = myParticles->HaloTags[ p ];
+    } // END for all particles
+}
+
+//------------------------------------------------------------------------------
+void CosmologyGetSubHaloIds(INTEGER *subHaloTags)
+{
+  assert("pre: CosmoToolsManager is NULL" && (CosmoToolsManager != NULL) );
+  assert("pre: user-supplied subHaloTags is NULL" && (subHaloTags != NULL) );
+
+ cosmologytools::SimulationParticles *myParticles =
+     CosmoToolsManager->GetParticles();
+ assert("pre: particle data-structure is NULL!" && (myParticles != NULL) );
+ assert("pre: particles haloTags are NULL!" &&
+         (myParticles->SubHaloTags != NULL) );
+
+ for( int p=0; p < myParticles->NumParticles; ++p )
+   {
+   subHaloTags[ p ] = myParticles->SubHaloTags[ p ];
+   } // END for all particles
 }
 
 //------------------------------------------------------------------------------
