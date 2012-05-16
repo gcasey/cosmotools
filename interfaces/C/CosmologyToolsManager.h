@@ -41,6 +41,7 @@ public:
 
   // Inline class macros
   GetNSetMacro(Layout,int);
+  GetNSetMacro(HaloFinder,int);
   GetNSetMacro(Communicator,MPI_Comm);
   GetNSetMacro(EnableVis,bool);
   GetNSetMacro(HaloTrackingFrequency,int);
@@ -65,6 +66,18 @@ public:
       REAL *vx, REAL *vy, REAL *vz,
       INTEGER *GlobalParticlesIds,
       INTEGER NumberOfParticles);
+
+  /**
+   * @brief Uses the forward halo-tracker to track the halos at the prescribed
+   * tracker frequency.
+   */
+  void TrackHalos();
+
+  /**
+   * @brief Calls the prescribed halo-finder to find the halos in the particle
+   * dataset of the given time-step.
+   */
+  void FindHalos();
 
   /**
    * @brief Barrier synchronization with all processes.

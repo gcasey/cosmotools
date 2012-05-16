@@ -20,14 +20,17 @@ set(RequiredLibs
 include(FortranCInterface)
 FortranCInterface_HEADER(
     CosmologyToolsAPIMangling.h SYMBOLS
-        CosmologyInit
-        CosmologyFinit
-        CosmologyEnableVis
         CosmologyDisableVis
-        CosmologySetMemoryLayout
-        CosmologySetTrackerFrequency
-        CosmologySetParticles
+        CosmologyEnableVis
         CosmologyFinalize
+        CosmologyFindHalos
+        CosmologyFinit
+        CosmologyInit
+        CosmologySetHaloFinder
+        CosmologySetMemoryLayout
+        CosmologySetParticles
+        CosmologySetTrackerFrequency
+        CosmologyTrackHalos
         )
 
 if(BUILD_SHARED_LIBS)

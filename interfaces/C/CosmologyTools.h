@@ -76,6 +76,27 @@ void CosmologySetMemoryLayout(int* memoryLayout);
 void CosmologySetTrackerFrequency(int *frequency);
 
 /**
+ * @brief Sets the halo-finder to use
+ * @param haloFinder the halo-finder to use
+ * @see HaloFinders.h for a list of halofinders to use.
+ */
+void CosmologySetHaloFinder(int *haloFinder);
+
+/**
+ * @brief Uses the forward halo-tracker to track halos at the prescribed
+ * tracker frequency.
+ * @note This method is used in combination with CosmologySetParticles
+ */
+void CosmologyTrackHalos();
+
+/**
+ * @brief Calls the prescribed halo finder to find the halos in the particle
+ * dataset of the given time-step.
+ * @note This method is used in combination with CosmologySetParticles
+ */
+void CosmologyFindHalos();
+
+/**
  * @brief Finalize the cosmology tools interface.
  * @note Blocks until all processes call this method.
  * @pre CosmoToolsManager != NULL

@@ -94,6 +94,10 @@ private:
 };
 
 //------------------------------------------------------------------------------
+//  CosmologyToolsManager implementation
+//------------------------------------------------------------------------------
+
+//------------------------------------------------------------------------------
 
 CosmologyToolsManager::CosmologyToolsManager()
 {
@@ -136,6 +140,18 @@ void CosmologyToolsManager::SetParticles(
   this->Particles->NumParticles = NumberOfParticles;
 
   this->Particles->AllocateHaloAndSubHaloArrays();
+}
+
+//-----------------------------------------------------------------------------
+void CosmologyToolsManager::TrackHalos()
+{
+ // TODO: implement this
+}
+
+//-----------------------------------------------------------------------------
+void CosmologyToolsManager::FindHalos()
+{
+  // TODO: implement this
 }
 
 } /* namespace cosmologytools */

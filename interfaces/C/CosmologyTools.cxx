@@ -76,6 +76,27 @@ void CosmologySetTrackerFrequency(int *frequency)
 }
 
 //------------------------------------------------------------------------------
+void CosmologySetHaloFinder( int *haloFinder )
+{
+  assert("pre: CosmoToolsManager is NULL" && (CosmoToolsManager != NULL) );
+  CosmoToolsManager->SetHaloFinder( *haloFinder );
+}
+
+//------------------------------------------------------------------------------
+void CosmologyTrackHalos()
+{
+  assert("pre: CosmoToolsManager is NULL" && (CosmoToolsManager != NULL) );
+  CosmoToolsManager->TrackHalos();
+}
+
+//------------------------------------------------------------------------------
+void CosmologyFindHalos()
+{
+  assert("pre: CosmoToolsManager is NULL" && (CosmoToolsManager != NULL) );
+  CosmoToolsManager->FindHalos();
+}
+
+//------------------------------------------------------------------------------
 void CosmologyFinalize()
 {
   assert("pre: CosmoToolsManager is NULL" && (CosmoToolsManager != NULL) );
