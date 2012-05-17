@@ -1,0 +1,130 @@
+#!/bin/bash
+
+##PBS -A CSC033
+#PBS -A CI-CCR000086
+#PBS -N t
+#PBS -j oe
+#PBS -l walltime=0:10:00,size=12
+
+#----------------------------------------------------------------------------
+#
+# mpi run script
+#
+# Tom Peterka
+# Argonne National Laboratory
+# 9700 S. Cass Ave.
+# Argonne, IL 60439
+# tpeterka@mcs.anl.gov
+#
+# All rights reserved. May not be used, modified, or copied
+# without permission
+#
+#----------------------------------------------------------------------------
+ARCH=MAC_OSX
+#ARCH=LINUX
+#ARCH=BGP
+#ARCH=FUSION
+#ARCH=XT
+#ARCH=XE
+
+# number of procs
+num_procs=2
+
+# number of BG/P nodes for vn mode
+num_nodes=$[$num_procs / 4]
+if [ $num_nodes -lt 1 ]; then
+    num_nodes=1
+fi
+
+# executable
+if [ "$ARCH" = "MAC_OSX" ]; then
+exe=${HOME}/hacc/voronoi/src/voronoi
+else
+exe=${HOME}/voronoi/src/voronoi
+fi
+
+# total number of blocks in the domain
+tb=$[$num_procs * 1]
+#tb=2
+
+# data size x y z (always 3D)
+#dsize="3 3 3"
+#dsize="5 3 3"
+#dsize="4 4 4"
+dsize="5 5 5"
+#dsize="10 10 10"
+
+jitter=0.4
+
+cell_size=1.0 #for testing
+
+ghost_factor=2.0
+
+#volume range (-1.0: unused)
+minv=-1.0
+maxv=-1.0
+
+#------
+#
+# program arguments
+#
+
+args="$tb $dsize $jitter $cell_size $ghost_factor $minv $maxv"
+
+#------
+#
+# run commands
+#
+
+if [ "$ARCH" = "MAC_OSX" ]; then
+
+mpiexec -l -n $num_procs $exe $args
+
+#dsymutil $exe ; mpiexec -l -n $num_procs xterm -e gdb -x gdb.run --args $exe $args
+
+#dsymutil $exe ; mpiexec -n $num_procs valgrind -q $exe $args
+
+#dsymutil $exe ; mpiexec -n $num_procs valgrind -q --leak-check=yes $exe $args
+
+fi
+
+if [ "$ARCH" = "LINUX" ]; then
+
+mpiexec -n $num_procs $exe $args
+
+#mpiexec -n $num_procs xterm -e gdb -x gdb.run --args $exe $args
+
+#mpiexec -n $num_procs valgrind -q $exe $args
+
+#mpiexec -n $num_procs valgrind -q --leak-check=yes $exe $args
+
+fi
+
+if [ "$ARCH" = "BGP" ]; then
+
+#cqsub -n $num_nodes -c $num_procs -p UltraVis -t 30 -m vn $exe $args
+cqsub -n $num_procs -c $num_procs -p UltraVis -t 30 -m smp $exe $args
+
+# for use with valgrind_memcheck.o
+#cqsub -n $num_procs -c $num_procs -p UltraVis -t 30 -m smp $exe -- $args
+
+fi
+
+if [ "$ARCH" = "FUSION" ]; then
+
+mpiexec $exe $args
+
+fi
+
+if [ "$ARCH" = "XT" ]; then
+
+cd /tmp/work/$USER
+aprun -n $num_procs $exe $args
+
+fi
+
+if [ "$ARCH" = "XE" ]; then
+
+aprun -n $num_procs $exe $args
+
+fi
