@@ -4,6 +4,9 @@ cmake_minimum_required(VERSION 2.8)
 ## Set the project name and enable C/C++ and Fortran support
 project(CosmologyTools C CXX Fortran)
 
+## Set path for cmake modules
+set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
+
 ## Set the build type
 set(CMAKE_BUILD_TYPE "Debug" CACHE STRING
   "one of: Release, Debug, RelWithDebInfo or MinSizeRel")
@@ -79,6 +82,7 @@ set(cosmopackages
     common
     sfprobe
     halofinder
+    tess
     interfaces
     pv-plugins
     )
