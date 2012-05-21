@@ -60,6 +60,11 @@ add_definitions(-DOMPI_SKIP_MPICXX -DMPICH_SKIP_MPICXX)
 
 ## Choose static or shared libraries.
 option(BUILD_SHARED_LIBS "Build shared libraries." OFF)
+if(NOT BUILD_SHARED_LIBS)
+ ## If we are building statically, make everything PICable so that we can
+ ## link with shared libraries
+ add_definitions(-fPIC)
+endif()
 
 ## Choose whether to use double-precision or not
 option(DOUBLE_PRECISION "Enable double-precision." OFF)
