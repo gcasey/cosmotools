@@ -27,7 +27,7 @@ add_subdirectory(cosmohalo)
 
 ## List of sources for the halo tracker
 set(HALOTRACKER_SRC
-    #ForwardHaloTracker.cxx
+    ForwardHaloTracker.cxx
     HaloDataInformation.cxx
     TemporalHaloInformation.cxx)
 
