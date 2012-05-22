@@ -68,8 +68,14 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define __vtkPLANLHaloFinder_h
 
 #include "vtkUnstructuredGridAlgorithm.h"
+#include "BasicDefinition.h" // For POSVEL_T, ID_T, etc.
 
+#include <vector> // For STL vector
+
+
+// Forward declarations
 class vtkMultiProcessController;
+class CosmoHaloFinderP;
 
 class VTK_EXPORT vtkPLANLHaloFinder : public vtkUnstructuredGridAlgorithm
 {
@@ -199,28 +205,68 @@ class VTK_EXPORT vtkPLANLHaloFinder : public vtkUnstructuredGridAlgorithm
                           vtkInformationVector**,
                           vtkInformationVector*);
 
+  // Description:
+  // Checks the integrid of the output particles. Primarily the method ensures
+  // that required arrays used in computation are available.
+  bool CheckOutputIntegrity(vtkUnstructuredGrid* outputParticles);
+
+  // Description:
+  // Computes the FOF halos based on the user-supplied linking length and
+  // PMin parameters.
+  void ComputeFOFHalos(
+      vtkUnstructuredGrid *particles,
+      vtkUnstructuredGrid *haloCenters );
+
+  // Description:
+  // Vectorize the data since the halo-finder expects the data as different
+  // vectors.
+  void VectorizeData(
+      vtkUnstructuredGrid *particles);
+
+  // Description:
+  // Computes FOF halo properties
+  void ComputeFOFHaloProperties(
+        std::vector<POSVEL_T> &fofMass,
+        std::vector<POSVEL_T> &fofXPos,
+        std::vector<POSVEL_T> &fofYPos,
+        std::vector<POSVEL_T> &fofZPos,
+        std::vector<POSVEL_T> &fofXVel,
+        std::vector<POSVEL_T> &fofYVel,
+        std::vector<POSVEL_T> &fofZVel,
+        std::vector<POSVEL_T> &fofXCofMass,
+        std::vector<POSVEL_T> &fofYCofMass,
+        std::vector<POSVEL_T> &fofZCofMass,
+        std::vector<POSVEL_T> &fofVelDisp);
+
   vtkMultiProcessController* Controller;
 
-  int NP; // number of particles in the original simulation
-  float RL; // The physical box dimensions (rL)
-  float Overlap; // The ghost cell boundary space
-  int PMin; // The minimum particles for a halo
-  float BB; // The linking length
-  int CopyHaloDataToParticles; // Copy halo information to original data
-  int ComputeMostBoundParticle; // Turn on MBP finding
+  int NP;                           // num particles in the original simulation
+  float RL;                         // The physical box dimensions (rL)
+  float Overlap;                    // The ghost cell boundary space
+  int PMin;                         // The minimum particles for a halo
+  float BB;                         // The linking length
+  int CopyHaloDataToParticles;      // Copy halo information to original data
+  int ComputeMostBoundParticle;     // Turn on MBP finding
   int ComputeMostConnectedParticle; // Turn on MCP finding
 
-  int ComputeSOD; // Turn on Spherical OverDensity (SOD) halos
-  int SODCenterType; // Set the center finding for SOD halos
+  int ComputeSOD;     // Turn on Spherical OverDensity (SOD) halos
+  int SODCenterType;  // Set the center finding for SOD halos
 
-  float RhoC; // SOD rho_C (2.77536627e11)
-  float SODMass; // Initial SOD mass (1.0e14)
-  float MinRadiusFactor; // Minimum factor of SOD radius (0.5)
-  float MaxRadiusFactor; // Maximum factor of SOD radius (2.0)
-  int SODBins; // Number of log scale bins for SOD (20)
-  int MinFOFSize; // Minimum FOF size for SOD (1000)
-  float MinFOFMass; // Minimum FOF mass for SOD (5.0e12)
+  float RhoC;             // SOD rho_C (2.77536627e11)
+  float SODMass;          // Initial SOD mass (1.0e14)
+  float MinRadiusFactor;  // Minimum factor of SOD radius (0.5)
+  float MaxRadiusFactor;  // Maximum factor of SOD radius (2.0)
+  int SODBins;            // Number of log scale bins for SOD (20)
+  int MinFOFSize;         // Minimum FOF size for SOD (1000)
+  float MinFOFMass;       // Minimum FOF mass for SOD (5.0e12)
 
+  // Internal storage for vectorized particle data information
+  std::vector<POSVEL_T> xx,yy,zz, vx,vy,vz, mass,potential;
+  std::vector<ID_T> tag;
+  std::vector<STATUS_T> status;
+  std::vector<MASK_T> mask;
+
+  CosmoHaloFinderP *HaloFinder;
  private:
   vtkPLANLHaloFinder(const vtkPLANLHaloFinder&);  // Not implemented.
   void operator=(const vtkPLANLHaloFinder&);  // Not implemented.
