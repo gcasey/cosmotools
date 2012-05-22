@@ -9,12 +9,14 @@ SimulationParticles::SimulationParticles()
 {
   this->X  = this->Y  = this->Z  = NULL;
   this->VX = this->VY = this->VZ = NULL;
-  this->GlobalIds    = NULL;
-  this->HaloTags     = NULL;
-  this->SubHaloTags  = NULL;
-  this->NumParticles = 0;
-  this->TimeStep     = -1;
-  this->RedShift     = 0.0;
+  this->GlobalIds           = NULL;
+  this->HaloTags            = NULL;
+  this->SubHaloTags         = NULL;
+  this->NumParticles        = 0;
+  this->TimeStep            = -1;
+  this->RedShift            = 0.0;
+  this->AreHalosComputed    = false;
+  this->AreSubHalosComputed = false;
 }
 
 //-----------------------------------------------------------------------------
@@ -52,6 +54,9 @@ void SimulationParticles::AllocateHaloAndSubHaloArrays()
     delete [] this->SubHaloTags;
     }
   this->SubHaloTags = new INTEGER[ this->NumParticles ];
+
+  this->AreHalosComputed    = false;
+  this->AreSubHalosComputed = false;
 }
 
 } /* namespace cosmogolytools */

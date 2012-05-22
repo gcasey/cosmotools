@@ -46,6 +46,9 @@ public:
   INTEGER *HaloTags;    /** List of halo ids for each particle (computed) */
   INTEGER *SubHaloTags; /** List of subhalo ids for each particles (computed) */
 
+  bool AreHalosComputed; /** Flag that indicates if the halos are computed */
+  bool AreSubHalosComputed; /** Flag that indicates if subhalos are computed */
+
 private:
   DISABLE_COPY_AND_ASSIGNMENT(SimulationParticles);
 };
