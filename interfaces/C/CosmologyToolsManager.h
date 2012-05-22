@@ -31,7 +31,7 @@ public:
 
 // Forward declarations
 class SimulationParticles;
-
+class ForwardHaloTracker;
 
 class CosmologyToolsManager
 {
@@ -91,6 +91,8 @@ protected:
   MPI_Comm Communicator;
   bool EnableVis;
   SimulationParticles *Particles;
+
+  ForwardHaloTracker *HaloTracker;
 
 private:
   DISABLE_COPY_AND_ASSIGNMENT(CosmologyToolsManager);

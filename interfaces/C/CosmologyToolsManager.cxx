@@ -2,6 +2,7 @@
 
 #include "HaloFinders.h"
 #include "SimulationParticles.h"
+#include "ForwardHaloTracker.h"
 
 #include <cassert>
 
@@ -16,6 +17,7 @@ CosmologyToolsManager::CosmologyToolsManager()
   this->HaloTrackingFrequency = 5;
   this->Particles             = new SimulationParticles();
   this->HaloFinder            = HaloFinders::COSMO;
+  this->HaloTracker           = new ForwardHaloTracker();
 }
 
 //-----------------------------------------------------------------------------
@@ -24,6 +26,11 @@ CosmologyToolsManager::~CosmologyToolsManager()
   if( this->Particles != NULL )
     {
     delete this->Particles;
+    }
+
+  if( this->HaloTracker != NULL )
+    {
+    delete this->HaloTracker;
     }
 }
 
@@ -47,14 +54,19 @@ void CosmologyToolsManager::SetParticles(
   this->Particles->VZ           = vz;
   this->Particles->GlobalIds    = GlobalParticlesIds;
   this->Particles->NumParticles = NumberOfParticles;
-
   this->Particles->AllocateHaloAndSubHaloArrays();
+
+  this->HaloTracker->RegisterParticles(
+      tstep,redshift,px,py,pz,
+      vx,vy,vz,NULL,
+      GlobalParticlesIds,NULL,NULL,
+      NumberOfParticles);
 }
 
 //-----------------------------------------------------------------------------
 void CosmologyToolsManager::TrackHalos()
 {
- // TODO: implement this
+  this->HaloTracker->UpdateMergerTree(this->Particles->TimeStep);
 }
 
 //-----------------------------------------------------------------------------
