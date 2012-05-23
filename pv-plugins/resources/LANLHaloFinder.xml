@@ -86,42 +86,21 @@
        </Documentation>
      </IntVectorProperty>
 
-     <IntVectorProperty
-      name="CopyHaloDataToParticles"
-      command="SetCopyHaloDataToParticles"
-      label="Copy FOF halo catalog to original particles"
-      number_of_elements="1"
-      default_values="0" >
-     <BooleanDomain name="bool" />
+      <IntVectorProperty
+        name="CenterFindingMethod"
+        command="SetCenterFindingMethod"
+        label="Method for detecting the halo center"
+        number_of_elements="1"
+        default_values="0">
+       <EnumerationDomain name="center_detection_algorithm">
+        <Entry value="0" text="Center of mass"/>
+        <Entry value="1" text="Average position"/>
+        <Entry value="2" text="Most Bound Particle (MBP)"/>
+        <Entry value="3" text="Most Connected Particle (MCP)"/>
+       </EnumerationDomain>
        <Documentation>
-       If checked, the friends-of-friends (FOF) halo catalog information will
-       be copied to the original particles as well.
-       </Documentation>
-     </IntVectorProperty>
-
-     <IntVectorProperty
-      name="ComputeMostBoundParticle"
-      command="SetComputeMostBoundParticle"
-      label="Compute the most bound particle"
-      number_of_elements="1"
-      default_values="0" >
-     <BooleanDomain name="bool" />
-       <Documentation>
-       If checked, the most bound particle for an FOF halo will be calculated.
-       WARNING: This can be very slow.
-       </Documentation>
-     </IntVectorProperty>
-
-     <IntVectorProperty
-      name="ComputeMostConnectedParticle"
-      command="SetComputeMostConnectedParticle"
-      label="Compute the most connected particle"
-      number_of_elements="1"
-      default_values="0" >
-     <BooleanDomain name="bool" />
-       <Documentation>
-       If checked, the most connected particle for an FOF halo will be calculated.
-       WARNING: This can be very slow.
+       Method used for computing the halo center.
+       WARNING: Using MBP or MCP can be very slow.
        </Documentation>
      </IntVectorProperty>
 
@@ -135,25 +114,6 @@
        <Documentation>
        If checked, spherical overdensity (SOD) halos will be calculated in
        addition to friends-of-friends (FOF) halos.
-       </Documentation>
-     </IntVectorProperty>
-
-     <IntVectorProperty
-        name="SODCenterType"
-        command="SetSODCenterType"
-        label="initial SOD center"
-        number_of_elements="1"
-        default_values="0">
-       <EnumerationDomain name="sod_center_type">
-        <Entry value="0" text="Center of mass"/>
-        <Entry value="1" text="Average position"/>
-        <Entry value="2" text="Most bound particle"/>
-        <Entry value="3" text="Most connected particle"/>
-       </EnumerationDomain>
-       <Documentation>
-       The initial friends-of-friends (FOF) center used for calculating a
-       spherical overdensity (SOD) halo.  WARNING: Using MBP or MCP can be
-       very slow.
        </Documentation>
      </IntVectorProperty>
 
