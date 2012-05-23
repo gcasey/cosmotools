@@ -71,6 +71,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "BasicDefinition.h" // For POSVEL_T, ID_T, etc.
 
 #include <vector> // For STL vector
+#include <map> // For STL map
 
 
 // Forward declarations
@@ -80,6 +81,15 @@ class CosmoHaloFinderP;
 class VTK_EXPORT vtkPLANLHaloFinder : public vtkUnstructuredGridAlgorithm
 {
  public:
+
+  enum {
+    CENTER_OF_MASS = 0,
+    AVERAGE        = 1,
+    MBP            = 2,
+    MCP            = 3,
+    NUMBER_OF_CENTER_FINDING_METHODS
+  } CenterDetectionAlgorithm;
+
   static vtkPLANLHaloFinder *New();
 
   vtkTypeMacro(vtkPLANLHaloFinder,vtkUnstructuredGridAlgorithm);
@@ -122,24 +132,6 @@ class VTK_EXPORT vtkPLANLHaloFinder : public vtkUnstructuredGridAlgorithm
   vtkGetMacro(BB, float);
 
   // Description:
-  // Copy the halo information to the original particles
-  // (default off)
-  vtkSetMacro(CopyHaloDataToParticles, int);
-  vtkGetMacro(CopyHaloDataToParticles, int);
-
-  // Description:
-  // Turn on calculation of the most bound particle (center finding)
-  // (default off)
-  vtkSetMacro(ComputeMostBoundParticle, int);
-  vtkGetMacro(ComputeMostBoundParticle, int);
-
-  // Description:
-  // Turn on calculation of the most connect particle (center finding)
-  // (default off)
-  vtkSetMacro(ComputeMostConnectedParticle, int);
-  vtkGetMacro(ComputeMostConnectedParticle, int);
-
-  // Description:
   // Turn on calculation of SOD halos
   // (default off)
   vtkSetMacro(ComputeSOD, int);
@@ -148,8 +140,8 @@ class VTK_EXPORT vtkPLANLHaloFinder : public vtkUnstructuredGridAlgorithm
   // Description:
   // Specify the FOF center to use in SOD calculations
   // (0 = default, center of mass, 1 = average, 2 = MBP, 3 = MCP)
-  vtkSetMacro(SODCenterType, int);
-  vtkGetMacro(SODCenterType, int);
+  vtkSetMacro(CenterFindingMethod, int);
+  vtkGetMacro(CenterFindingMethod, int);
 
   // Description:
   // Specify rho_c (critical density)
@@ -224,33 +216,36 @@ class VTK_EXPORT vtkPLANLHaloFinder : public vtkUnstructuredGridAlgorithm
       vtkUnstructuredGrid *particles);
 
   // Description:
-  // Computes FOF halo properties
-  void ComputeFOFHaloProperties(
-        std::vector<POSVEL_T> &fofMass,
-        std::vector<POSVEL_T> &fofXPos,
-        std::vector<POSVEL_T> &fofYPos,
-        std::vector<POSVEL_T> &fofZPos,
-        std::vector<POSVEL_T> &fofXVel,
-        std::vector<POSVEL_T> &fofYVel,
-        std::vector<POSVEL_T> &fofZVel,
-        std::vector<POSVEL_T> &fofXCofMass,
-        std::vector<POSVEL_T> &fofYCofMass,
-        std::vector<POSVEL_T> &fofZCofMass,
-        std::vector<POSVEL_T> &fofVelDisp);
+  // Computes FOF halo properties, i.e., fofMass, fofXPos, etc.
+  void ComputeFOFHaloProperties();
+
+  // Description:
+  // Initializes the haloCenter output (output-2 of the filter) s.t. the
+  // data-structure is ready to store all FOF properties for each of the
+  // N halos.
+  void InitializeHaloCenters(
+      vtkUnstructuredGrid *haloCenters, unsigned int N );
+
+  // Description:
+  // Marks the halos of the given halo and computes the center using the
+  // prescribed center-finding method.
+  void MarkHaloParticlesAndGetCenter(
+      const unsigned int halo,
+      const int internalHaloIdx,
+      double center[3],
+      vtkUnstructuredGrid *particles);
 
   vtkMultiProcessController* Controller;
 
-  int NP;                           // num particles in the original simulation
-  float RL;                         // The physical box dimensions (rL)
-  float Overlap;                    // The ghost cell boundary space
-  int PMin;                         // The minimum particles for a halo
-  float BB;                         // The linking length
-  int CopyHaloDataToParticles;      // Copy halo information to original data
-  int ComputeMostBoundParticle;     // Turn on MBP finding
-  int ComputeMostConnectedParticle; // Turn on MCP finding
+  int NP;                   // num particles in the original simulation
+  float RL;                 // The physical box dimensions (rL)
+  float Overlap;            // The ghost cell boundary space
+  int PMin;                 // The minimum particles for a halo
+  float BB;                 // The linking length
 
-  int ComputeSOD;     // Turn on Spherical OverDensity (SOD) halos
-  int SODCenterType;  // Set the center finding for SOD halos
+  int CenterFindingMethod;  // Halo center detection method
+  int ComputeSOD;           // Turn on Spherical OverDensity (SOD) halos
+
 
   float RhoC;             // SOD rho_C (2.77536627e11)
   float SODMass;          // Initial SOD mass (1.0e14)
@@ -265,6 +260,23 @@ class VTK_EXPORT vtkPLANLHaloFinder : public vtkUnstructuredGridAlgorithm
   std::vector<ID_T> tag;
   std::vector<STATUS_T> status;
   std::vector<MASK_T> mask;
+
+  // Computed FOF properties
+  std::vector<POSVEL_T> fofMass;     // mass of every halo
+  std::vector<POSVEL_T> fofXPos;     // x-component of the FOF position
+  std::vector<POSVEL_T> fofYPos;     // y-component of the FOF position
+  std::vector<POSVEL_T> fofZPos;     // z-component of the FOF position
+  std::vector<POSVEL_T> fofXVel;     // x-component of the FOF velocity
+  std::vector<POSVEL_T> fofYVel;     // y-component of the FOF velocity
+  std::vector<POSVEL_T> fofZVel;     // z-component of the FOF velocity
+  std::vector<POSVEL_T> fofXCofMass; // x-component of the FOF center of mass
+  std::vector<POSVEL_T> fofYCofMass; // y-component of the FOF center of mass
+  std::vector<POSVEL_T> fofZCofMass; // z-component of the FOF center of mass
+  std::vector<POSVEL_T> fofVelDisp;  // velocity dispersion of every halo
+
+  std::vector< int > ExtractedHalos; // list of halo IDs within the PMin thres.
+
+  std::map<ID_T,vtkIdType> GlobalToLocalMapping; // Global-to-local mapping
 
   CosmoHaloFinderP *HaloFinder;
  private:
