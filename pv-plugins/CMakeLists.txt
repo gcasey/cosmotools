@@ -6,7 +6,7 @@ find_package(ParaView REQUIRED)
 include(${PARAVIEW_USE_FILE})
 
 ## Set the plugin name and version
-set(PLUGIN_NAME CosmologyTools)
+set(PLUGIN_NAME PVCosmologyToolsPlugins)
 set(PLUGIN_VERSION "1.0")
 
 include_directories(
