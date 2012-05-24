@@ -83,8 +83,8 @@ class VTK_EXPORT vtkPLANLHaloFinder : public vtkUnstructuredGridAlgorithm
  public:
 
   enum {
-    CENTER_OF_MASS = 0,
-    AVERAGE        = 1,
+    AVERAGE        = 0,
+    CENTER_OF_MASS = 1,
     MBP            = 2,
     MCP            = 3,
     NUMBER_OF_CENTER_FINDING_METHODS
@@ -234,6 +234,11 @@ class VTK_EXPORT vtkPLANLHaloFinder : public vtkUnstructuredGridAlgorithm
       const int internalHaloIdx,
       double center[3],
       vtkUnstructuredGrid *particles);
+
+
+  // Description:
+  // Resets halo-finder internal data-structures
+  void ResetHaloFinderInternals();
 
   vtkMultiProcessController* Controller;
 

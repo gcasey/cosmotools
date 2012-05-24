@@ -93,8 +93,8 @@
         number_of_elements="1"
         default_values="0">
        <EnumerationDomain name="center_detection_algorithm">
-        <Entry value="0" text="Center of mass"/>
-        <Entry value="1" text="Average position"/>
+        <Entry value="0" text="Average position"/>
+        <Entry value="1" text="Center of mass"/>
         <Entry value="2" text="Most Bound Particle (MBP)"/>
         <Entry value="3" text="Most Connected Particle (MCP)"/>
        </EnumerationDomain>

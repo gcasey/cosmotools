@@ -69,6 +69,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "CosmologyToolsMacros.h"
 
 // VTK includes
+#include "vtkCellType.h"
 #include "vtkDemandDrivenPipeline.h"
 #include "vtkDoubleArray.h"
 #include "vtkDummyController.h"
@@ -228,6 +229,9 @@ int vtkPLANLHaloFinder::RequestData(
           vtkInformationVector* outputVector)
 {
   assert("pre: controller should not be NULL!" && (this->Controller != NULL));
+
+  // Reset previously calculated data
+  this->ResetHaloFinderInternals();
 
   // STEP 0: Get input object
   vtkInformation *input = inputVector[0]->GetInformationObject(0);
@@ -605,6 +609,7 @@ void vtkPLANLHaloFinder::InitializeHaloCenters(
     vtkUnstructuredGrid *haloCenters, unsigned int N)
 {
   // TODO: Note the vtkArrays here should match what POSVEL_T, ID_T are set
+  haloCenters->Allocate( N, 0);
 
   vtkPoints* pnts = vtkPoints::New();
   pnts->SetDataTypeToDouble();
@@ -640,6 +645,8 @@ void vtkPLANLHaloFinder::InitializeHaloCenters(
 
   for(unsigned int i=0; i < N; ++i )
     {
+    vtkIdType vertexIdx = i;
+    haloCenters->InsertNextCell(VTK_VERTEX,1,&vertexIdx);
     velArray[ i*3 ]    =
     velArray[ i*3+1 ]  =
     velArray[ i*3+2 ]  =
@@ -689,17 +696,16 @@ void vtkPLANLHaloFinder::ComputeFOFHaloProperties()
     {
     fof->FOFPosition(&this->fofXPos,&this->fofYPos,&this->fofZPos);
     }
-
-  // Compute mass of every halo
-  fof->FOFHaloMass(&this->fofMass);
-
   // Compute center of mass of every FOF halo if that's what will be used as
   // the halo center
-  if( this->CenterFindingMethod == CENTER_OF_MASS )
+  else if( this->CenterFindingMethod == CENTER_OF_MASS )
     {
     fof->FOFCenterOfMass(
       &this->fofXCofMass,&this->fofYCofMass,&this->fofZCofMass);
     }
+
+  // Compute mass of every halo
+  fof->FOFHaloMass(&this->fofMass);
 
   // Compute average velocity of every FOF halo
   fof->FOFVelocity(
@@ -722,6 +728,31 @@ void vtkPLANLHaloFinder::ComputeFOFHaloProperties()
          (this->fofVelDisp.size()==numberOfHalos));
 
   delete fof;
+}
+
+//------------------------------------------------------------------------------
+void vtkPLANLHaloFinder::ResetHaloFinderInternals()
+{
+  // input particle information
+  this->xx.resize(0); this->yy.resize(0);  this->zz.resize(0);
+  this->vx.resize(0); this->vy.resize(0);  this->vz.resize(0);
+  this->mass.resize(0);
+  this->potential.resize(0);
+  this->tag.resize(0);
+  this->status.resize(0);
+  this->mask.resize(0);
+
+  // computed FOF properties
+  this->fofMass.resize(0);
+  this->fofXPos.resize(0); this->fofYPos.resize(0); this->fofZPos.resize(0);
+  this->fofXVel.resize(0); this->fofYVel.resize(0); this->fofZVel.resize(0);
+  this->fofXCofMass.resize(0);
+  this->fofYCofMass.resize(0);
+  this->fofZCofMass.resize(0);
+  this->fofVelDisp.resize(0);
+  this->ExtractedHalos.resize(0);
+
+  this->GlobalToLocalMapping.clear();
 }
 
 //------------------------------------------------------------------------------
