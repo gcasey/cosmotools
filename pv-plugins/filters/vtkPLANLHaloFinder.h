@@ -69,14 +69,14 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "vtkUnstructuredGridAlgorithm.h"
 #include "BasicDefinition.h" // For POSVEL_T, ID_T, etc.
-
+#include "CosmoHaloFinderP.h" // For the cosmo halo-finder
 #include <vector> // For STL vector
 #include <map> // For STL map
 
 
 // Forward declarations
 class vtkMultiProcessController;
-class CosmoHaloFinderP;
+
 
 class VTK_EXPORT vtkPLANLHaloFinder : public vtkUnstructuredGridAlgorithm
 {
@@ -278,7 +278,7 @@ class VTK_EXPORT vtkPLANLHaloFinder : public vtkUnstructuredGridAlgorithm
 
   std::map<ID_T,vtkIdType> GlobalToLocalMapping; // Global-to-local mapping
 
-  CosmoHaloFinderP *HaloFinder;
+  cosmologytools::CosmoHaloFinderP *HaloFinder;
  private:
   vtkPLANLHaloFinder(const vtkPLANLHaloFinder&);  // Not implemented.
   void operator=(const vtkPLANLHaloFinder&);  // Not implemented.

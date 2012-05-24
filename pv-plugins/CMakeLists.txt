@@ -9,13 +9,18 @@ include(${PARAVIEW_USE_FILE})
 set(PLUGIN_NAME PVCosmologyToolsPlugins)
 set(PLUGIN_VERSION "1.0")
 
+## Setup include directory paths
 include_directories(
     ${PROJECT_SOURCE_DIR}/readers
     ${PROJECT_SOURCE_DIR}/filters
     ${PARAVIEW_INCLUDE_DIRS}
     ${VTK_INCLUDE_DIR}
-    ${PACKAGE_halofinder_INCLUDE_DIRS}
     )
+
+## Note we need to make sure that we put this include directory last so
+## that the CosmologyTools halo-finder will be used and not the old out-dated
+## version of the code that is available in ParaView.
+include_directories(BEFORE ${PACKAGE_halofinder_INCLUDE_DIRS})
 
 ## Set the server-manager XML
 set(SMXML
@@ -31,13 +36,9 @@ set(SMSRC
 
 ## Add halo-finders to the project if that plug-in is built
 set(RequiredLibs
-    ${PACKAGE_halofinder_LIBRARIES})
-
-## Append halo-finder XML definitions to the server-manager XML
-#list(APPEND SMXML resources/LANLHaloFinder.xml)
-## Append halo-finder sources to the server-manager XML
-#list(APPEND SMSRC filters/vtkPLANLHaloFinder.cxx)
-
+    ${PACKAGE_halofinder_LIBRARIES}
+    ${MPI_LIBRARIES}
+    )
 
 ## Add the paraview plugin
 ADD_PARAVIEW_PLUGIN(${PLUGIN_NAME} ${PLUGIN_VERSION}

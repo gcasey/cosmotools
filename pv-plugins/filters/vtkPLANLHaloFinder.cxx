@@ -118,13 +118,13 @@ vtkPLANLHaloFinder::vtkPLANLHaloFinder()
   this->ComputeSOD          = 0;
   this->CenterFindingMethod = AVERAGE;
 
-  this->RhoC            = RHO_C;
-  this->SODMass         = SOD_MASS;
-  this->MinRadiusFactor = MIN_RADIUS_FACTOR;
-  this->MaxRadiusFactor = MAX_RADIUS_FACTOR;
-  this->SODBins         = NUM_SOD_BINS;
-  this->MinFOFSize      = MIN_SOD_SIZE;
-  this->MinFOFMass      = MIN_SOD_MASS;
+  this->RhoC            = cosmologytools::RHO_C;
+  this->SODMass         = cosmologytools::SOD_MASS;
+  this->MinRadiusFactor = cosmologytools::MIN_RADIUS_FACTOR;
+  this->MaxRadiusFactor = cosmologytools::MAX_RADIUS_FACTOR;
+  this->SODBins         = cosmologytools::NUM_SOD_BINS;
+  this->MinFOFSize      = cosmologytools::MIN_SOD_SIZE;
+  this->MinFOFMass      = cosmologytools::MIN_SOD_MASS;
 }
 
 //------------------------------------------------------------------------------
@@ -266,7 +266,7 @@ int vtkPLANLHaloFinder::RequestData(
   // MPI cartesian topology. Currently, the LANL halofinder assumes
   // MPI_COMM_WORLD!!!!!!. This should be changed in the short future.
 
-  Partition::initialize();
+  cosmologytools::Partition::initialize();
 
   // Delete previously computed results to re-compute with modified params
   // TODO: We need to get smarter about this in the future, e.g., determine
@@ -276,7 +276,7 @@ int vtkPLANLHaloFinder::RequestData(
     {
     delete this->HaloFinder;
     }
-  this->HaloFinder = new CosmoHaloFinderP();
+  this->HaloFinder = new cosmologytools::CosmoHaloFinderP();
 
   // STEP 4: Compute the FOF halos
   this->ComputeFOFHalos(outputParticles, haloCenters);
@@ -472,7 +472,7 @@ void vtkPLANLHaloFinder::MarkHaloParticlesAndGetCenter(
   int* fofHaloCount = this->HaloFinder->getHaloCount();
   int* fofHaloList  = this->HaloFinder->getHaloList();
 
-  FOFHaloProperties* fof = new FOFHaloProperties();
+  cosmologytools::FOFHaloProperties* fof = new cosmologytools::FOFHaloProperties();
   fof->setHalos(numberOfHalos,fofHalos,fofHaloCount,fofHaloList);
   fof->setParameters("",this->RL,this->Overlap,this->BB);
   fof->setParticles(
@@ -522,7 +522,7 @@ void vtkPLANLHaloFinder::MarkHaloParticlesAndGetCenter(
     haloTags[ localParticleIdx ] = halo;
     } // END for all haloParticles
 
-  // STEP 3: Find the center
+  // STEP 4: Find the center
   switch( this->CenterFindingMethod )
     {
     case CENTER_OF_MASS:
@@ -553,19 +553,19 @@ void vtkPLANLHaloFinder::MarkHaloParticlesAndGetCenter(
       int centerIndex = -1;
       POTENTIAL_T minPotential;
 
-      HaloCenterFinder centerFinder;
+      cosmologytools::HaloCenterFinder centerFinder;
       centerFinder.setParticles(size,xLocHalo,yLocHalo,zLocHalo,massHalo,id);
       centerFinder.setParameters(this->BB,this->Overlap);
 
       if( this->CenterFindingMethod == MBP )
         {
-        centerIndex = (size < MBP_THRESHOLD)?
+        centerIndex = (size < cosmologytools::MBP_THRESHOLD)?
             centerFinder.mostBoundParticleN2( &minPotential ):
               centerFinder.mostBoundParticleAStar( &minPotential );
         } // END if MBP
       else
         {
-        centerIndex = (size < MCP_THRESHOLD)?
+        centerIndex = (size < cosmologytools::MCP_THRESHOLD)?
             centerFinder.mostConnectedParticleN2():
               centerFinder.mostConnectedParticleChainMesh();
         }
@@ -660,7 +660,7 @@ void vtkPLANLHaloFinder::ComputeFOFHaloProperties()
   int* fofHaloCount = this->HaloFinder->getHaloCount();
   int* fofHaloList  = this->HaloFinder->getHaloList();
 
-  FOFHaloProperties* fof = new FOFHaloProperties();
+  cosmologytools::FOFHaloProperties* fof = new cosmologytools::FOFHaloProperties();
   fof->setHalos(numberOfHalos,fofHalos,fofHaloCount,fofHaloList);
   fof->setParameters("",this->RL,this->Overlap,this->BB);
   fof->setParticles(
