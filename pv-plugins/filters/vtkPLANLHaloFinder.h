@@ -281,8 +281,6 @@ class VTK_EXPORT vtkPLANLHaloFinder : public vtkUnstructuredGridAlgorithm
 
   std::vector< int > ExtractedHalos; // list of halo IDs within the PMin thres.
 
-  std::map<ID_T,vtkIdType> GlobalToLocalMapping; // Global-to-local mapping
-
   cosmologytools::CosmoHaloFinderP *HaloFinder;
  private:
   vtkPLANLHaloFinder(const vtkPLANLHaloFinder&);  // Not implemented.

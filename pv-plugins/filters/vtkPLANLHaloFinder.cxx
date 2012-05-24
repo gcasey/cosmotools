@@ -352,7 +352,6 @@ void vtkPLANLHaloFinder::VectorizeData(
 
     // Extract global particle ID information & also setup global-to-local map
     this->tag[ idx ] = uid->GetValue( idx );
-    this->GlobalToLocalMapping[ this->tag[ idx ] ] = idx;
 
     // Extract status
     this->status[ idx ] = owner->GetValue( idx );
@@ -522,16 +521,7 @@ void vtkPLANLHaloFinder::MarkHaloParticlesAndGetCenter(
   // STEP 3: Mark particles within the halo with the the given halo tag/ID.
   for( int haloParticleIdx=0; haloParticleIdx < size; ++haloParticleIdx )
     {
-    ID_T globalParticleIdx = id[ haloParticleIdx ];
-    assert("pre: global particle Idx is not in map" &&
-      this->GlobalToLocalMapping.find(globalParticleIdx)!=
-          this->GlobalToLocalMapping.end() );
-
-    vtkIdType localParticleIdx =
-        this->GlobalToLocalMapping[ globalParticleIdx ];
-    assert( "pre: localParticleIdx is out-of-bounds!" &&
-            (localParticleIdx < particles->GetNumberOfPoints()) );
-    haloTags[ localParticleIdx ] = halo;
+    haloTags[ actualIdx[ haloParticleIdx ] ] = halo;
     } // END for all haloParticles
 
   // STEP 4: Find the center
@@ -751,8 +741,6 @@ void vtkPLANLHaloFinder::ResetHaloFinderInternals()
   this->fofZCofMass.resize(0);
   this->fofVelDisp.resize(0);
   this->ExtractedHalos.resize(0);
-
-  this->GlobalToLocalMapping.clear();
 }
 
 //------------------------------------------------------------------------------
