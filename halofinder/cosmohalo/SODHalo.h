@@ -68,6 +68,7 @@ using namespace std;
 
 #include "ChainingMesh.h"
 
+namespace cosmologytools {
 ///////////////////////////////////////////////////////////////////////////
 //
 // To calculate the exact r_200 store the distance and mass of each particle
@@ -262,4 +263,5 @@ private:
   double totalMass;                     // SOD total mass
 };
 
+}
 #endif

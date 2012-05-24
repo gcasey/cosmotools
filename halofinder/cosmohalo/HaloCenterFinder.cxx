@@ -54,6 +54,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 using namespace std;
 
+namespace cosmologytools {
 /////////////////////////////////////////////////////////////////////////
 //
 // HaloCenterFinder takes all particles in a halo and calculations the
@@ -1322,4 +1323,6 @@ ChainingMesh* HaloCenterFinder::buildChainingMesh(POSVEL_T chainSize)
   delete [] maxLoc;
 
   return haloChain;
+}
+
 }

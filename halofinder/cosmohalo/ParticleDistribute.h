@@ -76,6 +76,9 @@ using namespace vtkstd;
 using namespace std;
 #endif
 
+namespace cosmologytools {
+
+
 #ifdef USE_VTK_COSMO
 class COSMO_EXPORT ParticleDistribute {
 #else
@@ -221,7 +224,7 @@ private:
   bool   gadgetSwap;            // Endian swap needed
   long int gadgetParticleCount; // Total particles in the file
   long int gadgetStart[NUM_GADGET_TYPES];
-				// Offset into all particles for that type
+        // Offset into all particles for that type
 
   long   maxParticles;          // Largest number of particles in any file
   long   maxRead;               // Largest number of particles read at one time
@@ -265,4 +268,5 @@ private:
   vector<ID_T>* tag;            // Id tag for particles on this processor
 };
 
+}
 #endif

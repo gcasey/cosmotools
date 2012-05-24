@@ -10,6 +10,7 @@
 #include "ForceLaw.h"
 
 using namespace std;
+using namespace cosmologytools;
 
 #define RSM 0.1
 #define NINTERP 1024
@@ -53,8 +54,8 @@ int main(int argc, char *argv[]) {
   srand48(seed);
 
   printf("1/%d = %f second time resolution\n",
-	 CLOCKS_PER_SEC, 
-	 1.0/CLOCKS_PER_SEC);
+   CLOCKS_PER_SEC,
+   1.0/CLOCKS_PER_SEC);
   printf("%d force calculations\n",n);
   //printf("\n");
 

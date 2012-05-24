@@ -54,6 +54,8 @@ using namespace std;
 // The Timer class allows for easy timing of the program.  The timer
 // tracks real (clock) time elapsed, user time, and system time.
 
+namespace cosmologytools {
+
 // static data members of Timings class
 Timings::TimerList_t Timings::TimerList;
 Timings::TimerMap_t  Timings::TimerMap;
@@ -202,4 +204,6 @@ void Timings::print() {
     cout << "-----------------------------------------------------------------";
     cout << endl;
   }
+}
+
 }

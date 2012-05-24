@@ -58,6 +58,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 using namespace std;
 
+namespace cosmologytools {
 /////////////////////////////////////////////////////////////////////////
 //
 // FOFHaloProperties uses the results of the CosmoHaloFinder to locate the
@@ -151,7 +152,7 @@ void FOFHaloProperties::setParticles(
 }
 
 void FOFHaloProperties::setParticles(
-			long count,
+      long count,
                         POSVEL_T* xLoc,
                         POSVEL_T* yLoc,
                         POSVEL_T* zLoc,
@@ -587,12 +588,12 @@ void FOFHaloProperties::printHaloSizes(int minSize)
 /////////////////////////////////////////////////////////////////////////
 
 void FOFHaloProperties::extractLocation(
-				int halo,
-				int* actualIndx,
-				POSVEL_T* xLocHalo,
-				POSVEL_T* yLocHalo,
-				POSVEL_T* zLocHalo,
-				ID_T* id)
+        int halo,
+        int* actualIndx,
+        POSVEL_T* xLocHalo,
+        POSVEL_T* yLocHalo,
+        POSVEL_T* zLocHalo,
+        ID_T* id)
 {
   int p = this->halos[halo];
   for (int i = 0; i < this->haloCount[halo]; i++) {
@@ -614,16 +615,16 @@ void FOFHaloProperties::extractLocation(
 /////////////////////////////////////////////////////////////////////////
 
 void FOFHaloProperties::extractInformation(
-				int halo,
-				int* actualIndx,
-				POSVEL_T* xLocHalo,
-				POSVEL_T* yLocHalo,
-				POSVEL_T* zLocHalo,
-				POSVEL_T* xVelHalo,
-				POSVEL_T* yVelHalo,
-				POSVEL_T* zVelHalo,
-				POSVEL_T* massHalo,
-				ID_T* id)
+        int halo,
+        int* actualIndx,
+        POSVEL_T* xLocHalo,
+        POSVEL_T* yLocHalo,
+        POSVEL_T* zLocHalo,
+        POSVEL_T* xVelHalo,
+        POSVEL_T* yVelHalo,
+        POSVEL_T* zVelHalo,
+        POSVEL_T* massHalo,
+        ID_T* id)
 {
   int p = this->halos[halo];
   for (int i = 0; i < this->haloCount[halo]; i++) {
@@ -699,4 +700,7 @@ void FOFHaloProperties::printBoundingBox(int halo)
          << minBox[1] << ":" << maxBox[1] << "  "
          << minBox[2] << ":" << maxBox[2] << "  " << endl;
 }
+
 #endif
+
+}

@@ -7,6 +7,8 @@
 
 using namespace std;
 
+namespace cosmologytools {
+
 class FGrid {
 public:
   FGrid();
@@ -87,7 +89,7 @@ public:
   float m_r2max;
   float m_dr2;
   float m_oodr2;
-  int m_nInterp;  
+  int m_nInterp;
 };
 
 
@@ -126,4 +128,5 @@ class ForceLawSR : public ForceLaw
   FGridEval *m_fgore;
 };
 
+}
 #endif

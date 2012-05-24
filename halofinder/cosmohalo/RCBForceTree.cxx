@@ -80,6 +80,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #include <stdexcept>
 using namespace std;
 
+namespace cosmologytools {
 // References:
 // Emanuel Gafton and Stephan Rosswog. A fast recursive coordinate bisection tree for
 // neighbour search and gravity. Mon. Not. R. Astron. Soc. to appear, 2011.
@@ -842,7 +843,7 @@ void RCBForceTree<TDPTS>::createRCBForceSubtree(int d, ID_T tl, ID_T tlcl, ID_T 
 
   const bool geoSplit = false;
   POSVEL_T split = geoSplit ? (tree[tl].xmax[d]+tree[tl].xmin[d])/2 : tree[tl].xc[d];
-  ID_T is = ::partition(tree[tl].count, x1 + tree[tl].offset, x2 + tree[tl].offset, x3 + tree[tl].offset,
+  ID_T is = cosmologytools::partition(tree[tl].count, x1 + tree[tl].offset, x2 + tree[tl].offset, x3 + tree[tl].offset,
                         vx + tree[tl].offset, vy + tree[tl].offset, vz + tree[tl].offset,
                         mass + tree[tl].offset, phi + tree[tl].offset,
                         id + tree[tl].offset, mask + tree[tl].offset, split
@@ -909,12 +910,12 @@ void RCBForceTree<TDPTS>::createRCBForceTreeInParallel(ID_T tl)
   ID_T off = tree[tl].offset;
 
   // Compute the center-of-mass coordinates (and recompute the min/max)
-  ::cm(cnt, xx + off, yy + off, zz + off, mass + off,
+  cosmologytools::cm(cnt, xx + off, yy + off, zz + off, mass + off,
        tree[tl].xmin, tree[tl].xmax, tree[tl].xc);
 
   if (cnt <= nDirect) {
     // The pseudoparticles
-    tree[tl].tdr = ppContract*::pptdr(tree[tl].xmin, tree[tl].xmax, tree[tl].xc);
+    tree[tl].tdr = ppContract*cosmologytools::pptdr(tree[tl].xmin, tree[tl].xmax, tree[tl].xc);
     memset(tree[tl].ppm, 0, sizeof(POSVEL_T)*TDPTS);
     if (cnt > TDPTS) { // Otherwise, the pseudoparticles are never used
       POSVEL_T ppx[TDPTS], ppy[TDPTS], ppz[TDPTS];
@@ -982,7 +983,7 @@ void RCBForceTree<TDPTS>::createRCBForceTreeInParallel(ID_T tl)
 
   // Compute the pseudoparticles based on those of the children
   POSVEL_T ppx[TDPTS], ppy[TDPTS], ppz[TDPTS];
-  tree[tl].tdr = ppContract*::pptdr(tree[tl].xmin, tree[tl].xmax, tree[tl].xc);
+  tree[tl].tdr = ppContract*cosmologytools::pptdr(tree[tl].xmin, tree[tl].xmax, tree[tl].xc);
   pppts<TDPTS>(tree[tl].tdr, tree[tl].xc, ppx, ppy, ppz);
   memset(tree[tl].ppm, 0, sizeof(POSVEL_T)*TDPTS);
 
@@ -1274,7 +1275,7 @@ void RCBForceTree<TDPTS>::calcInternodeForce(ID_T tl,
   }
 
   // Process the interaction list...
-  ::nbody1(cnt, nx.size(),
+  cosmologytools::nbody1(cnt, nx.size(),
            xx + off, yy + off, zz + off, mass + off,
            &nx[0], &ny[0], &nz[0], &nm[0],
            vx + off, vy + off, vz + off, m_fl, m_fcoeff,
@@ -1337,4 +1338,6 @@ void RCBForceTree<TDPTS>::calcInternodeForces()
 // Explicit template instantiation...
 template class RCBForceTree<QUADRUPOLE_TDPTS>;
 template class RCBForceTree<MONOPOLE_TDPTS>;
+
+}
 

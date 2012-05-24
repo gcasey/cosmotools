@@ -91,6 +91,9 @@ size_t bigchunk_get_total();
 #ifdef __cplusplus
 }
 
+namespace cosmologytools {
+
+
 template <typename T>
 class bigchunk_allocator
 {
@@ -140,6 +143,7 @@ public:
   }
 };
 
+}
 #endif // __cplusplus
 #endif // BIGCHUNK_H
 

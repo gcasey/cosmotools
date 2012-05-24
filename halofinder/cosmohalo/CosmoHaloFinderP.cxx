@@ -54,6 +54,9 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 using namespace std;
 
+namespace cosmologytools {
+
+
 /////////////////////////////////////////////////////////////////////////
 //
 // Parallel manager for serial CosmoHaloFinder
@@ -1131,5 +1134,7 @@ void CosmoHaloFinderP::writeTaggedParticles()
 
   delete outStream;
   delete [] mapIndex;
+}
+
 }
 #endif // USE_VTK_COSMO

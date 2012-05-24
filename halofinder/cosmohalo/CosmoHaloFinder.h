@@ -1,56 +1,56 @@
 /*=========================================================================
-                                                                                
+
 Copyright (c) 2007, Los Alamos National Security, LLC
 
 All rights reserved.
 
-Copyright 2007. Los Alamos National Security, LLC. 
-This software was produced under U.S. Government contract DE-AC52-06NA25396 
-for Los Alamos National Laboratory (LANL), which is operated by 
-Los Alamos National Security, LLC for the U.S. Department of Energy. 
-The U.S. Government has rights to use, reproduce, and distribute this software. 
+Copyright 2007. Los Alamos National Security, LLC.
+This software was produced under U.S. Government contract DE-AC52-06NA25396
+for Los Alamos National Laboratory (LANL), which is operated by
+Los Alamos National Security, LLC for the U.S. Department of Energy.
+The U.S. Government has rights to use, reproduce, and distribute this software.
 NEITHER THE GOVERNMENT NOR LOS ALAMOS NATIONAL SECURITY, LLC MAKES ANY WARRANTY,
-EXPRESS OR IMPLIED, OR ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.  
-If software is modified to produce derivative works, such modified software 
-should be clearly marked, so as not to confuse it with the version available 
+EXPRESS OR IMPLIED, OR ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.
+If software is modified to produce derivative works, such modified software
+should be clearly marked, so as not to confuse it with the version available
 from LANL.
- 
-Additionally, redistribution and use in source and binary forms, with or 
-without modification, are permitted provided that the following conditions 
+
+Additionally, redistribution and use in source and binary forms, with or
+without modification, are permitted provided that the following conditions
 are met:
--   Redistributions of source code must retain the above copyright notice, 
-    this list of conditions and the following disclaimer. 
+-   Redistributions of source code must retain the above copyright notice,
+    this list of conditions and the following disclaimer.
 -   Redistributions in binary form must reproduce the above copyright notice,
     this list of conditions and the following disclaimer in the documentation
-    and/or other materials provided with the distribution. 
+    and/or other materials provided with the distribution.
 -   Neither the name of Los Alamos National Security, LLC, Los Alamos National
     Laboratory, LANL, the U.S. Government, nor the names of its contributors
-    may be used to endorse or promote products derived from this software 
-    without specific prior written permission. 
+    may be used to endorse or promote products derived from this software
+    without specific prior written permission.
 
 THIS SOFTWARE IS PROVIDED BY LOS ALAMOS NATIONAL SECURITY, LLC AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
-THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
-ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL SECURITY, LLC OR 
-CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, 
-EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, 
-PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; 
-OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, 
-WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR 
-OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF 
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL SECURITY, LLC OR
+CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-                                                                                
+
 =========================================================================*/
 
 // .NAME CosmoHaloFinder - find halos within a cosmology data file
 // .SECTION Description
-// CosmoHaloFinder is a filter object that operates on the unstructured 
-// grid created when a CosmoReader reads a .cosmo data file. 
+// CosmoHaloFinder is a filter object that operates on the unstructured
+// grid created when a CosmoReader reads a .cosmo data file.
 // It operates by finding clusters of neighbors.
 //
 // .SECTION Note
 // This halo finder implements a recursive algorithm using a k-d tree.
-// Linked lists are used to connect halos found during the recursive merge. 
+// Linked lists are used to connect halos found during the recursive merge.
 // Bounding boxes are calculated for each particle for pruning the merge tree.
 //
 // The halo finder doesn't actually build a tree that can be walked but
@@ -60,26 +60,26 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // First step is Reorder().  When it is called the first time it divides all
 // the particles on the X axis such that the particle at the halfway mark in
-// the array is correctly positioned, and all particles in the array below it 
+// the array is correctly positioned, and all particles in the array below it
 // have an X value less than it and all particles in the array above it have
 // an X value higher.  Reorder() calls nth_element() which is a partial sort but
 // faster.  So the division does not physically divide the space in half
 // but rather divides the number of particles in half on a dimension.
-// 
+//
 // Next step is the first level of recursion.  Each of the halves from above
 // are divided on the Y axis, again such that the number of particles is the
 // same in each half although the physical space is not divided.  Partial
 // ordering is done again by resequencing the seq array.  Each of these now
 // four pieces is divided on the Z axis next, and this continues until there
 // is one particle at the bottom of the tree.
-// 
-// Next step in the halo finder is to call ComputeLU() which computes a 
+//
+// Next step in the halo finder is to call ComputeLU() which computes a
 // lower and upper bound for each particle based on the k-d tree of the next
 // axis positioning.  This is used in pruning the merge tree during myFOF().
 // This means that if there is a branch of the k-d tree with some
 // halos in it, but that the next jump to a particle is too far away, then
 // that entire branch is ignored.
-// 
+//
 // Finally myFOF() is called and its recursion mimics that done by Reorder()
 // so that it is looking at the k-d tree resequence correctly.  myFOF()
 // recurses down to the bottom of the tree going to the left first.  When it
@@ -88,16 +88,16 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // of the k-d tree the two halves are divided on the next axis by count and
 // not by physical space, you can see that the Merge() must be done on those
 // four parts as follows.
-// 
-// Merge(A,C) Merge(A,D) Merge(B,C) Merge(B,D).  
 //
-// This is because it is unknown if A shares a boundary with C and D or 
-// B shares that boundary.  As particles are found to be close to each other, 
-// if they are already a part of a halo, the two halos must unite.  
+// Merge(A,C) Merge(A,D) Merge(B,C) Merge(B,D).
+//
+// This is because it is unknown if A shares a boundary with C and D or
+// B shares that boundary.  As particles are found to be close to each other,
+// if they are already a part of a halo, the two halos must unite.
 // While all this is going on, we also prune which means we stop the recursion.
 // As Merge() and myFOF() walk through the recursion chains of halos are
 // created and joined where they have a particle withing the required distance.
-// When myFOF() ends it has a chain of first particle in a halo and nextp 
+// When myFOF() ends it has a chain of first particle in a halo and nextp
 // pointing on down until -1 is reached.  Also the halo tag field for each
 // particle is constantly altered so that each particle knows what halo it
 // is part of, and that halo tag is the id of the lowest particle in the halo.
@@ -120,6 +120,9 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define dataZ 2
 
 using namespace std;
+
+namespace cosmologytools {
+
 
 /****************************************************************************/
 typedef POSVEL_T* floatptr;
@@ -186,7 +189,7 @@ public:
   POSVEL_T* getZVel()                   { return vz; }
   POSVEL_T* getMass()                   { return ms; }
   int*   getTag()                       { return pt; }
-  
+
   // np.in
   int np;
   POSVEL_T rL;
@@ -220,11 +223,11 @@ private:
   ValueIdPair *v;
   int *seq;
   void Reorder
-    (int first, 
-     int last, 
+    (int first,
+     int last,
      int flag);
 
-  // Calculates a lower and upper bound for each particle so that the 
+  // Calculates a lower and upper bound for each particle so that the
   // mergeing step can prune parts of the k-d tree
   POSVEL_T **lb, **ub;
   void ComputeLU(int, int);
@@ -234,4 +237,5 @@ private:
   void Merge(int, int, int, int, int);
 };
 
+}
 #endif

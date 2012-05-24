@@ -11,14 +11,13 @@
 #include "CosmologyToolsMacros.h"
 #include <mpi.h> // For MPI_Comm definition
 
-// Forward declarations
-class CosmoHaloFinderP;
 
 namespace cosmologytools {
 
 // Forward declarations
 class HaloDataInformation;
 class TemporalHaloInformation;
+class CosmoHaloFinderP;
 
 class ForwardHaloTracker
 {

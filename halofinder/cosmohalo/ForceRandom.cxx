@@ -11,6 +11,7 @@
 #include "ForceLaw.h"
 
 using namespace std;
+using namespace cosmologytools;
 
 #define RSM 0.1
 #define NINTERP 1024

@@ -1,45 +1,45 @@
 /*=========================================================================
-                                                                                
+
 Copyright (c) 2007, Los Alamos National Security, LLC
 
 All rights reserved.
 
-Copyright 2007. Los Alamos National Security, LLC. 
-This software was produced under U.S. Government contract DE-AC52-06NA25396 
-for Los Alamos National Laboratory (LANL), which is operated by 
-Los Alamos National Security, LLC for the U.S. Department of Energy. 
-The U.S. Government has rights to use, reproduce, and distribute this software. 
+Copyright 2007. Los Alamos National Security, LLC.
+This software was produced under U.S. Government contract DE-AC52-06NA25396
+for Los Alamos National Laboratory (LANL), which is operated by
+Los Alamos National Security, LLC for the U.S. Department of Energy.
+The U.S. Government has rights to use, reproduce, and distribute this software.
 NEITHER THE GOVERNMENT NOR LOS ALAMOS NATIONAL SECURITY, LLC MAKES ANY WARRANTY,
-EXPRESS OR IMPLIED, OR ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.  
-If software is modified to produce derivative works, such modified software 
-should be clearly marked, so as not to confuse it with the version available 
+EXPRESS OR IMPLIED, OR ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.
+If software is modified to produce derivative works, such modified software
+should be clearly marked, so as not to confuse it with the version available
 from LANL.
- 
-Additionally, redistribution and use in source and binary forms, with or 
-without modification, are permitted provided that the following conditions 
+
+Additionally, redistribution and use in source and binary forms, with or
+without modification, are permitted provided that the following conditions
 are met:
--   Redistributions of source code must retain the above copyright notice, 
-    this list of conditions and the following disclaimer. 
+-   Redistributions of source code must retain the above copyright notice,
+    this list of conditions and the following disclaimer.
 -   Redistributions in binary form must reproduce the above copyright notice,
     this list of conditions and the following disclaimer in the documentation
-    and/or other materials provided with the distribution. 
+    and/or other materials provided with the distribution.
 -   Neither the name of Los Alamos National Security, LLC, Los Alamos National
     Laboratory, LANL, the U.S. Government, nor the names of its contributors
-    may be used to endorse or promote products derived from this software 
-    without specific prior written permission. 
+    may be used to endorse or promote products derived from this software
+    without specific prior written permission.
 
 THIS SOFTWARE IS PROVIDED BY LOS ALAMOS NATIONAL SECURITY, LLC AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
-THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
-ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL SECURITY, LLC OR 
-CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, 
-EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, 
-PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; 
-OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, 
-WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR 
-OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF 
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL SECURITY, LLC OR
+CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-                                                                                
+
 =========================================================================*/
 
 #include <iostream>
@@ -55,6 +55,8 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "BHForceTree.h"
 
 using namespace std;
+
+namespace cosmologytools {
 
 /////////////////////////////////////////////////////////////////////////
 //
@@ -127,17 +129,17 @@ FNode::FNode(FNode* parent, int oindx)
 /////////////////////////////////////////////////////////////////////////
 
 BHForceTree::BHForceTree(
-			 POSVEL_T* minLoc,
-			 POSVEL_T* maxLoc,
-			 ID_T count,
-			 POSVEL_T* xLoc,
-			 POSVEL_T* yLoc,
-			 POSVEL_T* zLoc,
-			 POSVEL_T* xVel,
-			 POSVEL_T* yVel,
-			 POSVEL_T* zVel,
-			 POSVEL_T* ms,
-			 POSVEL_T avgMass)
+       POSVEL_T* minLoc,
+       POSVEL_T* maxLoc,
+       ID_T count,
+       POSVEL_T* xLoc,
+       POSVEL_T* yLoc,
+       POSVEL_T* zLoc,
+       POSVEL_T* xVel,
+       POSVEL_T* yVel,
+       POSVEL_T* zVel,
+       POSVEL_T* ms,
+       POSVEL_T avgMass)
 {
   // Extract the contiguous data block from a vector pointer
   this->particleCount = count;
@@ -176,19 +178,19 @@ BHForceTree::BHForceTree(
 }
 
 BHForceTree::BHForceTree(
-			 POSVEL_T* minLoc,
-			 POSVEL_T* maxLoc,
-			 ID_T count,
-			 POSVEL_T* xLoc,
-			 POSVEL_T* yLoc,
-			 POSVEL_T* zLoc,
-			 POSVEL_T* xVel,
-			 POSVEL_T* yVel,
-			 POSVEL_T* zVel,
-			 POSVEL_T* ms,
-			 POSVEL_T avgMass,
-			 ForceLaw *fl,
-			 float fcoeff)
+       POSVEL_T* minLoc,
+       POSVEL_T* maxLoc,
+       ID_T count,
+       POSVEL_T* xLoc,
+       POSVEL_T* yLoc,
+       POSVEL_T* zLoc,
+       POSVEL_T* xVel,
+       POSVEL_T* yVel,
+       POSVEL_T* zVel,
+       POSVEL_T* ms,
+       POSVEL_T avgMass,
+       ForceLaw *fl,
+       float fcoeff)
 {
   // Extract the contiguous data block from a vector pointer
   this->particleCount = count;
@@ -277,10 +279,10 @@ void BHForceTree::createBHForceTree()
         // Get the particle index of particle already in the node
         ID_T pindx2 = this->fNode[tindx].u.child[oindx];
 
-	// First, check to make sure that this particle is not at the exact
-	// same location as the particle that is already there. If it is, then
-	// we'll double the mass of the existing particle and leave this one
-	// out.
+  // First, check to make sure that this particle is not at the exact
+  // same location as the particle that is already there. If it is, then
+  // we'll double the mass of the existing particle and leave this one
+  // out.
         if (this->xx[pindx2] == this->xx[pindx] &&
             this->yy[pindx2] == this->yy[pindx] &&
             this->zz[pindx2] == this->zz[pindx]) {
@@ -288,10 +290,10 @@ void BHForceTree::createBHForceTree()
           goto next_particle;
         }
 
- 
+
         // Make sure that the vector does not over allocate
         if (this->fNode.capacity() == this->fNode.size()) {
-          this->fNode.reserve(this->fNode.capacity() 
+          this->fNode.reserve(this->fNode.capacity()
             + this->particleCount/NUM_CHILDREN);
         }
 
@@ -299,7 +301,7 @@ void BHForceTree::createBHForceTree()
         this->fNode.push_back(node);
         nodeIndex++;
         ID_T tindx2 = nodeIndex;
-        
+
         // Place the node that was sitting there already
         int oindx2 = getChildIndex(&this->fNode[tindx2], pindx2);
         this->fNode[tindx2].u.child[oindx2] = pindx2;
@@ -330,10 +332,10 @@ next_particle:;
 /////////////////////////////////////////////////////////////////////////
 
 void BHForceTree::threadBHForceTree(
-			ID_T curIndx,	     // Current node/particle
-			ID_T sibling,        // Sibling of current
-			ID_T parent,         // Parent of current
-			ID_T* lastIndx,      // Last node/particle
+      ID_T curIndx,	     // Current node/particle
+      ID_T sibling,        // Sibling of current
+      ID_T parent,         // Parent of current
+      ID_T* lastIndx,      // Last node/particle
                         POSVEL_T* radius)    // Needed to pass up partRadius
 {
   // Set the next index in the threading for node or particle
@@ -345,7 +347,7 @@ void BHForceTree::threadBHForceTree(
       this->fParticle[*lastIndx].nextNode = curIndx;
   }
   *lastIndx = curIndx;
- 
+
   // FParticle saves the parent and sibling FNode id
   if (curIndx < this->nodeOffset) {
     this->fParticle[curIndx].parent = parent;
@@ -425,7 +427,7 @@ void BHForceTree::threadBHForceTree(
       if (childMass[j] > 0) {
         curNode->u.n.partMass += childMass[j];
         for (int dim = 0; dim < DIMENSION; dim++)
-          curNode->u.n.partCenter[dim] += 
+          curNode->u.n.partCenter[dim] +=
                                      childCenter[j][dim] * childMass[j];
       }
     }
@@ -916,8 +918,8 @@ void BHForceTree::forceCalculationGroup(
   for (int p = 0; p < count; p++) {
     ID_T pId = (*particles)[p];
 
-    POSVEL_T value = 
-      forceCalculationParticle(pId, critRadius, 
+    POSVEL_T value =
+      forceCalculationParticle(pId, critRadius,
                                partInteract, nodeInteract);
     force[p] += value;
     this->fParticle[pId].force = force[p];
@@ -1005,7 +1007,7 @@ POSVEL_T BHForceTree::forceCalculationParticle(
       accel[0] += dx * f_over_r * m_fcoeff;
       accel[1] += dy * f_over_r * m_fcoeff;
       accel[2] += dz * f_over_r * m_fcoeff;
-    
+
       this->vx[p0] += dx * f_over_r * m_fcoeff;
       this->vy[p0] += dy * f_over_r * m_fcoeff;
       this->vz[p0] += dz * f_over_r * m_fcoeff;
@@ -1058,7 +1060,7 @@ void BHForceTree::treeForceGadgetTopDown(
   POSVEL_T pos_x = this->xx[p];
   POSVEL_T pos_y = this->yy[p];
   POSVEL_T pos_z = this->zz[p];
-  
+
   // Follow thread through tree from root choosing nodes and particles
   // which will contribute to the force of the given particle
   ID_T root = this->particleCount;
@@ -1082,28 +1084,28 @@ void BHForceTree::treeForceGadgetTopDown(
       FNode* curNode = &this->fNode[index - this->nodeOffset];
       partRadius = curNode->u.n.partRadius;
       distToNearPoint = distanceToNearestPoint(pos_x, pos_y, pos_z, curNode);
-      
+
       dx = curNode->u.n.partCenter[0] - pos_x;
       dy = curNode->u.n.partCenter[1] - pos_y;
       dz = curNode->u.n.partCenter[2] - pos_z;
       r = sqrt(dx * dx + dy * dy + dz * dz);
-      
+
       // Node is ignored if it is too far away from the particle
       // Distance from particle to particle radius exceeds critical radius
       // Distance from particle to nearest side of node exceeds critical radius
       if ((r - partRadius) > critRadius || distToNearPoint > critRadius) {
-	
+
         // Ignore node, move on to sibling of this node
         index = curNode->u.n.sibling;
-	
+
         // If there is no sibling go up a level until we find a node
         ID_T parent = curNode->u.n.parent;
         while (index == -1 && parent != -1 && parent != root) {
           index = this->fNode[parent - this->nodeOffset].u.n.sibling;
           parent = this->fNode[parent - this->nodeOffset].u.n.parent;
         }
-      } else { 
-        if (2*partRadius > (r * bhAngle)) { 
+      } else {
+        if (2*partRadius > (r * bhAngle)) {
           // Open node, move on to first child
           index = curNode->u.n.nextNode;
 
@@ -1111,7 +1113,7 @@ void BHForceTree::treeForceGadgetTopDown(
           // Accept node, add to interact list, move on to sibling
           nodeInteract->push_back(index);
           index = curNode->u.n.sibling;
- 
+
           // If there is no sibling go up a level until we find a node
           ID_T parent = curNode->u.n.parent;
           while (index == -1 && parent != -1 && parent != root) {
@@ -1124,7 +1126,7 @@ void BHForceTree::treeForceGadgetTopDown(
   }
 
   // Force calculation for this particle
-  this->fParticle[p].force = 
+  this->fParticle[p].force =
     forceCalculation(p, partInteract, nodeInteract);
 
   delete partInteract;
@@ -1146,7 +1148,7 @@ void BHForceTree::treeForceGadgetTopDownFast(
   POSVEL_T pos_x = this->xx[p];
   POSVEL_T pos_y = this->yy[p];
   POSVEL_T pos_z = this->zz[p];
-  
+
   // Follow thread through tree from root choosing nodes and particles
   // which will contribute to the force of the given particle
   ID_T root = this->particleCount;
@@ -1162,10 +1164,10 @@ void BHForceTree::treeForceGadgetTopDownFast(
       r = sqrt(dx * dx + dy * dy + dz * dz);
 
       if (r < critRadius && p != index) {
-	xInteract->push_back(this->xx[index]);
-	yInteract->push_back(this->yy[index]);
-	zInteract->push_back(this->zz[index]);
-	mInteract->push_back(this->mass[index]);
+  xInteract->push_back(this->xx[index]);
+  yInteract->push_back(this->yy[index]);
+  zInteract->push_back(this->zz[index]);
+  mInteract->push_back(this->mass[index]);
       }
 
       index = this->fParticle[index].nextNode;
@@ -1174,40 +1176,40 @@ void BHForceTree::treeForceGadgetTopDownFast(
       FNode* curNode = &this->fNode[index - this->nodeOffset];
       partRadius = curNode->u.n.partRadius;
       distToNearPoint = distanceToNearestPoint(pos_x, pos_y, pos_z, curNode);
-      
+
       dx = curNode->u.n.partCenter[0] - pos_x;
       dy = curNode->u.n.partCenter[1] - pos_y;
       dz = curNode->u.n.partCenter[2] - pos_z;
       r = sqrt(dx * dx + dy * dy + dz * dz);
-      
+
       // Node is ignored if it is too far away from the particle
       // Distance from particle to particle radius exceeds critical radius
       // Distance from particle to nearest side of node exceeds critical radius
       if ((r - partRadius) > critRadius || distToNearPoint > critRadius) {
-	
+
         // Ignore node, move on to sibling of this node
         index = curNode->u.n.sibling;
-	
+
         // If there is no sibling go up a level until we find a node
         ID_T parent = curNode->u.n.parent;
         while (index == -1 && parent != -1 && parent != root) {
           index = this->fNode[parent - this->nodeOffset].u.n.sibling;
           parent = this->fNode[parent - this->nodeOffset].u.n.parent;
         }
-      } else { 
-        if (2*partRadius > (r * bhAngle)) { 
+      } else {
+        if (2*partRadius > (r * bhAngle)) {
           // Open node, move on to first child
           index = curNode->u.n.nextNode;
-	  
+
         } else {
           // Accept node, add to interact list, move on to sibling
-	  xInteract->push_back(curNode->u.n.partCenter[0]);
-	  yInteract->push_back(curNode->u.n.partCenter[1]);
-	  zInteract->push_back(curNode->u.n.partCenter[2]);
-	  mInteract->push_back(curNode->u.n.partMass);
+    xInteract->push_back(curNode->u.n.partCenter[0]);
+    yInteract->push_back(curNode->u.n.partCenter[1]);
+    zInteract->push_back(curNode->u.n.partCenter[2]);
+    mInteract->push_back(curNode->u.n.partMass);
 
           index = curNode->u.n.sibling;
- 
+
           // If there is no sibling go up a level until we find a node
           ID_T parent = curNode->u.n.parent;
           while (index == -1 && parent != -1 && parent != root) {
@@ -1220,7 +1222,7 @@ void BHForceTree::treeForceGadgetTopDownFast(
   }
 
   // Force calculation for this particle
-  this->fParticle[p].force = 
+  this->fParticle[p].force =
     forceCalculationFast(p, xInteract, yInteract, zInteract, mInteract);
 
   delete xInteract;
@@ -1234,18 +1236,18 @@ void BHForceTree::treeForceGadgetTopDownFast2(
                     ID_T p,               // Particle to calculate force on
                     POSVEL_T bhAngle,     // Open node to examine children
                     POSVEL_T critRadius,  // Accept or ignore node not opened
-		    vector<POSVEL_T>* xInteract,
-		    vector<POSVEL_T>* yInteract,
-		    vector<POSVEL_T>* zInteract,
-		    vector<POSVEL_T>* mInteract,
-		    double *timeWalk,
-		    double *timeEval)
+        vector<POSVEL_T>* xInteract,
+        vector<POSVEL_T>* yInteract,
+        vector<POSVEL_T>* zInteract,
+        vector<POSVEL_T>* mInteract,
+        double *timeWalk,
+        double *timeEval)
 {
   POSVEL_T dx, dy, dz, r, partRadius, distToNearPoint;
   POSVEL_T pos_x = this->xx[p];
   POSVEL_T pos_y = this->yy[p];
   POSVEL_T pos_z = this->zz[p];
-  
+
   // Follow thread through tree from root choosing nodes and particles
   // which will contribute to the force of the given particle
   ID_T root = this->particleCount;
@@ -1264,10 +1266,10 @@ void BHForceTree::treeForceGadgetTopDownFast2(
       r = sqrt(dx * dx + dy * dy + dz * dz);
 
       if (r < critRadius && p != index) {
-	xInteract->push_back(this->xx[index]);
-	yInteract->push_back(this->yy[index]);
-	zInteract->push_back(this->zz[index]);
-	mInteract->push_back(this->mass[index]);
+  xInteract->push_back(this->xx[index]);
+  yInteract->push_back(this->yy[index]);
+  zInteract->push_back(this->zz[index]);
+  mInteract->push_back(this->mass[index]);
       }
 
       index = this->fParticle[index].nextNode;
@@ -1276,40 +1278,40 @@ void BHForceTree::treeForceGadgetTopDownFast2(
       FNode* curNode = &this->fNode[index - this->nodeOffset];
       partRadius = curNode->u.n.partRadius;
       distToNearPoint = distanceToNearestPoint(pos_x, pos_y, pos_z, curNode);
-      
+
       dx = curNode->u.n.partCenter[0] - pos_x;
       dy = curNode->u.n.partCenter[1] - pos_y;
       dz = curNode->u.n.partCenter[2] - pos_z;
       r = sqrt(dx * dx + dy * dy + dz * dz);
-      
+
       // Node is ignored if it is too far away from the particle
       // Distance from particle to particle radius exceeds critical radius
       // Distance from particle to nearest side of node exceeds critical radius
       if ((r - partRadius) > critRadius || distToNearPoint > critRadius) {
-	
+
         // Ignore node, move on to sibling of this node
         index = curNode->u.n.sibling;
-	
+
         // If there is no sibling go up a level until we find a node
         ID_T parent = curNode->u.n.parent;
         while (index == -1 && parent != -1 && parent != root) {
           index = this->fNode[parent - this->nodeOffset].u.n.sibling;
           parent = this->fNode[parent - this->nodeOffset].u.n.parent;
         }
-      } else { 
-        if (2*partRadius > (r * bhAngle)) { 
+      } else {
+        if (2*partRadius > (r * bhAngle)) {
           // Open node, move on to first child
           index = curNode->u.n.nextNode;
-	  
+
         } else {
           // Accept node, add to interact list, move on to sibling
-	  xInteract->push_back(curNode->u.n.partCenter[0]);
-	  yInteract->push_back(curNode->u.n.partCenter[1]);
-	  zInteract->push_back(curNode->u.n.partCenter[2]);
-	  mInteract->push_back(curNode->u.n.partMass);
+    xInteract->push_back(curNode->u.n.partCenter[0]);
+    yInteract->push_back(curNode->u.n.partCenter[1]);
+    zInteract->push_back(curNode->u.n.partCenter[2]);
+    mInteract->push_back(curNode->u.n.partMass);
 
           index = curNode->u.n.sibling;
- 
+
           // If there is no sibling go up a level until we find a node
           ID_T parent = curNode->u.n.parent;
           while (index == -1 && parent != -1 && parent != root) {
@@ -1325,7 +1327,7 @@ void BHForceTree::treeForceGadgetTopDownFast2(
 
   // Force calculation for this particle
   start = clock();
-  this->fParticle[p].force = 
+  this->fParticle[p].force =
     forceCalculationFast(p, xInteract, yInteract, zInteract, mInteract);
   end = clock();
   *timeEval = 1.0*(end-start)/CLOCKS_PER_SEC;
@@ -1383,7 +1385,7 @@ void BHForceTree::treeForceGadgetBottomUp(
           // Node
           FNode* childNode = &this->fNode[child - this->nodeOffset];
           partRadius = childNode->u.n.partRadius;
-          POSVEL_T distToNearPoint = 
+          POSVEL_T distToNearPoint =
             distanceToNearestPoint(pos_x, pos_y, pos_z, childNode);
 
           dx = childNode->u.n.partCenter[0] - pos_x;
@@ -1396,13 +1398,13 @@ void BHForceTree::treeForceGadgetBottomUp(
             // Ignore
           } else
 
-          if (2*partRadius < (r * bhAngle)) { 
+          if (2*partRadius < (r * bhAngle)) {
             // Accept
             nodeInteract->push_back(child);
 
           } else {
             // Open node
-            recurseOpenNode(childNode, pos_x, pos_y, pos_z, 
+            recurseOpenNode(childNode, pos_x, pos_y, pos_z,
                             bhAngle, critRadius,
                             partInteract, nodeInteract);
           }
@@ -1421,7 +1423,7 @@ void BHForceTree::treeForceGadgetBottomUp(
   }
 
   // Force calculation for this particle
-  this->fParticle[p].force = 
+  this->fParticle[p].force =
     forceCalculation(p, partInteract, nodeInteract);
 
   delete partInteract;
@@ -1463,7 +1465,7 @@ void BHForceTree::recurseOpenNode(
     } else {
       FNode* childNode = &this->fNode[child - this->nodeOffset];
       partRadius = childNode->u.n.partRadius;
-      POSVEL_T distToNearPoint = 
+      POSVEL_T distToNearPoint =
         distanceToNearestPoint(pos_x, pos_y, pos_z, childNode);
 
       dx = childNode->u.n.partCenter[0] - pos_x;
@@ -1476,20 +1478,20 @@ void BHForceTree::recurseOpenNode(
         // Ignore
       } else
 
-      if (2*partRadius < (r * bhAngle)) { 
+      if (2*partRadius < (r * bhAngle)) {
         // Accept
         nodeInteract->push_back(child);
 
       } else {
         // Open node
-        recurseOpenNode(childNode, pos_x, pos_y, pos_z, 
+        recurseOpenNode(childNode, pos_x, pos_y, pos_z,
                         bhAngle, critRadius,
                         partInteract, nodeInteract);
       }
       child = this->fNode[child - this->nodeOffset].u.n.sibling;
     }
   }
-} 
+}
 
 /////////////////////////////////////////////////////////////////////////
 //
@@ -1511,9 +1513,9 @@ void BHForceTree::treeForceBarnesAdjust(
   active->push_back(root);
 
   // Walk uses opening angle, critical radius for open, accept and ignore
-  walkTreeBarnesAdjust(active, partInteract, nodeInteract, 
+  walkTreeBarnesAdjust(active, partInteract, nodeInteract,
                        root, bhAngle, critRadius);
-  
+
   delete active;
   delete partInteract;
   delete nodeInteract;
@@ -1527,7 +1529,7 @@ void BHForceTree::treeForceBarnesAdjust(
 // Particles on the active list will always be chosen for the interact list.
 // Nodes on the active list may be OPENED if they are close enough
 // or ACCEPTED and used in summary if they are within a critical radius
-// and IGNORED otherwise. Nodes that are opened 
+// and IGNORED otherwise. Nodes that are opened
 // have all their children (particles or nodes) added to the active list.
 //
 // After the children are added a new level of recursion starts by
@@ -1695,7 +1697,7 @@ void BHForceTree::walkTreeBarnesAdjust(
     Timings::stopTimer(adjtimer);
 
     // Calculate force for the particle
-    this->fParticle[curId].force = 
+    this->fParticle[curId].force =
       forceCalculation(curId, adjPartInteract, adjNodeInteract);
 
     delete adjNodeInteract;
@@ -1717,7 +1719,7 @@ void BHForceTree::walkTreeBarnesAdjust(
 //
 // Recursion enters with a guess for the interact lists which were set
 // on previous invocations of the method.  Check the node interact list
-// which contains nodes which were accepted to see if they should 
+// which contains nodes which were accepted to see if they should
 // actually be opened relative to this new current particle or node
 // If so remove from the nodeInteract list and add to the active list
 //
@@ -1862,7 +1864,7 @@ void BHForceTree::treeForceBarnesQuick(
   active->push_back(root);
 
   // Quick walk of tree accepts nodes that do not touch target node
-  walkTreeBarnesQuick(active, partInteract, nodeInteract, 
+  walkTreeBarnesQuick(active, partInteract, nodeInteract,
                       root, bhAngle, critRadius);
 
   delete active;
@@ -1877,7 +1879,7 @@ void BHForceTree::treeForceBarnesQuick(
 // and nodes which possibly will contribute to the force on a particle.
 // Particles on the active list will always be chosen for the interact list.
 // Nodes on the active list may be OPENED if they are close enough
-// or ACCEPTED and used in summary if they are not. Nodes that are opened 
+// or ACCEPTED and used in summary if they are not. Nodes that are opened
 // have all their children (particles or nodes) added to the active list.
 //
 // After the children are added a new level of recursion starts by
@@ -1958,7 +1960,7 @@ void BHForceTree::walkTreeBarnesQuick(
       else {
         if (2*partRadius > (r * bhAngle)) {
           // Open node, move on to first child
-          ID_T child = 
+          ID_T child =
             this->fNode[(*curActive)[indx] - this->nodeOffset].u.n.nextNode;
           while (child != -1) {
             if (child >= this->nodeOffset) {
@@ -2029,7 +2031,7 @@ void BHForceTree::walkTreeBarnesQuick(
   else {
     if (curId > this->nodeOffset)
       cout << "ERROR: POP OUT ON NODE " << curId << endl;
-    this->fParticle[curId].force = 
+    this->fParticle[curId].force =
       forceCalculation(curId, partInteract, nodeInteract);
   }
 
@@ -2112,7 +2114,7 @@ POSVEL_T BHForceTree::forceCalculation(
     accel[0] += dx * f_over_r * m_fcoeff;
     accel[1] += dy * f_over_r * m_fcoeff;
     accel[2] += dz * f_over_r * m_fcoeff;
-    
+
     this->vx[p0] += dx * f_over_r * m_fcoeff;
     this->vy[p0] += dy * f_over_r * m_fcoeff;
     this->vz[p0] += dz * f_over_r * m_fcoeff;
@@ -2324,10 +2326,10 @@ void BHForceTree::printBHForceTree()
       FNode* fn = &this->fNode[curIndex-this->nodeOffset];
 
       cout << parentIndex << ":" << setw(parentIndex) << " ";
-      cout << "N " << curIndex 
-           << " sibling " << fn->u.n.sibling 
-           << " next " << fn->u.n.nextNode 
-           << " parent " << fn->u.n.parent 
+      cout << "N " << curIndex
+           << " sibling " << fn->u.n.sibling
+           << " next " << fn->u.n.nextNode
+           << " parent " << fn->u.n.parent
 
            << " [" << (fn->geoCenter[0]-fn->geoSide[0]/2.0)
            << ":" << (fn->geoCenter[0]+fn->geoSide[0]/2.0) << "] "
@@ -2336,14 +2338,14 @@ void BHForceTree::printBHForceTree()
            << " [" << (fn->geoCenter[2]-fn->geoSide[2]/2.0)
            << ":" << (fn->geoCenter[2]+fn->geoSide[2]/2.0) << "] "
 
-           << " (" << fn->u.n.partCenter[0] 
-           << " ," << fn->u.n.partCenter[1] 
+           << " (" << fn->u.n.partCenter[0]
+           << " ," << fn->u.n.partCenter[1]
            << " ," << fn->u.n.partCenter[2]
 
            << ") MASS " << fn->u.n.partMass
            << " RADIUS " << fn->u.n.partRadius
            << endl;
-        
+
       // Push back the new FNode which will have children
       parents.push_back(curIndex);
       parentIndex++;
@@ -2355,9 +2357,9 @@ void BHForceTree::printBHForceTree()
     // Print FParticle
     else {
       cout << parentIndex << ":" << setw(parentIndex) << " ";
-      cout << "P " << curIndex 
-           << " sibling " << this->fParticle[curIndex].sibling 
-           << " next " << this->fParticle[curIndex].nextNode 
+      cout << "P " << curIndex
+           << " sibling " << this->fParticle[curIndex].sibling
+           << " next " << this->fParticle[curIndex].nextNode
            << " parent " << this->fParticle[curIndex].parent
            << " (" << xx[curIndex]
            << " ," << yy[curIndex]
@@ -2398,3 +2400,5 @@ int BHForceTree::getChildIndex(FNode* node, ID_T pindx)
   if (this->zz[pindx] >= node->geoCenter[2]) index += 1;
   return index;
 }
+
+} /* end namespace cosmologytools */
