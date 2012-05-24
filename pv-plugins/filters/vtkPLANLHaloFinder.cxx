@@ -118,6 +118,7 @@ vtkPLANLHaloFinder::vtkPLANLHaloFinder()
   this->ComputeSOD          = 0;
   this->CenterFindingMethod = AVERAGE;
 
+  this->HaloFinder      = NULL;
   this->RhoC            = cosmologytools::RHO_C;
   this->SODMass         = cosmologytools::SOD_MASS;
   this->MinRadiusFactor = cosmologytools::MIN_RADIUS_FACTOR;
@@ -130,7 +131,7 @@ vtkPLANLHaloFinder::vtkPLANLHaloFinder()
 //------------------------------------------------------------------------------
 vtkPLANLHaloFinder::~vtkPLANLHaloFinder()
 {
-  this->SetController( NULL );
+  this->Controller = NULL;
 
   if( this->HaloFinder != NULL )
     {
@@ -252,6 +253,12 @@ int vtkPLANLHaloFinder::RequestData(
       vtkUnstructuredGrid::SafeDownCast(
           output1->Get(vtkDataObject::DATA_OBJECT() ) );
   assert("pre: halocenters is NULL" && (haloCenters != NULL) );
+
+  if( inputParticles->GetNumberOfPoints() == 0 )
+    {
+    // Empty input
+    return 1;
+    }
 
   // STEP 2: Get 1st output as a shallow-copy of the input & ensure integrity
   outputParticles->ShallowCopy( inputParticles );
@@ -472,7 +479,8 @@ void vtkPLANLHaloFinder::MarkHaloParticlesAndGetCenter(
   int* fofHaloCount = this->HaloFinder->getHaloCount();
   int* fofHaloList  = this->HaloFinder->getHaloList();
 
-  cosmologytools::FOFHaloProperties* fof = new cosmologytools::FOFHaloProperties();
+  cosmologytools::FOFHaloProperties* fof =
+      new cosmologytools::FOFHaloProperties();
   fof->setHalos(numberOfHalos,fofHalos,fofHaloCount,fofHaloList);
   fof->setParameters("",this->RL,this->Overlap,this->BB);
   fof->setParticles(
@@ -598,7 +606,7 @@ void vtkPLANLHaloFinder::InitializeHaloCenters(
 {
   // TODO: Note the vtkArrays here should match what POSVEL_T, ID_T are set
 
-  vtkPoints* pnts = haloCenters->GetPoints();
+  vtkPoints* pnts = vtkPoints::New();
   pnts->SetDataTypeToDouble();
   pnts->SetNumberOfPoints( N );
 
@@ -640,6 +648,8 @@ void vtkPLANLHaloFinder::InitializeHaloCenters(
     haloMassArray[ i ] = 0.0;
     }
 
+  haloCenters->SetPoints( pnts );
+  pnts->Delete();
   haloCenters->GetPointData()->AddArray(averageVelocity);
   averageVelocity->Delete();
   haloCenters->GetPointData()->AddArray(velDispersion);
@@ -660,7 +670,8 @@ void vtkPLANLHaloFinder::ComputeFOFHaloProperties()
   int* fofHaloCount = this->HaloFinder->getHaloCount();
   int* fofHaloList  = this->HaloFinder->getHaloList();
 
-  cosmologytools::FOFHaloProperties* fof = new cosmologytools::FOFHaloProperties();
+  cosmologytools::FOFHaloProperties* fof =
+      new cosmologytools::FOFHaloProperties();
   fof->setHalos(numberOfHalos,fofHalos,fofHaloCount,fofHaloList);
   fof->setParameters("",this->RL,this->Overlap,this->BB);
   fof->setParticles(
