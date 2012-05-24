@@ -12,6 +12,13 @@ set(PACKAGE_tess_LIBRARIES
     tess
     CACHE INTERNAL "package libraries")
 
+## Check if we are compiling on OS X, if so pass the MAC_OSX definition
+## the code is using to figure out how to include OpenGL and GLUT.
+string(COMPARE EQUAL ${CMAKE_SYSTEM_NAME} "Darwin" OSX)
+if(${OSX})
+ add_definitions(-DMAC_OSX)
+endif()
+
 ## Move header files to the include directory in the build tree
 file(GLOB HEADERS lib/*.h lib/*.hpp)
 foreach(header ${HEADERS})
