@@ -110,11 +110,12 @@ CosmoHaloFinderP::CosmoHaloFinderP()
   this->haloSize     = NULL;
   this->haloData     = NULL;
   this->myMixedHalos.resize(0);
+  this->allMixedHalos.resize(0);
 }
 
 CosmoHaloFinderP::~CosmoHaloFinderP()
 {
-  for (unsigned int i = 0; i < this->myMixedHalos.size(); i++)
+  for(unsigned int i=0; i < this->myMixedHalos.size(); i++)
     {
     if( this->myMixedHalos[i] != NULL )
       {

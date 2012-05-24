@@ -204,8 +204,8 @@ private:
   int numberOfMixedHalos;       // Number of halos with both alive and dead
   int numberOfHaloParticles;    // Number of particles in all VALID halos
 
-  vector<CosmoHalo*> myMixedHalos;      // Mixed halos on this processor
-  vector<CosmoHalo*> allMixedHalos;     // Combined mixed halos on MASTER
+  vector<CosmoHalo*> myMixedHalos;  // Mixed halos on this processor
+  vector<CosmoHalo*> allMixedHalos; // Combined mixed halos on MASTER
 
   vector<int> halos;            // First particle index into haloList
   vector<int> haloCount;        // Size of each halo
