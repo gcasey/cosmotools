@@ -276,7 +276,6 @@ int vtkPLANLHaloFinder::RequestData(
   // STEP 3: Initialize the partitioner used by the halo-finder which uses
   // MPI cartesian topology. Currently, the LANL halofinder assumes
   // MPI_COMM_WORLD!!!!!!. This should be changed in the short future.
-
   cosmologytools::Partition::initialize();
 
   // Delete previously computed results to re-compute with modified params
@@ -295,12 +294,36 @@ int vtkPLANLHaloFinder::RequestData(
   // STEP 5: Compute SOD halos
   if( this->ComputeSOD )
     {
-    // TODO: implement this
+    this->ComputeSODHalos(outputParticles, haloCenters);
     }
 
   // STEP 6: Synchronize processes
   this->Controller->Barrier();
   return 1;
+}
+
+//------------------------------------------------------------------------------
+void vtkPLANLHaloFinder::ComputeSODHalos(
+      vtkUnstructuredGrid *particles,
+      vtkUnstructuredGrid *fofHaloCenters)
+{
+  assert("pre: input particles should not be NULL" &&
+         (particles != NULL) );
+  assert("pre: FOF halo-centers should not be NULL" &&
+         (fofHaloCenters != NULL));
+
+  // STEP 0: Construct the ChainingMesh
+  cosmologytools::ChainingMesh *chainMesh =
+      new cosmologytools::ChainingMesh(
+          this->RL,this->Overlap,cosmologytools::CHAIN_SIZE,
+          &this->xx,&this->yy,&this->zz);
+
+  // STEP 1:
+
+  // STEP 2:
+
+  // STEP X: De-allocate stuff
+  delete chainMesh;
 }
 
 //------------------------------------------------------------------------------
@@ -349,6 +372,9 @@ void vtkPLANLHaloFinder::VectorizeData(
     this->vx[ idx ] = velocity->GetComponent(idx, 0);
     this->vy[ idx ] = velocity->GetComponent(idx, 1);
     this->vz[ idx ] = velocity->GetComponent(idx, 2);
+
+    // Extract the mass
+    this->mass[ idx ] = pmass->GetValue( idx );
 
     // Extract global particle ID information & also setup global-to-local map
     this->tag[ idx ] = uid->GetValue( idx );

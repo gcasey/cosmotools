@@ -210,6 +210,12 @@ class VTK_EXPORT vtkPLANLHaloFinder : public vtkUnstructuredGridAlgorithm
       vtkUnstructuredGrid *haloCenters );
 
   // Description:
+  // Given pre-computed FOF halos, this method computes the SOD halos.
+  void ComputeSODHalos(
+      vtkUnstructuredGrid *particles,
+      vtkUnstructuredGrid *haloCenters );
+
+  // Description:
   // Vectorize the data since the halo-finder expects the data as different
   // vectors.
   void VectorizeData(
