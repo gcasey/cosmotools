@@ -246,6 +246,10 @@ class VTK_EXPORT vtkPLANLHaloFinder : public vtkUnstructuredGridAlgorithm
   // Resets halo-finder internal data-structures
   void ResetHaloFinderInternals();
 
+  // Description:
+  // Initialize the SOD haloArrays
+  void InitializeSODHaloArrays( vtkUnstructuredGrid* haloCenters );
+
   vtkMultiProcessController* Controller;
 
   int NP;                   // num particles in the original simulation

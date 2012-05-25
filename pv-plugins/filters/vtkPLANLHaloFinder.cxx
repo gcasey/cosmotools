@@ -312,18 +312,172 @@ void vtkPLANLHaloFinder::ComputeSODHalos(
   assert("pre: FOF halo-centers should not be NULL" &&
          (fofHaloCenters != NULL));
 
-  // STEP 0: Construct the ChainingMesh
+  // STEP 0: Initialize SOD arrays & acquire handles
+  // "SODAveragePosition"
+  // "SODCenterOfMass"
+  // "SODMass"
+  // "SODAverageVelocity"
+  // "SODVelocityDispersion"
+  // "SODRadius"
+  this->InitializeSODHaloArrays( fofHaloCenters );
+  vtkPointData *PD = fofHaloCenters->GetPointData();
+  assert("pre: missing SODAveragePosition array" &&
+          PD->HasArray("SODAveragePosition") );
+  assert("pre: missing SODCenterOfMass" &&
+          PD->HasArray("SODCenterOfMass") );
+  assert("pre: missing SODMass" &&
+          PD->HasArray("SODMass") );
+  assert("pre: missing SODAverageVelocity" &&
+          PD->HasArray("SODAverageVelocity") );
+  assert("pre: missing SODVelocityDispersion" &&
+          PD->HasArray("SODVelocityDispersion") );
+  assert("pre: missing SODRadius" &&
+          PD->HasArray("SODRadius") );
+  vtkDoubleArray *sodPos =
+      vtkDoubleArray::SafeDownCast(PD->GetArray("SODAveragePosition"));
+  vtkDoubleArray *sodCofMass =
+      vtkDoubleArray::SafeDownCast(PD->GetArray("SODCenterOfMass"));
+  vtkDoubleArray *sodMass =
+      vtkDoubleArray::SafeDownCast(PD->GetArray("SODMass"));
+  vtkDoubleArray *sodVelocity =
+      vtkDoubleArray::SafeDownCast(PD->GetArray("SODAverageVelocity"));
+  vtkDoubleArray *sodDispersion =
+      vtkDoubleArray::SafeDownCast(PD->GetArray("SODVelocityDispersion"));
+  vtkDoubleArray *sodRadius =
+      vtkDoubleArray::SafeDownCast(PD->GetArray("SODRadius"));
+
+  // STEP 1: Construct the ChainingMesh
   cosmologytools::ChainingMesh *chainMesh =
       new cosmologytools::ChainingMesh(
           this->RL,this->Overlap,cosmologytools::CHAIN_SIZE,
           &this->xx,&this->yy,&this->zz);
 
-  // STEP 1:
+  // STEP 2: Loop through all halos and compute SOD halos
+  for(unsigned int i=0; i < this->ExtractedHalos.size(); ++i)
+    {
+    int internalHaloIdx = this->ExtractedHalos[ i ];
+    int haloSize        = this->HaloFinder->getHaloCount()[internalHaloIdx];
 
-  // STEP 2:
+    double haloMass     = this->fofMass[internalHaloIdx];
 
-  // STEP X: De-allocate stuff
+    if( (haloMass < this->MinFOFMass) || (haloSize < this->MinFOFSize) )
+      {
+      continue;
+      }
+
+    cosmologytools::SODHalo *sod = new cosmologytools::SODHalo();
+    sod->setParameters( chainMesh, this->SODBins, this->RL, this->NP,
+                        this->RhoC, this->SODMass, this->RhoC,
+                        this->MinRadiusFactor, this->MaxRadiusFactor );
+    sod->setParticles(
+        &this->xx,&this->yy,&this->zz,
+        &this->vx,&this->vy,&this->vz,
+        &this->mass,
+        &this->tag);
+
+    double center[3];
+    fofHaloCenters->GetPoint(i,center);
+    sod->createSODHalo(
+        this->HaloFinder->getHaloCount()[internalHaloIdx],
+        center[0],center[1],center[2],
+        this->fofXVel[internalHaloIdx],
+        this->fofYVel[internalHaloIdx],
+        this->fofZVel[internalHaloIdx],
+        this->fofMass[internalHaloIdx]);
+
+    if(sod->SODHaloSize() > 0)
+      {
+      POSVEL_T pos[3];
+      POSVEL_T cofmass[3];
+      POSVEL_T mass;
+      POSVEL_T vel[3];
+      POSVEL_T disp;
+      POSVEL_T radius = sod->SODRadius();
+
+      sod->SODAverageLocation(pos);
+      sod->SODCenterOfMass(cofmass);
+      sod->SODMass(&mass);
+      sod->SODAverageVelocity(vel);
+      sod->SODVelocityDispersion(&disp);
+
+      sodPos->SetTuple3(i,pos[0],pos[1],pos[2]);
+      sodCofMass->SetTuple3(i,cofmass[0],cofmass[1],cofmass[2]);
+      sodMass->SetValue(i,mass);
+      sodVelocity->SetTuple3(i,vel[0],vel[1],vel[2]);
+      sodDispersion->SetValue(i,disp);
+      sodRadius->SetValue(i,radius);
+      }
+
+    delete sod;
+    } // END for all halos within the PMIN threshold
+
+  // STEP 3: De-allocate Chain mesh
   delete chainMesh;
+}
+
+//------------------------------------------------------------------------------
+void vtkPLANLHaloFinder::InitializeSODHaloArrays(
+      vtkUnstructuredGrid *haloCenters)
+{
+  assert("pre: centers is NULL" && (haloCenters != NULL) );
+
+  //TODO: Again, these arrays should match the type of POSVEL_T
+
+  // STEP 0: Allocate arrays
+  vtkDoubleArray *averagePosition = vtkDoubleArray::New();
+  averagePosition->SetName("SODAveragePosition");
+  averagePosition->SetNumberOfComponents( 3 );
+  averagePosition->SetNumberOfTuples( haloCenters->GetNumberOfPoints() );
+
+  vtkDoubleArray *centerOfMass = vtkDoubleArray::New();
+  centerOfMass->SetName("SODCenterOfMass");
+  centerOfMass->SetNumberOfComponents( 3 );
+  centerOfMass->SetNumberOfTuples( haloCenters->GetNumberOfPoints() );
+
+  vtkDoubleArray *mass = vtkDoubleArray::New();
+  mass->SetName("SODMass");
+  mass->SetNumberOfComponents( 1 );
+  mass->SetNumberOfTuples( haloCenters->GetNumberOfPoints() );
+
+  vtkDoubleArray *averageVelocity = vtkDoubleArray::New();
+  averageVelocity->SetName("SODAverageVelocity");
+  averageVelocity->SetNumberOfComponents( 3 );
+  averageVelocity->SetNumberOfTuples( haloCenters->GetNumberOfPoints() );
+
+  vtkDoubleArray *velDispersion = vtkDoubleArray::New();
+  velDispersion->SetName("SODVelocityDispersion");
+  velDispersion->SetNumberOfComponents( 1 );
+  velDispersion->SetNumberOfTuples( haloCenters->GetNumberOfPoints() );
+
+  vtkDoubleArray *radius = vtkDoubleArray::New();
+  radius->SetName("SODRadius");
+  radius->SetNumberOfComponents( 1 );
+  radius->SetNumberOfTuples( haloCenters->GetNumberOfPoints() );
+
+  // STEP 1: Initialize
+  for( vtkIdType halo=0; halo < haloCenters->GetNumberOfPoints(); ++halo )
+    {
+    averagePosition->SetTuple3(halo,0.0,0.0,0.0);
+    centerOfMass->SetTuple3(halo,0.0,0.0,0.0);
+    mass->SetValue(halo,0.0);
+    averageVelocity->SetTuple3(halo,0.0,0.0,0.0);
+    velDispersion->SetValue(halo,0.0);
+    radius->SetValue(halo,0.0);
+    } // END for all extracted FOF halos
+
+  // STEP 2: Add arrays to halo-centers
+  haloCenters->GetPointData()->AddArray(averagePosition);
+  averagePosition->Delete();
+  haloCenters->GetPointData()->AddArray(centerOfMass);
+  centerOfMass->Delete();
+  haloCenters->GetPointData()->AddArray(mass);
+  mass->Delete();
+  haloCenters->GetPointData()->AddArray(averageVelocity);
+  averageVelocity->Delete();
+  haloCenters->GetPointData()->AddArray(velDispersion);
+  velDispersion->Delete();
+  haloCenters->GetPointData()->AddArray(radius);
+  radius->Delete();
 }
 
 //------------------------------------------------------------------------------
