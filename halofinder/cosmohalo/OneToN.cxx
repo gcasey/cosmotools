@@ -22,11 +22,11 @@
 using namespace std;
 
 void OneToN(
-	const string& inFile, 
-	float boxSize,
-	int varyFastest,
-	int numberOfDimensions, 
-	int* layoutSize)
+  const string& inFile,
+  float boxSize,
+  int varyFastest,
+  int numberOfDimensions,
+  int* layoutSize)
 {
   // Open the file and make sure everything is ok.
   ifstream *inStream = new ifstream(inFile.c_str(), ios::in);
@@ -107,7 +107,7 @@ void OneToN(
               (slot[1] * layoutSize[2]) +
                slot[2];
 
-    outStream[index].write(reinterpret_cast<const char*>(fBlock), 
+    outStream[index].write(reinterpret_cast<const char*>(fBlock),
                          nfloat * sizeof(float));
     outStream[index].write(reinterpret_cast<const char*>(iBlock),
                          nint * sizeof(int));
@@ -119,11 +119,11 @@ void OneToN(
   for (int file = 0; file < numberOfFiles; file++) {
     outStream[file].close();
     totalOutParticles += numberOfOutParticles[file];
-    cout << "NumberOfParticles " << file << ": " 
+    cout << "NumberOfParticles " << file << ": "
          << numberOfOutParticles[file] << endl;
   }
   cout << "Number of out particles: " << totalOutParticles << endl;
-  
+
   delete inStream;
   delete [] outStream;
   delete [] numberOfOutParticles;
@@ -188,7 +188,7 @@ int main(int argc, char* argv[])
   cout << "Box size: " << boxSize << endl;
   cout << "Vary fastest in: " << varyFastest << endl;
   cout << "Dimensions: " << numberOfDimensions << endl;
-  cout << "Layout: [" 
+  cout << "Layout: ["
        << layout[0] << "," << layout[1] << "," << layout[2] << "]" << endl;
 
   OneToN(inFile, boxSize, varyFastest, numberOfDimensions, layout);

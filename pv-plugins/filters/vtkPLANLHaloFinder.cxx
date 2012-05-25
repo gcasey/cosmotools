@@ -65,8 +65,13 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "vtkPLANLHaloFinder.h"
 
+// CosmologyTools includes
+#include "CosmologyToolsMacros.h"
+
 // VTK includes
+#include "vtkCellType.h"
 #include "vtkDemandDrivenPipeline.h"
+#include "vtkDoubleArray.h"
 #include "vtkDummyController.h"
 #include "vtkFloatArray.h"
 #include "vtkInformation.h"
@@ -90,133 +95,110 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "Partition.h"
 #include "SODHalo.h"
 
+// C++ includes
+#include <cassert>
+#include <vector>
+
+
 vtkStandardNewMacro(vtkPLANLHaloFinder);
 
-/****************************************************************************/
+//------------------------------------------------------------------------------
 vtkPLANLHaloFinder::vtkPLANLHaloFinder()
 {
   this->SetNumberOfOutputPorts(2);
 
   this->Controller = 0;
   this->SetController(vtkMultiProcessController::GetGlobalController());
-  if(!this->Controller)
-    {
-      this->SetController(vtkSmartPointer<vtkDummyController>::New());
-    }
 
-  this->NP = 256;
-  this->RL = 100;
+  this->NP      = 256;
+  this->RL      = 100;
   this->Overlap = 5;
-  this->BB = .2;
-  this->PMin = 100;
-  this->CopyHaloDataToParticles = 0;
+  this->BB      = .2;
+  this->PMin    = 100;
 
-  this->ComputeMostBoundParticle = 0;
-  this->ComputeMostConnectedParticle = 0;
+  this->ComputeSOD          = 0;
+  this->CenterFindingMethod = AVERAGE;
 
-  this->ComputeSOD = 0;
-  this->SODCenterType = 0;
-
-  this->RhoC = RHO_C;
-  this->SODMass = SOD_MASS;
-  this->MinRadiusFactor = MIN_RADIUS_FACTOR;
-  this->MaxRadiusFactor = MAX_RADIUS_FACTOR;
-  this->SODBins = NUM_SOD_BINS;
-  this->MinFOFSize = MIN_SOD_SIZE;
-  this->MinFOFMass = MIN_SOD_MASS;
+  this->HaloFinder      = NULL;
+  this->RhoC            = cosmologytools::RHO_C;
+  this->SODMass         = cosmologytools::SOD_MASS;
+  this->MinRadiusFactor = cosmologytools::MIN_RADIUS_FACTOR;
+  this->MaxRadiusFactor = cosmologytools::MAX_RADIUS_FACTOR;
+  this->SODBins         = cosmologytools::NUM_SOD_BINS;
+  this->MinFOFSize      = cosmologytools::MIN_SOD_SIZE;
+  this->MinFOFMass      = cosmologytools::MIN_SOD_MASS;
 }
 
-/****************************************************************************/
+//------------------------------------------------------------------------------
 vtkPLANLHaloFinder::~vtkPLANLHaloFinder()
 {
-  this->SetController(0);
+  this->Controller = NULL;
+
+  if( this->HaloFinder != NULL )
+    {
+    delete this->HaloFinder;
+    }
+
+  this->xx.clear();
+  this->yy.clear();
+  this->zz.clear();
+  this->vx.clear();
+  this->vy.clear();
+  this->vz.clear();
+  this->mass.clear();
+  this->tag.clear();
+  this->status.clear();
+  this->potential.clear();
+  this->mask.clear();
+
+  this->fofMass.clear();
+  this->fofXPos.clear();
+  this->fofYPos.clear();
+  this->fofZPos.clear();
+  this->fofXVel.clear();
+  this->fofYVel.clear();
+  this->fofZVel.clear();
+  this->fofXCofMass.clear();
+  this->fofYCofMass.clear();
+  this->fofZCofMass.clear();
+  this->fofVelDisp.clear();
+
+  this->ExtractedHalos.clear();
 }
 
-/****************************************************************************/
-
+//------------------------------------------------------------------------------
 void vtkPLANLHaloFinder::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os,indent);
-
-  if (this->Controller)
-    {
-    os << indent << "Controller: " << this->Controller << endl;
-    }
-  else
-    {
-    os << indent << "Controller: (null)\n";
-    }
-  os << indent << "NP: " << this->NP << endl;
-  os << indent << "rL: " << this->RL << endl;
-  os << indent << "Overlap: " << this->Overlap << endl;
-  os << indent << "bb: " << this->BB << endl;
-  os << indent << "pmin: " << this->PMin << endl;
-  os << indent << "CopyHaloDataToParticles: " << this->CopyHaloDataToParticles
-     << endl;
-  os << indent << "ComputeMostBoundParticle: " << this->ComputeMostBoundParticle << endl;
-  os << indent << "ComputeMostConnectedParticle: " << this->ComputeMostConnectedParticle
-     << endl;
-  os << indent << "ComputeSOD: " << this->ComputeSOD << endl;
-  os << indent << "SODCenterType: " << this->SODCenterType << endl;
-
-  os << indent << "RhoC: " << this->RhoC << endl;
-  os << indent << "SODMass: " << this->SODMass << endl;
-  os << indent << "MinRadiusFactor: " << this->MinRadiusFactor << endl;
-  os << indent << "MaxRadiusFactor: " << this->MaxRadiusFactor << endl;
-  os << indent << "SODBins: " << this->SODBins << endl;
-  os << indent << "MinFOFSize: " << this->MinFOFSize << endl;
-  os << indent << "MinFOFMass: " << this->MinFOFMass << endl;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPLANLHaloFinder::SetController(vtkMultiProcessController *c)
 {
-  if(this->Controller == c)
-    {
-    return;
-    }
-
-  this->Modified();
-
-  if(this->Controller != 0)
-    {
-    this->Controller->UnRegister(this);
-    this->Controller = 0;
-    }
-
-  if(c == 0)
-    {
-    return;
-    }
-
+  assert("pre: cannot set a NULL controller!" && (c != NULL) );
   this->Controller = c;
-  c->Register(this);
 }
 
+//------------------------------------------------------------------------------
 vtkMultiProcessController* vtkPLANLHaloFinder::GetController()
 {
-  return (vtkMultiProcessController*)this->Controller;
+  return(this->Controller);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPLANLHaloFinder::RequestInformation
 (vtkInformation* vtkNotUsed(request),
  vtkInformationVector** inputVector,
  vtkInformationVector* outputVector)
 {
-#ifndef USE_SERIAL_COSMO
-  // check for controller
-  if(!this->Controller)
-    {
-    vtkErrorMacro(<< "Unable to work without a Controller.");
-    return 0;
-    }
-#endif
+  assert("pre: controller should not be NULL!" && (this->Controller != NULL));
 
   // set the other outputs to have the same number of pieces
-  if((*inputVector)->GetInformationObject(0)->Has(vtkStreamingDemandDrivenPipeline::MAXIMUM_NUMBER_OF_PIECES()))
+  if((*inputVector)->GetInformationObject(0)->Has(
+        vtkStreamingDemandDrivenPipeline::MAXIMUM_NUMBER_OF_PIECES()))
     {
-    if(outputVector->GetInformationObject(1)->Has(vtkStreamingDemandDrivenPipeline::MAXIMUM_NUMBER_OF_PIECES()))
+    if(outputVector->GetInformationObject(1)->Has(
+          vtkStreamingDemandDrivenPipeline::MAXIMUM_NUMBER_OF_PIECES()))
       {
       if(outputVector->GetInformationObject(0)->Get
          (vtkStreamingDemandDrivenPipeline::MAXIMUM_NUMBER_OF_PIECES()) !=
@@ -237,885 +219,727 @@ int vtkPLANLHaloFinder::RequestInformation
          (vtkStreamingDemandDrivenPipeline::MAXIMUM_NUMBER_OF_PIECES()));
       }
     }
-
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPLANLHaloFinder::RequestData(
-  vtkInformation* request,
-  vtkInformationVector** inputVector,
-  vtkInformationVector* outputVector)
+          vtkInformation* request,
+          vtkInformationVector** inputVector,
+          vtkInformationVector* outputVector)
 {
-  int rno = request->Get(vtkDemandDrivenPipeline::FROM_OUTPUT_PORT());
+  assert("pre: controller should not be NULL!" && (this->Controller != NULL));
 
-  // get the info objects
-  vtkInformation* inInfo = (*inputVector)->GetInformationObject(0);
-  vtkInformation* outInfo = outputVector->GetInformationObject(0);
-  vtkInformation* catInfo = outputVector->GetInformationObject(1);
+  // Reset previously calculated data
+  this->ResetHaloFinderInternals();
 
-  // get the input and output
-  vtkUnstructuredGrid* input = vtkUnstructuredGrid::SafeDownCast
-    (inInfo->Get(vtkDataObject::DATA_OBJECT()));
+  // STEP 0: Get input object
+  vtkInformation *input = inputVector[0]->GetInformationObject(0);
+  assert( "pre: input information object is NULL " && (input != NULL) );
+  vtkUnstructuredGrid *inputParticles =
+      vtkUnstructuredGrid::SafeDownCast(
+          input->Get(vtkDataObject::DATA_OBJECT() ) );
+  assert("pre: input particles is NULL!" && (inputParticles != NULL) );
 
-  vtkUnstructuredGrid* output = vtkUnstructuredGrid::SafeDownCast
-    (outInfo->Get(vtkDataObject::DATA_OBJECT()));
+  // STEP 1: Get output objects. The output consists of two objects: (1) The
+  // particles with halo information attached to it and (2) the halo centers
+  // and generic FOF information.
+  vtkInformation *output0 = outputVector->GetInformationObject(0);
+  assert("pre: output information object is NULL" && (output0 != NULL) );
+  vtkUnstructuredGrid *outputParticles =
+      vtkUnstructuredGrid::SafeDownCast(
+          output0->Get(vtkDataObject::DATA_OBJECT() ) );
+  assert("pre: output particles is NULL" && (outputParticles != NULL) );
 
-  vtkUnstructuredGrid* catalog = vtkUnstructuredGrid::SafeDownCast
-    (catInfo->Get(vtkDataObject::DATA_OBJECT()));
+  vtkInformation *output1 = outputVector->GetInformationObject(1);
+  assert("pre: output information object is NULL" && (output1 != NULL) );
+  vtkUnstructuredGrid *haloCenters =
+      vtkUnstructuredGrid::SafeDownCast(
+          output1->Get(vtkDataObject::DATA_OBJECT() ) );
+  assert("pre: halocenters is NULL" && (haloCenters != NULL) );
 
-  if(!input || !output || !catalog)
+  if( inputParticles->GetNumberOfPoints() == 0 )
     {
-    return 0;
-    }
-
-  // check that the piece number is correct
-  int updatePiece = 0;
-  int updateTotal = 1;
-  if(rno == 0)
-    {
-    if(outInfo->Has(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER()))
-      {
-      updatePiece = outInfo->
-        Get(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER());
-      }
-    if(outInfo->Has(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES()))
-      {
-      updateTotal = outInfo->
-        Get(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES());
-      }
-    }
-  else if(rno == 1)
-    {
-    if(catInfo->Has(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER()))
-      {
-      updatePiece = catInfo->
-        Get(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER());
-      }
-    if(catInfo->Has(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES()))
-      {
-      updateTotal = catInfo->
-        Get(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES());
-      }
-    }
-
-  if(updatePiece != this->Controller->GetLocalProcessId() ||
-     updateTotal != this->Controller->GetNumberOfProcesses())
-    {
-    vtkErrorMacro(<< "Piece number does not match process number.");
-    return 0;
-    }
-
-  // shallow total point input to output
-  output->ShallowCopy(input);
-
-  // code to short circuit if there are no points
-  if(output->GetNumberOfPoints() < 1)
-    {
-    catalog->Initialize();
+    // Empty input
     return 1;
     }
 
-  // RRU code
-  // Initialize the partitioner which uses MPI Cartesian Topology
-  Partition::initialize();
-
-  // halo finder needs vectors so take the time to turn them into vectors
-  // FIXME: ought to go into the halo finder and put some #ifdefs
-  // so that it can use vtkDataArray as is - ought to do that with the
-  // reader as well, because it doubles the memory requirement currently
-  if(!output->GetPointData()->HasArray("velocity") ||
-     !output->GetPointData()->HasArray("mass") ||
-     !output->GetPointData()->HasArray("tag") ||
-     !output->GetPointData()->HasArray("ghost"))
+  // STEP 2: Get 1st output as a shallow-copy of the input & ensure integrity
+  outputParticles->ShallowCopy( inputParticles );
+  if( !this->CheckOutputIntegrity(outputParticles) )
     {
-    vtkErrorMacro(<< "The input data does not have one or more of " <<
-                  "the following point arrays: velocity, mass, tag, or ghost.");
+    vtkErrorMacro("Missing arrays from output particles mesh!");
     return 0;
     }
 
-  vtkPoints* points = output->GetPoints();
-  vtkFloatArray* velocity = vtkFloatArray::SafeDownCast
-    (output->GetPointData()->GetArray("velocity"));
-  vtkFloatArray* pmass = vtkFloatArray::SafeDownCast
-    (output->GetPointData()->GetArray("mass"));
-  vtkIntArray* uid = vtkIntArray::SafeDownCast
-    (output->GetPointData()->GetArray("tag"));
-  vtkIntArray* owner = vtkIntArray::SafeDownCast
-    (output->GetPointData()->GetArray("ghost"));
 
-  if(velocity == 0 || pmass == 0 || uid == 0 || owner == 0 ||
-     velocity->GetNumberOfComponents() != DIMENSION)
+  // STEP 3: Initialize the partitioner used by the halo-finder which uses
+  // MPI cartesian topology. Currently, the LANL halofinder assumes
+  // MPI_COMM_WORLD!!!!!!. This should be changed in the short future.
+  cosmologytools::Partition::initialize();
+
+  // Delete previously computed results to re-compute with modified params
+  // TODO: We need to get smarter about this in the future, e.g., determine
+  // if we really have to run the halo-finder again or just filter differently
+  // the results, just change the halo-centers etc.
+  if( this->HaloFinder != NULL )
     {
-    vtkErrorMacro(<< "One or more of the input point data arrays is" <<
-                  "malformed: velocity, mass, tag, or ghost.");
-    return 0;
+    delete this->HaloFinder;
+    }
+  this->HaloFinder = new cosmologytools::CosmoHaloFinderP();
+
+  // STEP 4: Compute the FOF halos
+  this->ComputeFOFHalos(outputParticles, haloCenters);
+
+  // STEP 5: Compute SOD halos
+  if( this->ComputeSOD )
+    {
+    this->ComputeSODHalos(outputParticles, haloCenters);
     }
 
-  // create the empty ones
-  vtkIdType numberOfLocalPoints = output->GetNumberOfPoints();
-  vector<POTENTIAL_T>* potential = new vector<POTENTIAL_T>(numberOfLocalPoints);
-  vector<MASK_T>* mask = new vector<MASK_T>(numberOfLocalPoints);
+  // STEP 6: Synchronize processes
+  this->Controller->Barrier();
+  return 1;
+}
 
-  // fill in the non empty ones
-  vector<POSVEL_T>* xx = new vector<POSVEL_T>;
-  vector<POSVEL_T>* yy = new vector<POSVEL_T>;
-  vector<POSVEL_T>* zz = new vector<POSVEL_T>;
-  vector<POSVEL_T>* vx = new vector<POSVEL_T>;
-  vector<POSVEL_T>* vy = new vector<POSVEL_T>;
-  vector<POSVEL_T>* vz = new vector<POSVEL_T>;
-  vector<POSVEL_T>* mass = new vector<POSVEL_T>;
-  vector<ID_T>* tag = new vector<ID_T>;
-  vector<STATUS_T>* status = new vector<STATUS_T>;
+//------------------------------------------------------------------------------
+void vtkPLANLHaloFinder::ComputeSODHalos(
+      vtkUnstructuredGrid *particles,
+      vtkUnstructuredGrid *fofHaloCenters)
+{
+  assert("pre: input particles should not be NULL" &&
+         (particles != NULL) );
+  assert("pre: FOF halo-centers should not be NULL" &&
+         (fofHaloCenters != NULL));
 
-  for(int i = 0; i < numberOfLocalPoints; i = i + 1)
+  // STEP 0: Initialize SOD arrays & acquire handles
+  // "SODAveragePosition"
+  // "SODCenterOfMass"
+  // "SODMass"
+  // "SODAverageVelocity"
+  // "SODVelocityDispersion"
+  // "SODRadius"
+  this->InitializeSODHaloArrays( fofHaloCenters );
+  vtkPointData *PD = fofHaloCenters->GetPointData();
+  assert("pre: missing SODAveragePosition array" &&
+          PD->HasArray("SODAveragePosition") );
+  assert("pre: missing SODCenterOfMass" &&
+          PD->HasArray("SODCenterOfMass") );
+  assert("pre: missing SODMass" &&
+          PD->HasArray("SODMass") );
+  assert("pre: missing SODAverageVelocity" &&
+          PD->HasArray("SODAverageVelocity") );
+  assert("pre: missing SODVelocityDispersion" &&
+          PD->HasArray("SODVelocityDispersion") );
+  assert("pre: missing SODRadius" &&
+          PD->HasArray("SODRadius") );
+  vtkDoubleArray *sodPos =
+      vtkDoubleArray::SafeDownCast(PD->GetArray("SODAveragePosition"));
+  vtkDoubleArray *sodCofMass =
+      vtkDoubleArray::SafeDownCast(PD->GetArray("SODCenterOfMass"));
+  vtkDoubleArray *sodMass =
+      vtkDoubleArray::SafeDownCast(PD->GetArray("SODMass"));
+  vtkDoubleArray *sodVelocity =
+      vtkDoubleArray::SafeDownCast(PD->GetArray("SODAverageVelocity"));
+  vtkDoubleArray *sodDispersion =
+      vtkDoubleArray::SafeDownCast(PD->GetArray("SODVelocityDispersion"));
+  vtkDoubleArray *sodRadius =
+      vtkDoubleArray::SafeDownCast(PD->GetArray("SODRadius"));
+
+  // STEP 1: Construct the ChainingMesh
+  cosmologytools::ChainingMesh *chainMesh =
+      new cosmologytools::ChainingMesh(
+          this->RL,this->Overlap,cosmologytools::CHAIN_SIZE,
+          &this->xx,&this->yy,&this->zz);
+
+  // STEP 2: Loop through all halos and compute SOD halos
+  for(unsigned int i=0; i < this->ExtractedHalos.size(); ++i)
     {
-    // get and set the point
-    double pt[DIMENSION];
+    int internalHaloIdx = this->ExtractedHalos[ i ];
+    int haloSize        = this->HaloFinder->getHaloCount()[internalHaloIdx];
 
-    points->GetPoint(i, pt);
-    xx->push_back((float)pt[0]);
-    yy->push_back((float)pt[1]);
-    zz->push_back((float)pt[2]);
+    double haloMass     = this->fofMass[internalHaloIdx];
 
-    // get and set the velocity
-    float vel[DIMENSION];
-
-    velocity->GetTupleValue(i, vel);
-    vx->push_back(vel[0]);
-    vy->push_back(vel[1]);
-    vz->push_back(vel[2]);
-
-    // get and set the mass
-    vel[0] = pmass->GetValue(i);
-    mass->push_back(vel[0]);
-
-    // get and set the tag
-    int particle = uid->GetValue(i);
-    tag->push_back(particle);
-
-    // get and set the status
-    int neighbor = owner->GetValue(i);
-    status->push_back(neighbor);
-    }
-
-  // delete owner/status because it was only needed for halo finding
-  output->GetPointData()->RemoveArray("ghost");
-
-  // Run halo finder
-  // Collect the serial halo finder results
-  // Merge the halos so that only one copy of each is written
-  // Parallel halo finder must consult with each of the 26 possible neighbor
-  // halo finders to see who will report a particular halo
-  CosmoHaloFinderP* haloFinder = new CosmoHaloFinderP();;
-
-  haloFinder->setParameters
-    ("", this->RL, this->Overlap, this->NP, this->PMin, this->BB);
-  haloFinder->setParticles(xx, yy, zz, vx, vy, vz,
-                           potential, tag, mask, status);
-  haloFinder->executeHaloFinder();
-  haloFinder->collectHalos();
-  haloFinder->mergeHalos();
-
-  // adjust ghost cells, because halo finder updates it
-  vtkUnsignedCharArray* newghost = vtkUnsignedCharArray::New();
-  newghost->SetNumberOfValues(numberOfLocalPoints);
-  newghost->SetName("vtkGhostLevels");
-
-  for(int i = 0; i < numberOfLocalPoints; i = i + 1)
-    {
-    unsigned char level = (*status)[i] < 0 ? 0 : 1;
-    newghost->SetValue(i, level);
-    }
-
-  // Collect information from the halo finder needed for halo properties
-  // Vector halos is the index of the first particle for halo in the haloList
-  // Following the chain of indices in the haloList retrieves all particles
-  int numberOfFOFHalos = haloFinder->getNumberOfHalos();
-  int* fofHalos = haloFinder->getHalos();
-  int* fofHaloCount = haloFinder->getHaloCount();
-  int* fofHaloList = haloFinder->getHaloList();
-  int* fofHaloTags = new int[numberOfFOFHalos];
-
-  FOFHaloProperties* fof = new FOFHaloProperties();
-  fof->setHalos(numberOfFOFHalos, fofHalos, fofHaloCount, fofHaloList);
-  fof->setParameters("", this->RL, this->Overlap, this->BB);
-  fof->setParticles
-    (xx, yy, zz, vx, vy, vz, mass, potential, tag, mask, status);
-
-  // Find the mass of every FOF halo
-  vector<POSVEL_T>* fofMass = new vector<POSVEL_T>;
-  fof->FOFHaloMass(fofMass);
-
-  // Find the average position of every FOF halo
-  vector<POSVEL_T>* fofXPos = new vector<POSVEL_T>;
-  vector<POSVEL_T>* fofYPos = new vector<POSVEL_T>;
-  vector<POSVEL_T>* fofZPos = new vector<POSVEL_T>;
-  fof->FOFPosition(fofXPos, fofYPos, fofZPos);
-
-  // Find the center of mass of every FOF halo
-  vector<POSVEL_T>* fofXCofMass = new vector<POSVEL_T>;
-  vector<POSVEL_T>* fofYCofMass = new vector<POSVEL_T>;
-  vector<POSVEL_T>* fofZCofMass = new vector<POSVEL_T>;
-  fof->FOFCenterOfMass(fofXCofMass, fofYCofMass, fofZCofMass);
-
-  // Find the average velocity of every FOF halo
-  vector<POSVEL_T>* fofXVel = new vector<POSVEL_T>;
-  vector<POSVEL_T>* fofYVel = new vector<POSVEL_T>;
-  vector<POSVEL_T>* fofZVel = new vector<POSVEL_T>;
-  fof->FOFVelocity(fofXVel, fofYVel, fofZVel);
-
-  // Find the velocity dispersion of every FOF halo
-  vector<POSVEL_T>* fofVelDisp = new vector<POSVEL_T>;
-  fof->FOFVelocityDispersion(fofXVel, fofYVel, fofZVel, fofVelDisp);
-
-  // set the tags to -1
-  for(int i = 0; i < numberOfFOFHalos; i = i + 1)
-    {
-    fofHaloTags[i] = -1;
-    }
-
-  // walk the list to get the lowest tag id
-  int pminHalos = 0;
-  for(int i = 0; i < numberOfFOFHalos; i = i + 1)
-    {
-    int size = fofHaloCount[i];
-
-    if(size >= this->PMin)
-      {
-      pminHalos = pminHalos + 1;
-      int index = fofHalos[i];
-      for(int j = 0; j < size; j = j + 1)
-        {
-        if(fofHaloTags[i] == -1 || fofHaloTags[i] > (*tag)[index])
-          {
-          fofHaloTags[i] = (*tag)[index];
-          }
-
-        index = fofHaloList[index];
-        }
-      }
-    }
-
-  // calculate MCP or MBP
-  int* mbpCenter = 0;
-  int* mcpCenter = 0;
-  int mbpOn = this->ComputeMostBoundParticle ||
-    (this->ComputeSOD && this->SODCenterType == 2);
-  int mcpOn = this->ComputeMostConnectedParticle ||
-    (this->ComputeSOD && this->SODCenterType == 3);
-  if(mbpOn)
-    {
-    mbpCenter = new int[numberOfFOFHalos];
-    }
-  if(mcpOn)
-    {
-    mcpCenter = new int[numberOfFOFHalos];
-    }
-
-  if(mcpOn || mbpOn)
-    {
-    for(int i = 0; i < numberOfFOFHalos; i = i + 1)
-      {
-      // skip if it's not large enough
-      long size = fofHaloCount[i];
-      if(size < this->PMin)
-        {
-        continue;
-        }
-
-      // Allocate arrays which will hold halo particle information
-      POSVEL_T* xLocHalo = new POSVEL_T[size];
-      POSVEL_T* yLocHalo = new POSVEL_T[size];
-      POSVEL_T* zLocHalo = new POSVEL_T[size];
-      POSVEL_T* xVelHalo = new POSVEL_T[size];
-      POSVEL_T* yVelHalo = new POSVEL_T[size];
-      POSVEL_T* zVelHalo = new POSVEL_T[size];
-      POSVEL_T* massHalo = new POSVEL_T[size];
-      ID_T* id = new ID_T[size];
-
-      int* actualIndex = new int[size];
-      fof->extractInformation(i, actualIndex,
-                              xLocHalo, yLocHalo, zLocHalo,
-                              xVelHalo, yVelHalo, zVelHalo,
-                              massHalo, id);
-
-      // Most bound particle method of center finding
-      int centerIndex;
-      POTENTIAL_T minPotential;
-      if(mbpOn)
-        {
-        HaloCenterFinder centerFinder;
-        centerFinder.setParticles(size,
-                                  xLocHalo, yLocHalo, zLocHalo,
-                                  massHalo, id);
-        centerFinder.setParameters(this->BB, this->Overlap);
-
-        // Calculate the halo center using MBP (most bound particle)
-        // Combination of n^2/2 algorithm and A* algorithm
-        if(size < MBP_THRESHOLD)
-          {
-          centerIndex = centerFinder.mostBoundParticleN2(&minPotential);
-          }
-        else
-          {
-          centerIndex = centerFinder.mostBoundParticleAStar(&minPotential);
-          }
-
-        mbpCenter[i] = actualIndex[centerIndex];
-        }
-
-      // Most connected particle method of center finding
-      if(mcpOn)
-        {
-        HaloCenterFinder centerFinder;
-        centerFinder.setParticles(size,
-                                  xLocHalo, yLocHalo, zLocHalo,
-                                  massHalo, id);
-        centerFinder.setParameters(this->BB, this->Overlap);
-
-        // Calculate the halo center using MCP (most connected particle)
-        // Combination of n^2/2 algorithm and chaining mesh algorithm
-        if(size < MCP_THRESHOLD)
-          {
-          centerIndex = centerFinder.mostConnectedParticleN2();
-          }
-        else
-          {
-          centerIndex = centerFinder.mostConnectedParticleChainMesh();
-          }
-
-        mcpCenter[i] = actualIndex[centerIndex];
-        }
-
-      delete [] xLocHalo;
-      delete [] yLocHalo;
-      delete [] zLocHalo;
-      delete [] xVelHalo;
-      delete [] yVelHalo;
-      delete [] zVelHalo;
-      delete [] massHalo;
-      delete [] id;
-      delete [] actualIndex;
-      }
-    }
-
-  // calculate SOD halos
-  vtkFloatArray* sodPos = 0;
-  vtkFloatArray* sodCofMass = 0;
-  vtkFloatArray* sodMass = 0;
-  vtkFloatArray* sodVelocity = 0;
-  vtkFloatArray* sodDispersion = 0;
-  vtkFloatArray* sodRadius = 0;
-  if(this->ComputeSOD)
-    {
-    // set up the arrays
-    sodPos = vtkFloatArray::New();
-    sodPos->SetName("sod_average_position");
-    sodPos->SetNumberOfComponents(3);
-    sodPos->SetNumberOfTuples(pminHalos);
-
-    sodCofMass = vtkFloatArray::New();
-    sodCofMass->SetName("sod_center_of_mass");
-    sodCofMass->SetNumberOfComponents(3);
-    sodCofMass->SetNumberOfTuples(pminHalos);
-
-    sodMass = vtkFloatArray::New();
-    sodMass->SetName("sod_mass");
-    sodMass->SetNumberOfTuples(pminHalos);
-
-    sodVelocity = vtkFloatArray::New();
-    sodVelocity->SetName("sod_average_velocity");
-    sodVelocity->SetNumberOfComponents(3);
-    sodVelocity->SetNumberOfTuples(pminHalos);
-
-    sodDispersion = vtkFloatArray::New();
-    sodDispersion->SetName("sod_velocity_dispersion");
-    sodDispersion->SetNumberOfTuples(pminHalos);
-
-    sodRadius = vtkFloatArray::New();
-    sodRadius->SetName("sod_radius");
-    sodRadius->SetNumberOfTuples(pminHalos);
-
-    ChainingMesh* chain =
-      new ChainingMesh(this->RL, this->Overlap, CHAIN_SIZE, xx, yy, zz);
-
-    int index = 0;
-    for(int i = 0; i < numberOfFOFHalos; i = i + 1)
-      {
-      // skip if it's not large enough
-      if(fofHaloCount[i] < this->PMin)
-        {
-        continue;
-        }
-
-      // only calculate the SOD if it is big enough
-      if((*fofMass)[i] >= this->MinFOFMass ||
-         fofHaloCount[i] >= this->MinFOFSize)
-        {
-        SODHalo* sod = new SODHalo();
-        sod->setParameters(chain, this->SODBins, this->RL, this->NP,
-                           this->RhoC, this->SODMass, this->RhoC,
-                           this->MinRadiusFactor, this->MaxRadiusFactor);
-        sod->setParticles(xx, yy, zz, vx, vy, vz, mass, tag);
-
-        // no minimum potential array like in the sim
-        // FIXME: possibly have a minimum potential calculation?
-
-        if(this->SODCenterType == 0)
-          {
-          sod->createSODHalo(fofHaloCount[i],
-                             (*fofXCofMass)[i],
-                             (*fofYCofMass)[i],
-                             (*fofZCofMass)[i],
-                             (*fofXVel)[i],
-                             (*fofYVel)[i],
-                             (*fofZVel)[i],
-                             (*fofMass)[i]);
-          }
-        else if(this->SODCenterType == 1)
-          {
-          sod->createSODHalo(fofHaloCount[i],
-                             (*fofXPos)[i],
-                             (*fofYPos)[i],
-                             (*fofZPos)[i],
-                             (*fofXVel)[i],
-                             (*fofYVel)[i],
-                             (*fofZVel)[i],
-                             (*fofMass)[i]);
-          }
-        else
-          {
-          int center =
-            this->SODCenterType == 2 ? mbpCenter[i] :
-            mcpCenter[i];
-
-          sod->createSODHalo(fofHaloCount[i],
-                             (*xx)[center],
-                             (*yy)[center],
-                             (*zz)[center],
-                             (*fofXVel)[i],
-                             (*fofYVel)[i],
-                             (*fofZVel)[i],
-                             (*fofMass)[i]);
-          }
-
-        // get the halo and fill in the array
-        if(sod->SODHaloSize() > 0)
-          {
-          POSVEL_T tempPos[DIMENSION];
-          POSVEL_T tempCofMass[DIMENSION];
-          POSVEL_T tempMass;
-          POSVEL_T tempVelocity[DIMENSION];
-          POSVEL_T tempDispersion;
-          POSVEL_T tempRadius;
-
-          sod->SODAverageLocation(tempPos);
-          sod->SODCenterOfMass(tempCofMass);
-          sod->SODMass(&tempMass);
-          sod->SODAverageVelocity(tempVelocity);
-          sod->SODVelocityDispersion(&tempDispersion);
-          tempRadius = sod->SODRadius();
-
-          sodPos->SetComponent(index, 0, tempPos[0]);
-          sodPos->SetComponent(index, 1, tempPos[1]);
-          sodPos->SetComponent(index, 2, tempPos[2]);
-
-          sodCofMass->SetComponent(index, 0, tempCofMass[0]);
-          sodCofMass->SetComponent(index, 1, tempCofMass[1]);
-          sodCofMass->SetComponent(index, 2, tempCofMass[2]);
-
-          sodMass->SetComponent(index, 0, tempMass);
-
-          sodVelocity->SetComponent(index, 0, tempVelocity[0]);
-          sodVelocity->SetComponent(index, 1, tempVelocity[1]);
-          sodVelocity->SetComponent(index, 2, tempVelocity[2]);
-
-          sodDispersion->SetComponent(index, 0, tempDispersion);
-
-          sodRadius->SetComponent(index, 0, tempRadius);
-          }
-        // fill in a blank entry for the array
-        else
-          {
-          sodPos->SetComponent(index, 0, 0);
-          sodPos->SetComponent(index, 1, 0);
-          sodPos->SetComponent(index, 2, 0);
-
-          sodCofMass->SetComponent(index, 0, 0);
-          sodCofMass->SetComponent(index, 1, 0);
-          sodCofMass->SetComponent(index, 2, 0);
-
-          sodMass->SetComponent(index, 0, 0);
-
-          sodVelocity->SetComponent(index, 0, 0);
-          sodVelocity->SetComponent(index, 1, 0);
-          sodVelocity->SetComponent(index, 2, 0);
-
-          sodDispersion->SetComponent(index, 0, 0);
-
-          sodRadius->SetComponent(index, 0, -1);
-          }
-
-        delete sod;
-        }
-      // fill in a blank entry for the array
-      else
-        {
-        sodPos->SetComponent(index, 0, 0);
-        sodPos->SetComponent(index, 1, 0);
-        sodPos->SetComponent(index, 2, 0);
-
-        sodCofMass->SetComponent(index, 0, 0);
-        sodCofMass->SetComponent(index, 1, 0);
-        sodCofMass->SetComponent(index, 2, 0);
-
-        sodMass->SetComponent(index, 0, 0);
-
-        sodVelocity->SetComponent(index, 0, 0);
-        sodVelocity->SetComponent(index, 1, 0);
-        sodVelocity->SetComponent(index, 2, 0);
-
-        sodDispersion->SetComponent(index, 0, 0);
-
-        sodRadius->SetComponent(index, 0, -1);
-        }
-
-      index = index + 1;
-      }
-
-    delete chain;
-    }
-
-  // walk the list again to set the values for the points and catalog
-  vtkIntArray* partTag = 0;
-  vtkFloatArray* partPos = 0;
-  vtkFloatArray* partCofMass = 0;
-  vtkFloatArray* partMass = 0;
-  vtkFloatArray* partVelocity = 0;
-  vtkFloatArray* partDispersion = 0;
-
-  vtkFloatArray* partMBP = 0;
-  vtkFloatArray* partMCP = 0;
-
-  // if we are copying to particles get the arrays ready
-  if(this->CopyHaloDataToParticles)
-    {
-    partTag = vtkIntArray::New();
-    partTag->SetName("halo_tag");
-    partTag->SetNumberOfValues(numberOfLocalPoints);
-    partTag->FillComponent(0, -1);
-
-    partPos = vtkFloatArray::New();
-    partPos->SetName("halo_average_position");
-    partPos->SetNumberOfComponents(3);
-    partPos->SetNumberOfTuples(numberOfLocalPoints);
-
-    partCofMass = vtkFloatArray::New();
-    partCofMass->SetName("halo_center_of_mass");
-    partCofMass->SetNumberOfComponents(3);
-    partCofMass->SetNumberOfTuples(numberOfLocalPoints);
-
-    partMass = vtkFloatArray::New();
-    partMass->SetName("halo_mass");
-    partMass->SetNumberOfValues(numberOfLocalPoints);
-
-    partVelocity = vtkFloatArray::New();
-    partVelocity->SetName("halo_average_velocity");
-    partVelocity->SetNumberOfComponents(3);
-    partVelocity->SetNumberOfTuples(numberOfLocalPoints);
-
-    partDispersion = vtkFloatArray::New();
-    partDispersion->SetName("halo_velocity_dispersion");
-    partDispersion->SetNumberOfValues(numberOfLocalPoints);
-
-    if(mbpOn)
-      {
-      partMBP = vtkFloatArray::New();
-      partMBP->SetName("halo_most_bound_particle");
-      partMBP->SetNumberOfComponents(3);
-      partMBP->SetNumberOfTuples(numberOfLocalPoints);
-      }
-
-    if(mcpOn)
-      {
-      partMCP = vtkFloatArray::New();
-      partMCP->SetName("halo_most_connected_particle");
-      partMCP->SetNumberOfComponents(3);
-      partMCP->SetNumberOfTuples(numberOfLocalPoints);
-      }
-    }
-
-  // get the catalog arrays ready
-  vtkPoints* catpoints = vtkPoints::New();
-  catpoints->SetDataTypeToFloat();
-  catalog->Allocate(pminHalos);
-  catalog->SetPoints(catpoints);
-
-  vtkIntArray* haloTag = vtkIntArray::New();
-  haloTag->SetName("halo_tag");
-  haloTag->SetNumberOfValues(pminHalos);
-
-  vtkFloatArray* haloPos = vtkFloatArray::New();
-  haloPos->SetName("halo_average_position");
-  haloPos->SetNumberOfComponents(3);
-  haloPos->SetNumberOfTuples(pminHalos);
-
-  vtkFloatArray* haloCofMass = vtkFloatArray::New();
-  haloCofMass->SetName("halo_center_of_mass");
-  haloCofMass->SetNumberOfComponents(3);
-  haloCofMass->SetNumberOfTuples(pminHalos);
-
-  vtkFloatArray* haloMass = vtkFloatArray::New();
-  haloMass->SetName("halo_mass");
-  haloMass->SetNumberOfValues(pminHalos);
-
-  vtkFloatArray* haloVelocity = vtkFloatArray::New();
-  haloVelocity->SetName("halo_average_velocity");
-  haloVelocity->SetNumberOfComponents(3);
-  haloVelocity->SetNumberOfTuples(pminHalos);
-
-  vtkFloatArray* haloDispersion = vtkFloatArray::New();
-  haloDispersion->SetName("halo_velocity_dispersion");
-  haloDispersion->SetNumberOfValues(pminHalos);
-
-  vtkFloatArray* haloMBP = 0;
-  vtkFloatArray* haloMCP = 0;
-
-  if(mbpOn)
-    {
-    haloMBP = vtkFloatArray::New();
-    haloMBP->SetName("halo_most_bound_particle");
-    haloMBP->SetNumberOfComponents(3);
-    haloMBP->SetNumberOfTuples(pminHalos);
-    }
-
-  if(mcpOn)
-    {
-    haloMCP = vtkFloatArray::New();
-    haloMCP->SetName("halo_most_connected_particle");
-    haloMCP->SetNumberOfComponents(3);
-    haloMCP->SetNumberOfTuples(pminHalos);
-    }
-
-  // walk the halos and copy the data
-  int halocount = 0;
-  for(int i = 0; i < numberOfFOFHalos; i = i + 1)
-    {
-    // skip if not large enough
-    if(fofHaloCount[i] < this->PMin)
+    if( (haloMass < this->MinFOFMass) || (haloSize < this->MinFOFSize) )
       {
       continue;
       }
 
-    // set the catalog position
-    vtkIdType pid;
-    pid = catpoints->InsertNextPoint
-      ((*fofXPos)[i], (*fofYPos)[i], (*fofZPos)[i]);
-    catalog->InsertNextCell(1, 1, &pid);
+    cosmologytools::SODHalo *sod = new cosmologytools::SODHalo();
+    sod->setParameters( chainMesh, this->SODBins, this->RL, this->NP,
+                        this->RhoC, this->SODMass, this->RhoC,
+                        this->MinRadiusFactor, this->MaxRadiusFactor );
+    sod->setParticles(
+        &this->xx,&this->yy,&this->zz,
+        &this->vx,&this->vy,&this->vz,
+        &this->mass,
+        &this->tag);
 
-    // set the halo data
-    haloTag->SetValue(halocount, fofHaloTags[i]);
-    haloPos->SetComponent(halocount, 0, (*fofXPos)[i]);
-    haloPos->SetComponent(halocount, 1, (*fofYPos)[i]);
-    haloPos->SetComponent(halocount, 2, (*fofZPos)[i]);
-    haloCofMass->SetComponent(halocount, 0, (*fofXCofMass)[i]);
-    haloCofMass->SetComponent(halocount, 1, (*fofYCofMass)[i]);
-    haloCofMass->SetComponent(halocount, 2, (*fofZCofMass)[i]);
-    haloMass->SetValue(halocount, (*fofMass)[i]);
-    haloVelocity->SetComponent(halocount, 0, (*fofXVel)[i]);
-    haloVelocity->SetComponent(halocount, 1, (*fofYVel)[i]);
-    haloVelocity->SetComponent(halocount, 2, (*fofZVel)[i]);
-    haloDispersion->SetValue(halocount, (*fofVelDisp)[i]);
+    double center[3];
+    fofHaloCenters->GetPoint(i,center);
+    sod->createSODHalo(
+        this->HaloFinder->getHaloCount()[internalHaloIdx],
+        center[0],center[1],center[2],
+        this->fofXVel[internalHaloIdx],
+        this->fofYVel[internalHaloIdx],
+        this->fofZVel[internalHaloIdx],
+        this->fofMass[internalHaloIdx]);
 
-    if(haloMBP)
+    if(sod->SODHaloSize() > 0)
       {
-      haloMBP->SetComponent(halocount, 0, (*xx)[mbpCenter[i]]);
-      haloMBP->SetComponent(halocount, 1, (*yy)[mbpCenter[i]]);
-      haloMBP->SetComponent(halocount, 2, (*zz)[mbpCenter[i]]);
+      POSVEL_T pos[3];
+      POSVEL_T cofmass[3];
+      POSVEL_T mass;
+      POSVEL_T vel[3];
+      POSVEL_T disp;
+      POSVEL_T radius = sod->SODRadius();
+
+      sod->SODAverageLocation(pos);
+      sod->SODCenterOfMass(cofmass);
+      sod->SODMass(&mass);
+      sod->SODAverageVelocity(vel);
+      sod->SODVelocityDispersion(&disp);
+
+      sodPos->SetTuple3(i,pos[0],pos[1],pos[2]);
+      sodCofMass->SetTuple3(i,cofmass[0],cofmass[1],cofmass[2]);
+      sodMass->SetValue(i,mass);
+      sodVelocity->SetTuple3(i,vel[0],vel[1],vel[2]);
+      sodDispersion->SetValue(i,disp);
+      sodRadius->SetValue(i,radius);
       }
 
-    if(haloMCP)
-      {
-      haloMCP->SetComponent(halocount, 0, (*xx)[mcpCenter[i]]);
-      haloMCP->SetComponent(halocount, 1, (*yy)[mcpCenter[i]]);
-      haloMCP->SetComponent(halocount, 2, (*zz)[mcpCenter[i]]);
-      }
+    delete sod;
+    } // END for all halos within the PMIN threshold
 
-    // increment to the next halo
-    halocount = halocount + 1;
+  // STEP 3: De-allocate Chain mesh
+  delete chainMesh;
+}
 
-    // set the halo data for the original points
-    if(this->CopyHaloDataToParticles)
-      {
-      int index = fofHalos[i];
-      for(int j = 0; j < fofHaloCount[i]; j = j + 1)
-        {
-        partTag->SetValue(index, fofHaloTags[i]);
-        partPos->SetComponent(index, 0, (*fofXPos)[i]);
-        partPos->SetComponent(index, 1, (*fofYPos)[i]);
-        partPos->SetComponent(index, 2, (*fofZPos)[i]);
-        partCofMass->SetComponent(index, 0, (*fofXCofMass)[i]);
-        partCofMass->SetComponent(index, 1, (*fofYCofMass)[i]);
-        partCofMass->SetComponent(index, 2, (*fofZCofMass)[i]);
-        partMass->SetValue(index, (*fofMass)[i]);
-        partVelocity->SetComponent(index, 0, (*fofXVel)[i]);
-        partVelocity->SetComponent(index, 1, (*fofYVel)[i]);
-        partVelocity->SetComponent(index, 2, (*fofZVel)[i]);
-        partDispersion->SetValue(index, (*fofVelDisp)[i]);
+//------------------------------------------------------------------------------
+void vtkPLANLHaloFinder::InitializeSODHaloArrays(
+      vtkUnstructuredGrid *haloCenters)
+{
+  assert("pre: centers is NULL" && (haloCenters != NULL) );
 
-        if(partMBP)
-          {
-          partMBP->SetComponent(index, 0, (*xx)[mbpCenter[i]]);
-          partMBP->SetComponent(index, 1, (*yy)[mbpCenter[i]]);
-          partMBP->SetComponent(index, 2, (*zz)[mbpCenter[i]]);
-          }
+  //TODO: Again, these arrays should match the type of POSVEL_T
 
-        if(partMCP)
-          {
-          partMCP->SetComponent(index, 0, (*xx)[mcpCenter[i]]);
-          partMCP->SetComponent(index, 1, (*yy)[mcpCenter[i]]);
-          partMCP->SetComponent(index, 2, (*zz)[mcpCenter[i]]);
-          }
+  // STEP 0: Allocate arrays
+  vtkDoubleArray *averagePosition = vtkDoubleArray::New();
+  averagePosition->SetName("SODAveragePosition");
+  averagePosition->SetNumberOfComponents( 3 );
+  averagePosition->SetNumberOfTuples( haloCenters->GetNumberOfPoints() );
 
-        index = fofHaloList[index];
-        }
-      }
-    }
+  vtkDoubleArray *centerOfMass = vtkDoubleArray::New();
+  centerOfMass->SetName("SODCenterOfMass");
+  centerOfMass->SetNumberOfComponents( 3 );
+  centerOfMass->SetNumberOfTuples( haloCenters->GetNumberOfPoints() );
 
-  // set the array for particles
-  if(this->CopyHaloDataToParticles)
+  vtkDoubleArray *mass = vtkDoubleArray::New();
+  mass->SetName("SODMass");
+  mass->SetNumberOfComponents( 1 );
+  mass->SetNumberOfTuples( haloCenters->GetNumberOfPoints() );
+
+  vtkDoubleArray *averageVelocity = vtkDoubleArray::New();
+  averageVelocity->SetName("SODAverageVelocity");
+  averageVelocity->SetNumberOfComponents( 3 );
+  averageVelocity->SetNumberOfTuples( haloCenters->GetNumberOfPoints() );
+
+  vtkDoubleArray *velDispersion = vtkDoubleArray::New();
+  velDispersion->SetName("SODVelocityDispersion");
+  velDispersion->SetNumberOfComponents( 1 );
+  velDispersion->SetNumberOfTuples( haloCenters->GetNumberOfPoints() );
+
+  vtkDoubleArray *radius = vtkDoubleArray::New();
+  radius->SetName("SODRadius");
+  radius->SetNumberOfComponents( 1 );
+  radius->SetNumberOfTuples( haloCenters->GetNumberOfPoints() );
+
+  // STEP 1: Initialize
+  for( vtkIdType halo=0; halo < haloCenters->GetNumberOfPoints(); ++halo )
     {
-    output->GetPointData()->AddArray(partTag);
-    output->GetPointData()->AddArray(partPos);
-    output->GetPointData()->AddArray(partCofMass);
-    output->GetPointData()->AddArray(partMass);
-    output->GetPointData()->AddArray(partVelocity);
-    output->GetPointData()->AddArray(partDispersion);
-    if(partMBP)
-      {
-      output->GetPointData()->AddArray(partMBP);
-      }
-    if(partMCP)
-      {
-      output->GetPointData()->AddArray(partMCP);
-      }
-    }
-  output->GetPointData()->AddArray(newghost);
+    averagePosition->SetTuple3(halo,0.0,0.0,0.0);
+    centerOfMass->SetTuple3(halo,0.0,0.0,0.0);
+    mass->SetValue(halo,0.0);
+    averageVelocity->SetTuple3(halo,0.0,0.0,0.0);
+    velDispersion->SetValue(halo,0.0);
+    radius->SetValue(halo,0.0);
+    } // END for all extracted FOF halos
 
-  // set the arrays for the catalog
-  catalog->GetPointData()->AddArray(haloTag);
-  catalog->GetPointData()->AddArray(haloPos);
-  catalog->GetPointData()->AddArray(haloCofMass);
-  catalog->GetPointData()->AddArray(haloMass);
-  catalog->GetPointData()->AddArray(haloVelocity);
-  catalog->GetPointData()->AddArray(haloDispersion);
-  if(haloMBP)
-    {
-    catalog->GetPointData()->AddArray(haloMBP);
-    }
-  if(haloMCP)
-    {
-    catalog->GetPointData()->AddArray(haloMCP);
-    }
+  // STEP 2: Add arrays to halo-centers
+  haloCenters->GetPointData()->AddArray(averagePosition);
+  averagePosition->Delete();
+  haloCenters->GetPointData()->AddArray(centerOfMass);
+  centerOfMass->Delete();
+  haloCenters->GetPointData()->AddArray(mass);
+  mass->Delete();
+  haloCenters->GetPointData()->AddArray(averageVelocity);
+  averageVelocity->Delete();
+  haloCenters->GetPointData()->AddArray(velDispersion);
+  velDispersion->Delete();
+  haloCenters->GetPointData()->AddArray(radius);
+  radius->Delete();
+}
 
-  if(sodPos)
-    {
-    catalog->GetPointData()->AddArray(sodPos);
-    catalog->GetPointData()->AddArray(sodCofMass);
-    catalog->GetPointData()->AddArray(sodMass);
-    catalog->GetPointData()->AddArray(sodVelocity);
-    catalog->GetPointData()->AddArray(sodDispersion);
-    catalog->GetPointData()->AddArray(sodRadius);
-    }
+//------------------------------------------------------------------------------
+void vtkPLANLHaloFinder::VectorizeData(
+    vtkUnstructuredGrid *particles)
+{
+  assert("pre: input particles mesh is NULL" && (particles != NULL) );
 
-  // cleanup
-  if(this->CopyHaloDataToParticles)
-    {
-    partTag->Delete();
-    partPos->Delete();
-    partCofMass->Delete();
-    partMass->Delete();
-    partVelocity->Delete();
-    partDispersion->Delete();
-    }
-  newghost->Delete();
+  // TODO: VTK data arrays must match what POSVEL_T & ID_T are.
 
-  catpoints->Delete();
+  vtkPoints     *points   = particles->GetPoints();
+  vtkFloatArray *velocity = vtkFloatArray::SafeDownCast(
+      particles->GetPointData()->GetArray("velocity") );
+  vtkFloatArray *pmass = vtkFloatArray::SafeDownCast(
+      particles->GetPointData()->GetArray("mass") );
+  vtkIntArray *uid = vtkIntArray::SafeDownCast(
+      particles->GetPointData()->GetArray("tag")  );
+  vtkIntArray *owner = vtkIntArray::SafeDownCast(
+      particles->GetPointData()->GetArray("ghost") );
+
+  vtkIntArray *haloTag = vtkIntArray::New();
+  haloTag->SetName( "HaloID" );
+  haloTag->SetNumberOfComponents( 1 );
+  haloTag->SetNumberOfTuples( points->GetNumberOfPoints( ) );
+  int *haloTagPtr = static_cast<int*>( haloTag->GetVoidPointer(0) );
+
+  vtkIdType numParticles = points->GetNumberOfPoints();
+  this->xx.resize( numParticles );
+  this->yy.resize( numParticles );
+  this->zz.resize( numParticles );
+  this->vx.resize( numParticles );
+  this->vy.resize( numParticles );
+  this->vz.resize( numParticles );
+  this->mass.resize( numParticles );
+  this->tag.resize( numParticles );
+  this->status.resize( numParticles );
+
+  for( vtkIdType idx=0; idx < numParticles; ++idx )
+    {
+    // Extract position vector
+    this->xx[ idx ] = points->GetPoint( idx )[ 0 ];
+    this->yy[ idx ] = points->GetPoint( idx )[ 1 ];
+    this->zz[ idx ] = points->GetPoint( idx )[ 2 ];
+
+    // Extract velocity vector
+    this->vx[ idx ] = velocity->GetComponent(idx, 0);
+    this->vy[ idx ] = velocity->GetComponent(idx, 1);
+    this->vz[ idx ] = velocity->GetComponent(idx, 2);
+
+    // Extract the mass
+    this->mass[ idx ] = pmass->GetValue( idx );
+
+    // Extract global particle ID information & also setup global-to-local map
+    this->tag[ idx ] = uid->GetValue( idx );
+
+    // Extract status
+    this->status[ idx ] = owner->GetValue( idx );
+
+    // Initialize all halo IDs to -1, i.e., all particles are not in halos
+    haloTagPtr[ idx ] = -1;
+    } // END for all particles
+
+  // Remove the ghost array since the status vector now has that information
+  particles->GetPointData()->RemoveArray("ghost");
+
+  // Add halo IDs to the particles
+  particles->GetPointData()->AddArray( haloTag );
   haloTag->Delete();
-  haloPos->Delete();
-  haloCofMass->Delete();
+}
+
+//------------------------------------------------------------------------------
+void vtkPLANLHaloFinder::ComputeFOFHalos(
+    vtkUnstructuredGrid *particles, vtkUnstructuredGrid *haloCenters)
+{
+  assert("pre: input particles mesh is NULL" && (particles != NULL) );
+  assert("pre: halo-centers data-structure is NULL" && (haloCenters != NULL) );
+  assert("pre: halo-finder is not allocated!" && (this->HaloFinder != NULL) );
+
+  // STEP 0: Vectorize the data
+  this->VectorizeData(particles);
+
+  // STEP 1: Allocate potential & mask vectors required by the halo-finder
+  this->potential.resize( particles->GetNumberOfPoints() );
+  this->mask.resize( particles->GetNumberOfPoints() );
+
+  // STEP 2: Initialize halo-finder parameters
+  this->HaloFinder->setParameters(
+      "",this->RL,this->Overlap,this->NP,this->PMin,this->BB);
+  this->HaloFinder->setParticles(
+      &this->xx,&this->yy,&this->zz,
+      &this->vx,&this->vy,&this->vz,
+      &this->potential,
+      &this->tag,
+      &this->mask,
+      &this->status
+      );
+
+  // STEP 3: Execute the halo-finder
+  this->HaloFinder->executeHaloFinder();
+  this->HaloFinder->collectHalos();
+  this->HaloFinder->mergeHalos();
+
+  // STEP 4: Calculate basic FOF halo properties
+  this->ComputeFOFHaloProperties();
+
+  // STEP 5: Filter out halos within the PMin threshold
+  int numberOfFOFHalos = this->HaloFinder->getNumberOfHalos();
+  int *fofHaloCount    = this->HaloFinder->getHaloCount();
+
+  for( int halo=0; halo < numberOfFOFHalos; ++halo )
+    {
+    // Disregard halos that do not fall within the PMin threshold
+    if( fofHaloCount[ halo ] >= this->PMin )
+      {
+      this->ExtractedHalos.push_back( halo );
+      } // END if haloSize is within threshold
+    } // END for all halos
+
+  // STEP 6: Loop through the extracted halos and do the following:
+  //          1. Compute the halo-centers
+  //          2. Attach halo-properties to each halo-center,e.g.,mass,vel,etc.
+  //          3. Mark all particles within each halo
+  this->InitializeHaloCenters( haloCenters, this->ExtractedHalos.size() );
+  assert("pre: halo mass array not present!" &&
+          haloCenters->GetPointData()->HasArray("HaloMass") );
+  assert("pre: AverageVelocity array not present!" &&
+          haloCenters->GetPointData()->HasArray("AverageVelocity") );
+  assert("pre: VelocityDispersion array not present!" &&
+          haloCenters->GetPointData()->HasArray("VelocityDispersion") );
+  assert("pre: HaloID array not present!" &&
+          haloCenters->GetPointData()->HasArray("HaloID") );
+
+  vtkPoints *pnts  = haloCenters->GetPoints();
+  vtkPointData *PD = haloCenters->GetPointData();
+  double* haloMass = static_cast<double*>(
+      PD->GetArray("HaloMass")->GetVoidPointer(0));
+  double* haloAverageVel = static_cast<double*>(
+      PD->GetArray("AverageVelocity")->GetVoidPointer(0));
+  double* haloVelDisp = static_cast<double*>(
+      PD->GetArray("VelocityDispersion")->GetVoidPointer(0));
+  int* haloId = static_cast<int*>(
+      PD->GetArray("HaloID")->GetVoidPointer(0));
+
+  double center[3];
+  for(unsigned int halo=0; halo < this->ExtractedHalos.size(); ++halo )
+    {
+    int haloIdx = this->ExtractedHalos[ halo ];
+    assert( "pre: haloIdx is out-of-bounds!" &&
+            (haloIdx >= 0) && (haloIdx < this->fofMass.size() ) );
+
+    this->MarkHaloParticlesAndGetCenter(halo,haloIdx,center,particles);
+    pnts->SetPoint( halo, center );
+
+    haloMass[ halo ]          = this->fofMass[ haloIdx ];
+    haloVelDisp[ halo ]       = this->fofVelDisp[ haloIdx ];
+    haloAverageVel[ halo*3  ] = this->fofXVel[ haloIdx ];
+    haloAverageVel[ halo*3+1] = this->fofYVel[ haloIdx ];
+    haloAverageVel[ halo*3+2] = this->fofZVel[ haloIdx ];
+    haloId[ halo ]            = halo;
+    } // END for all extracted halos
+}
+
+//------------------------------------------------------------------------------
+void vtkPLANLHaloFinder::MarkHaloParticlesAndGetCenter(
+      const unsigned int halo,
+      const int internalHaloIdx,
+      double center[3],
+      vtkUnstructuredGrid *particles)
+{
+  assert("pre: output particles data-structured is NULL" &&
+         (particles != NULL) );
+  assert("pre: particles must have a HaloID array" &&
+         (particles->GetPointData()->HasArray("HaloID")));
+
+  // STEP 0: Get pointer to the haloTags array
+  int *haloTags = static_cast<int*>(
+      particles->GetPointData()->GetArray("HaloID")->GetVoidPointer(0));
+
+  // STEP 1: Construct FOF halo properties (TODO: we can modularize this part)
+  int numberOfHalos = this->HaloFinder->getNumberOfHalos();
+  int* fofHalos     = this->HaloFinder->getHalos();
+  int* fofHaloCount = this->HaloFinder->getHaloCount();
+  int* fofHaloList  = this->HaloFinder->getHaloList();
+
+  cosmologytools::FOFHaloProperties* fof =
+      new cosmologytools::FOFHaloProperties();
+  fof->setHalos(numberOfHalos,fofHalos,fofHaloCount,fofHaloList);
+  fof->setParameters("",this->RL,this->Overlap,this->BB);
+  fof->setParticles(
+      &this->xx,&this->yy,&this->zz,
+      &this->vx,&this->vy,&this->vz,
+      &this->mass,
+      &this->potential,
+      &this->tag,
+      &this->mask,
+      &this->status
+      );
+
+  // STEP 2: Get the particle halo information for the given halo with the given
+  // internal halo idx. The halo finder find halos in [0, N]. However, we
+  // filter out the halos that are not within the PMin threshold. This yields
+  // halos [0, M] where M < N. The internalHaloIdx is w.r.t. the [0,N] range
+  // while the halo is w.r.t. the [0,M] range.
+  long size = fofHaloCount[ internalHaloIdx ];
+  POSVEL_T* xLocHalo = new POSVEL_T[size];
+  POSVEL_T* yLocHalo = new POSVEL_T[size];
+  POSVEL_T* zLocHalo = new POSVEL_T[size];
+  POSVEL_T* xVelHalo = new POSVEL_T[size];
+  POSVEL_T* yVelHalo = new POSVEL_T[size];
+  POSVEL_T* zVelHalo = new POSVEL_T[size];
+  POSVEL_T* massHalo = new POSVEL_T[size];
+  ID_T* id           = new ID_T[size];
+  int* actualIdx = new int[size];
+  fof->extractInformation(
+      internalHaloIdx,actualIdx,
+      xLocHalo, yLocHalo, zLocHalo,
+      xVelHalo, yVelHalo, zVelHalo,
+      massHalo, id
+      );
+
+  // STEP 3: Mark particles within the halo with the the given halo tag/ID.
+  for( int haloParticleIdx=0; haloParticleIdx < size; ++haloParticleIdx )
+    {
+    haloTags[ actualIdx[ haloParticleIdx ] ] = halo;
+    } // END for all haloParticles
+
+  // STEP 4: Find the center
+  switch( this->CenterFindingMethod )
+    {
+    case CENTER_OF_MASS:
+      assert("pre:center of mass has not been constructed correctly!" &&
+             (this->fofXCofMass.size()==numberOfHalos));
+      assert("pre:center of mass has not been constructed correctly!" &&
+             (this->fofYCofMass.size()==numberOfHalos));
+      assert("pre:center of mass has not been constructed correctly!" &&
+             (this->fofZCofMass.size()==numberOfHalos));
+      center[0] = this->fofXCofMass[ internalHaloIdx ];
+      center[1] = this->fofYCofMass[ internalHaloIdx ];
+      center[2] = this->fofZCofMass[ internalHaloIdx ];
+      break;
+    case AVERAGE:
+      assert("pre:average halo center has not been constructed correctly!" &&
+             (this->fofXPos.size()==numberOfHalos));
+      assert("pre:average halo center has not been constructed correctly!" &&
+             (this->fofYPos.size()==numberOfHalos));
+      assert("pre:average halo center has not been constructed correctly!" &&
+             (this->fofZPos.size()==numberOfHalos));
+      center[0] = this->fofXPos[ internalHaloIdx ];
+      center[1] = this->fofYPos[ internalHaloIdx ];
+      center[2] = this->fofZPos[ internalHaloIdx ];
+      break;
+    case MBP:
+    case MCP:
+      {
+      int centerIndex = -1;
+      POTENTIAL_T minPotential;
+
+      cosmologytools::HaloCenterFinder centerFinder;
+      centerFinder.setParticles(size,xLocHalo,yLocHalo,zLocHalo,massHalo,id);
+      centerFinder.setParameters(this->BB,this->Overlap);
+
+      if( this->CenterFindingMethod == MBP )
+        {
+        centerIndex = (size < cosmologytools::MBP_THRESHOLD)?
+            centerFinder.mostBoundParticleN2( &minPotential ):
+              centerFinder.mostBoundParticleAStar( &minPotential );
+        } // END if MBP
+      else
+        {
+        centerIndex = (size < cosmologytools::MCP_THRESHOLD)?
+            centerFinder.mostConnectedParticleN2():
+              centerFinder.mostConnectedParticleChainMesh();
+        }
+
+      int pidx = actualIdx[ centerIndex ];
+      assert("pre: particle index is out-of-bounds" &&
+             (pidx >= 0) && (pidx < particles->GetNumberOfPoints() ) );
+      particles->GetPoint( pidx, center );
+      }
+      break;
+    default:
+      vtkErrorMacro("Undefined center-finding method!");
+    }
+
+  delete [] xLocHalo;
+  delete [] yLocHalo;
+  delete [] zLocHalo;
+  delete [] xVelHalo;
+  delete [] yVelHalo;
+  delete [] zVelHalo;
+  delete [] massHalo;
+  delete [] id;
+  delete [] actualIdx;
+  delete fof;
+}
+
+//------------------------------------------------------------------------------
+void vtkPLANLHaloFinder::InitializeHaloCenters(
+    vtkUnstructuredGrid *haloCenters, unsigned int N)
+{
+  // TODO: Note the vtkArrays here should match what POSVEL_T, ID_T are set
+  haloCenters->Allocate( N, 0);
+
+  vtkPoints* pnts = vtkPoints::New();
+  pnts->SetDataTypeToDouble();
+  pnts->SetNumberOfPoints( N );
+
+  vtkDoubleArray *haloMass = vtkDoubleArray::New();
+  haloMass->SetName( "HaloMass" );
+  haloMass->SetNumberOfComponents( 1 );
+  haloMass->SetNumberOfTuples( N );
+  double *haloMassArray =
+      static_cast<double*>(haloMass->GetVoidPointer(0));
+
+  vtkDoubleArray *averageVelocity = vtkDoubleArray::New();
+  averageVelocity->SetName("AverageVelocity");
+  averageVelocity->SetNumberOfComponents( 3 );
+  averageVelocity->SetNumberOfTuples( N );
+  double *velArray =
+      static_cast<double*>(averageVelocity->GetVoidPointer(0));
+
+  vtkDoubleArray *velDispersion = vtkDoubleArray::New();
+  velDispersion->SetName("VelocityDispersion");
+  velDispersion->SetNumberOfComponents( 1 );
+  velDispersion->SetNumberOfTuples( N );
+  double *velDispArray =
+      static_cast<double*>(velDispersion->GetVoidPointer(0));
+
+  vtkIntArray *haloIdx = vtkIntArray::New();
+  haloIdx->SetName( "HaloID" );
+  haloIdx->SetNumberOfComponents( 1 );
+  haloIdx->SetNumberOfTuples( N );
+  int *haloIdxArray =
+      static_cast< int* >(haloIdx->GetVoidPointer(0));
+
+  for(unsigned int i=0; i < N; ++i )
+    {
+    vtkIdType vertexIdx = i;
+    haloCenters->InsertNextCell(VTK_VERTEX,1,&vertexIdx);
+    velArray[ i*3 ]    =
+    velArray[ i*3+1 ]  =
+    velArray[ i*3+2 ]  =
+    velDispArray[ i ]  = 0.0;
+    haloIdxArray[ i ]  = -1;
+    haloMassArray[ i ] = 0.0;
+    }
+
+  haloCenters->SetPoints( pnts );
+  pnts->Delete();
+  haloCenters->GetPointData()->AddArray(averageVelocity);
+  averageVelocity->Delete();
+  haloCenters->GetPointData()->AddArray(velDispersion);
+  velDispersion->Delete();
+  haloCenters->GetPointData()->AddArray(haloIdx);
+  haloIdx->Delete();
+  haloCenters->GetPointData()->AddArray(haloMass);
   haloMass->Delete();
-  haloVelocity->Delete();
-  haloDispersion->Delete();
+}
 
-  if(partMBP)
+//------------------------------------------------------------------------------
+void vtkPLANLHaloFinder::ComputeFOFHaloProperties()
+{
+  assert("pre: haloFinder is NULL!" && (this->HaloFinder != NULL) );
+
+  int numberOfHalos = this->HaloFinder->getNumberOfHalos();
+  int* fofHalos     = this->HaloFinder->getHalos();
+  int* fofHaloCount = this->HaloFinder->getHaloCount();
+  int* fofHaloList  = this->HaloFinder->getHaloList();
+
+  cosmologytools::FOFHaloProperties* fof =
+      new cosmologytools::FOFHaloProperties();
+  fof->setHalos(numberOfHalos,fofHalos,fofHaloCount,fofHaloList);
+  fof->setParameters("",this->RL,this->Overlap,this->BB);
+  fof->setParticles(
+      &this->xx,&this->yy,&this->zz,
+      &this->vx,&this->vy,&this->vz,
+      &this->mass,
+      &this->potential,
+      &this->tag,
+      &this->mask,
+      &this->status);
+
+  // Compute average halo position if that's what will be used as the halo
+  // center position
+  if( this->CenterFindingMethod == AVERAGE )
     {
-    partMBP->Delete();
+    fof->FOFPosition(&this->fofXPos,&this->fofYPos,&this->fofZPos);
+    }
+  // Compute center of mass of every FOF halo if that's what will be used as
+  // the halo center
+  else if( this->CenterFindingMethod == CENTER_OF_MASS )
+    {
+    fof->FOFCenterOfMass(
+      &this->fofXCofMass,&this->fofYCofMass,&this->fofZCofMass);
     }
 
-  if(partMCP)
-    {
-    partMCP->Delete();
-    }
+  // Compute mass of every halo
+  fof->FOFHaloMass(&this->fofMass);
 
-  if(haloMBP)
-    {
-    haloMBP->Delete();
-    }
+  // Compute average velocity of every FOF halo
+  fof->FOFVelocity(
+      &this->fofXVel,&this->fofYVel,&this->fofZVel);
 
-  if(haloMCP)
-    {
-    haloMCP->Delete();
-    }
+  // Compute the velocity dispersion
+  fof->FOFVelocityDispersion(
+      &this->fofXVel,&this->fofYVel,&this->fofZVel,&this->fofVelDisp);
 
-  if(mbpCenter)
-    {
-    delete [] mbpCenter;
-    }
-
-  if(mcpCenter)
-    {
-    delete [] mcpCenter;
-    }
-
-  if(sodPos)
-    {
-    sodPos->Delete();
-    sodCofMass->Delete();
-    sodMass->Delete();
-    sodVelocity->Delete();
-    sodDispersion->Delete();
-    sodRadius->Delete();
-    }
-
-  delete xx;
-  delete yy;
-  delete zz;
-  delete vx;
-  delete vy;
-  delete vz;
-  delete mass;
-  delete tag;
-  delete status;
-  delete potential;
-  delete mask;
-
-  delete [] fofHaloTags;
-  delete fofMass;
-  delete fofXPos;
-  delete fofYPos;
-  delete fofZPos;
-  delete fofXCofMass;
-  delete fofYCofMass;
-  delete fofZCofMass;
-  delete fofXVel;
-  delete fofYVel;
-  delete fofZVel;
-  delete fofVelDisp;
+  // Sanity checks!
+  assert("post: FOF mass property not correctly computed!" &&
+         (this->fofMass.size()==numberOfHalos) );
+  assert("post: FOF x-velocity component not correctly computed!" &&
+         (this->fofXVel.size()==numberOfHalos) );
+  assert("post: FOF y-velocity component not correctly computed!" &&
+         (this->fofYVel.size()==numberOfHalos) );
+  assert("post: FOF z-velocity component not correctly computed!" &&
+         (this->fofZVel.size()==numberOfHalos) );
+  assert("post: FOF velocity dispersion not correctly computed!" &&
+         (this->fofVelDisp.size()==numberOfHalos));
 
   delete fof;
-  delete haloFinder;
-
-  return 1;
 }
+
+//------------------------------------------------------------------------------
+void vtkPLANLHaloFinder::ResetHaloFinderInternals()
+{
+  // input particle information
+  this->xx.resize(0); this->yy.resize(0);  this->zz.resize(0);
+  this->vx.resize(0); this->vy.resize(0);  this->vz.resize(0);
+  this->mass.resize(0);
+  this->potential.resize(0);
+  this->tag.resize(0);
+  this->status.resize(0);
+  this->mask.resize(0);
+
+  // computed FOF properties
+  this->fofMass.resize(0);
+  this->fofXPos.resize(0); this->fofYPos.resize(0); this->fofZPos.resize(0);
+  this->fofXVel.resize(0); this->fofYVel.resize(0); this->fofZVel.resize(0);
+  this->fofXCofMass.resize(0);
+  this->fofYCofMass.resize(0);
+  this->fofZCofMass.resize(0);
+  this->fofVelDisp.resize(0);
+  this->ExtractedHalos.resize(0);
+}
+
+//------------------------------------------------------------------------------
+bool vtkPLANLHaloFinder::CheckOutputIntegrity(
+      vtkUnstructuredGrid* outputParticles)
+{
+  assert("pre: particle mesh is NULL" && (outputParticles != NULL) );
+  if(!outputParticles->GetPointData()->HasArray("velocity") ||
+      !outputParticles->GetPointData()->HasArray("mass") ||
+      !outputParticles->GetPointData()->HasArray("tag") ||
+      !outputParticles->GetPointData()->HasArray("ghost"))
+      {
+      vtkErrorMacro(
+          << "The input data does not have one or more of "
+          << "the following point arrays: velocity, mass, tag, or ghost."
+         );
+      return false;
+      }
+  return true;
+}
+
+

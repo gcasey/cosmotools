@@ -18,6 +18,9 @@ int my_posix_memalign(void **memptr, size_t alignment, size_t size) {
 }
 */
 
+namespace cosmologytools {
+
+
 //-----------------------------------------------------------------------------
 
 FGrid::FGrid() :
@@ -189,4 +192,6 @@ float ForceLawSR::f_over_r(float r2) {
   ret *= (r2>=m_r2min)*(r2<=m_r2max);
   return ret;
   //return ( powf(r2 + m_rsm2, -1.5) );
+}
+
 }

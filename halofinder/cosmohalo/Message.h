@@ -56,6 +56,8 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 using namespace std;
 
 
+namespace cosmologytools {
+
 
 class Message {
 public:
@@ -117,4 +119,5 @@ private:
   int   bufPos;         // Position in buffer
 };
 
+}
 #endif

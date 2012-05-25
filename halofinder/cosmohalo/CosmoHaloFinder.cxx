@@ -1,45 +1,45 @@
 /*=========================================================================
-                                                                                
+
 Copyright (c) 2007, Los Alamos National Security, LLC
 
 All rights reserved.
 
-Copyright 2007. Los Alamos National Security, LLC. 
-This software was produced under U.S. Government contract DE-AC52-06NA25396 
-for Los Alamos National Laboratory (LANL), which is operated by 
-Los Alamos National Security, LLC for the U.S. Department of Energy. 
-The U.S. Government has rights to use, reproduce, and distribute this software. 
+Copyright 2007. Los Alamos National Security, LLC.
+This software was produced under U.S. Government contract DE-AC52-06NA25396
+for Los Alamos National Laboratory (LANL), which is operated by
+Los Alamos National Security, LLC for the U.S. Department of Energy.
+The U.S. Government has rights to use, reproduce, and distribute this software.
 NEITHER THE GOVERNMENT NOR LOS ALAMOS NATIONAL SECURITY, LLC MAKES ANY WARRANTY,
-EXPRESS OR IMPLIED, OR ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.  
-If software is modified to produce derivative works, such modified software 
-should be clearly marked, so as not to confuse it with the version available 
+EXPRESS OR IMPLIED, OR ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.
+If software is modified to produce derivative works, such modified software
+should be clearly marked, so as not to confuse it with the version available
 from LANL.
- 
-Additionally, redistribution and use in source and binary forms, with or 
-without modification, are permitted provided that the following conditions 
+
+Additionally, redistribution and use in source and binary forms, with or
+without modification, are permitted provided that the following conditions
 are met:
--   Redistributions of source code must retain the above copyright notice, 
-    this list of conditions and the following disclaimer. 
+-   Redistributions of source code must retain the above copyright notice,
+    this list of conditions and the following disclaimer.
 -   Redistributions in binary form must reproduce the above copyright notice,
     this list of conditions and the following disclaimer in the documentation
-    and/or other materials provided with the distribution. 
+    and/or other materials provided with the distribution.
 -   Neither the name of Los Alamos National Security, LLC, Los Alamos National
     Laboratory, LANL, the U.S. Government, nor the names of its contributors
-    may be used to endorse or promote products derived from this software 
-    without specific prior written permission. 
+    may be used to endorse or promote products derived from this software
+    without specific prior written permission.
 
 THIS SOFTWARE IS PROVIDED BY LOS ALAMOS NATIONAL SECURITY, LLC AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
-THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
-ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL SECURITY, LLC OR 
-CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, 
-EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, 
-PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; 
-OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, 
-WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR 
-OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF 
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL SECURITY, LLC OR
+CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-                                                                                
+
 =========================================================================*/
 
 #include <iostream>
@@ -58,6 +58,9 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 using namespace std;
 
+namespace cosmologytools {
+
+
 /****************************************************************************/
 CosmoHaloFinder::CosmoHaloFinder()
 {
@@ -66,7 +69,7 @@ CosmoHaloFinder::CosmoHaloFinder()
   yy = 0;
   zz = 0;
   vx = 0;
-  vy = 0; 
+  vy = 0;
   vz = 0;
   ms = 0;
   pt = 0;
@@ -132,7 +135,7 @@ void CosmoHaloFinder::Execute()
   Writing();
 #endif
 }
- 
+
 /****************************************************************************/
 void CosmoHaloFinder::Reading()
 {
@@ -204,7 +207,7 @@ void CosmoHaloFinder::Reading()
 
     // sanity check
     if (fBlock[0] > rL || fBlock[2] > rL || fBlock[4] > rL) {
-      cout << "rL is too small" << endl; 
+      cout << "rL is too small" << endl;
       exit (-1);
     }
 
@@ -220,10 +223,10 @@ void CosmoHaloFinder::Reading()
     zz[i] = fBlock[4];
     vz[i] = fBlock[5];
     ms[i] = fBlock[6];
-    pt[i] = iBlock[0]; 
-        
+    pt[i] = iBlock[0];
+
   } // i-loop
-  
+
   delete FileStream;
 
   return;
@@ -406,7 +409,7 @@ void CosmoHaloFinder::Finding()
 
 /****************************************************************************/
 void CosmoHaloFinder::Reorder(int first,
-                              int last, 
+                              int last,
                               int dataFlag)
 {
   int len = last - first;
@@ -434,11 +437,11 @@ void CosmoHaloFinder::Reorder(int first,
 void CosmoHaloFinder::ComputeLU(int first, int last)
 {
   int len = last - first;
-    
+
   int middle  = first + len/2;
   int middle1 = first + len/4;
   int middle2 = first + 3*len/4;
-  
+
   // base cases
   if (len == 2) {
     int ii = seq[first];
@@ -529,31 +532,31 @@ void CosmoHaloFinder::Merge(int first1, int last1, int first2, int last2, int da
     for (int j=0; j<len2; j++) {
       int ii = seq[first1+i];
       int jj = seq[first2+j];
-  
+
       // fast exit
       if (ht[ii] == ht[jj])
         continue;
-  
+
       // ht[ii] != ht[jj]
       POSVEL_T xdist = fabs(data[dataX][jj] - data[dataX][ii]);
       POSVEL_T ydist = fabs(data[dataY][jj] - data[dataY][ii]);
       POSVEL_T zdist = fabs(data[dataZ][jj] - data[dataZ][ii]);
-  
+
       if (periodic) {
         xdist = min(xdist, np-xdist);
         ydist = min(ydist, np-ydist);
         zdist = min(zdist, np-zdist);
       }
-  
+
       if ((xdist<bb) && (ydist<bb) && (zdist<bb)) {
-  
+
         POSVEL_T dist = xdist*xdist + ydist*ydist + zdist*zdist;
         if (dist < bb*bb) {
-  
+
           // union two halos to one
           int newHaloId = min(ht[ii], ht[jj]);
           int oldHaloId = max(ht[ii], ht[jj]);
-  
+
           // update particles with oldHaloId
           int last = -1;
           int ith = halo[oldHaloId];
@@ -562,7 +565,7 @@ void CosmoHaloFinder::Merge(int first1, int last1, int first2, int last2, int da
             last = ith;
             ith = nextp[ith];
           }
-  
+
           // update halo's linked list
           nextp[last] = halo[newHaloId];
           halo[newHaloId] = halo[oldHaloId];
@@ -608,4 +611,6 @@ void CosmoHaloFinder::Merge(int first1, int last1, int first2, int last2, int da
 
   // done
   return;
+}
+
 }

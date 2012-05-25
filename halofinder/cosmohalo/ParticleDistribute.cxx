@@ -68,6 +68,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <cstring>
 using namespace std;
 
+namespace cosmologytools {
 /////////////////////////////////////////////////////////////////////////
 //
 // Particle data space is partitioned for the number of processors
@@ -1265,7 +1266,7 @@ void ParticleDistribute::readFromBlockFile(
       (POSVEL_T) this->gadgetHeader.mass[type] * this->massConvertFactor;
 
     // Place particles of this type and mass in the buffer
-    int numLeftInType = this->gadgetHeader.npart[type] - 
+    int numLeftInType = this->gadgetHeader.npart[type] -
                         (curParticle - this->gadgetStart[type]);
     int count = min(particlesRemaining, numLeftInType);
 
@@ -1519,7 +1520,7 @@ void ParticleDistribute::readFromBlockFile(
       (POSVEL_T) this->gadgetHeader.mass[type] * this->massConvertFactor;
 
     // Place particles of this type and mass in the buffer
-    int numLeftInType = this->gadgetHeader.npart[type] - 
+    int numLeftInType = this->gadgetHeader.npart[type] -
                         (curParticle - this->gadgetStart[type]);
     int count = min(particlesRemaining, numLeftInType);
 
@@ -2030,4 +2031,6 @@ void ParticleDistribute::readData(
          dataPtr += dataSize;
       }
    }
+}
+
 }

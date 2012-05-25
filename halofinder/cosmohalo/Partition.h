@@ -65,7 +65,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 using namespace std;
 
-
+namespace cosmologytools {
 
 class Partition {
 public:
@@ -108,4 +108,5 @@ private:
   static int neighbor[NUM_OF_NEIGHBORS];// Neighbor processor ids
 };
 
+}
 #endif

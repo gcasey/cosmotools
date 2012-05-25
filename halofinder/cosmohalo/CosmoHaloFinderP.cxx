@@ -54,6 +54,9 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 using namespace std;
 
+namespace cosmologytools {
+
+
 /////////////////////////////////////////////////////////////////////////
 //
 // Parallel manager for serial CosmoHaloFinder
@@ -102,20 +105,27 @@ CosmoHaloFinderP::CosmoHaloFinderP()
     this->deadHalo[n] = 0;
   }
 
-  this->haloList = 0;
-  this->haloStart = 0;
-  this->haloSize = 0;
-  this->haloData = 0;
+  this->haloList     = NULL;
+  this->haloStart    = NULL;
+  this->haloSize     = NULL;
+  this->haloData     = NULL;
+  this->myMixedHalos.resize(0);
+  this->allMixedHalos.resize(0);
 }
 
 CosmoHaloFinderP::~CosmoHaloFinderP()
 {
-  for (unsigned int i = 0; i < this->myMixedHalos.size(); i++)
-    delete this->myMixedHalos[i];
+  for(unsigned int i=0; i < this->myMixedHalos.size(); i++)
+    {
+    if( this->myMixedHalos[i] != NULL )
+      {
+      delete this->myMixedHalos[i];
+      }
+    }
 
-  if (this->haloList != 0) delete [] this->haloList;
-  if (this->haloStart != 0) delete [] this->haloStart;
-  if (this->haloSize != 0) delete [] this->haloSize;
+  if (this->haloList  != NULL) delete [] this->haloList;
+  if (this->haloStart != NULL) delete [] this->haloStart;
+  if (this->haloSize  != NULL) delete [] this->haloSize;
 
   if (this->haloData != 0) {
     for (int dim = 0; dim < DIMENSION; dim++)
@@ -1125,5 +1135,7 @@ void CosmoHaloFinderP::writeTaggedParticles()
 
   delete outStream;
   delete [] mapIndex;
+}
+
 }
 #endif // USE_VTK_COSMO

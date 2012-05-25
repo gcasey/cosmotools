@@ -52,22 +52,23 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef SODHalo_h
 #define SODHalo_h
 
-#ifdef USE_VTK_COSMO
-#include "CosmoDefinition.h"
-#include "vtkstd/string"
-#include "vtkstd/vector"
-
-using namespace vtkstd;
-#else
+//#ifdef USE_VTK_COSMO
+//#include "CosmoDefinition.h"
+//#include "vtkstd/string"
+//#include "vtkstd/vector"
+//
+//using namespace vtkstd;
+//#else
 #include "Definition.h"
 #include <string>
 #include <vector>
 
 using namespace std;
-#endif
+//#endif
 
 #include "ChainingMesh.h"
 
+namespace cosmologytools {
 ///////////////////////////////////////////////////////////////////////////
 //
 // To calculate the exact r_200 store the distance and mass of each particle
@@ -262,4 +263,5 @@ private:
   double totalMass;                     // SOD total mass
 };
 
+}
 #endif

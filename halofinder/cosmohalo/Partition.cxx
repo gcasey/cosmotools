@@ -1,45 +1,45 @@
 /*=========================================================================
-                                                                                
+
 Copyright (c) 2007, Los Alamos National Security, LLC
 
 All rights reserved.
 
-Copyright 2007. Los Alamos National Security, LLC. 
-This software was produced under U.S. Government contract DE-AC52-06NA25396 
-for Los Alamos National Laboratory (LANL), which is operated by 
-Los Alamos National Security, LLC for the U.S. Department of Energy. 
-The U.S. Government has rights to use, reproduce, and distribute this software. 
+Copyright 2007. Los Alamos National Security, LLC.
+This software was produced under U.S. Government contract DE-AC52-06NA25396
+for Los Alamos National Laboratory (LANL), which is operated by
+Los Alamos National Security, LLC for the U.S. Department of Energy.
+The U.S. Government has rights to use, reproduce, and distribute this software.
 NEITHER THE GOVERNMENT NOR LOS ALAMOS NATIONAL SECURITY, LLC MAKES ANY WARRANTY,
-EXPRESS OR IMPLIED, OR ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.  
-If software is modified to produce derivative works, such modified software 
-should be clearly marked, so as not to confuse it with the version available 
+EXPRESS OR IMPLIED, OR ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.
+If software is modified to produce derivative works, such modified software
+should be clearly marked, so as not to confuse it with the version available
 from LANL.
- 
-Additionally, redistribution and use in source and binary forms, with or 
-without modification, are permitted provided that the following conditions 
+
+Additionally, redistribution and use in source and binary forms, with or
+without modification, are permitted provided that the following conditions
 are met:
--   Redistributions of source code must retain the above copyright notice, 
-    this list of conditions and the following disclaimer. 
+-   Redistributions of source code must retain the above copyright notice,
+    this list of conditions and the following disclaimer.
 -   Redistributions in binary form must reproduce the above copyright notice,
     this list of conditions and the following disclaimer in the documentation
-    and/or other materials provided with the distribution. 
+    and/or other materials provided with the distribution.
 -   Neither the name of Los Alamos National Security, LLC, Los Alamos National
     Laboratory, LANL, the U.S. Government, nor the names of its contributors
-    may be used to endorse or promote products derived from this software 
-    without specific prior written permission. 
+    may be used to endorse or promote products derived from this software
+    without specific prior written permission.
 
 THIS SOFTWARE IS PROVIDED BY LOS ALAMOS NATIONAL SECURITY, LLC AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
-THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
-ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL SECURITY, LLC OR 
-CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, 
-EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, 
-PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; 
-OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, 
-WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR 
-OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF 
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL SECURITY, LLC OR
+CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-                                                                                
+
 =========================================================================*/
 
 #include <iostream>
@@ -47,6 +47,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "Partition.h"
 #include "dims.h"
 
+namespace cosmologytools {
 /////////////////////////////////////////////////////////////////////////
 //
 // Static class to control MPI and the partitioning of processors in
@@ -92,7 +93,7 @@ void Partition::initialize(MPI_Comm comm)
     // on ParaView (client only, it won't MPI_Init itself)
     int temp;
     MPI_Initialized(&temp);
-    if(!temp) 
+    if(!temp)
       {
       temp = 0;
       MPI_Init(&temp, 0);
@@ -103,11 +104,11 @@ void Partition::initialize(MPI_Comm comm)
     //MPI_Init(&argc, &argv);
     MPI_Comm_rank(comm, &myProc);
     MPI_Comm_size(comm, &numProc);
-#endif    
+#endif
 
     for (int dim = 0; dim < DIMENSION; dim++)
       decompSize[dim] = 0;
-    
+
 #ifdef USE_SERIAL_COSMO
     myProc = 0;
     numProc = 1;
@@ -124,25 +125,25 @@ void Partition::initialize(MPI_Comm comm)
     // Compute the number of processors in each dimension
     //MPI_Dims_create(numProc, DIMENSION, decompSize);
     MY_Dims_create_3D(numProc, DIMENSION, decompSize);
-    
+
     // Create the Cartesion communicator
     MPI_Cart_create(comm,
                     DIMENSION, decompSize, periodic, reorder, &cartComm);
-    
+
     // Reset my rank if it changed
     MPI_Comm_rank(cartComm, &myProc);
-    
+
     // Get this processor's position in the Cartesian topology
     MPI_Cart_coords(cartComm, myProc, DIMENSION, myPosition);
-#endif    
+#endif
 
     // Set all my neighbor processor ids for communication
     setNeighbors();
-    
+
 #ifndef USE_VTK_COSMO
     if (myProc == 0)
       cout << "Partition 3D: [" << decompSize[0] << ":"
-           << decompSize[1] << ":" << decompSize[2] << "]" << endl; 
+           << decompSize[1] << ":" << decompSize[2] << "]" << endl;
 #endif
 
     initialized = 1;
@@ -214,7 +215,7 @@ int Partition::getNeighbor
 }
 
 /////////////////////////////////////////////////////////////////////////
-//    
+//
 // Every processor will have 26 neighbors because the cosmology structure
 // is a 3D torus.  Each will have 6 face neighbors, 12 edge neighbors and
 // 8 corner neighbors.
@@ -222,7 +223,7 @@ int Partition::getNeighbor
 /////////////////////////////////////////////////////////////////////////
 
 void Partition::setNeighbors()
-{ 
+{
   // Where is this processor in the decomposition
   int xpos = myPosition[0];
   int ypos = myPosition[1];
@@ -241,17 +242,17 @@ void Partition::setNeighbors()
   neighbor[X0_Y1] = Partition::getNeighbor(xpos-1, ypos+1, zpos);
   neighbor[X1_Y0] = Partition::getNeighbor(xpos+1, ypos-1, zpos);
   neighbor[X1_Y1] = Partition::getNeighbor(xpos+1, ypos+1, zpos);
-  
+
   neighbor[Y0_Z0] = Partition::getNeighbor(xpos, ypos-1, zpos-1);
   neighbor[Y0_Z1] = Partition::getNeighbor(xpos, ypos-1, zpos+1);
   neighbor[Y1_Z0] = Partition::getNeighbor(xpos, ypos+1, zpos-1);
   neighbor[Y1_Z1] = Partition::getNeighbor(xpos, ypos+1, zpos+1);
-  
+
   neighbor[Z0_X0] = Partition::getNeighbor(xpos-1, ypos, zpos-1);
   neighbor[Z0_X1] = Partition::getNeighbor(xpos+1, ypos, zpos-1);
   neighbor[Z1_X0] = Partition::getNeighbor(xpos-1, ypos, zpos+1);
   neighbor[Z1_X1] = Partition::getNeighbor(xpos+1, ypos, zpos+1);
-  
+
   // Corner neighbors
   neighbor[X0_Y0_Z0] = Partition::getNeighbor(xpos-1, ypos-1, zpos-1);
   neighbor[X1_Y0_Z0] = Partition::getNeighbor(xpos+1, ypos-1, zpos-1);
@@ -275,4 +276,6 @@ void Partition::finalize()
   myProc = -1;
 
   //MPI_Finalize();
+}
+
 }

@@ -5,6 +5,7 @@
 
 using namespace std;
 
+
 /////////////////////////////////////////////////////////////////////////
 //
 // Read a file of halo tag and number of particles in that halo (ASCII)
@@ -55,7 +56,7 @@ int main(int argc, char** argv)
       if ((haloMass[h] >= M) && (haloMass[h] < (M * pow(10, dM)))) {
         count++;
         M_weight[bin] += haloMass[h];
-      } 
+      }
     }
     binCount[bin] = count * 1.0;
 
@@ -72,8 +73,8 @@ int main(int argc, char** argv)
     M_weight[bin] = log10(M_weight[bin]);
 
     cout << setprecision(8) << setw(9) << showpoint
-         << log10(M) << "\t" 
-         << log10(M * pow(10, dM)) << "\t" 
+         << log10(M) << "\t"
+         << log10(M * pow(10, dM)) << "\t"
          << binCount[bin] << endl;
 
     M = M * pow(10, dM);

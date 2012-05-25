@@ -60,6 +60,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 using namespace std;
 
+namespace cosmologytools {
 /////////////////////////////////////////////////////////////////////////
 //
 // SODHalo uses the results of the CosmoHaloFinder to locate the
@@ -265,9 +266,9 @@ void SODHalo::createSODHalo(
   }
 
 #ifdef DEBUG
-  cout << "Rank: " << this->myProc 
+  cout << "Rank: " << this->myProc
        << " Initial radius = " << this->initRadius << endl;
-  cout << "Rank: " << this->myProc 
+  cout << "Rank: " << this->myProc
        << " Characteristic radius " << this->charRadius << endl;
 #endif
 }
@@ -304,10 +305,10 @@ void SODHalo::calculateMassProfile()
 
 #ifndef USE_VTK_COSMO
   if (this->maxRadius < requiredMaxRadius) {
-    cout << "Rank: " << this->myProc 
+    cout << "Rank: " << this->myProc
          << " Reset max radius from " << requiredMaxRadius
          << " to " << maxRadius << endl;
-    cout << "Rank: " << this->myProc 
+    cout << "Rank: " << this->myProc
          << "Might need to make the dead size (overload) larger" << endl;
   }
 #endif
@@ -857,4 +858,6 @@ void SODHalo::splint(
   *y = a * ya[klo] + b * ya[khi] +
        ((a * a * a - a) * y2a[klo] +
        (b * b * b - b) * y2a[khi]) * (h * h) / 6.0;
+}
+
 }

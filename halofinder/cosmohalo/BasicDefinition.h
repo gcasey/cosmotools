@@ -73,6 +73,7 @@ typedef uint16_t        MASK_T;   // Other particle information
 
 
 ///////////////////////////////////////////////////////////////////////////
+namespace cosmologytools {
 
 const float MAX_FLOAT   = 1.0e15;
 const float MIN_FLOAT   = -1.0e15;
@@ -286,4 +287,5 @@ struct GadgetHeader {
   char     fill[GADGET_FILL];
 };
 
+} /* end namespace cosmologytools */
 #endif
