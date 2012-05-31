@@ -6,15 +6,26 @@ foreach(header ${HEADERS})
 endforeach()
 
 set(SOURCES
- CosmologyToolsManager.cxx
  CosmologyTools.cxx
+ CosmologyToolsManager.cxx
+ ParaViewInSituInterface.cxx
  SimulationParticles.cxx
  )
 
-include_directories(${PACKAGE_halofinder_INCLUDE_DIRS})
+## find paraview
+find_package(ParaView REQUIRED)
+include(${PARAVIEW_USE_FILE})
+
+include_directories(
+    ${PACKAGE_halofinder_INCLUDE_DIRS}
+    ${VTK_INCLUDE_DIRS}
+    ${PARAVIEW_INCLUDE_DIRS}
+    )
 
 set(RequiredLibs
     ${PACKAGE_halofinder_LIBRARIES}
+    ${PARAVIEW_LIBRARIES}
+    ${VTK_LIBRARIES}
     ${MPI_LIBRARIES})
 
 ## Setup the fortran mangling
@@ -36,6 +47,7 @@ FortranCInterface_HEADER(
         CosmologySetTrackerFrequency
         CosmologyTrackHalos
         )
+
 ## Copy the mangled header to the main includes directory
 file(COPY ${PROJECT_BINARY_DIR}/C/CosmologyToolsAPIMangling.h
       DESTINATION ${HEADER_INCLUDES_DIRECTORY} )
