@@ -1,8 +1,9 @@
 #include "CosmologyToolsManager.h"
 
-#include "HaloFinders.h"
-#include "SimulationParticles.h"
 #include "ForwardHaloTracker.h"
+#include "HaloFinders.h"
+#include "ParaViewInSituInterface.h"
+#include "SimulationParticles.h"
 
 #include <cstdlib>
 #include <cassert>
@@ -12,16 +13,22 @@ namespace cosmologytools
 
 CosmologyToolsManager::CosmologyToolsManager()
 {
-  this->Layout                = MemoryLayout::ROWMAJOR;
-  this->Communicator          = MPI_COMM_WORLD;
-  this->EnableVis             = false;
-  this->HaloTrackingFrequency = 5;
-  this->Particles             = new SimulationParticles();
-  this->HaloFinder            = HaloFinders::COSMO;
-  this->HaloTracker           = new ForwardHaloTracker();
+  this->Layout                 = MemoryLayout::ROWMAJOR;
+  this->Communicator           = MPI_COMM_WORLD;
+  this->EnableVis              = false;
+  this->HaloTrackingFrequency  = 5;
+  this->VisualizationFrequency = 10;
 
   this->TimeSteps = NULL;
   this->NumTimeSteps = 0;
+
+  this->Particles   = new SimulationParticles();
+
+  this->HaloFinder  = HaloFinders::COSMO;
+  this->HaloTracker = new ForwardHaloTracker();
+
+  this->Paraview = new ParaViewInSituInterface();
+  this->Paraview->Initialize();
 }
 
 //-----------------------------------------------------------------------------
@@ -36,6 +43,12 @@ CosmologyToolsManager::~CosmologyToolsManager()
     {
     delete this->HaloTracker;
     }
+
+ if( this->Paraview != NULL )
+	{
+	this->Paraview->Finalize();
+	delete this->Paraview;
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -95,12 +108,30 @@ void CosmologyToolsManager::SetParticles(
 void CosmologyToolsManager::TrackHalos()
 {
   this->HaloTracker->UpdateMergerTree(this->Particles->TimeStep);
+  if( this->IsVisualizationCheckPoint() )
+    {
+    this->Paraview->Update(this->Particles);
+    }
 }
 
 //-----------------------------------------------------------------------------
 void CosmologyToolsManager::FindHalos()
 {
-  // TODO: implement this
+  // TODO: call halo-finder
+  if( this->IsVisualizationCheckPoint() )
+    {
+    this->Paraview->Update(this->Particles);
+    }
+}
+
+//-----------------------------------------------------------------------------
+bool CosmologyToolsManager::IsVisualizationCheckPoint()
+{
+  if( (this->Particles->TimeStep % this->VisualizationFrequency) == 0 )
+    {
+    return true;
+    }
+  return false;
 }
 
 } /* namespace cosmologytools */

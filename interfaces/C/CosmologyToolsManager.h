@@ -32,6 +32,7 @@ public:
 // Forward declarations
 class SimulationParticles;
 class ForwardHaloTracker;
+class ParaViewInSituInterface;
 
 class CosmologyToolsManager
 {
@@ -45,6 +46,7 @@ public:
   GetNSetMacro(Communicator,MPI_Comm);
   GetNSetMacro(EnableVis,bool);
   GetNSetMacro(HaloTrackingFrequency,int);
+  GetNSetMacro(VisualizationFrequency,int);
   GetMacro(Particles,SimulationParticles*);
 
   /**
@@ -97,6 +99,7 @@ public:
 protected:
   int HaloFinder;
   int HaloTrackingFrequency;
+  int VisualizationFrequency;
   int Layout;
   MPI_Comm Communicator;
   bool EnableVis;
@@ -108,6 +111,12 @@ protected:
   SimulationParticles *Particles;
 
   ForwardHaloTracker *HaloTracker;
+  ParaViewInSituInterface *Paraview;
+
+  /**
+   * @return status true iff this timestep is a visualization checkpoint.
+   */
+  bool IsVisualizationCheckPoint();
 
 private:
   DISABLE_COPY_AND_ASSIGNMENT(CosmologyToolsManager);
