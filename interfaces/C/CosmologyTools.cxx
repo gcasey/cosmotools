@@ -130,6 +130,13 @@ void CosmologySetTrackerFrequency(int *frequency)
 }
 
 //------------------------------------------------------------------------------
+void CosmologySetVisualizationFrequency(int *frequency)
+{
+  assert("pre: CosmoToolsManager is NULL" && (CosmoToolsManager != NULL) );
+  CosmoToolsManager->SetVisualizationFrequency( *frequency );
+}
+
+//------------------------------------------------------------------------------
 void CosmologySetHaloFinder( int *haloFinder )
 {
   assert("pre: CosmoToolsManager is NULL" && (CosmoToolsManager != NULL) );

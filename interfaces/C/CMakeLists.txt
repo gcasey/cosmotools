@@ -45,6 +45,7 @@ FortranCInterface_HEADER(
         CosmologySetMemoryLayout
         CosmologySetParticles
         CosmologySetTrackerFrequency
+        CosmologySetVisualizationFrequency
         CosmologyTrackHalos
         )
 

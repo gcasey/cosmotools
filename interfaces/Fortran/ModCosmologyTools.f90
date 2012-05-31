@@ -78,6 +78,18 @@ contains
 
 !-------------------------------------------------------------------------------
 ! Description:
+! Sets the visualization checkpoint frequency
+!
+! IN frequency -- an integer that specifies how often visualization will update
+!-------------------------------------------------------------------------------
+  subroutine ModCosmologySetVisualizationFrequency(frequency)
+      implicit none
+      integer :: frequency
+      call CosmologySetVisualizationFrequency( frequency )
+  end subroutine ModCosmologySetVisualizationFrequency
+
+!-------------------------------------------------------------------------------
+! Description:
 ! Sets the halo finder to use
 !
 ! IN haloFinder -- an integer that specifies which halofinder to use.

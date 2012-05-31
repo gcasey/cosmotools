@@ -89,6 +89,12 @@ void CosmologySetAnalysisTimeSteps(INTEGER *tsteps, INTEGER N);
 void CosmologySetTrackerFrequency(int *frequency);
 
 /**
+ * @brief Sets the frequency at which a visualization checkpoint will occur.
+ * @param frequency the frequency for visualizing the results.
+ */
+void CosmologySetVisualizationFrequency(int *frequency);
+
+/**
  * @brief Fills the user-supplied buffer with the halo tags for each particle.
  * @param haloTags user-supplied buffer to store the halo tags
  * @note particles that are not inside a halo will have a value of -1.
