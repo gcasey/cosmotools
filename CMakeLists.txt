@@ -10,6 +10,12 @@ set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 include(CosmologyToolsEnvironment)
 include(CosmologyToolsTypes)
 
+## Choose whether to compile with co-visualization
+option(ENABLE_COVIS "Compile with co-visualization" ON)
+if( ${ENABLE_COVIS} )
+  add_definitions(-DCOVIS)
+endif()
+
 ## Set the list of cosmology packages to be build. Note the order here matters!
 set(cosmopackages
     common

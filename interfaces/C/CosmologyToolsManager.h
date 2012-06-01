@@ -32,7 +32,10 @@ public:
 // Forward declarations
 class SimulationParticles;
 class ForwardHaloTracker;
-class ParaViewInSituInterface;
+
+#ifdef ENABLE_COVIS
+ class ParaViewInSituInterface;
+#endif
 
 class CosmologyToolsManager
 {
@@ -58,7 +61,7 @@ public:
           INTEGER *timeSteps, INTEGER numTimeSteps);
 
   /**
-   * @brief Sets the particles at the given timeste/redshift.
+   * @brief Sets the particles at the given timestep/redshift.
    * @param tstep the current discrete time-step
    * @param redshift the redshift at the given time-step
    * @param px x-component of the particles position vector
@@ -111,10 +114,19 @@ protected:
   SimulationParticles *Particles;
 
   ForwardHaloTracker *HaloTracker;
+
+#ifdef ENABLE_COVIS
   ParaViewInSituInterface *Paraview;
+#endif
 
   /**
-   * @return status true iff this timestep is a visualization checkpoint.
+   * @brief
+   * @param particles
+   */
+  void VisualizationUpdate();
+
+  /**
+   * @return Status true iff this time-step is a visualization checkpoint.
    */
   bool IsVisualizationCheckPoint();
 

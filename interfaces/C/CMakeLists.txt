@@ -8,25 +8,31 @@ endforeach()
 set(SOURCES
  CosmologyTools.cxx
  CosmologyToolsManager.cxx
- ParaViewInSituInterface.cxx
  SimulationParticles.cxx
  )
 
-## find paraview
-find_package(ParaView REQUIRED)
-include(${PARAVIEW_USE_FILE})
-
 include_directories(
-    ${PACKAGE_halofinder_INCLUDE_DIRS}
-    ${VTK_INCLUDE_DIRS}
-    ${PARAVIEW_INCLUDE_DIRS}
-    )
+    ${PACKAGE_halofinder_INCLUDE_DIRS})
 
 set(RequiredLibs
-    ${PACKAGE_halofinder_LIBRARIES}
-    ${PARAVIEW_LIBRARIES}
-    ${VTK_LIBRARIES}
-    ${MPI_LIBRARIES})
+    ${PACKAGE_halofinder_LIBRARIES})
+
+## find paraview
+if( ${ENABLE_COVIS} )
+    list(APPEND SOURCES ParaViewInSituInterface.cxx)
+
+    find_package(ParaView REQUIRED)
+    include(${PARAVIEW_USE_FILE})
+
+    include_directories(
+        ${VTK_INCLUDE_DIRS}
+        ${PARAVIEW_INCLUDE_DIRS}
+        )
+
+   list(APPEND RequiredLibs ${PARAVIEW_LIBRARIES})
+   list(APPEND RequiredLibs ${VTK_LIBRARIES})
+   list(APPEND RequiredLibs ${MPI_LIBRARIES})
+endif()
 
 ## Setup the fortran mangling
 include(FortranCInterface)

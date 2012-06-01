@@ -5,6 +5,10 @@
 #include "ParaViewInSituInterface.h"
 #include "SimulationParticles.h"
 
+#ifdef ENABLE_COVIS
+ #include "ParaViewInSituInterface.h"
+#endif
+
 #include <cstdlib>
 #include <cassert>
 
@@ -27,8 +31,11 @@ CosmologyToolsManager::CosmologyToolsManager()
   this->HaloFinder  = HaloFinders::COSMO;
   this->HaloTracker = new ForwardHaloTracker();
 
+#ifdef ENABLE_COVIS
   this->Paraview = new ParaViewInSituInterface();
   this->Paraview->Initialize();
+#endif
+
 }
 
 //-----------------------------------------------------------------------------
@@ -44,12 +51,15 @@ CosmologyToolsManager::~CosmologyToolsManager()
     delete this->HaloTracker;
     }
 
- if( this->Paraview != NULL )
-	{
-	this->Paraview->Finalize();
-	delete this->Paraview;
-	}
+#ifdef ENABLE_COVIS
+  if( this->Paraview != NULL )
+    {
+    this->Paraview->Finalize();
+    delete this->Paraview;
+    }
+#endif
 }
+
 
 //-----------------------------------------------------------------------------
 void CosmologyToolsManager::SetAnalysisTimeSteps(
@@ -117,11 +127,21 @@ void CosmologyToolsManager::TrackHalos()
 //-----------------------------------------------------------------------------
 void CosmologyToolsManager::FindHalos()
 {
-  // TODO: call halo-finder
+  // TODO: call the halo-finder
+  this->VisualizationUpdate();
+}
+
+//-----------------------------------------------------------------------------
+void CosmologyToolsManager::VisualizationUpdate()
+{
+
+#ifdef ENABLE_COVIS
   if( this->IsVisualizationCheckPoint() )
     {
-    this->Paraview->Update(this->Particles);
+    this->Paraview->Update( this->Particles );
     }
+#endif
+
 }
 
 //-----------------------------------------------------------------------------
