@@ -386,6 +386,58 @@ void FOFHaloProperties::FOFVelocityDispersion(
 
 /////////////////////////////////////////////////////////////////////////
 //
+// Computes basic FOF Attributes, i.e., mass, velocity and velocite disp
+// in a single loop of all the halos.
+//
+/////////////////////////////////////////////////////////////////////////
+void FOFHaloProperties::FOFAttributes(
+    vector<POSVEL_T>* haloMass,
+    vector<POSVEL_T>* xVel,
+    vector<POSVEL_T>* yVel,
+    vector<POSVEL_T>* zVel,
+    vector<POSVEL_T>* velDisp)
+{
+
+  POSVEL_T avx,avy,avz,haloParticleDot,haloDot,disp;
+  int p;
+
+  for( int halo=0; halo < this->numberOfHalos; ++halo )
+    {
+    // Compute halo mass
+    haloMass->push_back(
+        static_cast<POSVEL_T>(KahanSummation(halo, this->mass)));
+
+    // Compute average velocity
+    avx = static_cast<POSVEL_T>(
+        KahanSummation(halo,this->vx)/this->haloCount[halo]);
+    avy = static_cast<POSVEL_T>(
+        KahanSummation(halo,this->vy)/this->haloCount[halo]);
+    avz = static_cast<POSVEL_T>(
+        KahanSummation(halo,this->vz)/this->haloCount[halo]);
+    xVel->push_back( avx );
+    yVel->push_back( avy );
+    zVel->push_back( avz );
+
+    // Compute velocity dispersion
+
+    // Compute the dot product of all the particles at the given halo
+    for( p=this->halos[halo]; p != -1; p = this->haloList[p] )
+      {
+      haloParticleDot +=
+          this->dotProduct(this->vx[p],this->vy[p],this->vz[p]);
+      } // END for all halo particles
+
+    // Compute dot product of the average velocity
+    haloDot = this->dotProduct(avx,avy,avz);
+
+    // Compute the velocity dispersion
+    disp = static_cast<POSVEL_T>(sqrt( (haloParticleDot-haloDot)/3.0 ) );
+    velDisp->push_back( disp );
+    } // END for all halos
+}
+
+/////////////////////////////////////////////////////////////////////////
+//
 // Dot product of a vector
 //
 /////////////////////////////////////////////////////////////////////////

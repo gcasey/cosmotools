@@ -145,6 +145,14 @@ public:
         vector<POSVEL_T>* zVel,
         vector<POSVEL_T>* velDisp);
 
+  // Find the basic FOF halo properties: mass,velocity and velocity dispersion
+  void FOFAttributes(
+        vector<POSVEL_T>* haloMass,
+        vector<POSVEL_T>* xVel,
+        vector<POSVEL_T>* yVel,
+        vector<POSVEL_T>* zVel,
+        vector<POSVEL_T>* velDisp);
+
   // Kahan summation of floating point numbers to reduce roundoff error
   POSVEL_T KahanSummation(int halo, POSVEL_T* data);
   POSVEL_T KahanSummation2(int halo, POSVEL_T* data1, POSVEL_T* data2);
