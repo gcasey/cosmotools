@@ -9,6 +9,7 @@
 
 // Forward declarations
 class vtkLiveInsituLink;
+class vtkCPProcessor;
 
 namespace cosmologytools
 {
@@ -47,6 +48,7 @@ protected:
   int Port;
   bool IsInitialized;
   vtkLiveInsituLink *PVLink;
+  vtkCPProcessor *PVCoProcessor;
 
 private:
   DISABLE_COPY_AND_ASSIGNMENT(ParaViewInSituInterface);
