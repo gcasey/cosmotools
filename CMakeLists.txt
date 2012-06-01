@@ -13,7 +13,7 @@ include(CosmologyToolsTypes)
 ## Choose whether to compile with co-visualization
 option(ENABLE_COVIS "Compile with co-visualization" ON)
 if( ${ENABLE_COVIS} )
-  add_definitions(-DCOVIS)
+  add_definitions(-DENABLE_COVIS)
 endif()
 
 ## Set the list of cosmology packages to be build. Note the order here matters!
