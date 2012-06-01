@@ -874,16 +874,10 @@ void vtkPLANLHaloFinder::ComputeFOFHaloProperties()
       &this->fofXCofMass,&this->fofYCofMass,&this->fofZCofMass);
     }
 
-  // Compute mass of every halo
-  fof->FOFHaloMass(&this->fofMass);
-
-  // Compute average velocity of every FOF halo
-  fof->FOFVelocity(
-      &this->fofXVel,&this->fofYVel,&this->fofZVel);
-
-  // Compute the velocity dispersion
-  fof->FOFVelocityDispersion(
-      &this->fofXVel,&this->fofYVel,&this->fofZVel,&this->fofVelDisp);
+  fof->FOFAttributes(
+      &this->fofMass,
+      &this->fofXVel, &this->fofYVel,&this->fofZVel,
+      &this->fofVelDisp);
 
   // Sanity checks!
   assert("post: FOF mass property not correctly computed!" &&
