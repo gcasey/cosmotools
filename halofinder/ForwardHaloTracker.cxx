@@ -13,12 +13,13 @@ namespace cosmologytools {
 
 ForwardHaloTracker::ForwardHaloTracker()
 {
-  this->Communicator     = MPI_COMM_WORLD;
-  this->Frequency        = 5;
-  this->RL               = 100;
-  this->Overlap          = 5;
-  this->LinkingLength    = 0.2;
-  this->TemporalHaloData = new TemporalHaloInformation();
+  this->Communicator         = MPI_COMM_WORLD;
+  this->Frequency            = 5;
+  this->RL                   = 100;
+  this->Overlap              = 5;
+  this->LinkingLength        = 0.2;
+  this->UseExplicitTimeSteps = false;
+  this->TemporalHaloData     = new TemporalHaloInformation();
 }
 
 //------------------------------------------------------------------------------
@@ -31,6 +32,44 @@ ForwardHaloTracker::~ForwardHaloTracker()
 }
 
 //------------------------------------------------------------------------------
+void ForwardHaloTracker::SetExplicitTrackerTimeSteps(
+    INTEGER *tsteps, const INTEGER N)
+{
+  this->UseExplicitTimeSteps = true;
+  for( int i=0; i < N; ++i )
+    {
+    this->TimeSteps.insert( tsteps[i] );
+    }
+}
+
+//------------------------------------------------------------------------------
+bool ForwardHaloTracker::IsTrackerTimeStep(const int tstep)
+{
+  if( this->UseExplicitTimeSteps )
+    {
+    if( this->TimeSteps.find( tstep ) != this->TimeSteps.end() )
+      {
+      return true;
+      }
+    else
+      {
+      return false;
+      }
+    }
+  else
+    {
+    if( (tstep % this->Frequency) == 0)
+      {
+      return true;
+      }
+    else
+      {
+      return false;
+      }
+    }
+}
+
+//------------------------------------------------------------------------------
 void ForwardHaloTracker::RegisterParticles(
     const int tstep, const double redShift,
     REAL* px, REAL* py, REAL *pz,
@@ -38,7 +77,7 @@ void ForwardHaloTracker::RegisterParticles(
     INTEGER* id, INTEGER* mask, INTEGER* state,
     INTEGER N)
 {
-  if( (tstep % this->Frequency) == 0)
+  if( this->IsTrackerTimeStep( tstep ) )
     {
     CosmoHaloFinderP *haloFinder = new CosmoHaloFinderP;
 
@@ -92,7 +131,7 @@ void ForwardHaloTracker::RegisterParticles(
 //------------------------------------------------------------------------------
 void ForwardHaloTracker::UpdateMergerTree(const int tstep)
 {
-  if( (tstep%this->Frequency==0) && this->TemporalHaloData->IsComplete() )
+  if( this->IsTrackerTimeStep(tstep) && this->TemporalHaloData->IsComplete() )
     {
     // TODO: update the merger trees here
     // Plug-in Jay's code here!
@@ -107,7 +146,34 @@ void ForwardHaloTracker::GetHaloInformation(
   assert("pre: halo information object is NULL" && hinfo != NULL);
   assert("pre: hfinder information object is NULL" && hfinder != NULL);
 
-  // TODO: Extract the global particle IDs and halo tags
+  // STEP 0: Get halo-finder properties
+  int numberOfHalos = hfinder->getNumberOfHalos();
+  int *fofHalos     = hfinder->getHalos();
+  int *fofHaloCount = hfinder->getHaloCount();
+  int *fofHaloList  = hfinder->getHaloList();
+
+  // STEP 1: Construct FOFHaloProperties object
+  cosmologytools::FOFHaloProperties* fof =
+      new cosmologytools::FOFHaloProperties();
+  fof->setHalos(numberOfHalos,fofHalos,fofHaloCount,fofHaloList);
+  fof->setParameters("",this->RL,this->Overlap,this->LinkingLength);
+
+  // STEP 1: Filter out the halos
+  std::vector< int > extractedHalos;
+  for(int halo=0; halo < numberOfHalos; ++halo )
+    {
+    if( fofHaloCount[halo] >= this->PMin )
+      {
+      extractedHalos.push_back( halo );
+      } // END if the halo is within the pmin threshold
+    } // END for all halos
+
+  // STEP 2: Extract particle halo ids and particle ids
+  for(int halo=0; halo < static_cast<int>(extractedHalos.size()); ++halo )
+    {
+    int internalHaloIdx = extractedHalos[ halo ];
+    } // END for all extracted halos
+
 }
 
 } /* namespace cosmogolytools */

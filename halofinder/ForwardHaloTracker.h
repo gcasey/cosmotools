@@ -11,6 +11,8 @@
 #include "CosmologyToolsMacros.h"
 #include <mpi.h> // For MPI_Comm definition
 
+// C++ includes
+#include<set>
 
 namespace cosmologytools {
 
@@ -48,6 +50,24 @@ public:
       REAL* potential, INTEGER* id,
       INTEGER* mask, INTEGER* state,
       INTEGER N);
+
+  /**
+   * @brief Explicitly set the tracker time-steps when the tracker is invoked.
+   * @param tsteps array of time-steps
+   * @param N the number of time-steps
+   */
+  void SetExplicitTrackerTimeSteps(INTEGER *tsteps, const INTEGER N);
+
+  /**
+   * @brief Checks if the supplied timesteps is a tracker timestep. If explicit
+   * timesteps are provided, then the method checks if the given timestep is
+   * in the list of pre-scribed time-steps that the tracker should execute.
+   * Otherwise, the frequency is used to determine if the tracker should run.
+   * @param tstep the current time-step
+   * @return status true if it is a tracker time-step, else false.
+   */
+  bool IsTrackerTimeStep(const int tstep);
+
 
   // In-line halo-finder parameters
   GetNSetMacro(PMin,INTEGER);
@@ -91,6 +111,9 @@ protected:
   REAL LinkingLength; // linking-length to use for FOF
   REAL RL;            // The physical box size (i.e., domain size)
   INTEGER Overlap;    // the ghost overlap
+
+  bool UseExplicitTimeSteps;
+  std::set< INTEGER > TimeSteps;
 
   // Tracker parameters
   MPI_Comm Communicator; // The MPI communicator to use
