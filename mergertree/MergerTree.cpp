@@ -8,7 +8,7 @@
 #include <iomanip>
 #include <algorithm>
 #include <time.h>
- 
+
 
 struct Frame
 {
@@ -16,7 +16,7 @@ struct Frame
     int SObjID;
     int NodeID1;
     //int NormObjID;
-               
+
 };
 
 
@@ -45,6 +45,7 @@ int main()
     char st2[32] = "halos_138_subhalo_";
     char ext[10] = ".cosmo";
     char filename [50] = {'\0'};
+
     float pos1, vel1, pos2, vel2, pos3, vel3, tag1; //Positions, velocities and subhalo_tags
     int tag2; //Particle tag
     int high_sub1 = 0, high_sub2 = 0;
@@ -60,19 +61,23 @@ int main()
     vector<int> VNode;
 
 
-   
+
 
   // Reads binary files for first time step.
+  std::ostringstream oss;
+  oss.clear();
   for (filecounter1 = 1; filecounter1 < 600; filecounter1++)
     {
-        sprintf_s(filename, "%s%d%s", st1, filecounter1, ext);
 
-        ifstream file (filename, ios::in|ios::binary);
+//        sprintf_s(filename, "%s%d%s", st1, filecounter1, ext);
+        oss.str("");
+        oss << st1 << filecounter1 << ext;
+        ifstream file (oss.str().c_str(), ios::in|ios::binary);
         int iter = 0; //To categorise the particle parameters according to their position in the file
 
         if(file.is_open())
         {
-       
+
             while(!file.eof())
             {
 
@@ -80,13 +85,13 @@ int main()
                 {
                     file.read((char *)(&pos1), sizeof(pos1));
                 }
-       
+
 
                 else if ((iter % 8) == 1)
                 {
                     file.read((char *)(&vel1), sizeof(vel1));
                 }
-   
+
 
                 else if ((iter % 8) == 2)
                 {
@@ -128,7 +133,7 @@ int main()
                                             //cout << "Subhalo IDs " << VSobj[countO] << "Halo ID " << VObj[countO] << endl;
                     countO++;
                 }
-       
+
 
                 else if ((iter % 8) == 7) //Particle_tag
                 {
@@ -147,12 +152,12 @@ int main()
         }
         file.close();
         file.clear();
-           
+
         increment = (high_sub1 + 1); //Assign value of higest subhalo_tag to continue numbering
     }
     Global_halo = Halo_count1;
     cout<<"Global Halo "<<Global_halo<<endl;
-   
+
     Frame* Ftime1;
       Ftime1 = new Frame[countO];
     for(int sub = 0; sub < countO; sub++) //Trasfer info to vectors
@@ -170,7 +175,7 @@ int main()
     cout<<"Sizeof"<<(sizeof(Ftime1)/sizeof(Ftime1[0]))<<endl;
     cout << "Highsub " << high_sub1 << endl;
 
- 
+
     vector<int> HaloVol1(high_sub1 + 1);
 
     size_t Ftime1_len = sizeof(Ftime1) / sizeof(struct Frame);
@@ -185,7 +190,7 @@ int main()
 
    for(int Ncount = 0; Ncount < countO; Ncount++)
    {
-       Halo1.push_back(Ftime1[Ncount].SObjID);      
+       Halo1.push_back(Ftime1[Ncount].SObjID);
        HaloVol1[Ftime1[Ncount].SObjID]++; //For counting number of particles in halo
    }
 
@@ -197,7 +202,7 @@ int main()
    cout << "Sorted again!" << endl;
 
 
-  
+
 
 
    // Reads binary files for second time step.
@@ -205,14 +210,15 @@ int main()
 
   for (filecounter2 = 1; filecounter2 < 600; filecounter2++)
     {
-        sprintf_s(filename, "%s%d%s", st2, filecounter2, ext);
-
-        ifstream file2 (filename, ios::in|ios::binary);
+//        sprintf_s(filename, "%s%d%s", st2, filecounter2, ext);
+        oss.str( "" );
+        oss << st2 << filecounter2 << ext;
+        ifstream file2 (oss.str().c_str(), ios::in|ios::binary);
         int iter2 = 0; //To categorise the parameters according to their position in the file
 
         if(file2.is_open())
         {
-       
+
             while(!file2.eof())
             {
 
@@ -220,13 +226,13 @@ int main()
                 {
                     file2.read((char *)(&pos1), sizeof(pos1));
                 }
-       
+
 
                 else if ((iter2 % 8) == 1)
                 {
                     file2.read((char *)(&vel1), sizeof(vel1));
                 }
-   
+
 
                 else if ((iter2 % 8) == 2)
                 {
@@ -268,7 +274,7 @@ int main()
                                                             //cout << "Subhalo IDs " << Ftime2[countO2].SObjID << endl;
                     countO2++;
                 }
-       
+
 
                 else if ((iter2 % 8) == 7)
                 {
@@ -285,11 +291,11 @@ int main()
         }
         file2.close();
         file2.clear();
-       
-   
+
+
         increment = (high_sub2 + 1); //Assign value of highest subhao_tag to continue numbering
     }
- 
+
 
 
     Frame* Ftime2;
@@ -326,21 +332,21 @@ int main()
         HaloVol2[Ftime2[Ncount2].SObjID]++;
    }
 
-     
+
    start2 = clock();
    qsort(Ftime2,countO2, 12, struct_cmp);
    duration = (clock() - start2); // (double) CLOCKS_PER_SEC;
    //cout << "Duration2 : " << duration << endl;
    //cout<<"Sizeof after sort"<<(sizeof(Ftime2)/sizeof(Ftime2[0]))<<endl;
- 
+
 
 
      int numNodes1=(sizeof(Ftime1)); ///sizeof(Ftime1[0]));
      //cout<<"Size Ftime1 Numnodes"<<numNodes1<<endl;
      int numNodes2=(sizeof(Ftime2)); ///sizeof(Ftime2[0]));
      //cout<<"Size Ftime2 Numnodes"<<numNodes2<<endl;
-   
-     
+
+
      vector< vector <int> > OverlapTable ((high_sub1 + 2), vector<int> (high_sub2 + 2)); // Initialise the subhalo Overlap Table
      //vector< vector <int> > OverlapTable_H ((Halo_count1 + 1), vector<int> (Halo_count2 + 1)); // Initialise the Halo Overlap Table
      register int iT (0), jT (0);
@@ -385,7 +391,7 @@ int main()
           }
 
           else
-         
+
           {
 
                 if(Ftime1[iT].NodeID1 > Ftime2[jT].NodeID1)
@@ -411,7 +417,7 @@ int main()
 
                 }
           }
-     
+
           /*if (iT==numNodes1 || jT==numNodes2)
           { // one frame finished, then terminate search
            iT = numNodes1;
@@ -421,8 +427,8 @@ int main()
     duration = (clock() - start1); // (double) CLOCKS_PER_SEC;
     //cout << "Duration Search : " << duration << endl;
 
-         
-   
+
+
 
 
      // Write tracking results to a file
@@ -447,7 +453,7 @@ int main()
                 temp.push_back(Scount2);
                 checkE++; // To check number of overlaps in timestep i+1
              }
-                          
+
              else if((Scount1 == 0) && (OverlapTable[Scount1][Scount2] == 0))
              {
                  tempB.push_back(Scount2);
@@ -458,14 +464,14 @@ int main()
              {
                     myfile << "HaloID "<< Ftime1[Scount1].ObjID1<<" in Time199 consists of HaloID"<<Ftime2[Scount2].ObjID1<<" in Time249"<<endl;
              }*/
-                                
+
          }
 
 
              float PerOver = 0.0;
              double var1= 0.0, var2 = 0.0;
              if((Scount1 == 0) && (iterB > 0)) //Check for BIRTH event
-             {         
+             {
                  for(int birth = 0; birth < iterB; birth++)
                  {
                      scanB = 0; //Reinitialise birth check counter
@@ -474,7 +480,7 @@ int main()
                          if(OverlapTable[chkB][tempB[birth]] > 0)
                              scanB++;
                      }
-                     
+
                      if(scanB == 0)
                      {
                           //duration = (clock() - start1); // (double) CLOCKS_PER_SEC;
@@ -485,7 +491,7 @@ int main()
                      }
                  }
              }
-             
+
 
 
 
@@ -515,7 +521,7 @@ int main()
              }
 
 
-             
+
              if(checkE == 1) //Condition for MERGE/CONTINUATION event
              {
                  int countM =0;
@@ -542,7 +548,7 @@ int main()
                         InVar1 = OverlapTable[tempM[Cmerge]][temp[0]];
                         InVar2 = HaloVol1[tempM[Cmerge]];
                         PerInOver = (InVar1/InVar2)*100;
-                       
+
                         myfile<<"SubHalo ID "<<tempM[Cmerge]<<" ("<<HaloVol1[tempM[Cmerge]]<< ") of Halo ID " << OverlapTable[tempM[Cmerge]][high_sub2 + 1] << " (" << PerInOver << "%) " <<endl; //NormObj: tempM[Cmerge] else use Halo1[tempM[Cmerge]]
                         if(OverlapTable[tempM[Cmerge]][high_sub2 + 1] < Halo_IdMin)
                         {
@@ -555,7 +561,7 @@ int main()
                      var1 = TotOvHalo;
                      var2 = TotHalo1;
                      PerOver = (var1/var2)*100;
-                     OverlapTable[high_sub1 + 1][temp[0]] = Halo_IdMin;                     
+                     OverlapTable[high_sub1 + 1][temp[0]] = Halo_IdMin;
                      myfile<<"                                 }-> ("<<PerOver<<"%) }-> SubHalo ID "<<temp[0]<<" ("<<HaloVol2[temp[0]]<<") of Halo ID " << OverlapTable[high_sub1 + 1][temp[0]] <<endl; //NormObj: temp[0] else use Halo2[temp[0]]
                  }
 
