@@ -88,6 +88,7 @@ set(cosmopackages
     sfprobe
     halofinder
     tess
+    mergertree
     interfaces
     pv-plugins
     )
