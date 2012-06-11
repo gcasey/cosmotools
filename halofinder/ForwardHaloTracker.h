@@ -11,6 +11,9 @@
 #include "CosmologyToolsMacros.h"
 #include <mpi.h> // For MPI_Comm definition
 
+// C++ includes
+#include <set>
+#include <vector>
 
 namespace cosmologytools {
 
@@ -45,9 +48,27 @@ public:
       const int tstep, const double redShift,
       REAL* px, REAL* py, REAL *pz,
       REAL* vx, REAL* vy, REAL *vz,
-      REAL* potential, INTEGER* id,
+      REAL* mass, REAL* potential, INTEGER* id,
       INTEGER* mask, INTEGER* state,
       INTEGER N);
+
+  /**
+   * @brief Explicitly set the tracker time-steps when the tracker is invoked.
+   * @param tsteps array of time-steps
+   * @param N the number of time-steps
+   */
+  void SetExplicitTrackerTimeSteps(INTEGER *tsteps, const INTEGER N);
+
+  /**
+   * @brief Checks if the supplied timesteps is a tracker timestep. If explicit
+   * timesteps are provided, then the method checks if the given timestep is
+   * in the list of pre-scribed time-steps that the tracker should execute.
+   * Otherwise, the frequency is used to determine if the tracker should run.
+   * @param tstep the current time-step
+   * @return status true if it is a tracker time-step, else false.
+   */
+  bool IsTrackerTimeStep(const int tstep);
+
 
   // In-line halo-finder parameters
   GetNSetMacro(PMin,INTEGER);
@@ -92,7 +113,24 @@ protected:
   REAL RL;            // The physical box size (i.e., domain size)
   INTEGER Overlap;    // the ghost overlap
 
+  // Registered particles, these pointers are owned by the caller!
+  std::vector< REAL > Px;
+  std::vector< REAL > Py;
+  std::vector< REAL > Pz;
+  std::vector< REAL > Vx;
+  std::vector< REAL > Vy;
+  std::vector< REAL > Vz;
+  std::vector< REAL > Mass;
+  std::vector< REAL > Potential;
+  std::vector< INTEGER > Id;
+  std::vector< short unsigned int > Mask;
+  std::vector< INTEGER > State;
+  INTEGER NumberOfParticles;
+
   // Tracker parameters
+  bool UseExplicitTimeSteps;
+  std::set< INTEGER > TimeSteps;
+
   MPI_Comm Communicator; // The MPI communicator to use
   int Frequency;        // The execution frequency of the halo-finder/tracker.
 
