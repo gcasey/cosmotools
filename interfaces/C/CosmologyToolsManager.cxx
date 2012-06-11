@@ -58,7 +58,7 @@ void CosmologyToolsManager::SetParticles(
 
   this->HaloTracker->RegisterParticles(
       tstep,redshift,px,py,pz,
-      vx,vy,vz,NULL,
+      vx,vy,vz,NULL,NULL,
       GlobalParticlesIds,NULL,NULL,
       NumberOfParticles);
 }

@@ -12,7 +12,8 @@
 #include <mpi.h> // For MPI_Comm definition
 
 // C++ includes
-#include<set>
+#include <set>
+#include <vector>
 
 namespace cosmologytools {
 
@@ -47,7 +48,7 @@ public:
       const int tstep, const double redShift,
       REAL* px, REAL* py, REAL *pz,
       REAL* vx, REAL* vy, REAL *vz,
-      REAL* potential, INTEGER* id,
+      REAL* mass, REAL* potential, INTEGER* id,
       INTEGER* mask, INTEGER* state,
       INTEGER N);
 
@@ -112,10 +113,24 @@ protected:
   REAL RL;            // The physical box size (i.e., domain size)
   INTEGER Overlap;    // the ghost overlap
 
+  // Registered particles, these pointers are owned by the caller!
+  std::vector< REAL > Px;
+  std::vector< REAL > Py;
+  std::vector< REAL > Pz;
+  std::vector< REAL > Vx;
+  std::vector< REAL > Vy;
+  std::vector< REAL > Vz;
+  std::vector< REAL > Mass;
+  std::vector< REAL > Potential;
+  std::vector< INTEGER > Id;
+  std::vector< short unsigned int > Mask;
+  std::vector< INTEGER > State;
+  INTEGER NumberOfParticles;
+
+  // Tracker parameters
   bool UseExplicitTimeSteps;
   std::set< INTEGER > TimeSteps;
 
-  // Tracker parameters
   MPI_Comm Communicator; // The MPI communicator to use
   int Frequency;        // The execution frequency of the halo-finder/tracker.
 
