@@ -4,6 +4,7 @@
 #include "SimulationParticles.h"
 #include "ForwardHaloTracker.h"
 
+#include <cstdlib>
 #include <cassert>
 
 namespace cosmologytools
