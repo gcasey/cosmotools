@@ -1,13 +1,21 @@
 /**
  * @class StructureFormationProbe
- * @brief A class the implements a tesselation-based approach to
+ * @brief A class the implements a tesselation-based approach for finding
+ * streams and caustic surfaces in N-Body cosmology simulations.
  */
 #ifndef STRUCTUREFORMATIONPROBE_H_
 #define STRUCTUREFORMATIONPROBE_H_
 
 #include "CosmologyToolsMacros.h"
+#include "LangrangianTesselator.h"
+#include "SimpleMesh.h"
+
+// C/C++ includes
+#include <vector>
+#include <map>
 
 namespace cosmologytools {
+
 
 class StructureFormationProbe
 {
@@ -15,109 +23,105 @@ public:
   StructureFormationProbe();
   virtual ~StructureFormationProbe();
 
-  // In-line functions
-  SetVector6Macro(WholeExtent,int);
-  GetNSetMacro(Particles,REAL*);
-  GetNSetMacro(NumParticles,int);
-  GetNSetMacro(Stride,int);
+  /**
+   * @brief Get/Set macro for fringe
+   */
+  GetNSetMacro(Fringe,INTEGER);
 
   /**
-   * @brief Sets the virtual grid extent for this instance.
-   * @param extent the node extent for this StructureFormationProbe instance.
-   * @note extent is a flat array that stores[imin imax jmin jmax kmin kmax]
-   * @pre extent is expected to be a 3-D extent
+   * @brief Sets the particle (positions) and corresponding global Ids.
+   * @param particles the particles position vector strided by 3.
+   * @param GlobalIds list of the global Ids corresponding to each particle.
+   * @param N the total number of particles.
+   * @note the particle global IDs must start numbering from 0.
    */
-  void SetGridExtent(int extent[6]);
+  void SetParticles(REAL *particles, INTEGER *GlobalIds, INTEGER N);
 
   /**
-   * @brief Tesselates the grid extent.
-   * @post Each voxel is split to 5 tetrahedra.
+   * @brief Constructs the langrangian mesh with the given origin, spacing
+   * and extent.
    */
-  virtual void Tesselate();
+  void BuildLangrangianMesh(
+          REAL origin[3], REAL spacing[3], INTEGER extent[6]);
+
 
   /**
-   * @brief Writes the tesselation in a VTK file.
-   * @param fileName the name of the file
-   * @note used for debugging.
+   * @brief Returns the langrangian tesselator instance that is associated with
+   * this instance of StructureFormationProbe.
+   * @return langrange
    */
-  void WriteTesselation( char* fileName);
+  LangrangianTesselator* GetLangrangeTesselator();
+
+  /**
+   * @brief Builds the euler mesh by mapping the tet connectivity of the
+   * langrangian mesh onto the given particles.
+   * @pre A langragian tesselation must have been first constructed.
+   */
+  void BuildEulerMesh();
+
+  /**
+   * @brief Returns the nodes, tet connectivity of the computed euler mesh as
+   * well as the volume for each element in the mesh.
+   * @param nodes the euler mesh nodes (out)
+   * @param tets the euler mesh tetrahedral connectivity (out)
+   * @param volumes the volumes of each cell in the euler mesh (out)
+   */
+  void GetEulerMesh(
+        std::vector<REAL> &nodes,
+        std::vector<INTEGER> &tets,
+        std::vector<REAL> &volumes);
+
+  /**
+   * @brief Loops through all mesh faces and checks if the face corresponds to
+   * a face on a caustic surface.
+   * @param nodes
+   * @param triangles
+   */
+  void ExtractCausticSurfaces(
+      std::vector<REAL> &nodes, std::vector<INTEGER> &triangles);
+
+  /**
+   * @brief Find the number of streams at the given location.
+   * @param pnt the xyz coordinates of the probe point.
+   * @return N the number of streams at the user-supplied location.
+   * @note The number of streams is equal to the number of tetrahedra that
+   * contain the given point.
+   */
+  INTEGER GetNumberOfStreams(REAL pnt[3]);
 
 protected:
-  int Extent[6];       // The grid node extent (supplied by the user)
-  int WholeExtent[6];  // The entire grid extent (supplied by the user)
-  REAL *Particles;     // A flat particles array (supplied by the user)
-  int NumParticles;    // The total number of particles (supplied by the user)
-  int Stride;          // The stide used to index the particles array
-
-
-  int NumTets;        // The total number of tets
-  int  *Connectivity; // tetrahedral connectivity computed internally.
+  REAL *Particles;      // pointer to user-supplied array of particles
+  INTEGER *GlobalIds;   // pointer to user-supplied array of global IDs
+  INTEGER NumParticles; // the total number of particles (user-supplied)
+  INTEGER Fringe;       // user-supplied parameter to reject tets that are
+                        // fringe distance from the boundary. The fringe is
+                        // used to deal with artifacts on the periodic boundary.
 
   /**
-   * @brief Initializes data-structures
+   * @brief Given the tet connectivity in langrangian space, this method returns
+   * the xyz coordinates of the tet nodes in euler-space corresponding to the
+   * user-supplied particles vector. If the tet is mapped successfully this
+   * method returns true. Otherwise, false is returned.
+   * @param tet the tetrahedral connectivity
+   * @param nodes flat array where the nodes will be stored.
+   * @return status true if successful, else false.
    */
-  void Initialize();
+  bool MapTetToEulerSpace(INTEGER tet[4], REAL nodes[12]);
 
   /**
-   * @brief Tesselates the extent that is assigned to this process
+   * @brief This method checks if the given node is within a fringe from a
+   * periodic boundary.
+   * @param nodeIdx
+   * @return
    */
-  void TesselateGridExtent();
+  bool IsNodeWithinPeriodicBoundaryFringe( INTEGER nodeIdx );
 
-  /**
-   * @brief Given structured coordinates in IJK space return the linear index,
-   * w.r.t. the user-supplied global grid extent (node-extent)
-   * @param i the i-coordinate of the node in IJK space
-   * @param j the j-coordinate of the node in IJK space
-   * @param k the k-coordinate of the node in IJK space
-   * @return idx the global linear index of the node
-   */
-  int GetGlobalLinearIndex(const int i, const int j, const int k);
+  std::map< INTEGER, INTEGER > Global2PositionMap;
 
-  /**
-   * @brief Given structured coordinates in IJK space return the linear index.
-   * @param i the i-coordinate of the node in IJK space
-   * @param j the j-coordinate of the node in IJK space
-   * @param k the k-coordinate of the node in IJK space
-   * @return idx the linear index of the node
-   * @note This linear index is local w.r.t. the user-supplied grid extent.
-   */
-  int GetLinearIndex(const int i, const int j, const int k);
+  LangrangianTesselator *Langrange; // langrangian tesselator (computed)
 
-  /**
-   * @brief Given a (local) linear index, returns the global IJK coordinates.
-   * @param idx the linear index.
-   * @param i the i-coordinate of the node in IJK space (out)
-   * @param j the j-coordinate of the node in IJK space (out)
-   * @param k the k-coordinate of the node in IJK space (out)
-   * @post (i,j,k) must be within the user-supplied extent.
-   */
-  void GetStructuredCoordinates(
-      const int idx,int &i, int &j, int &k);
-
-  /**
-   * @brief A convenience method that checks if the extent is a 3-D extent.
-   * @param extent the grid extent to check whether or not it is 3-D.
-   * @return status true iff the extent corresponds to a 3-D extent, else false.
-   */
-  bool Is3DExtent( int extent[6] );
-
-  /**
-   * @brief Computes the number of nodes given the grid node-extent.
-   * @param extent the node extent of the grid
-   * @return N the total number of nodes in the grid.
-   * @pre this->Is3DExtent( extent ) == true.
-   * @post N > 0
-   */
-  int GetNumberOfNodes( int extent[6] );
-
-  /**
-   * @brief Computes the number of cells given the grid node-extent
-   * @param extent the node extent of the grid
-   * @return N the total number of cells in the grid.
-   * @pre this->Is3DExtent( extent ) == true.
-   * @post N > 0
-   */
-  int GetNumberOfCells( int extent[6] );
+  SimpleMesh EulerMesh;
+  std::vector< REAL > Volumes;
 
 private:
   DISABLE_COPY_AND_ASSIGNMENT(StructureFormationProbe);

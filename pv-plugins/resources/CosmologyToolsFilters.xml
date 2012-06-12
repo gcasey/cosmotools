@@ -5,6 +5,7 @@
     show_in_toolbar="1"
     preserve_order="1">
 
+    <Filter name="StructureFormationProbe" />
     <Filter name="DensityProfile" />
     <Filter name="LANLHaloFinder" />
     <Filter name="VoronoiFilter" />

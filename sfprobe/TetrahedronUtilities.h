@@ -27,6 +27,15 @@ public:
   static REAL ComputeVolume(
       REAL v0[3], REAL v1[3], REAL v2[3], REAL v3[3]);
 
+  /**
+   * @brief Returns the IDs of the requested face
+   * @param idx the index of the requested face
+   * @param tet the connectivity of the tetrahedron
+   * @param face user-supplied storage for the face IDs (out)
+   * @pre idx >= 0 && idx < 4
+   */
+  static void GetFace( const int idx,INTEGER tet[4], INTEGER face[3]);
+
 protected:
 
   /**

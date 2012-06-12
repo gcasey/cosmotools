@@ -24,6 +24,7 @@ include_directories(
 ## version of the code that is available in ParaView.
 include_directories(BEFORE ${PACKAGE_halofinder_INCLUDE_DIRS})
 include_directories(BEFORE ${PACKAGE_tess_INCLUDE_DIRS})
+include_directories(BEFORE ${PACKAGE_sfprobe_INCLUDE_DIRS})
 
 ## Set the server-manager XML
 set(SMXML
@@ -31,12 +32,14 @@ set(SMXML
     resources/LANLHaloFinder.xml
     resources/VoronoiFilter.xml
     resources/vtkPVoronoiReader.xml
+    resources/StructureFormationProbe.xml
     )
 
 ## Set the server-manager sources
 set(SMSRC
     filters/vtkCosmoDensityProfile.cxx
     filters/vtkPLANLHaloFinder.cxx
+    filters/vtkPStructureFormationProbe.cxx
     filters/VoronoiFilter.cxx
     filters/vtkMinkowskiFilter.cxx
     filters/vtkPMergeConnected.cxx
@@ -53,6 +56,7 @@ set(GUIXML
 set(RequiredLibs
     ${PACKAGE_halofinder_LIBRARIES}
     ${PACKAGE_tess_LIBRARIES}
+    ${PACKAGE_sfprobe_LIBRARIES}
     ${MPI_LIBRARIES}
     )
 

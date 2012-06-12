@@ -1,0 +1,71 @@
+<ServerMangerConfiguration>
+  <ProxyGroup name="filters">
+     <SourceProxy name="StructureFormationProbe"
+                  class="vtkPStructureFormationProbe"
+                  label="StructureFormationProbe">
+   <InputProperty
+      name="Input"
+      command="SetInputConnection">
+      <ProxyGroupDomain name="groups">
+        <Group name="sources"/>
+        <Group name="filters"/>
+      </ProxyGroupDomain>
+      <DataTypeDomain name="input_type">
+        <DataType value="vtkUnstructuredGrid"/>
+      </DataTypeDomain>
+      <Documentation>
+       This property specifies the input of the filter.
+      </Documentation>
+     </InputProperty>
+
+   <IntVectorProperty name="ShiftGlobalNumberingToZero"
+                      label="Shift Global Numbering to Zero"
+                      command="SetShiftGlobalNumberingToZero"
+                      number_of_elements="1"
+                      default_values="1">
+      <BooleanDomain name="bool" />
+      <Documentation>
+        Shift the global number of the particle tags s.t. it starts from zero.
+        This is required if the input dataset has tags starting from one.
+      </Documentation>
+   </IntVectorProperty>
+
+   <IntVectorProperty name="Extent"
+                      label="Extent"
+                      command="SetExtent"
+                      number_of_elements="6"
+                      default_values="0 5 0 5 0 5">
+       <IntRangeDomain name="range" />
+       <Documentation>
+         This property sets the extent of the domain.
+       </Documentation>
+    </IntVectorProperty>
+
+    <IntVectorProperty name="Fringe"
+                       label="Fringe"
+                       number_of_elements="1"
+                       default_values="1">
+      <IntRangeDomain name="range" min="0" max="5" />
+      <Documentation>
+         This property sets the fringe parameter that is used to resolve
+         artifacts on periodic boundaries. By default, the value is set to 1.
+      </Documentation>
+    </IntVectorProperty>
+
+    <IntVectorProperty
+        name="Space"
+        command="SetDomainSpace"
+        label="Sets the desired space, euler or langrangian (initial)"
+        number_of_elements="1"
+        default_values="0">
+       <EnumerationDomain name="domain">
+        <Entry value="0" text="Lagrange"/>
+        <Entry value="1" text="Euler"/>
+       </EnumerationDomain>
+       <Documentation>
+        Sets the domain space.
+       </Documentation>
+     </IntVectorProperty>
+  </SourceProxy>
+ </ProxyGroup>
+</ServerMangerConfiguration>

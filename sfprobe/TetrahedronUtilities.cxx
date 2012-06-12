@@ -1,5 +1,9 @@
 #include "TetrahedronUtilities.h"
 
+// C/C++ includes
+#include <iostream> // For cout/cerr
+#include <cassert>  // For assert
+
 namespace cosmologytools
 {
 
@@ -38,6 +42,40 @@ REAL TetrahedronUtilities::ComputeVolume(
   TetrahedronUtilities::CrossProduct(B,C,BxC);
   vol = 0.1666666667 * TetrahedronUtilities::DotProduct(A,BxC);
   return( vol );
+}
+
+//-----------------------------------------------------------------------------
+void TetrahedronUtilities::GetFace(
+        const int idx, INTEGER tet[4], INTEGER face[3])
+{
+  assert("pre: face index is out-of bounds" &&
+          (idx >= 0) && (idx < 4) );
+
+  switch( idx )
+    {
+    case 0:
+      face[0] = tet[0];
+      face[1] = tet[3];
+      face[2] = tet[1];
+      break;
+    case 1:
+      face[0] = tet[1];
+      face[1] = tet[3];
+      face[2] = tet[2];
+      break;
+    case 2:
+      face[0] = tet[2];
+      face[1] = tet[3];
+      face[2] = tet[0];
+      break;
+    case 3:
+      face[0] = tet[0];
+      face[1] = tet[1];
+      face[2] = tet[2];
+      break;
+    default:
+      std::cerr << "ERROR: Invalid face index, code should not reach here!\n";
+    }
 }
 
 } /* namespace cosmologytools */
