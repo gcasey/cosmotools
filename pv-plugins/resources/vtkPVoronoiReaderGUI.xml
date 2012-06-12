@@ -1,6 +1,6 @@
 <ParaViewReaders>
-  <Reader name="vtkPVoronoiReader" extensions="abc"
-	  file_description="Example (.abc) Files">
+  <Reader name="vtkPVoronoiReader" extensions="out"
+	  file_description="Voronoi (.out) Files">
   </Reader>
 </ParaViewReaders>
 
