@@ -26,12 +26,14 @@ include_directories(BEFORE ${PACKAGE_halofinder_INCLUDE_DIRS})
 set(SMXML
     resources/DensityProfile.xml
     resources/LANLHaloFinder.xml
+    resources/vtkPVoronoiReader.xml
     )
 
 ## Set the server-manager sources
 set(SMSRC
     filters/vtkCosmoDensityProfile.cxx
     filters/vtkPLANLHaloFinder.cxx
+    readers/vtkPVoronoiReader.cxx
     )
 
 ## Add halo-finders to the project if that plug-in is built
@@ -42,7 +44,7 @@ set(RequiredLibs
 
 ## Add the paraview plugin
 ADD_PARAVIEW_PLUGIN(${PLUGIN_NAME} ${PLUGIN_VERSION}
-    GUI_RESOURCE_FILES resources/CosmologyTools.xml
+    GUI_RESOURCE_FILES resources/CosmologyTools.xml resources/vtkPVoronoiReaderGUI.xml
     SERVER_MANAGER_XML ${SMXML}
     SERVER_MANAGER_SOURCES ${SMSRC}
     )

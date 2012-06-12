@@ -1,0 +1,6 @@
+<ParaViewReaders>
+  <Reader name="vtkPVoronoiReader" extensions="abc"
+	  file_description="Example (.abc) Files">
+  </Reader>
+</ParaViewReaders>
+
