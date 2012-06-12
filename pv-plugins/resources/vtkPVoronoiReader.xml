@@ -3,8 +3,8 @@
     <!-- ================================================================== -->
     <SourceProxy name="vtkPVoronoiReader" class="vtkPVoronoiReader" label="vtkPVoronoiReader">
       <Documentation
-         long_help="Read a .abc file."
-         short_help="Read a .abc file.">
+         long_help="Read a .out file."
+         short_help="Read a .out file.">
       </Documentation>
       <StringVectorProperty
             name="FileName"
@@ -18,7 +18,7 @@
       </StringVectorProperty>
  
       <Hints>
-        <ReaderFactory extensions="abc"
+        <ReaderFactory extensions="out"
                        file_description="Example File Format" />
      </Hints>
     </SourceProxy>
