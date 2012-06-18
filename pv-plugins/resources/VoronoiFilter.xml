@@ -1,0 +1,48 @@
+<ServerManagerConfiguration>
+  <ProxyGroup name="filters">
+    <SourceProxy name="VoronoiFilter"
+                 class="VoronoiFilter"
+                 label="VoronoiFilter">
+      <Documentation
+         long_help="Setting the parameters visualizing voronoi data"
+         short_help="Vornonoi filter settings">
+      </Documentation>
+
+      <InputProperty
+        name="Input"
+        command="SetInputConnection">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources"/>
+          <Group name="filters"/>
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkMultiBlockDataSet"/>
+        </DataTypeDomain>
+        <Documentation>
+          This property specifies the input for this filter.
+        </Documentation>
+      </InputProperty>
+
+      <DoubleVectorProperty
+         name="VolumeRange"
+         label="Volume Range"
+         command="SetVolumeRange"
+         number_of_elements="2"
+         animateable="1"
+         default_values="0.1 0.2" >
+         <DoubleRangeDomain name="range"/>
+      </DoubleVectorProperty>
+
+      <DoubleVectorProperty
+        name="AreaRange"
+        label="AreaRange"
+        command="SetAreaRange"
+        number_of_elements="2"
+        default_values="0.3 0.4">
+         <DoubleRangeDomain name="range"/>
+      </DoubleVectorProperty>
+
+    </SourceProxy>
+  </ProxyGroup>
+</ServerManagerConfiguration>                                                                                                                                    
+

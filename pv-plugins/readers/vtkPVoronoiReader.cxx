@@ -21,7 +21,6 @@
 #include <assert.h>
 using namespace std;
 
-//#include <vtkSmartPointer.h>
 #define VTK_CREATE(type, name) \
     vtkSmartPointer<type> name = vtkSmartPointer<type>::New()
 #define VTK_NEW(type, name) \
@@ -71,7 +70,19 @@ void vtkPVoronoiReader::SetController(vtkMultiProcessController *c)
   this->NumProcesses = c->GetNumberOfProcesses();
   this->MyId = c->GetLocalProcessId();
 }
+
+int vtkPVoronoiReader::FillOutputPortInformation( int port, vtkInformation* info )
+{
+  if ( port == 0 )
+  {
+    info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkMultiBlockDataSet" );
  
+    return 1;
+  }
+ 
+  return 0;
+}
+
 int vtkPVoronoiReader::RequestData(
   vtkInformation *vtkNotUsed(request),
   vtkInformationVector **vtkNotUsed(inputVector),
@@ -101,12 +112,11 @@ int vtkPVoronoiReader::RequestData(
 
   if (sum > 0) //from example, not sure whether to happen
   {
-    cout << "sum > 0" << endl;
+    return 1; //to be changed to the right error code
   }
 
   if (!contr) //from example, not sure whether to happen
   {
-    //this->SetUpEmptyGrid(output);
     return 1;
   }
 
@@ -129,7 +139,7 @@ int vtkPVoronoiReader::RequestData(
   output->SetNumberOfBlocks(tb);
   for (i=piece; i<tb; i+=numPieces)
   {
-    sprintf(msg, "rank %d, block %d, offset %ld\n", piece, i, ftr[i]);
+    sprintf(msg, "rank %d, block %d, offset %lld\n", piece, i, ftr[i]);
     printf("%s", msg);
     block = (vblock_t *)malloc(sizeof(vblock_t));
     ReadBlock(fd, block, ftr[i]);
@@ -158,9 +168,9 @@ void vtkPVoronoiReader::PrintSelf(ostream& os, vtkIndent indent)
       << (this->FileName ? this->FileName : "(none)") << "\n";
 }
 
+//----------------------------------------------------------------------------
 //SER_IO related
 
-//----------------------------------------------------------------------------
 //
 // reads the file footer
 // footer in file is always ordered by global block id
@@ -199,7 +209,7 @@ void vtkPVoronoiReader::ReadFooter(FILE*& fd, int64_t*& ftr, int& tb)
       Swap((char *)ftr, tb, sizeof(int64_t));
   }
 }
-//----------------------------------------------------------------------------
+
 //
 // reads the header for one block from a file
 //
@@ -218,7 +228,7 @@ void vtkPVoronoiReader::ReadHeader(FILE *fd, int *hdr, int64_t ofst)
   if (swap_bytes)
     Swap((char *)hdr, HDR_ELEMS, sizeof(int));
 }
-//----------------------------------------------------------------------------
+
 //
 // Copies the header for one block from a buffer in memory
 //
@@ -236,7 +246,7 @@ int vtkPVoronoiReader::CopyHeader(unsigned char *in_buf, int *hdr)
 
   return(HDR_ELEMS * sizeof(int));
 }
-//----------------------------------------------------------------------------
+
 //
 // reads one block from a file
 //
@@ -305,7 +315,7 @@ void vtkPVoronoiReader::ReadBlock(FILE *fd, vblock_t* &v, int64_t ofst)
     Swap((char *)v->maxs, 3, sizeof(float));
   }
 }
-//----------------------------------------------------------------------------
+
 //
 // copies one block from a buffer in memory
 //
@@ -398,74 +408,10 @@ void vtkPVoronoiReader::CopyBlock(unsigned char *in_buf, vblock_t* &v)
     Swap((char *)&v->maxs, 3, sizeof(float));
   }
 }
+
 //----------------------------------------------------------------------------
-
-#if 0 // not using compression for now
-
-//
-// block decompression
-//
-// in_buf: input block buffer (MPI_BYTE datatype)
-// in_size: input size in bytes
-// decomp_buf: decompressed buffer
-// decomp_size: decompressed size in bytes (output)
-//
-// side effects: grows decomp_buf, user's responsibility to free it
-//
-void vtkPVoronoiReader::DecompressBlock(unsigned  char* in_buf, int in_size, 
-			    vector<unsigned char> *decomp_buf, 
-			    int *decomp_size) {
-
-  unsigned int out_size; // size of output buffer
-  z_stream strm; // structure used to pass info t/from zlib
-  unsigned char temp_buf[CHUNK]; // temporary
-  int num_out; // number of compressed bytes in one deflation
-  int ret; // return value
-
-  // allocate inflate state
-  strm.zalloc = Z_NULL;
-  strm.zfree = Z_NULL;
-  strm.opaque = Z_NULL;
-  strm.avail_in = 0;
-  strm.next_in = Z_NULL;
-  ret = inflateInit(&strm);
-  assert(ret == Z_OK);
-
-  *decomp_size = 0;
-  int num_in_chunks = ceil((float)in_size / CHUNK); // number of input chunks
-
-  // read the character buffer in chunks
-  for (int i = 0; i < num_in_chunks; i++) { 
-    strm.next_in = in_buf + i * CHUNK;
-    if (i < num_in_chunks - 1) 
-      strm.avail_in = CHUNK;
-    else
-      strm.avail_in = (in_size % CHUNK ? in_size - i * CHUNK : CHUNK);
-    do { // decompress each chunk
-      strm.avail_out = CHUNK;
-      strm.next_out = temp_buf;
-      ret = inflate(&strm, Z_NO_FLUSH);
-      assert(ret != Z_STREAM_ERROR);
-      num_out = CHUNK - strm.avail_out;
-      *decomp_size += num_out;
-      decomp_buf->insert(decomp_buf->end(), temp_buf, temp_buf + num_out);
-    } while (strm.avail_out == 0);
-    if (ret == Z_STREAM_END) // in case decompression finishes early
-      break;
-  }
-  inflateEnd(&strm);
-
-//   fprintf(stderr, "decompression: from %d bytes to %d bytes\n", 
-// 	  in_size, *decomp_size);
-
-}
-//-----------------------------------------------------------------------
-
-#endif
-
 // SWAP related
 
-// swaps bytes
 //
 // n: address of items
 // nitems: number of items
@@ -502,7 +448,7 @@ void vtkPVoronoiReader::Swap(char *n, int nitems, int item_size)
     //MPI_Abort(MPI_COMM_WORLD, 0);
   }
 }
-//-----------------------------------------------------------------------
+
 //
 // Swaps 8  bytes from 1-2-3-4-5-6-7-8 to 8-7-6-5-4-3-2-1 order.
 // cast the input as a char and use on any 8 byte variable
@@ -535,7 +481,7 @@ void vtkPVoronoiReader::Swap8(char *n)
   *n = *n1;
   *n1 = c;
 }
-//-----------------------------------------------------------------------------
+
 //
 // Swaps 4 bytes from 1-2-3-4 to 4-3-2-1 order.
 // cast the input as a char and use on any 4 byte variable
@@ -556,7 +502,7 @@ void vtkPVoronoiReader::Swap4(char *n)
   *n = *n1;
   *n1 = c;
 }
-//----------------------------------------------------------------------------
+
 //
 // Swaps 2 bytes from 1-2 to 2-1 order.
 // cast the input as a char and use on any 2 byte variable
@@ -605,7 +551,6 @@ void vtkPVoronoiReader::vor2ugrid(struct vblock_t *block, vtkSmartPointer<vtkUns
   points->SetData(points_array);
  
   //create unstructure grid
-  //VTK_CREATE(vtkUnstructuredGrid, ugrid);
   ugrid->SetPoints(points);
 
   //cells
@@ -642,21 +587,18 @@ void vtkPVoronoiReader::vor2ugrid(struct vblock_t *block, vtkSmartPointer<vtkUns
     ugrid->InsertNextCell(VTK_POLYHEDRON, num_cell_fverts, &face_verts[vert_id_cell_start], num_cell_faces, cell->GetPointer());
   }
 
-  //fields, area, vol
-  float *field_vals = (float *)malloc(sizeof(float) * 2 * num_cells);
-  for (i=0; i<num_cells; i++)
-  {
-    field_vals[i * 2] = i;
-    field_vals[i * 2 + 1] = i + 0.5;
-  }
+  VTK_CREATE(vtkFloatArray, area_array);
+  area_array->SetName("Areas");
+  area_array->SetNumberOfComponents(1);
+  area_array->SetNumberOfTuples(num_cells);
+  area_array->SetVoidArray(block->areas, num_cells, 1); //keep the array from being delete when the object is deleted
+  ugrid->GetFieldData()->AddArray(area_array);
 
-  VTK_CREATE(vtkFloatArray, field_array);
-  field_array->SetNumberOfComponents(2);
-  field_array->SetNumberOfTuples(num_cells);
-  field_array->SetVoidArray(field_vals, 2 * num_cells, 0);
+  VTK_CREATE(vtkFloatArray, vol_array);
+  vol_array->SetName("Volumes");
+  vol_array->SetNumberOfComponents(1);
+  vol_array->SetNumberOfTuples(num_cells);
+  vol_array->SetVoidArray(block->vols, num_cells, 1);
+  ugrid->GetFieldData()->AddArray(vol_array);
 
-  ugrid->GetFieldData()->AddArray(field_array);
-
-  //if (MyId == 5)
-  //  ugrid->Print(cout);
 }

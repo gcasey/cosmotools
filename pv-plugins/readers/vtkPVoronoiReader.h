@@ -17,7 +17,6 @@ public:
   static vtkPVoronoiReader *New();
  
   // Description:
-  // Specify file name of the .abc file.
   vtkSetStringMacro(FileName);
   vtkGetStringMacro(FileName);
  
@@ -25,7 +24,10 @@ protected:
   vtkPVoronoiReader();
   ~vtkPVoronoiReader(){}
  
-  int RequestData(vtkInformation *, vtkInformationVector **, vtkInformationVector *);
+  int FillOutputPortInformation( int port, vtkInformation* info );
+  int RequestData(vtkInformation *, 
+                  vtkInformationVector **, 
+                  vtkInformationVector *);
  
 private:
   vtkPVoronoiReader(const vtkPVoronoiReader&);  // Not implemented.
@@ -37,11 +39,6 @@ private:
   int CopyHeader(unsigned char *in_buf, int *hdr);
   void ReadBlock(FILE *fd, vblock_t* &v, int64_t ofst);
   void CopyBlock(unsigned char *in_buf, vblock_t* &v);
-  #if 0 // not using compression for now
-    void DecompressBlock(unsigned  char* in_buf, int in_size, 
-		       vector<unsigned char> *decomp_buf, 
-		       int *decomp_size);
-  #endif
 
   int dim; // number of dimensions in the dataset
   bool swap_bytes; // whether to swap bytes for endian conversion

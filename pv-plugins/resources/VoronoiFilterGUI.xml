@@ -1,0 +1,10 @@
+<ParaViewFilters>
+  <Category
+    name="VoronoiFilter"
+    menu_label="&amp;VoronoiFilter"
+    show_in_toolbar="1"
+    preserve_order="1">
+
+    <Filter name="VoronoiFilter" />
+  </Category>
+</ParaViewFilters>
