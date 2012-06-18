@@ -19,6 +19,7 @@
 #include <cstring>
 #include <cstdlib>
 #include <assert.h>
+#include <inttypes.h>
 using namespace std;
 
 #define VTK_CREATE(type, name) \
@@ -136,10 +137,12 @@ int vtkPVoronoiReader::RequestData(
 
   vblock_t *block;
   char msg[100];
+
   output->SetNumberOfBlocks(tb);
+
   for (i=piece; i<tb; i+=numPieces)
   {
-    sprintf(msg, "rank %d, block %d, offset %lld\n", piece, i, ftr[i]);
+    sprintf(msg, "rank %d, block %d, offset %lld\n", piece, i, (long long int)ftr[i]);
     printf("%s", msg);
     block = (vblock_t *)malloc(sizeof(vblock_t));
     ReadBlock(fd, block, ftr[i]);
@@ -527,19 +530,7 @@ void vtkPVoronoiReader::vor2ugrid(struct vblock_t *block, vtkSmartPointer<vtkUns
   num_faces = block->tot_num_cell_faces;
 
   float *vert_vals = block->save_verts;
-
-  float mins[3], maxs[3];
-  mins[0] = 0;  mins[1] = 0;  mins[2] = 0; //hack
-  maxs[0] = 32; maxs[1] = 32; maxs[2] = 32;
-  for (i=0; i<num_verts; i++)
-  {
-    if (vert_vals[i * 3    ] < mins[0]) vert_vals[i * 3    ] = mins[0];
-    if (vert_vals[i * 3    ] > maxs[0]) vert_vals[i * 3    ] = maxs[0];
-    if (vert_vals[i * 3 + 1] < mins[1]) vert_vals[i * 3 + 1] = mins[1];
-    if (vert_vals[i * 3 + 1] > maxs[1]) vert_vals[i * 3 + 1] = maxs[1];
-    if (vert_vals[i * 3 + 2] < mins[2]) vert_vals[i * 3 + 2] = mins[2];
-    if (vert_vals[i * 3 + 2] > maxs[2]) vert_vals[i * 3 + 2] = maxs[2];
-  }
+  vtkMultiProcessController *contr = this->Controller;
 
   //create points
   VTK_CREATE(vtkFloatArray, points_array);
