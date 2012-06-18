@@ -41,7 +41,6 @@ set(SMSRC
 ## Set the gui-resource_files
 set(GUIXML
     resources/CosmologyTools.xml 
-    resources/VoronoiFilterGUI.xml
     resources/vtkPVoronoiReaderGUI.xml
     )
 

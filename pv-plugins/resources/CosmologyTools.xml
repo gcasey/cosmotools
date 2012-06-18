@@ -7,5 +7,6 @@
 
     <Filter name="DensityProfile" />
     <Filter name="LANLHaloFinder" />
+    <Filter name="VoronoiFilter" />
   </Category>
 </ParaViewFilters>
