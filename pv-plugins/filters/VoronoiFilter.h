@@ -5,7 +5,7 @@
 
 class vtkMultiProcessController;
 
-class VoronoiFilter : public vtkMultiBlockDataSetAlgorithm
+class VTK_EXPORT VoronoiFilter : public vtkMultiBlockDataSetAlgorithm
 {
 public:
   static VoronoiFilter* New();
@@ -47,7 +47,7 @@ private:
   void SetController(vtkMultiProcessController *c);
 
   //filter
-  
+
 };
 
 #endif

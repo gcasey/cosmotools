@@ -1,6 +1,6 @@
 #ifndef __VTKPVORONOIREADER_h
 #define __VTKPVORONOIREADER_h
- 
+
 #include <vtkMultiBlockDataSetAlgorithm.h>
 #include <vtkSmartPointer.h>
 #include "voronoi.h"
@@ -8,27 +8,27 @@
 class vtkMultiProcessController;
 class vtkUnstructuredGrid;
 
-class vtkPVoronoiReader : public vtkMultiBlockDataSetAlgorithm
+class VTK_EXPORT vtkPVoronoiReader : public vtkMultiBlockDataSetAlgorithm
 {
 public:
   vtkTypeMacro(vtkPVoronoiReader,vtkMultiBlockDataSetAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);
- 
+
   static vtkPVoronoiReader *New();
- 
+
   // Description:
   vtkSetStringMacro(FileName);
   vtkGetStringMacro(FileName);
- 
+
 protected:
   vtkPVoronoiReader();
   ~vtkPVoronoiReader(){}
- 
+
   int FillOutputPortInformation( int port, vtkInformation* info );
-  int RequestData(vtkInformation *, 
-                  vtkInformationVector **, 
+  int RequestData(vtkInformation *,
+                  vtkInformationVector **,
                   vtkInformationVector *);
- 
+
 private:
   vtkPVoronoiReader(const vtkPVoronoiReader&);  // Not implemented.
   void operator=(const vtkPVoronoiReader&);  // Not implemented.
@@ -48,7 +48,7 @@ private:
   void Swap8(char *n);
   void Swap4(char *n);
   void Swap2(char *n);
- 
+
   //parallelism
   int NumProcesses;
   int MyId;
@@ -57,8 +57,8 @@ private:
 
   //voronoi
   void vor2ugrid(struct vblock_t *block, vtkSmartPointer<vtkUnstructuredGrid> &ugrid);
- 
+
   char* FileName;
 };
- 
+
 #endif
