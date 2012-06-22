@@ -40,8 +40,8 @@ set(SMSRC
 
 ## Set the gui-resource_files
 set(GUIXML
-    resources/CosmologyTools.xml 
-    resources/vtkPVoronoiReaderGUI.xml
+    resources/CosmologyToolsFilters.xml
+    resources/CosmologyToolsReaders.xml
     )
 
 ## Add halo-finders to the project if that plug-in is built
