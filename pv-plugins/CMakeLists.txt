@@ -21,6 +21,7 @@ include_directories(
 ## that the CosmologyTools halo-finder will be used and not the old out-dated
 ## version of the code that is available in ParaView.
 include_directories(BEFORE ${PACKAGE_halofinder_INCLUDE_DIRS})
+include_directories(BEFORE ${PACKAGE_tess_INCLUDE_DIRS})
 
 ## Set the server-manager XML
 set(SMXML
@@ -47,6 +48,7 @@ set(GUIXML
 ## Add halo-finders to the project if that plug-in is built
 set(RequiredLibs
     ${PACKAGE_halofinder_LIBRARIES}
+    ${PACKAGE_tess_LIBRARIES}
     ${MPI_LIBRARIES}
     )
 
