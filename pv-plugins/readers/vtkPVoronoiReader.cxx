@@ -1,5 +1,5 @@
 #include <vtkPVoronoiReader.h>
- 
+
 #include <vtkObjectFactory.h>
 #include <vtkStreamingDemandDrivenPipeline.h>
 #include <vtkInformationVector.h>
@@ -12,6 +12,7 @@
 #include <vtkFloatArray.h>
 #include <vtkPoints.h>
 #include <vtkFieldData.h>
+#include <vtkCellData.h>
 
 #include <iostream>
 #include <string>
@@ -26,9 +27,9 @@ using namespace std;
     vtkSmartPointer<type> name = vtkSmartPointer<type>::New()
 #define VTK_NEW(type, name) \
     name = vtkSmartPointer<type>::New()
- 
+
 vtkStandardNewMacro(vtkPVoronoiReader);
- 
+
 vtkPVoronoiReader::vtkPVoronoiReader()
 {
   this->swap_bytes = 0;
@@ -77,10 +78,10 @@ int vtkPVoronoiReader::FillOutputPortInformation( int port, vtkInformation* info
   if ( port == 0 )
   {
     info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkMultiBlockDataSet" );
- 
+
     return 1;
   }
- 
+
   return 0;
 }
 
@@ -93,12 +94,12 @@ int vtkPVoronoiReader::RequestData(
   // get the info object
   vtkInformation *outInfo = outputVector->GetInformationObject(0);
   int piece, numPieces;
- 
+
   piece = outInfo->Get(
       vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER());
   numPieces = outInfo->Get(
       vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES());
- 
+
   vtkMultiBlockDataSet *output = vtkMultiBlockDataSet::SafeDownCast(
       outInfo->Get(vtkDataObject::DATA_OBJECT()));
 
@@ -150,7 +151,7 @@ int vtkPVoronoiReader::RequestData(
     vor2ugrid(block, ugrid);
     output->SetBlock(i, ugrid);
   }
-  
+
   fclose(fd);
 
   if (contr != this->Controller)
@@ -162,11 +163,11 @@ int vtkPVoronoiReader::RequestData(
 
   return 1;
 }
- 
+
 void vtkPVoronoiReader::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os,indent);
- 
+
   os << indent << "File Name: "
       << (this->FileName ? this->FileName : "(none)") << "\n";
 }
@@ -374,8 +375,8 @@ void vtkPVoronoiReader::CopyBlock(unsigned char *in_buf, vblock_t* &v)
     memcpy(v->sites, in_buf + ofst, 3 * v->num_orig_particles * sizeof(float));
     ofst += (3 * v->num_orig_particles * sizeof(float));
 
-    memcpy(v->complete_cells, in_buf + ofst, 
-	   v->num_complete_cells * sizeof(int));
+    memcpy(v->complete_cells, in_buf + ofst,
+     v->num_complete_cells * sizeof(int));
     ofst += (v->num_complete_cells * sizeof(int));
 
     memcpy(v->areas, in_buf + ofst, v->num_complete_cells * sizeof(float));
@@ -384,12 +385,12 @@ void vtkPVoronoiReader::CopyBlock(unsigned char *in_buf, vblock_t* &v)
     memcpy(v->vols, in_buf + ofst, v->num_complete_cells * sizeof(float));
     ofst += (v->num_complete_cells * sizeof(float));
 
-    memcpy(v->num_cell_faces, in_buf + ofst, 
-	   v->num_complete_cells * sizeof(int));
+    memcpy(v->num_cell_faces, in_buf + ofst,
+     v->num_complete_cells * sizeof(int));
     ofst += (v->num_complete_cells * sizeof(int));
 
-    memcpy(v->num_face_verts, in_buf + ofst, 
-	   v->tot_num_cell_faces * sizeof(int));
+    memcpy(v->num_face_verts, in_buf + ofst,
+     v->tot_num_cell_faces * sizeof(int));
     ofst += (v->tot_num_cell_faces * sizeof(int));
 
     memcpy(v->face_verts, in_buf + ofst, v->tot_num_face_verts * sizeof(int));
@@ -540,7 +541,7 @@ void vtkPVoronoiReader::vor2ugrid(struct vblock_t *block, vtkSmartPointer<vtkUns
 
   VTK_CREATE(vtkPoints, points);
   points->SetData(points_array);
- 
+
   //create unstructure grid
   ugrid->SetPoints(points);
 
@@ -583,13 +584,13 @@ void vtkPVoronoiReader::vor2ugrid(struct vblock_t *block, vtkSmartPointer<vtkUns
   area_array->SetNumberOfComponents(1);
   area_array->SetNumberOfTuples(num_cells);
   area_array->SetVoidArray(block->areas, num_cells, 1); //keep the array from being delete when the object is deleted
-  ugrid->GetFieldData()->AddArray(area_array);
+  ugrid->GetCellData()->AddArray(area_array);
 
   VTK_CREATE(vtkFloatArray, vol_array);
   vol_array->SetName("Volumes");
   vol_array->SetNumberOfComponents(1);
   vol_array->SetNumberOfTuples(num_cells);
   vol_array->SetVoidArray(block->vols, num_cells, 1);
-  ugrid->GetFieldData()->AddArray(vol_array);
+  ugrid->GetCellData()->AddArray(vol_array);
 
 }
