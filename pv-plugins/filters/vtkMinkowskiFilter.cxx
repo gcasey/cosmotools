@@ -2,7 +2,7 @@
 
 #include "vtkMinkowskiFilter.h"
 
-#include <vtkFieldData.h>
+#include <vtkCellData.h>
 #include <vtkFloatArray.h>
 #include <vtkCellArray.h>
 #include <vtkInformation.h>
@@ -116,11 +116,11 @@ int vtkMinkowskiFilter::RequestData(vtkInformation *vtkNotUsed(request),
     //input
     vtkUnstructuredGrid *ugrid = vtkUnstructuredGrid::SafeDownCast(
         input->GetBlock(i));
-    vtkFieldData *field_data = ugrid->GetFieldData();
+    vtkCellData *cell_data = ugrid->GetCellData();
     vtkFloatArray *area_array = vtkFloatArray::SafeDownCast(
-        field_data->GetArray("Areas"));
+        cell_data->GetArray("Areas"));
     vtkFloatArray *vol_array = vtkFloatArray::SafeDownCast(
-        field_data->GetArray("Volumes"));
+        cell_data->GetArray("Volumes"));
     tc = ugrid->GetNumberOfCells();
   }
 
