@@ -36,6 +36,7 @@ set(SMSRC
     filters/vtkCosmoDensityProfile.cxx
     filters/vtkPLANLHaloFinder.cxx
     filters/VoronoiFilter.cxx
+    filters/vtkMinkowskiFilter.cxx
     readers/vtkPVoronoiReader.cxx
     )
 
