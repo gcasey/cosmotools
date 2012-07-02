@@ -5,6 +5,10 @@
 
 class vtkMultiProcessController;
 class vtkUnstructuredGrid;
+class vtkCell;
+class vtkDoubleArray;
+class vtkPoints;
+class vtkPolyhedron;
 
 class VTK_EXPORT vtkMinkowskiFilter : public vtkMultiBlockDataSetAlgorithm 
 {
@@ -31,20 +35,18 @@ class VTK_EXPORT vtkMinkowskiFilter : public vtkMultiBlockDataSetAlgorithm
   vtkMultiProcessController *Controller;
   void SetController(vtkMultiProcessController *c);
 
-  void compute_mf(vtkUnstructuredGrid *ugrid, 
-                  double &S, 
-                  double &V, 
-                  double &C, 
-                  double &X);
-  double compute_S(vtkUnstructuredGrid *ugrid); //surface area
-  double compute_V(vtkUnstructuredGrid *ugrid); //volume
-  double compute_C(vtkUnstructuredGrid *ugrid); //integrated mean curvature
-  double compute_X(vtkUnstructuredGrid *ugrid); //euler characteristic
+  void compute_mf(vtkUnstructuredGrid *ugrid, vtkDoubleArray *S, 
+      vtkDoubleArray *V, vtkDoubleArray *C, vtkDoubleArray *X);
+  double compute_S(vtkPolyhedron *cell); //surface area
+  double compute_V(vtkPolyhedron *cell); //volume
+  double compute_C(vtkPolyhedron *cell); //integrated mean curvature
+  double compute_X(vtkPolyhedron *cell); //euler characteristic
 
-  double compute_face_area(vtkCell *face, vtkPoints *pts);
-  double compute_edge_length(vtkPoint);
+  void compute_normal(vtkCell *face, double normal[3]);
+  double compute_face_area(vtkCell *face);
+  double compute_edge_length(double v1[3], double v2[3]);
   double compute_face_angle(vtkCell *f1, vtkCell *f2);
-  double compute_get_num_edges(vtkCell *cell);
+  int get_num_edges(vtkCell *cell);
 };
 
 #endif //  __vtkMinkowskiFilter_h
