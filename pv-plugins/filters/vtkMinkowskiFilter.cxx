@@ -2,6 +2,8 @@
 
 #include "vtkMinkowskiFilter.h"
 
+#include <cmath>
+#include <vtkMath.h>
 #include <vtkCellData.h>
 #include <vtkFloatArray.h>
 #include <vtkCellArray.h>
@@ -138,4 +140,64 @@ int vtkMinkowskiFilter::FillOutputPortInformation(int port, vtkInformation* info
  
   return 0;
 }
+
+void vtkMinkowskiFilter::compute_mf(vtkUnstructuredGrid *ugrid, double &S, double &V, double &C, double &X)
+{
+  S = compute_S(ugrid);
+  V = compute_V(ugrid);
+  C = compute_C(ugrid);
+  X = compute_X(ugrid);
+}
+
+double vtkMinkowskiFilter::compute_S(vtkUnstructuredGrid *ugrid)
+{
+  
+}
+
+double vtkMinkowskiFilter::compute_V(vtkUnstructuredGrid *ugrid)
+{
+
+}
+
+double vtkMinkowskiFilter::compute_C(vtkUnstructuredGrid *ugrid)
+{
+
+}
+
+double vtkMinkowskiFilter::compute_X(vtkUnstructuredGrid *ugrid)
+{
+
+}
+
+double vtkMinkowskiFilter::compute_face_area(vtkCell *face)
+{
+  int i, j;
+  double area = 0;
+
+  j = num_points-1;  // The last vertex is the 'previous' one to the first
+
+  for (i=0; i<num_points; i++)
+    { area = area +  (X[j]+X[i]) * (Y[j]-Y[i]); 
+      j = i;  //j is previous vertex to i
+    }
+  return area/2;
+  
+}
+
+double vtkMinkowskiFilter::compute_edge_length(double *v1, double *v2)
+{
+  return sqrt(vtkMath::Dot(v1, v2));
+}
+
+double vtkMinkowskiFilter::compute_face_angle(vtkCell *f1, vtkCell *f2)
+{
+
+}
+
+double vtkMinkowskiFilter::compute_get_num_edges(vtkCell *cell)
+{
+
+}
+
+
 

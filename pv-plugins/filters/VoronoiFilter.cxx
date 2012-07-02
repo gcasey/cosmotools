@@ -1,6 +1,6 @@
 #include "VoronoiFilter.h"
 
-#include <vtkFieldData.h>
+#include <vtkCellData.h>
 #include <vtkFloatArray.h>
 #include <vtkCellArray.h>
 #include <vtkInformation.h>
@@ -130,16 +130,16 @@ int VoronoiFilter::RequestData(vtkInformation *vtkNotUsed(request),
     //input
     vtkUnstructuredGrid *ugrid = vtkUnstructuredGrid::SafeDownCast(
         input->GetBlock(i));
-    vtkFieldData *field_data = ugrid->GetFieldData();
+    vtkCellData *cell_data = ugrid->GetCellData();
     vtkFloatArray *area_array = vtkFloatArray::SafeDownCast(
-        field_data->GetArray("Areas"));
+        cell_data->GetArray("Areas"));
     vtkFloatArray *vol_array = vtkFloatArray::SafeDownCast(
-        field_data->GetArray("Volumes"));
+        cell_data->GetArray("Volumes"));
     tc = ugrid->GetNumberOfCells();
 
     //output
     VTK_CREATE(vtkUnstructuredGrid, ugrid_out);
-    VTK_CREATE(vtkFieldData, field_data_out);
+    VTK_CREATE(vtkCellData, cell_data_out);
     VTK_CREATE(vtkFloatArray, area_array_out);
     area_array_out->SetName("Areas");
     area_array_out->SetNumberOfComponents(1);
@@ -163,8 +163,8 @@ int VoronoiFilter::RequestData(vtkInformation *vtkNotUsed(request),
         vol_array_out->InsertNextTuple1(vol_array->GetValue(j));
       }
     }
-    ugrid_out->GetFieldData()->AddArray(area_array_out);
-    ugrid_out->GetFieldData()->AddArray(vol_array_out);
+    ugrid_out->GetCellData()->AddArray(area_array_out);
+    ugrid_out->GetCellData()->AddArray(vol_array_out);
 
     output->SetBlock(i, ugrid_out);
   }
