@@ -5,6 +5,7 @@
 #include <vtkPoints.h>
 #include <vtkCell.h>
 #include <vtkPolyhedron.h>
+#include <vtkPointData.h>
 #include <vtkCellData.h>
 #include <vtkFloatArray.h>
 #include <vtkDoubleArray.h>
@@ -112,7 +113,8 @@ int vtkMinkowskiFilter::RequestData(vtkInformation *vtkNotUsed(request),
 
   int i, j, tc, tb;
   tb = input->GetNumberOfBlocks();
-  output->SetNumberOfBlocks(tb);
+
+  output->CopyStructure(input);
 
   for (i=piece; i<tb; i+=numPieces)
   {
@@ -125,6 +127,22 @@ int vtkMinkowskiFilter::RequestData(vtkInformation *vtkNotUsed(request),
     vtkFloatArray *vol_array = vtkFloatArray::SafeDownCast(
         cell_data->GetArray("Volumes"));
     tc = ugrid->GetNumberOfCells();
+
+    VTK_CREATE(vtkDoubleArray, S);
+    VTK_CREATE(vtkDoubleArray, V);
+    VTK_CREATE(vtkDoubleArray, C);
+    VTK_CREATE(vtkDoubleArray, X);
+
+    compute_mf(ugrid, S, V, C, X);
+
+    vtkUnstructuredGrid *ugrid_out = vtkUnstructuredGrid::SafeDownCast(
+        input->GetBlock(i));
+    ugrid_out->GetPointData()->PassData(ugrid->GetPointData());
+    ugrid_out->GetCellData()->PassData(ugrid->GetCellData());
+    ugrid_out->GetCellData()->AddArray(S);
+    ugrid_out->GetCellData()->AddArray(V);
+    ugrid_out->GetCellData()->AddArray(C);
+    ugrid_out->GetCellData()->AddArray(X);
   }
 
   return 1;
