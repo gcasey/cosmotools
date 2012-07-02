@@ -41,8 +41,7 @@
         default_values="0.3 0.4">
          <DoubleRangeDomain name="range"/>
       </DoubleVectorProperty>
-
     </SourceProxy>
-  </ProxyGroup>
-</ServerManagerConfiguration>                                                                                                                                    
 
+  </ProxyGroup>
+</ServerManagerConfiguration>

@@ -135,14 +135,19 @@ int vtkMinkowskiFilter::RequestData(vtkInformation *vtkNotUsed(request),
 
     compute_mf(ugrid, S, V, C, X);
 
-    vtkUnstructuredGrid *ugrid_out = vtkUnstructuredGrid::SafeDownCast(
-        input->GetBlock(i));
+    //vtkUnstructuredGrid *ugrid_out = vtkUnstructuredGrid::SafeDownCast(
+    //    input->GetBlock(i));
+
+    VTK_CREATE(vtkUnstructuredGrid, ugrid_out);
+    ugrid_out->CopyStructure(ugrid);
     ugrid_out->GetPointData()->PassData(ugrid->GetPointData());
     ugrid_out->GetCellData()->PassData(ugrid->GetCellData());
     ugrid_out->GetCellData()->AddArray(S);
     ugrid_out->GetCellData()->AddArray(V);
     ugrid_out->GetCellData()->AddArray(C);
     ugrid_out->GetCellData()->AddArray(X);
+
+    output->SetBlock(i, ugrid_out);
   }
 
   return 1;
@@ -173,13 +178,9 @@ void vtkMinkowskiFilter::compute_mf(vtkUnstructuredGrid *ugrid,
   C_array = new double[num_cells];
   X_array = new double[num_cells];
 
-  vtkIdType *ptIds;
-  vtkIdType nfaces;
   for (i=0; i<num_cells; i++)
   {
-    ugrid->GetFaceStream(i, nfaces, ptIds);
-    VTK_CREATE(vtkPolyhedron, cell);
-    cell->SetFaces(ptIds);
+    vtkPolyhedron *cell = vtkPolyhedron::SafeDownCast(ugrid->GetCell(i));
 
     S_array[i] = compute_S(cell);
     V_array[i] = compute_V(cell);
@@ -251,9 +252,9 @@ double vtkMinkowskiFilter::compute_face_area(vtkCell *face)
   vtkPoints *verts = face->GetPoints();
   compute_normal(face, N);
 
-  ax = abs(N[0]);
-  ay = abs(N[1]);
-  az = abs(N[2]);
+  ax = fabs(N[0]);
+  ay = fabs(N[1]);
+  az = fabs(N[2]);
 
   coord = 3;
   if (ax > ay)
