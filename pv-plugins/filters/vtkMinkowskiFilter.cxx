@@ -4,6 +4,7 @@
 #include <vtkMath.h>
 #include <vtkPoints.h>
 #include <vtkCell.h>
+#include <vtkPolygon.h>
 #include <vtkPolyhedron.h>
 #include <vtkPointData.h>
 #include <vtkCellData.h>
@@ -128,6 +129,9 @@ int vtkMinkowskiFilter::RequestData(vtkInformation *vtkNotUsed(request),
         cell_data->GetArray("Volumes"));
     tc = ugrid->GetNumberOfCells();
 
+    float *farea = area_array->GetPointer(0);
+    float *fvol = vol_array->GetPointer(0);
+
     VTK_CREATE(vtkDoubleArray, S);
     VTK_CREATE(vtkDoubleArray, V);
     VTK_CREATE(vtkDoubleArray, C);
@@ -183,6 +187,7 @@ void vtkMinkowskiFilter::compute_mf(vtkUnstructuredGrid *ugrid,
     vtkPolyhedron *cell = vtkPolyhedron::SafeDownCast(ugrid->GetCell(i));
 
     S_array[i] = compute_S(cell);
+
     V_array[i] = compute_V(cell);
     C_array[i] = compute_C(cell);
     X_array[i] = compute_X(cell);
@@ -196,17 +201,17 @@ void vtkMinkowskiFilter::compute_mf(vtkUnstructuredGrid *ugrid,
   V->SetName("V");
   V->SetNumberOfComponents(1);
   V->SetNumberOfTuples(num_cells);
-  V->SetVoidArray(S_array, num_cells, 0);
+  V->SetVoidArray(V_array, num_cells, 0);
 
   C->SetName("C");
   C->SetNumberOfComponents(1);
   C->SetNumberOfTuples(num_cells);
-  C->SetVoidArray(S_array, num_cells, 0);
+  C->SetVoidArray(C_array, num_cells, 0);
 
   X->SetName("X");
   X->SetNumberOfComponents(1);
   X->SetNumberOfTuples(num_cells);
-  X->SetVoidArray(S_array, num_cells, 0);
+  X->SetVoidArray(X_array, num_cells, 0);
   
 }
 
@@ -220,6 +225,8 @@ double vtkMinkowskiFilter::compute_S(vtkPolyhedron *cell)
   for (i=0; i<num_faces; i++)
   {
     face = cell->GetFace(i);
+    //vtkPolygon *face_polygon = vtkPolygon::SafeDownCast(face);
+    //area += face_polygon->ComputeArea();
     area += compute_face_area(face);
   }
 
@@ -290,7 +297,7 @@ double vtkMinkowskiFilter::compute_face_area(vtkCell *face)
   else if (coord == 3)
     area *= an / (2 * az);
 
-  return area;
+  return fabs(area); //area is alway positive
 }
 
 double vtkMinkowskiFilter::compute_edge_length(double v1[3], double v2[3])
