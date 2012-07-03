@@ -28,7 +28,6 @@ set(SMXML
     resources/DensityProfile.xml
     resources/LANLHaloFinder.xml
     resources/VoronoiFilter.xml
-    resources/MinkowskiFilter.xml
     resources/vtkPVoronoiReader.xml
     )
 
