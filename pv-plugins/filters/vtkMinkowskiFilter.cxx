@@ -139,9 +139,6 @@ int vtkMinkowskiFilter::RequestData(vtkInformation *vtkNotUsed(request),
 
     compute_mf(ugrid, S, V, C, X);
 
-    //vtkUnstructuredGrid *ugrid_out = vtkUnstructuredGrid::SafeDownCast(
-    //    input->GetBlock(i));
-
     VTK_CREATE(vtkUnstructuredGrid, ugrid_out);
     ugrid_out->CopyStructure(ugrid);
     ugrid_out->GetPointData()->PassData(ugrid->GetPointData());
@@ -225,8 +222,6 @@ double vtkMinkowskiFilter::compute_S(vtkPolyhedron *cell)
   for (i=0; i<num_faces; i++)
   {
     face = cell->GetFace(i);
-    //vtkPolygon *face_polygon = vtkPolygon::SafeDownCast(face);
-    //area += face_polygon->ComputeArea();
     area += compute_face_area(face);
   }
 
