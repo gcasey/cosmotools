@@ -40,7 +40,9 @@ class VTK_EXPORT vtkMinkowskiFilter : public vtkUnstructuredGridAlgorithm
   double compute_face_area(vtkCell *face);
   double compute_edge_length(double v1[3], double v2[3]);
   double compute_face_angle(vtkCell *f1, vtkCell *f2);
-  int get_num_edges(vtkCell *cell);
+  int get_num_edges(vtkPolyhedron *cell);
+  int get_num_faces(vtkPolyhedron *cell);
+  int get_num_verts(vtkPolyhedron *cell);
 };
 
 #endif //  __vtkMinkowskiFilter_h

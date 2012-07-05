@@ -175,7 +175,13 @@ double vtkMinkowskiFilter::compute_C(vtkPolyhedron *cell)
 
 double vtkMinkowskiFilter::compute_X(vtkPolyhedron *cell)
 {
-  return 0; // doing nothing now
+  int nfaces = cell->GetNumberOfFaces();
+  int nedges = cell->GetNumberOfEdges();
+  int nverts = cell->GetNumberOfPoints();
+
+  double X = nfaces - nedges + nverts;
+  
+  return X;
 }
 
 double vtkMinkowskiFilter::compute_face_area(vtkCell *face)
@@ -240,9 +246,19 @@ double vtkMinkowskiFilter::compute_face_angle(vtkCell *f1, vtkCell *f2)
   return 0; // doing nothing now
 }
 
-int vtkMinkowskiFilter::get_num_edges(vtkCell *cell)
+int vtkMinkowskiFilter::get_num_edges(vtkPolyhedron *cell)
 {
-  return 0; // doing nothing now
+  return cell->GetNumberOfEdges();
+}
+
+int vtkMinkowskiFilter::get_num_faces(vtkPolyhedron *cell)
+{
+  return cell->GetNumberOfFaces();
+}
+
+int vtkMinkowskiFilter::get_num_verts(vtkPolyhedron *cell)
+{
+  return cell->GetNumberOfPoints();
 }
 
 //compute normal of a face using Newell's method
