@@ -1,6 +1,9 @@
 #include "vtkMinkowskiFilter.h"
 
+#include <cstdio>
+#include <map>
 #include <cmath>
+
 #include <vtkMath.h>
 #include <vtkPoints.h>
 #include <vtkCell.h>
@@ -170,7 +173,76 @@ double vtkMinkowskiFilter::compute_V(vtkUnstructuredGrid *ugrid, int cid)
 
 double vtkMinkowskiFilter::compute_C(vtkPolyhedron *cell)
 {
-  return 0; // doing nothing now
+  int i, j;
+  int num_edges = cell->GetNumberOfEdges();
+  int num_faces = cell->GetNumberOfFaces();
+  
+  double edge_lens[num_edges];
+  double face_normals[num_faces][3];
+
+  vtkIdType edge_faces[num_edges][2];
+  for (i=0; i<num_edges; i++)
+  {
+    edge_faces[i][0] = -1;
+    edge_faces[i][1] = -1;
+  }
+  
+  std::map<std::string,int> edge_map;
+
+  char key[100];
+  for (i=0; i<num_edges; i++)
+  {
+    vtkCell *e = cell->GetEdge(i);
+
+    sprintf(key, "%d_%d", (int)e->GetPointId(0), (int)e->GetPointId(1));
+    std::string key_str = std::string(key);
+    edge_map[key_str] = i;
+
+    edge_lens[i] = compute_edge_length(e);
+  }
+
+  for (i=0; i<num_faces; i++)
+  {
+    vtkCell *f = cell->GetFace(i);
+    vtkIdList *verts = f->GetPointIds();
+    int num_verts = verts->GetNumberOfIds(); 
+
+    for (j=0; j<num_verts - 1; j++)
+    {
+      sprintf(key, "%d_%d", (int)verts->GetId(j), (int)verts->GetId(j+1));
+      std::string key_str = std::string(key);
+      std::map<std::string, int>::iterator it = edge_map.find(key_str);
+      if (it == edge_map.end())
+      {
+        sprintf(key, "%d_%d", (int)verts->GetId(j+1), (int)verts->GetId(j));
+        key_str = std::string(key);
+        it = edge_map.find(key_str);
+      }
+
+      if (it == edge_map.end())
+        std::cerr << "error: can't find the edge" << std::endl;
+
+      int edge_id = it->second;
+      if (edge_faces[edge_id][0] == -1)
+        edge_faces[edge_id][0] = i;
+      else if (edge_faces[edge_id][1] == -1)
+        edge_faces[edge_id][1] = i;
+      else
+        std::cerr << "error: edge is accessed more than twice" << std::endl;
+    }
+    
+    compute_normal(f, face_normals[i]);
+  }
+
+  double C = 0;
+  for (i=0; i<num_edges; i++)
+  {
+    
+  }
+
+
+  
+  return 0;
 }
 
 double vtkMinkowskiFilter::compute_X(vtkPolyhedron *cell)
@@ -236,29 +308,81 @@ double vtkMinkowskiFilter::compute_face_area(vtkCell *face)
   return fabs(area); //area is alway positive
 }
 
-double vtkMinkowskiFilter::compute_edge_length(double v1[3], double v2[3])
+double vtkMinkowskiFilter::compute_edge_length(vtkCell *edge)
 {
-  return sqrt(vtkMath::Dot(v1, v2));
+  double v[3], v1[3], v2[3];
+  edge->GetPoints()->GetPoint(0, v1);
+  edge->GetPoints()->GetPoint(0, v2);
+
+  v[0] = v2[0] - v1[0];
+  v[1] = v2[1] - v1[1];
+  v[2] = v2[2] - v1[2];
+
+  return sqrt(vtkMath::Dot(v, v));
+}
+
+int vtkMinkowskiFilter::compute_epsilon(vtkCell *f1, vtkCell *f2, vtkCell *e)
+{
+  int i;
+  vtkIdType pe1, pe2, pf1 = -1, pf2 = -1;
+
+  pe1 = e->GetPointId(0);
+  pe2 = e->GetPointId(1);
+
+  vtkIdList *vs1 = f1->GetPointIds();
+  vtkIdList *vs2 = f2->GetPointIds();
+  for (i=0; i<vs1->GetNumberOfIds(); i++)
+  {
+    if (vs1->GetId(i) != pe1 && vs1->GetId(i) != pe2)
+    {
+      pf1 = i;
+      break;
+    }
+  }
+  for (i=0; i<vs2->GetNumberOfIds(); i++)
+  {
+    if (vs2->GetId(i) != pe1 && vs2->GetId(i) != pe2)
+    {
+      pf2 = i;
+      break;
+    }
+  }
+
+  if (pf1 == -1 || pf2 == -1)
+    std::cerr << "error: compute_epsilon" << std::endl;
+
+  double ve[3], vf1[3], vf2[3], vf[3];
+  e->GetPoints()->GetPoint(0, ve);
+  f1->GetPoints()->GetPoint(pf1, vf1);
+  f2->GetPoints()->GetPoint(pf2, vf2);
+
+  vf[0] = (vf1[0] + vf2[0]) * 0.5;
+  vf[1] = (vf1[1] + vf2[1]) * 0.5;
+  vf[2] = (vf1[2] + vf2[2]) * 0.5;
+
+  double vec[3];
+  vec[0] = vf[0] - ve[0];
+  vec[1] = vf[1] - ve[1];
+  vec[2] = vf[2] - ve[2];
+  double N[3];
+  compute_normal(f1, N);
+  
+  double val = vtkMath::Dot(vec, N);
+
+  if (val > 0)
+    return 1;
+  else
+    return 0;
 }
 
 double vtkMinkowskiFilter::compute_face_angle(vtkCell *f1, vtkCell *f2)
 {
-  return 0; // doing nothing now
-}
+  double n1[3], n2[3];
 
-int vtkMinkowskiFilter::get_num_edges(vtkPolyhedron *cell)
-{
-  return cell->GetNumberOfEdges();
-}
+  compute_normal(f1, n1);
+  compute_normal(f2, n2);
 
-int vtkMinkowskiFilter::get_num_faces(vtkPolyhedron *cell)
-{
-  return cell->GetNumberOfFaces();
-}
-
-int vtkMinkowskiFilter::get_num_verts(vtkPolyhedron *cell)
-{
-  return cell->GetNumberOfPoints();
+  return acos(vtkMath::Dot(n1, n2));
 }
 
 //compute normal of a face using Newell's method
@@ -285,12 +409,7 @@ void vtkMinkowskiFilter::compute_normal(vtkCell *face, double normal[3])
     normal[2] += (vcurr[0] - vnext[0]) * (vcurr[1] + vnext[1]);
   }
 
-  double mag = sqrt(normal[0] * normal[0] + normal[1] * normal[1] +
-		   normal[2] * normal[2]);
-  // normalize
-  normal[0] /= mag;
-  normal[1] /= mag;
-  normal[2] /= mag;
+  vtkMath::Normalize(normal);
 
   // direction is inward, need to invert
   normal[0] *= -1.0;
