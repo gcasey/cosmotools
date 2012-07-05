@@ -1,20 +1,18 @@
 #ifndef __vtkMinkowskiFilter_h
 #define __vtkMinkowskiFilter_h
 
-#include "vtkMultiBlockDataSetAlgorithm.h"
+#include "vtkUnstructuredGridAlgorithm.h"
 
-class vtkMultiProcessController;
 class vtkUnstructuredGrid;
 class vtkCell;
 class vtkDoubleArray;
-class vtkPoints;
 class vtkPolyhedron;
 
-class VTK_EXPORT vtkMinkowskiFilter : public vtkMultiBlockDataSetAlgorithm 
+class VTK_EXPORT vtkMinkowskiFilter : public vtkUnstructuredGridAlgorithm 
 {
  public:
   static vtkMinkowskiFilter *New();
-  vtkTypeMacro(vtkMinkowskiFilter, vtkMultiBlockDataSetAlgorithm);
+  vtkTypeMacro(vtkMinkowskiFilter, vtkUnstructuredGridAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);
 
  protected:
@@ -29,11 +27,6 @@ class VTK_EXPORT vtkMinkowskiFilter : public vtkMultiBlockDataSetAlgorithm
  private:
   vtkMinkowskiFilter(const vtkMinkowskiFilter&);  // Not implemented.
   void operator=(const vtkMinkowskiFilter&);  // Not implemented.
-
-  int NumProcesses;
-  int MyId;
-  vtkMultiProcessController *Controller;
-  void SetController(vtkMultiProcessController *c);
 
   void compute_mf(vtkUnstructuredGrid *ugrid, vtkDoubleArray *S, 
       vtkDoubleArray *V, vtkDoubleArray *C, vtkDoubleArray *X);
