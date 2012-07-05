@@ -31,7 +31,8 @@ class VTK_EXPORT vtkMinkowskiFilter : public vtkUnstructuredGridAlgorithm
   void compute_mf(vtkUnstructuredGrid *ugrid, vtkDoubleArray *S, 
       vtkDoubleArray *V, vtkDoubleArray *C, vtkDoubleArray *X);
   double compute_S(vtkPolyhedron *cell); //surface area
-  double compute_V(vtkPolyhedron *cell); //volume
+  double compute_V(vtkPolyhedron *cell); //volume1
+  double compute_V(vtkUnstructuredGrid *ugrid, int cid); //volume2
   double compute_C(vtkPolyhedron *cell); //integrated mean curvature
   double compute_X(vtkPolyhedron *cell); //euler characteristic
 

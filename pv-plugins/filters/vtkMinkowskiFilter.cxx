@@ -55,19 +55,7 @@ int vtkMinkowskiFilter::RequestData(vtkInformation *vtkNotUsed(request),
   vtkUnstructuredGrid *output = vtkUnstructuredGrid::SafeDownCast(
       outInfo->Get(vtkDataObject::DATA_OBJECT()));
 
-  int i, j, tc;
-
   output->CopyStructure(input);
-
-  vtkCellData *cell_data = input->GetCellData();
-  vtkFloatArray *area_array = vtkFloatArray::SafeDownCast(
-      cell_data->GetArray("Areas"));
-  vtkFloatArray *vol_array = vtkFloatArray::SafeDownCast(
-      cell_data->GetArray("Volumes"));
-  tc = input->GetNumberOfCells();
-
-  float *farea = area_array->GetPointer(0);
-  float *fvol = vol_array->GetPointer(0);
 
   VTK_CREATE(vtkDoubleArray, S);
   VTK_CREATE(vtkDoubleArray, V);
@@ -112,12 +100,20 @@ void vtkMinkowskiFilter::compute_mf(vtkUnstructuredGrid *ugrid,
   C_array = new double[num_cells];
   X_array = new double[num_cells];
 
+  vtkCellData *cell_data = ugrid->GetCellData();
+  vtkFloatArray *area_array = vtkFloatArray::SafeDownCast(
+      cell_data->GetArray("Areas"));
+  vtkFloatArray *vol_array = vtkFloatArray::SafeDownCast(
+      cell_data->GetArray("Volumes"));
+  float *farea = area_array->GetPointer(0);
+  float *fvol = vol_array->GetPointer(0);
+
   for (i=0; i<num_cells; i++)
   {
     vtkPolyhedron *cell = vtkPolyhedron::SafeDownCast(ugrid->GetCell(i));
 
     S_array[i] = compute_S(cell);
-    V_array[i] = compute_V(cell);
+    V_array[i] = compute_V(ugrid, i);
     C_array[i] = compute_C(cell);
     X_array[i] = compute_X(cell);
   }
@@ -162,7 +158,14 @@ double vtkMinkowskiFilter::compute_S(vtkPolyhedron *cell)
 
 double vtkMinkowskiFilter::compute_V(vtkPolyhedron *cell)
 {
+  // for manually compute polyhedron volume
   return 0; // doing nothing now
+}
+
+double vtkMinkowskiFilter::compute_V(vtkUnstructuredGrid *ugrid, int cid)
+{
+  // for precomputed cell volume
+  return ugrid->GetCellData()->GetArray("Volumes")->GetTuple1(cid);
 }
 
 double vtkMinkowskiFilter::compute_C(vtkPolyhedron *cell)
