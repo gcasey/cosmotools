@@ -58,8 +58,6 @@ int vtkMinkowskiFilter::RequestData(vtkInformation *vtkNotUsed(request),
   vtkUnstructuredGrid *output = vtkUnstructuredGrid::SafeDownCast(
       outInfo->Get(vtkDataObject::DATA_OBJECT()));
 
-  output->CopyStructure(input);
-
   VTK_CREATE(vtkDoubleArray, S);
   VTK_CREATE(vtkDoubleArray, V);
   VTK_CREATE(vtkDoubleArray, C);
