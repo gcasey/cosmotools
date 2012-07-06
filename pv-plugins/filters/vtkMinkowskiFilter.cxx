@@ -179,7 +179,7 @@ double vtkMinkowskiFilter::compute_C(vtkPolyhedron *cell)
   
   double face_normals[num_faces][3];
 
-  vtkIdType edge_faces[num_edges][2];
+  int edge_faces[num_edges][2];
   for (i=0; i<num_edges; i++)
   {
     edge_faces[i][0] = -1;
@@ -204,14 +204,15 @@ double vtkMinkowskiFilter::compute_C(vtkPolyhedron *cell)
     vtkIdList *verts = f->GetPointIds();
     int num_verts = verts->GetNumberOfIds(); 
 
-    for (j=0; j<num_verts - 1; j++)
+    for (j=0; j<num_verts; j++)
     {
-      sprintf(key, "%d_%d", (int)verts->GetId(j), (int)verts->GetId(j+1));
+      sprintf(key, "%d_%d", (int)verts->GetId(j % num_verts), 
+          (int)verts->GetId((j+1) % num_verts));
       std::string key_str = std::string(key);
       std::map<std::string, int>::iterator it = edge_map.find(key_str);
       if (it == edge_map.end())
       {
-        sprintf(key, "%d_%d", (int)verts->GetId(j+1), (int)verts->GetId(j));
+        sprintf(key, "%d_%d", (int)verts->GetId((j+1) % num_verts), (int)verts->GetId(j % num_verts));
         key_str = std::string(key);
         it = edge_map.find(key_str);
       }
@@ -233,10 +234,12 @@ double vtkMinkowskiFilter::compute_C(vtkPolyhedron *cell)
 
   double C = 0;
   double l, phi, epsilon;
+  VTK_CREATE(vtkPolygon, f1); //hack, vtkPolyhedron::GetFace keeps returning
+  VTK_CREATE(vtkPolygon, f2); //the same pointer but different content
   for (i=0; i<num_edges; i++)
   {
-    vtkCell *f1 = cell->GetFace(edge_faces[i][0]);
-    vtkCell *f2 = cell->GetFace(edge_faces[i][1]);
+    f1->DeepCopy(cell->GetFace(edge_faces[i][0]));
+    f2->DeepCopy(cell->GetFace(edge_faces[i][1]));
     vtkCell *e  = cell->GetEdge(i);
 
     l = compute_edge_length(e);
@@ -317,7 +320,7 @@ double vtkMinkowskiFilter::compute_edge_length(vtkCell *edge)
 {
   double v[3], v1[3], v2[3];
   edge->GetPoints()->GetPoint(0, v1);
-  edge->GetPoints()->GetPoint(0, v2);
+  edge->GetPoints()->GetPoint(1, v2);
 
   v[0] = v2[0] - v1[0];
   v[1] = v2[1] - v1[1];
@@ -375,9 +378,9 @@ int vtkMinkowskiFilter::compute_epsilon(vtkCell *f1, vtkCell *f2, vtkCell *e)
   double val = vtkMath::Dot(vec, N);
 
   if (val > 0)
-    return 1;
+    return -1;
   else
-    return 0;
+    return 1;
 }
 
 double vtkMinkowskiFilter::compute_face_angle(vtkCell *f1, vtkCell *f2)
