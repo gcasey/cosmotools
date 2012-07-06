@@ -34,8 +34,10 @@ private:
   void SetController(vtkMultiProcessController *c);
 
   //filter
-  vtkIdList* MergeCellsOnRegionId(vtkUnstructuredGrid *ugrid, int rid);
-  float MergeCellDataOnRegionId(vtkFloatArray *data_array, vtkIdTypeArray *rid_array, vtkIdType rid);
+  vtkIdList* MergeCellsOnRegionId(vtkUnstructuredGrid *ugrid, int target);
+  float MergeCellDataOnRegionId(vtkFloatArray *data_array, vtkIdTypeArray *rid_array, vtkIdType target);
+
+  std::string IdsToKeystr(vtkIdList* ids);
 };
 
 #endif

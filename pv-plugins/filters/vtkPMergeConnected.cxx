@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <cstring>
+#include <map>
 
 #include <vtkIdList.h>
 #include <vtkPolyhedron.h>
@@ -184,24 +185,80 @@ int vtkPMergeConnected::RequestData(vtkInformation *vtkNotUsed(request),
   return 1;
 }
 
-vtkIdList* vtkPMergeConnected::MergeCellsOnRegionId(vtkUnstructuredGrid *ugrid, int rid)
+std::string vtkPMergeConnected::IdsToKeystr(vtkIdList* ids)
 {
-  /*if (prid_array->GetTuple1(k) == j)
-  {
-    vtkPolyhedron *cell = vtkPolyhedron::SafeDownCast(ugrid->GetCell(k));
-
-    if (k<100)
-      std::cout << k << ": " << cell << std::endl;
-  }*/
+  return "key";
 }
 
-float vtkPMergeConnected::MergeCellDataOnRegionId(vtkFloatArray *data_array, vtkIdTypeArray *rid_array, vtkIdType rid)
+struct cmp_ids
+{
+  bool operator()(char const *a, char const *b)
+  {
+    int i, ret = 0;
+    vtkIdList *list_a = (vtkIdList *)a;
+    vtkIdList *list_b = (vtkIdList *)b;
+    
+    if (list_a->GetNumberOfIds() == list_b->GetNumberOfIds())
+    {
+      for (i=0; i<list_a->GetNumberOfIds(); i++)
+      {
+        if (list_a->GetId(i) != list_b->GetId(i))
+        {
+          ret = list_a->GetId(i) - list_b->GetId(i);
+          break;
+        } 
+      }
+    }
+    else
+      ret = list_a->GetNumberOfIds() - list_b->GetNumberOfIds();
+
+    return ret;
+  }
+};
+
+
+//face stream of a polyhedron cell in the following format: 
+//numCellFaces, numFace0Pts, id1, id2, id3, numFace1Pts,id1, id2, id3, ...
+vtkIdList* vtkPMergeConnected::MergeCellsOnRegionId(vtkUnstructuredGrid *ugrid, int target)
+{
+  int i, j;
+
+  VTK_CREATE(vtkIdList, facestream);
+  vtkIdTypeArray *rids = vtkIdTypeArray::SafeDownCast(ugrid->GetCellData()->GetArray("RegionId"));
+
+  //initially set -1 for number of faces in facestream
+  facestream->InsertNextId(-1);
+
+  std::map<vtkIdList*, int> face_map;
+
+  for (i=0; i<rids->GetNumberOfTuples(); i++)
+  {
+    if (rids->GetTuple1(i) == target)
+    {
+      vtkPolyhedron *cell = vtkPolyhedron::SafeDownCast(ugrid->GetCell(i));
+      for (j=0; j<cell->GetNumberOfFaces(); j++)
+      {
+        vtkCell *face = cell->GetFace(j);
+        vtkIdList *pts = face->GetPointIds();
+        std::string key = IdsToKeyStr(pts);
+        
+        std::map<std::string, int>::iterator it = face_map.find(key);
+        if (it == edge_map.end())
+          it->second = 0;
+        else
+          it->second ++;
+      }
+    }
+  }
+}
+
+float vtkPMergeConnected::MergeCellDataOnRegionId(vtkFloatArray *data_array, vtkIdTypeArray *rid_array, vtkIdType target)
 {
   int i;
   float val = 0;
 
   for (i=0; i<rid_array->GetNumberOfTuples(); i++)
-    if (rid_array->GetTuple1(i) == rid)
+    if (rid_array->GetTuple1(i) == target)
       val += data_array->GetTuple1(i);
 
   return val;
