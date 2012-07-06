@@ -139,7 +139,6 @@ int VoronoiFilter::RequestData(vtkInformation *vtkNotUsed(request),
 
     //output
     VTK_CREATE(vtkUnstructuredGrid, ugrid_out);
-    VTK_CREATE(vtkCellData, cell_data_out);
     VTK_CREATE(vtkFloatArray, area_array_out);
     area_array_out->SetName("Areas");
     area_array_out->SetNumberOfComponents(1);
