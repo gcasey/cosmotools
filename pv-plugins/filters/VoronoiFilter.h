@@ -1,5 +1,5 @@
 #ifndef __VoronoiFilter_h
-#define __VornoniFilter_h
+#define __VoronoiFilter_h
 
 #include "vtkMultiBlockDataSetAlgorithm.h"
 
