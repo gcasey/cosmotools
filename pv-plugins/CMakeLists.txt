@@ -37,6 +37,7 @@ set(SMSRC
     filters/vtkPLANLHaloFinder.cxx
     filters/VoronoiFilter.cxx
     filters/vtkMinkowskiFilter.cxx
+    filters/vtkPMergeConnected.cxx
     readers/vtkPVoronoiReader.cxx
     )
 
