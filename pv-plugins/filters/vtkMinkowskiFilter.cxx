@@ -177,7 +177,6 @@ double vtkMinkowskiFilter::compute_C(vtkPolyhedron *cell)
   int num_edges = cell->GetNumberOfEdges();
   int num_faces = cell->GetNumberOfFaces();
   
-  double edge_lens[num_edges];
   double face_normals[num_faces][3];
 
   vtkIdType edge_faces[num_edges][2];
@@ -197,8 +196,6 @@ double vtkMinkowskiFilter::compute_C(vtkPolyhedron *cell)
     sprintf(key, "%d_%d", (int)e->GetPointId(0), (int)e->GetPointId(1));
     std::string key_str = std::string(key);
     edge_map[key_str] = i;
-
-    edge_lens[i] = compute_edge_length(e);
   }
 
   for (i=0; i<num_faces; i++)
@@ -235,14 +232,22 @@ double vtkMinkowskiFilter::compute_C(vtkPolyhedron *cell)
   }
 
   double C = 0;
+  double l, phi, epsilon;
   for (i=0; i<num_edges; i++)
   {
-    
+    vtkCell *f1 = cell->GetFace(edge_faces[i][0]);
+    vtkCell *f2 = cell->GetFace(edge_faces[i][1]);
+    vtkCell *e  = cell->GetEdge(i);
+
+    l = compute_edge_length(e);
+    phi = compute_face_angle(f1, f2);
+    epsilon = compute_epsilon(f1, f2, e);
+
+    C += l * phi * epsilon;
   }
+  C *= 0.5;
 
-
-  
-  return 0;
+  return C;
 }
 
 double vtkMinkowskiFilter::compute_X(vtkPolyhedron *cell)
