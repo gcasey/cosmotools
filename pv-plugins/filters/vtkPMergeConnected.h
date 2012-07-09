@@ -16,6 +16,13 @@ public:
   vtkTypeMacro(vtkPMergeConnected, vtkMultiBlockDataSetAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);
 
+  struct FaceWithKey
+  {
+    int num_pts;
+    vtkIdType *key, *orig;
+  };
+  struct cmp_ids;
+
 protected:
   vtkPMergeConnected();
   ~vtkPMergeConnected();
@@ -37,7 +44,8 @@ private:
   vtkIdList* MergeCellsOnRegionId(vtkUnstructuredGrid *ugrid, int target);
   float MergeCellDataOnRegionId(vtkFloatArray *data_array, vtkIdTypeArray *rid_array, vtkIdType target);
 
-  std::string IdsToKeystr(vtkIdList* ids);
+  void delete_key(FaceWithKey *key);
+  FaceWithKey* IdsToKey(vtkIdList* ids);
 };
 
 #endif

@@ -185,37 +185,65 @@ int vtkPMergeConnected::RequestData(vtkInformation *vtkNotUsed(request),
   return 1;
 }
 
-std::string vtkPMergeConnected::IdsToKeystr(vtkIdList* ids)
+int compare_ids(const void *a, const void *b)
 {
-  return "key";
+  return (*(vtkIdType *)a - *(vtkIdType *)b);
 }
 
-struct cmp_ids
+
+vtkPMergeConnected::FaceWithKey* vtkPMergeConnected::IdsToKey(vtkIdList* ids)
+{
+  FaceWithKey *facekey = new FaceWithKey[1];
+
+  int num_pts = ids->GetNumberOfIds();
+  vtkIdType *key  = new vtkIdType[num_pts];
+  vtkIdType *orig = new vtkIdType[num_pts];
+
+  int i;
+  for (i=0; i<num_pts; i++)
+    orig[i] = ids->GetId(i);
+  memcpy(key, orig, sizeof(vtkIdType) * num_pts);
+  qsort(key, num_pts, sizeof(vtkIdType) * num_pts, compare_ids);
+
+  facekey->num_pts = num_pts;
+  facekey->key = key;
+  facekey->orig = orig;
+  
+  return facekey;
+}
+
+struct vtkPMergeConnected::cmp_ids
 {
   bool operator()(char const *a, char const *b)
   {
     int i, ret = 0;
-    vtkIdList *list_a = (vtkIdList *)a;
-    vtkIdList *list_b = (vtkIdList *)b;
+    FaceWithKey *face_a = (FaceWithKey *)a;
+    FaceWithKey *face_b = (FaceWithKey *)b;
     
-    if (list_a->GetNumberOfIds() == list_b->GetNumberOfIds())
+    if (face_a->num_pts == face_b->num_pts)
     {
-      for (i=0; i<list_a->GetNumberOfIds(); i++)
+      for (i=0; i<face_a->num_pts; i++)
       {
-        if (list_a->GetId(i) != list_b->GetId(i))
+        if (face_a->key[i] != face_b->key[i])
         {
-          ret = list_a->GetId(i) - list_b->GetId(i);
+          ret = face_a->key[i] - face_b->key[i];
           break;
         } 
       }
     }
     else
-      ret = list_a->GetNumberOfIds() - list_b->GetNumberOfIds();
+      ret = face_a->num_pts - face_b->num_pts;
 
     return ret;
   }
 };
 
+void vtkPMergeConnected::delete_key(FaceWithKey *key)
+{
+  delete[] key->key;
+  delete[] key->orig;
+  delete[] key;
+}
 
 //face stream of a polyhedron cell in the following format: 
 //numCellFaces, numFace0Pts, id1, id2, id3, numFace1Pts,id1, id2, id3, ...
@@ -229,7 +257,8 @@ vtkIdList* vtkPMergeConnected::MergeCellsOnRegionId(vtkUnstructuredGrid *ugrid, 
   //initially set -1 for number of faces in facestream
   facestream->InsertNextId(-1);
 
-  std::map<vtkIdList*, int> face_map;
+  std::map<FaceWithKey *, int> face_map;
+  std::map<FaceWithKey *, int>::iterator it;
 
   for (i=0; i<rids->GetNumberOfTuples(); i++)
   {
@@ -240,16 +269,37 @@ vtkIdList* vtkPMergeConnected::MergeCellsOnRegionId(vtkUnstructuredGrid *ugrid, 
       {
         vtkCell *face = cell->GetFace(j);
         vtkIdList *pts = face->GetPointIds();
-        std::string key = IdsToKeyStr(pts);
+        FaceWithKey *key = IdsToKey(pts);
         
-        std::map<std::string, int>::iterator it = face_map.find(key);
-        if (it == edge_map.end())
-          it->second = 0;
+        it = face_map.find(key);
+        if (it == face_map.end())
+          face_map[key] = 1;
         else
           it->second ++;
       }
     }
   }
+
+  int face_count = 0;
+  for(it=face_map.begin(); it!=face_map.end(); ++it)
+  {
+    FaceWithKey *key = (* it).first;
+    int count = (* it).second;
+
+    if (count > 2)
+      std::cerr << "error in building up face map" << std::endl;
+    else if (count == 1)
+    {
+      facestream->InsertNextId(key->num_pts);
+      for (i=0; i<key->num_pts; i++)
+        facestream->InsertNextId(key->orig[i]);
+      face_count ++;
+    }
+    delete_key(key);
+  }
+  facestream->SetId(0, face_count);
+
+  return facestream;
 }
 
 float vtkPMergeConnected::MergeCellDataOnRegionId(vtkFloatArray *data_array, vtkIdTypeArray *rid_array, vtkIdType target)
