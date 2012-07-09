@@ -29,7 +29,7 @@
          command="SetVolumeRange"
          number_of_elements="2"
          animateable="1"
-         default_values="0.1 0.2" >
+         default_values="7 8" >
          <DoubleRangeDomain name="range"/>
       </DoubleVectorProperty>
 
@@ -38,7 +38,7 @@
         label="AreaRange"
         command="SetAreaRange"
         number_of_elements="2"
-        default_values="0.3 0.4">
+        default_values="0 100">
          <DoubleRangeDomain name="range"/>
       </DoubleVectorProperty>
     </SourceProxy>

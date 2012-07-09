@@ -41,7 +41,7 @@ private:
   void SetController(vtkMultiProcessController *c);
 
   //filter
-  vtkIdList* MergeCellsOnRegionId(vtkUnstructuredGrid *ugrid, int target);
+  void MergeCellsOnRegionId(vtkUnstructuredGrid *ugrid, int target, vtkIdList* facestream);
   float MergeCellDataOnRegionId(vtkFloatArray *data_array, vtkIdTypeArray *rid_array, vtkIdType target);
 
   void delete_key(FaceWithKey *key);

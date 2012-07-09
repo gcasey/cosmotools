@@ -131,14 +131,14 @@ int vtkPMergeConnected::RequestData(vtkInformation *vtkNotUsed(request),
     vtkPointData *opd = ugrid_out->GetPointData();
 
     ocd->CopyStructure(cd);
-    opd->CopyStructure(pd);
+    //opd->CopyStructure(pd);
 
     vtkIdTypeArray *prid_array = vtkIdTypeArray::SafeDownCast(
         pd->GetArray("RegionId"));
     vtkIdTypeArray *crid_array = vtkIdTypeArray::SafeDownCast(
         cd->GetArray("RegionId"));
-    vtkIdTypeArray *oprid_array = vtkIdTypeArray::SafeDownCast(
-        opd->GetArray("RegionId"));
+    //vtkIdTypeArray *oprid_array = vtkIdTypeArray::SafeDownCast(
+    //    opd->GetArray("RegionId"));
     vtkIdTypeArray *ocrid_array = vtkIdTypeArray::SafeDownCast(
         ocd->GetArray("RegionId"));
 
@@ -152,14 +152,34 @@ int vtkPMergeConnected::RequestData(vtkInformation *vtkNotUsed(request),
 
     //initialize the size of cell data arrays
     for (j=0; j<cd->GetNumberOfArrays(); j++)
+    {
+      ocd->GetArray(j)->SetNumberOfComponents(
+          cd->GetArray(j)->GetNumberOfComponents());
       ocd->GetArray(j)->SetNumberOfTuples(num_regions);
+    }
 
     tc = ugrid->GetNumberOfCells();
     int new_id = 0;
     for (j=rid_range[0]; j<=rid_range[1]; j++)
     {
       //compute face stream of merged polyhedron cell
-      vtkIdList *mcell = MergeCellsOnRegionId(ugrid, j);
+      VTK_CREATE(vtkIdList, mcell);
+      MergeCellsOnRegionId(ugrid, j, mcell);
+
+      int index = 0;
+      int nfaces = mcell->GetId(index ++);
+      std::cout << "nface: " << nfaces << std::endl;
+      for (int i=0; i<nfaces; i++)
+      {
+        int npts = mcell->GetId(index ++);
+        std::cout << npts << " | ";
+        for (int j=0; j<npts; j++)
+        {
+          std::cout << mcell->GetId(index ++) << " ";
+        }
+        std::cout << std::endl;
+      }
+
       ugrid_out->InsertNextCell(VTK_POLYHEDRON, mcell);
     
       //"RegionId" cells keep their old id
@@ -203,7 +223,7 @@ vtkPMergeConnected::FaceWithKey* vtkPMergeConnected::IdsToKey(vtkIdList* ids)
   for (i=0; i<num_pts; i++)
     orig[i] = ids->GetId(i);
   memcpy(key, orig, sizeof(vtkIdType) * num_pts);
-  qsort(key, num_pts, sizeof(vtkIdType) * num_pts, compare_ids);
+  qsort(key, num_pts, sizeof(vtkIdType), compare_ids);
 
   facekey->num_pts = num_pts;
   facekey->key = key;
@@ -214,27 +234,25 @@ vtkPMergeConnected::FaceWithKey* vtkPMergeConnected::IdsToKey(vtkIdList* ids)
 
 struct vtkPMergeConnected::cmp_ids
 {
-  bool operator()(char const *a, char const *b)
+  bool operator()(FaceWithKey const *a, FaceWithKey const *b)
   {
     int i, ret = 0;
-    FaceWithKey *face_a = (FaceWithKey *)a;
-    FaceWithKey *face_b = (FaceWithKey *)b;
     
-    if (face_a->num_pts == face_b->num_pts)
+    if (a->num_pts == b->num_pts)
     {
-      for (i=0; i<face_a->num_pts; i++)
+      for (i=0; i<a->num_pts; i++)
       {
-        if (face_a->key[i] != face_b->key[i])
+        if (a->key[i] != b->key[i])
         {
-          ret = face_a->key[i] - face_b->key[i];
+          ret = a->key[i] - b->key[i];
           break;
         } 
       }
     }
     else
-      ret = face_a->num_pts - face_b->num_pts;
-
-    return ret;
+      ret = a->num_pts - b->num_pts;
+    
+    return ret < 0;
   }
 };
 
@@ -247,18 +265,17 @@ void vtkPMergeConnected::delete_key(FaceWithKey *key)
 
 //face stream of a polyhedron cell in the following format: 
 //numCellFaces, numFace0Pts, id1, id2, id3, numFace1Pts,id1, id2, id3, ...
-vtkIdList* vtkPMergeConnected::MergeCellsOnRegionId(vtkUnstructuredGrid *ugrid, int target)
+void vtkPMergeConnected::MergeCellsOnRegionId(vtkUnstructuredGrid *ugrid, int target, vtkIdList *facestream)
 {
   int i, j;
 
-  VTK_CREATE(vtkIdList, facestream);
   vtkIdTypeArray *rids = vtkIdTypeArray::SafeDownCast(ugrid->GetCellData()->GetArray("RegionId"));
 
   //initially set -1 for number of faces in facestream
   facestream->InsertNextId(-1);
 
-  std::map<FaceWithKey *, int> face_map;
-  std::map<FaceWithKey *, int>::iterator it;
+  std::map<FaceWithKey *, int, cmp_ids> face_map;
+  std::map<FaceWithKey *, int, cmp_ids>::iterator it;
 
   for (i=0; i<rids->GetNumberOfTuples(); i++)
   {
@@ -276,6 +293,11 @@ vtkIdList* vtkPMergeConnected::MergeCellsOnRegionId(vtkUnstructuredGrid *ugrid, 
           face_map[key] = 1;
         else
           it->second ++;
+
+        std::cout << key->num_pts << " | ";
+        for (int k=0; k<key->num_pts; k++)
+          std::cout << key->key[k] << " ";
+        std::cout << " | " << face_map[key] << std::endl;
       }
     }
   }
@@ -298,8 +320,6 @@ vtkIdList* vtkPMergeConnected::MergeCellsOnRegionId(vtkUnstructuredGrid *ugrid, 
     delete_key(key);
   }
   facestream->SetId(0, face_count);
-
-  return facestream;
 }
 
 float vtkPMergeConnected::MergeCellDataOnRegionId(vtkFloatArray *data_array, vtkIdTypeArray *rid_array, vtkIdType target)
