@@ -142,9 +142,6 @@ int vtkPMergeConnected::RequestData(vtkInformation *vtkNotUsed(request),
     vtkIdTypeArray *ocrid_array = vtkIdTypeArray::SafeDownCast(
         ocd->GetArray("RegionId"));
 
-    //oprid_array->SetNumberOfComponents(1);
-    //ocrid_array->SetNumberOfComponents(1);
-
     //checking RegionId range
     double rid_range[2];
     crid_array->GetRange(rid_range, 0);
@@ -165,21 +162,6 @@ int vtkPMergeConnected::RequestData(vtkInformation *vtkNotUsed(request),
       //compute face stream of merged polyhedron cell
       VTK_CREATE(vtkIdList, mcell);
       MergeCellsOnRegionId(ugrid, j, mcell);
-
-      int index = 0;
-      int nfaces = mcell->GetId(index ++);
-      std::cout << "nface: " << nfaces << std::endl;
-      for (int i=0; i<nfaces; i++)
-      {
-        int npts = mcell->GetId(index ++);
-        std::cout << npts << " | ";
-        for (int j=0; j<npts; j++)
-        {
-          std::cout << mcell->GetId(index ++) << " ";
-        }
-        std::cout << std::endl;
-      }
-
       ugrid_out->InsertNextCell(VTK_POLYHEDRON, mcell);
     
       //"RegionId" cells keep their old id
@@ -202,15 +184,72 @@ int vtkPMergeConnected::RequestData(vtkInformation *vtkNotUsed(request),
     output->SetBlock(i, ugrid_out);
   }
 
+  //convert local region id to global id
+  LocalToGlobalRegionId(contr, output);
+
   return 1;
 }
 
+// convert local region id to global ones
+int vtkPMergeConnected::LocalToGlobalRegionId(vtkMultiProcessController *contr, vtkMultiBlockDataSet *data)
+{
+  int i, j;
+  int rank, num_p, tb;
+  num_p = contr->GetNumberOfProcesses();
+  rank = contr->GetLocalProcessId();
+  tb = data->GetNumberOfBlocks();
+
+  // gather information about number of regions in each block
+  int all_num_regions_local[tb];
+  memset(all_num_regions_local, 0, sizeof(int) * tb);
+  for (i=rank; i<tb; i+=num_p)
+  {
+    vtkUnstructuredGrid *ugrid = vtkUnstructuredGrid::SafeDownCast(
+          data->GetBlock(i));
+    vtkIdTypeArray *crid_array = vtkIdTypeArray::SafeDownCast(
+          ugrid->GetCellData()->GetArray("RegionId"));
+
+    double rid_range[2];
+    crid_array->GetRange(rid_range, 0);
+    all_num_regions_local[i] = rid_range[1] - rid_range[0] + 1;
+  }
+
+  int all_num_regions[tb];
+  contr->AllReduce(all_num_regions_local, all_num_regions, tb, vtkCommunicator::SUM_OP);
+
+  // compute and adding offset and make local id global
+  for (i=rank; i<tb; i+=num_p)
+  {
+    vtkUnstructuredGrid *ugrid = vtkUnstructuredGrid::SafeDownCast(
+          data->GetBlock(i));
+    vtkIdTypeArray *crid_array = vtkIdTypeArray::SafeDownCast(
+          ugrid->GetCellData()->GetArray("RegionId"));
+
+    int num_tuples = crid_array->GetNumberOfTuples();
+    VTK_CREATE(vtkIdTypeArray, new_array);
+    new_array->SetNumberOfComponents(1);
+    new_array->SetNumberOfTuples(num_tuples);
+    new_array->SetName("RegionId");
+
+    int offset = 0;
+    for (j=0; j<i; j++)
+      offset += all_num_regions[j];
+
+    //vtkIdTypeArray doesn't update range when replace elements, hack around
+    for (j=0; j<num_tuples; j++)
+      new_array->InsertValue(j, offset + crid_array->GetValue(j));
+    ugrid->GetCellData()->RemoveArray("RegionId");
+    ugrid->GetCellData()->AddArray(new_array);
+  }
+}
+
+// comparision function to sort point id list
 int compare_ids(const void *a, const void *b)
 {
   return (*(vtkIdType *)a - *(vtkIdType *)b);
 }
 
-
+// generate FaceWithKey struct from vtkIdList to use for indexing
 vtkPMergeConnected::FaceWithKey* vtkPMergeConnected::IdsToKey(vtkIdList* ids)
 {
   FaceWithKey *facekey = new FaceWithKey[1];
@@ -232,6 +271,7 @@ vtkPMergeConnected::FaceWithKey* vtkPMergeConnected::IdsToKey(vtkIdList* ids)
   return facekey;
 }
 
+// compare function in face_map
 struct vtkPMergeConnected::cmp_ids
 {
   bool operator()(FaceWithKey const *a, FaceWithKey const *b)
@@ -256,6 +296,7 @@ struct vtkPMergeConnected::cmp_ids
   }
 };
 
+// delete a FaceWithKey struct
 void vtkPMergeConnected::delete_key(FaceWithKey *key)
 {
   delete[] key->key;
@@ -271,12 +312,13 @@ void vtkPMergeConnected::MergeCellsOnRegionId(vtkUnstructuredGrid *ugrid, int ta
 
   vtkIdTypeArray *rids = vtkIdTypeArray::SafeDownCast(ugrid->GetCellData()->GetArray("RegionId"));
 
-  //initially set -1 for number of faces in facestream
+  // initially set -1 for number of faces in facestream
   facestream->InsertNextId(-1);
 
   std::map<FaceWithKey *, int, cmp_ids> face_map;
   std::map<FaceWithKey *, int, cmp_ids>::iterator it;
 
+  // create face map and count how many times a face is shared.
   for (i=0; i<rids->GetNumberOfTuples(); i++)
   {
     if (rids->GetTuple1(i) == target)
@@ -293,15 +335,11 @@ void vtkPMergeConnected::MergeCellsOnRegionId(vtkUnstructuredGrid *ugrid, int ta
           face_map[key] = 1;
         else
           it->second ++;
-
-        std::cout << key->num_pts << " | ";
-        for (int k=0; k<key->num_pts; k++)
-          std::cout << key->key[k] << " ";
-        std::cout << " | " << face_map[key] << std::endl;
       }
     }
   }
 
+  // keep those unshared faces and build up a new cell
   int face_count = 0;
   for(it=face_map.begin(); it!=face_map.end(); ++it)
   {
@@ -322,6 +360,7 @@ void vtkPMergeConnected::MergeCellsOnRegionId(vtkUnstructuredGrid *ugrid, int ta
   facestream->SetId(0, face_count);
 }
 
+// for original cell data, sum them up if possible in merging the connected cells
 float vtkPMergeConnected::MergeCellDataOnRegionId(vtkFloatArray *data_array, vtkIdTypeArray *rid_array, vtkIdType target)
 {
   int i;
