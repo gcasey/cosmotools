@@ -130,14 +130,14 @@ int vtkPMergeConnected::RequestData(vtkInformation *vtkNotUsed(request),
     vtkCellData  *ocd = ugrid_out->GetCellData();
     vtkPointData *opd = ugrid_out->GetPointData();
 
-    vtkIdTypeArray *prid_array = vtkIdTypeArray::SafeDownCast(
-        pd->GetArray("RegionId"));
+    //vtkIdTypeArray *prid_array = vtkIdTypeArray::SafeDownCast(
+    //    pd->GetArray("RegionId"));
     vtkIdTypeArray *crid_array = vtkIdTypeArray::SafeDownCast(
         cd->GetArray("RegionId"));
     vtkFloatArray *vol_array = vtkFloatArray::SafeDownCast(
-        cd->GetArray("Volume"));
+        cd->GetArray("Volumes"));
 
-    VTK_CREATE(vtkIdTypeArray, oprid_array);
+    //VTK_CREATE(vtkIdTypeArray, oprid_array);
     VTK_CREATE(vtkIdTypeArray, ocrid_array);
     VTK_CREATE(vtkFloatArray,  ovol_array);
 
@@ -147,17 +147,13 @@ int vtkPMergeConnected::RequestData(vtkInformation *vtkNotUsed(request),
     int num_regions = rid_range[1] - rid_range[0] + 1;
 
     // Initialize the size of rid arrays
-    oprid_array->SetName("RegionId");
+    //oprid_array->SetName("RegionId");
     ocrid_array->SetName("RegionId");
-    ovol_array->SetName("Volume");
+    ovol_array->SetName("Volumes");
 
-    oprid_array->SetNumberOfComponents(1);
+    //oprid_array->SetNumberOfComponents(1);
     ocrid_array->SetNumberOfComponents(1);
     ovol_array->SetNumberOfComponents(1);
-
-    oprid_array->SetNumberOfTuples(num_regions);
-    ocrid_array->SetNumberOfTuples(num_regions);
-    ovol_array->SetNumberOfTuples(num_regions);
 
     // Compute cell/point data
     tc = ugrid->GetNumberOfCells();
