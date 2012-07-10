@@ -28,13 +28,16 @@ class VTK_EXPORT vtkMinkowskiFilter : public vtkUnstructuredGridAlgorithm
   vtkMinkowskiFilter(const vtkMinkowskiFilter&);  // Not implemented.
   void operator=(const vtkMinkowskiFilter&);  // Not implemented.
 
-  void compute_mf(vtkUnstructuredGrid *ugrid, vtkDoubleArray *S, 
-      vtkDoubleArray *V, vtkDoubleArray *C, vtkDoubleArray *X);
-  double compute_S(vtkPolyhedron *cell); //surface area
-  double compute_V(vtkPolyhedron *cell); //volume1
-  double compute_V(vtkUnstructuredGrid *ugrid, int cid); //volume2
-  double compute_C(vtkPolyhedron *cell); //integrated mean curvature
-  double compute_X(vtkPolyhedron *cell); //euler characteristic
+  void compute_mf(vtkUnstructuredGrid *ugrid, vtkDoubleArray *S, vtkDoubleArray *V, vtkDoubleArray *C, vtkDoubleArray *X, vtkDoubleArray *G, vtkDoubleArray *T, vtkDoubleArray *B, vtkDoubleArray *L);
+  double compute_S(vtkPolyhedron *cell); // surface area
+  double compute_V(vtkPolyhedron *cell); // volume1
+  double compute_V(vtkUnstructuredGrid *ugrid, int cid); // volume2
+  double compute_C(vtkPolyhedron *cell); // integrated mean curvature
+  double compute_X(vtkPolyhedron *cell); // euler characteristic
+  double compute_G(double X);            // genus
+  double compute_T(double V, double S);  // thickness
+  double compute_B(double S, double C);  // breadth
+  double compute_L(double C, double G);  // length
 
   void compute_normal(vtkCell *face, double normal[3]);
   int compute_epsilon(vtkCell *f1, vtkCell *f2, vtkCell *e);
