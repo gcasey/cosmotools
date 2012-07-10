@@ -130,16 +130,20 @@ int vtkPMergeConnected::RequestData(vtkInformation *vtkNotUsed(request),
     vtkCellData  *ocd = ugrid_out->GetCellData();
     vtkPointData *opd = ugrid_out->GetPointData();
 
-    //vtkIdTypeArray *prid_array = vtkIdTypeArray::SafeDownCast(
-    //    pd->GetArray("RegionId"));
+    vtkIdTypeArray *prid_array = vtkIdTypeArray::SafeDownCast(
+        pd->GetArray("RegionId"));
     vtkIdTypeArray *crid_array = vtkIdTypeArray::SafeDownCast(
         cd->GetArray("RegionId"));
     vtkFloatArray *vol_array = vtkFloatArray::SafeDownCast(
         cd->GetArray("Volumes"));
 
-    //VTK_CREATE(vtkIdTypeArray, oprid_array);
+    VTK_CREATE(vtkIdTypeArray, oprid_array);
     VTK_CREATE(vtkIdTypeArray, ocrid_array);
     VTK_CREATE(vtkFloatArray,  ovol_array);
+
+    // point data "RegionId" keep their old id for now
+    oprid_array->DeepCopy(prid_array);
+    oprid_array->SetName("RegionId");
 
     // Checking RegionId range
     double rid_range[2];
@@ -147,11 +151,9 @@ int vtkPMergeConnected::RequestData(vtkInformation *vtkNotUsed(request),
     int num_regions = rid_range[1] - rid_range[0] + 1;
 
     // Initialize the size of rid arrays
-    //oprid_array->SetName("RegionId");
     ocrid_array->SetName("RegionId");
     ovol_array->SetName("Volumes");
 
-    //oprid_array->SetNumberOfComponents(1);
     ocrid_array->SetNumberOfComponents(1);
     ovol_array->SetNumberOfComponents(1);
 
@@ -173,6 +175,7 @@ int vtkPMergeConnected::RequestData(vtkInformation *vtkNotUsed(request),
     }
 
     // Add new data arrays
+    opd->AddArray(oprid_array);
     ocd->AddArray(ocrid_array);
     ocd->AddArray(ovol_array);
 
@@ -219,22 +222,37 @@ int vtkPMergeConnected::LocalToGlobalRegionId(vtkMultiProcessController *contr, 
           data->GetBlock(i));
     vtkIdTypeArray *crid_array = vtkIdTypeArray::SafeDownCast(
           ugrid->GetCellData()->GetArray("RegionId"));
+    vtkIdTypeArray *prid_array = vtkIdTypeArray::SafeDownCast(
+          ugrid->GetPointData()->GetArray("RegionId"));
 
-    int num_tuples = crid_array->GetNumberOfTuples();
-    VTK_CREATE(vtkIdTypeArray, new_array);
-    new_array->SetNumberOfComponents(1);
-    new_array->SetNumberOfTuples(num_tuples);
-    new_array->SetName("RegionId");
+    int num_cells = crid_array->GetNumberOfTuples();
+    int num_points = prid_array->GetNumberOfTuples();
+
+    VTK_CREATE(vtkIdTypeArray, ocrid_array);
+    VTK_CREATE(vtkIdTypeArray, oprid_array);
+
+    ocrid_array->SetNumberOfComponents(1);
+    oprid_array->SetNumberOfComponents(1);
+    ocrid_array->SetNumberOfTuples(num_cells);
+    oprid_array->SetNumberOfTuples(num_points);
+    ocrid_array->SetName("RegionId");
+    oprid_array->SetName("RegionId");
 
     int offset = 0;
     for (j=0; j<i; j++)
       offset += all_num_regions[j];
 
     // vtkIdTypeArray doesn't update range when replace elements, hack around
-    for (j=0; j<num_tuples; j++)
-      new_array->InsertValue(j, offset + crid_array->GetValue(j));
+    for (j=0; j<num_cells; j++)
+      ocrid_array->InsertValue(j, offset + crid_array->GetValue(j));
+    for (j=0; j<num_points; j++)
+      oprid_array->InsertValue(j, offset + prid_array->GetValue(j));
+
     ugrid->GetCellData()->RemoveArray("RegionId");
-    ugrid->GetCellData()->AddArray(new_array);
+    ugrid->GetCellData()->AddArray(ocrid_array);
+
+    ugrid->GetPointData()->RemoveArray("Regionid");
+    ugrid->GetPointData()->AddArray(oprid_array);
   }
 }
 
