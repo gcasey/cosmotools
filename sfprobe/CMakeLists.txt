@@ -1,5 +1,16 @@
 project(sfprobe)
 
+## Specify global include dirs and global libraries for this project
+## such that, they can be used within other projects.
+set(PACKAGE_sfprobe_INCLUDE_DIRS
+    ${PACKAGE_sfprobe_INCLUDE_DIRS}
+    ${PROJECT_SOURCE_DIR}
+    CACHE INTERNAL "package include directories")
+set(PACKAGE_sfprobe_LIBRARIES
+    ${PACKAGE_sfprobe_LIBRARIES}
+    sfprobe
+    CACHE INTERNAL "package libraries")
+
 set(SOURCES
     ExtentPartitioner.cxx
     StructureFormationProbe.cxx
