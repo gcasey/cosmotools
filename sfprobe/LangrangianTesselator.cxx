@@ -153,16 +153,16 @@ void LangrangianTesselator::BuildTesselation()
         // Set tetrahedral connectivity
         if( cellIdx % 2 )
           {
-          ADDTET(tetIdx,V[1],V[2],V[3],V[6]);
+          ADDTET(tetIdx,V[1],V[3],V[6],V[2]);
           ADDTET(tetIdx,V[0],V[1],V[3],V[4]);
-          ADDTET(tetIdx,V[4],V[6],V[5],V[1]);
-          ADDTET(tetIdx,V[4],V[6],V[7],V[3]);
-          ADDTET(tetIdx,V[3],V[6],V[4],V[1]);
+          ADDTET(tetIdx,V[1],V[4],V[5],V[6]);
+          ADDTET(tetIdx,V[3],V[6],V[7],V[4]);
+          ADDTET(tetIdx,V[1],V[4],V[6],V[3]);
           }
         else
           {
-          ADDTET(tetIdx,V[1],V[5],V[2],V[0]);
-          ADDTET(tetIdx,V[2],V[3],V[0],V[7]);
+          ADDTET(tetIdx,V[2],V[1],V[5],V[0]);
+          ADDTET(tetIdx,V[0],V[2],V[3],V[7]);
           ADDTET(tetIdx,V[2],V[5],V[6],V[7]);
           ADDTET(tetIdx,V[0],V[7],V[4],V[5]);
           ADDTET(tetIdx,V[0],V[2],V[7],V[5]);
