@@ -96,8 +96,6 @@ protected:
 
 private:
   DISABLE_COPY_AND_ASSIGNMENT(LangrangianTesselator);
-
-
 };
 
 } /* namespace cosmologytools */

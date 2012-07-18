@@ -66,7 +66,7 @@ void LangrangianTesselator::GetPoint(INTEGER ijk[3], REAL pnt[3])
  INTEGER nodeIdx = this->Connectivity[tetIdx*4+i];                    \
  tet[i] = nodeIdx;                                                     \
  INTEGER ijk[3];                                                       \
- ExtentUtilities::GetStructuredCoordinates(nodeIdx,ijk,this->Extent); \
+ ExtentUtilities::GetStructuredCoordinates(nodeIdx,this->Extent,ijk); \
  this->GetPoint( ijk, V);                                              \
 }
 
