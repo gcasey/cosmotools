@@ -2,16 +2,17 @@
 
 #include <vtkCellArray.h>
 #include <vtkCellData.h>
+#include <vtkFieldData.h>
 #include <vtkFloatArray.h>
 #include <vtkInformation.h>
 #include <vtkInformationVector.h>
 #include <vtkMultiBlockDataSet.h>
 #include <vtkMultiProcessController.h>
 #include <vtkObjectFactory.h>
+#include <vtkSmartPointer.h>
 #include <vtkStreamingDemandDrivenPipeline.h>
 #include <vtkUnstructuredGrid.h>
 
-#include <vtkSmartPointer.h>
 #define VTK_CREATE(type, name) \
   vtkSmartPointer<type> name = vtkSmartPointer<type>::New()
 #define VTK_NEW(type, name) \
