@@ -4,18 +4,19 @@
 #include <cstring>
 #include <map>
 
-#include <vtkIdList.h>
-#include <vtkPolyhedron.h>
-#include <vtkPointData.h>
 #include <vtkCellData.h>
 #include <vtkFloatArray.h>
+#include <vtkIdList.h>
 #include <vtkIdTypeArray.h>
 #include <vtkInformation.h>
 #include <vtkInformationVector.h>
 #include <vtkMultiBlockDataSet.h>
 #include <vtkMultiProcessController.h>
-#include <vtkUnstructuredGrid.h>
+#include <vtkObjectFactory.h>
+#include <vtkPointData.h>
+#include <vtkPolyhedron.h>
 #include <vtkStreamingDemandDrivenPipeline.h>
+#include <vtkUnstructuredGrid.h>
 
 #include <vtkSmartPointer.h>
 #define VTK_CREATE(type, name) \
@@ -24,7 +25,7 @@
   name = vtkSmartPointer<type>::New()
 
 
-vtkStandardNewMacro(vtkPMergeConnected); 
+vtkStandardNewMacro(vtkPMergeConnected);
 
 vtkPMergeConnected::vtkPMergeConnected()
 {
@@ -78,14 +79,14 @@ void vtkPMergeConnected::SetController(vtkMultiProcessController *c)
   this->MyId = c->GetLocalProcessId();
 }
 
-int vtkPMergeConnected::RequestData(vtkInformation *vtkNotUsed(request), 
+int vtkPMergeConnected::RequestData(vtkInformation *vtkNotUsed(request),
     vtkInformationVector** inputVector,
     vtkInformationVector* outputVector)
 {
   // Get the info objects
   vtkInformation *inInfo = inputVector[0]->GetInformationObject(0);
   vtkInformation *outInfo = outputVector->GetInformationObject(0);
- 
+
   // Get the input and ouptut
   vtkMultiBlockDataSet *input = vtkMultiBlockDataSet::SafeDownCast(
       inInfo->Get(vtkDataObject::DATA_OBJECT()));
@@ -165,7 +166,7 @@ int vtkPMergeConnected::RequestData(vtkInformation *vtkNotUsed(request),
       VTK_CREATE(vtkIdList, mcell);
       MergeCellsOnRegionId(ugrid, j, mcell);
       ugrid_out->InsertNextCell(VTK_POLYHEDRON, mcell);
-    
+
       // "RegionId" cells keep their old id
       ocrid_array->InsertNextValue(j);
 
@@ -280,7 +281,7 @@ vtkPMergeConnected::FaceWithKey* vtkPMergeConnected::IdsToKey(vtkIdList* ids)
   facekey->num_pts = num_pts;
   facekey->key = key;
   facekey->orig = orig;
-  
+
   return facekey;
 }
 
@@ -290,7 +291,7 @@ struct vtkPMergeConnected::cmp_ids
   bool operator()(FaceWithKey const *a, FaceWithKey const *b)
   {
     int i, ret = 0;
-    
+
     if (a->num_pts == b->num_pts)
     {
       for (i=0; i<a->num_pts; i++)
@@ -299,12 +300,12 @@ struct vtkPMergeConnected::cmp_ids
         {
           ret = a->key[i] - b->key[i];
           break;
-        } 
+        }
       }
     }
     else
       ret = a->num_pts - b->num_pts;
-    
+
     return ret < 0;
   }
 };
@@ -317,7 +318,7 @@ void vtkPMergeConnected::delete_key(FaceWithKey *key)
   delete[] key;
 }
 
-// Face stream of a polyhedron cell in the following format: 
+// Face stream of a polyhedron cell in the following format:
 // numCellFaces, numFace0Pts, id1, id2, id3, numFace1Pts,id1, id2, id3, ...
 void vtkPMergeConnected::MergeCellsOnRegionId(vtkUnstructuredGrid *ugrid, int target, vtkIdList *facestream)
 {
@@ -342,7 +343,7 @@ void vtkPMergeConnected::MergeCellsOnRegionId(vtkUnstructuredGrid *ugrid, int ta
         vtkCell *face = cell->GetFace(j);
         vtkIdList *pts = face->GetPointIds();
         FaceWithKey *key = IdsToKey(pts);
-        
+
         it = face_map.find(key);
         if (it == face_map.end())
           face_map[key] = 1;
@@ -391,10 +392,10 @@ int vtkPMergeConnected::FillOutputPortInformation(int port, vtkInformation* info
   if ( port == 0 )
   {
     info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkMultiBlockDataSet" );
- 
+
     return 1;
   }
- 
+
   return 0;
 }
 

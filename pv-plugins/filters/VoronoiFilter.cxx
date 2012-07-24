@@ -1,14 +1,15 @@
 #include "VoronoiFilter.h"
 
+#include <vtkCellArray.h>
 #include <vtkCellData.h>
 #include <vtkFloatArray.h>
-#include <vtkCellArray.h>
 #include <vtkInformation.h>
 #include <vtkInformationVector.h>
 #include <vtkMultiBlockDataSet.h>
 #include <vtkMultiProcessController.h>
-#include <vtkUnstructuredGrid.h>
+#include <vtkObjectFactory.h>
 #include <vtkStreamingDemandDrivenPipeline.h>
+#include <vtkUnstructuredGrid.h>
 
 #include <vtkSmartPointer.h>
 #define VTK_CREATE(type, name) \
@@ -17,7 +18,7 @@
   name = vtkSmartPointer<type>::New()
 
 
-vtkStandardNewMacro(VoronoiFilter); 
+vtkStandardNewMacro(VoronoiFilter);
 
 VoronoiFilter::VoronoiFilter()
 {
@@ -82,14 +83,14 @@ void VoronoiFilter::SetController(vtkMultiProcessController *c)
   this->MyId = c->GetLocalProcessId();
 }
 
-int VoronoiFilter::RequestData(vtkInformation *vtkNotUsed(request), 
+int VoronoiFilter::RequestData(vtkInformation *vtkNotUsed(request),
     vtkInformationVector** inputVector,
     vtkInformationVector* outputVector)
 {
   // Get the info objects
   vtkInformation *inInfo = inputVector[0]->GetInformationObject(0);
   vtkInformation *outInfo = outputVector->GetInformationObject(0);
- 
+
   // Get the input and ouptut
   vtkMultiBlockDataSet *input = vtkMultiBlockDataSet::SafeDownCast(
       inInfo->Get(vtkDataObject::DATA_OBJECT()));
@@ -176,9 +177,9 @@ int VoronoiFilter::FillOutputPortInformation(int port, vtkInformation* info )
   if ( port == 0 )
   {
     info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkMultiBlockDataSet" );
- 
+
     return 1;
   }
- 
+
   return 0;
 }
