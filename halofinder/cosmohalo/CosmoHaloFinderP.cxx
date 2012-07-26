@@ -124,6 +124,7 @@ CosmoHaloFinderP::~CosmoHaloFinderP()
   clearHaloSize();
 }
 
+/////////////////////////////////////////////////////////////////////////
 void CosmoHaloFinderP::initializeHaloFinder()
 {
   // Get the number of processors and rank of this processor
@@ -226,6 +227,12 @@ void CosmoHaloFinderP::setParameters(
   this->haloFinder.periodic = false;
   this->haloFinder.textmode = "ascii";
 
+  // Serial halo finder wants normalized locations on a grid superimposed
+  // on the physical rL grid.  Grid size is np and number of particles in
+  // the problem is np^3
+  this->normalizeFactor = (POSVEL_T)((1.0 * _np) / _rL);
+
+
   if (this->myProc == MASTER) {
     cout << endl << "------------------------------------" << endl;
     cout << "np:       " << this->np << endl;
@@ -233,6 +240,7 @@ void CosmoHaloFinderP::setParameters(
     cout << "nmin:     " << this->nmin << endl;
     cout << "pmin:     " << this->pmin << endl << endl;
   }
+
 }
 
 /////////////////////////////////////////////////////////////////////////
@@ -347,14 +355,14 @@ void CosmoHaloFinderP::executeHaloFinder()
 #endif // HALO_FINDER_VERBOSE
 
 #ifndef USE_SERIAL_COSMO
-  MPI_Barrier(Partition::getComm());
+  MPI_Barrier(cosmologytools::Partition::getComm());
 #endif
 
   if (this->particleCount > 0)
     this->haloFinder.Finding();
 
 #ifndef USE_SERIAL_COSMO
-  MPI_Barrier(Partition::getComm());
+  MPI_Barrier(cosmologytools::Partition::getComm());
 #endif
 }
 
@@ -608,6 +616,10 @@ void CosmoHaloFinderP::mergeHalos()
                 1, MPI_INT, MPI_MAX, cosmologytools::Partition::getComm());
 #endif
 
+  // If there are no halos to merge, return
+  if (maxNumberOfMixed == 0)
+    return;
+
   // Everyone creates the buffer for maximum halos
   // MASTER will receive into it, others will send from it
   int haloBufSize = maxNumberOfMixed * this->pmin * 2;
@@ -652,7 +664,7 @@ void CosmoHaloFinderP::mergeHalos()
 #else
   MPI_Allreduce((void*) &this->numberOfHaloParticles,
                 (void*) &totalAliveHaloParticles,
-                1, MPI_INT, MPI_SUM, Partition::getComm());
+                1, MPI_INT, MPI_SUM, cosmologytools::Partition::getComm());
 #endif
 
   if (this->myProc == MASTER) {
