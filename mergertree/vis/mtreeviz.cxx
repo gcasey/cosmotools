@@ -220,7 +220,8 @@ void BuildGraph(vtkMutableDirectedGraph *g)
     {
     if( static_cast<int>(GraphNodes[i].DescendantNumber) != -1)
       {
-      g->AddEdge( i, GraphNodes[i].DescendantNumber);
+      g->AddEdge( GraphNodes[i].DescendantNumber, i);
+//      g->AddEdge( i, GraphNodes[i].DescendantNumber);
       edgeNodes->SetId(0,i);
       edgeNodes->SetId(1,GraphNodes[i].DescendantNumber);
       meshLines->InsertNextCell( edgeNodes );
@@ -268,11 +269,18 @@ int main(int argc, char **argv)
   writer->Delete();
 
   // STEP 3: Visualize the graph
+  vtkSmartPointer<vtkTree> t = vtkSmartPointer<vtkTree>::New();
+  if( t->CheckedShallowCopy( g.GetPointer() ) )
+    {
+    std::cout << "Graph is a tree!\n";
+    std::cout.flush();
+    }
   vtkSmartPointer<vtkGraphLayoutView> graphLayoutView =
     vtkSmartPointer<vtkGraphLayoutView>::New();
 
   graphLayoutView->SetVertexScalarBarVisibility(true);
-  graphLayoutView->AddRepresentationFromInput(g);
+  graphLayoutView->SetLayoutStrategyToTree();
+  graphLayoutView->AddRepresentationFromInput(t);
   graphLayoutView->SetColorVertices(true);
   graphLayoutView->SetVertexColorArrayName("HaloDensity");
   graphLayoutView->ResetCamera();
