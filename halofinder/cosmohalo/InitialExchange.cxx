@@ -77,6 +77,9 @@ namespace cosmologytools {
 
 InitialExchange::InitialExchange()
 {
+  // By default use MPI_COMM_WORLD
+  this->Communicator = MPI_COMM_WORLD;
+
   // Get the number of processors running this problem and rank
   this->numProc = Partition::getNumProc();
   this->myProc = Partition::getMyProc();
@@ -544,9 +547,9 @@ void InitialExchange::exchangeParticles()
 
   // Count the particles across processors
   long totalAliveParticles = 0;
-  MPI_Allreduce((void*) &this->numberOfAliveParticles, 
-                (void*) &totalAliveParticles, 
-                1, MPI_LONG, MPI_SUM, MPI_COMM_WORLD);
+  MPI_Allreduce((void*) &this->numberOfAliveParticles,
+                (void*) &totalAliveParticles,
+                1, MPI_LONG, MPI_SUM, this->Communicator);
 
 #ifdef INITIAL_EXCHANGE_VERBOSE
   cout << "InitialExchange Particles Rank " << setw(3) << this->myProc 
@@ -652,7 +655,7 @@ void InitialExchange::exchangeNeighborParticles()
   int maxDeadSize;
   MPI_Allreduce((void*) &myShareSize,
                 (void*) &maxDeadSize,
-                1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+                1, MPI_INT, MPI_MAX, this->Communicator);
 
   // Allocate messages to send and receive MPI buffers
   int bufferSize = (1 * sizeof(int)) +          // number of particles
@@ -668,7 +671,7 @@ void InitialExchange::exchangeNeighborParticles()
     printf("PXCH buffer = 2*%d = %f MB\n",bufferSize,
            2.0*bufferSize/1024.0/1024.0);
   }
-  MPI_Barrier(MPI_COMM_WORLD);
+  MPI_Barrier(this->Communicator);
 
   // Exchange with each neighbor, with everyone sending in one direction and
   // receiving from the other.  Data corresponding to the particle index

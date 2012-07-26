@@ -130,6 +130,9 @@ public:
 
   long getNumberOfAliveParticles() const { return numberOfAliveParticles; }
 
+  void setCommunicator( MPI_Comm comm )
+    { this->Communicator = comm; };
+
 private:
   int    myProc;		// My processor number
   int    numProc;		// Total number of processors
@@ -176,6 +179,8 @@ private:
   vector<MASK_T>* mask;		// Particle information
 
   vector<STATUS_T>* status;	// Particle is ALIVE when it leaves
+
+  MPI_Comm Communicator;
 };
 
 }
