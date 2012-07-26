@@ -84,6 +84,9 @@ using std::string;
 using std::vector;
 using std::map;
 
+#include <mpi.h>
+
+
 namespace cosmologytools {
 
 //////////////////////////////////////////////////////////////////////
@@ -223,7 +226,7 @@ public:
   //
 
   // print the results to standard out
-  static void print();
+  static void print(MPI_Comm comm=MPI_COMM_WORLD);
 
 private:
   // type of storage for list of TimerInfo

@@ -122,14 +122,14 @@ void Timings::clearTimer(TimerRef t) {
 
 //////////////////////////////////////////////////////////////////////
 // print out the timing results
-void Timings::print() {
+void Timings::print( MPI_Comm comm) {
   int i,j;
   if (TimerList.size() < 1)
     return;
 
   int nodes, rank;
-  MPI_Comm_size(MPI_COMM_WORLD, &nodes);
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(comm, &nodes);
+  MPI_Comm_rank(comm, &rank);
 
   // report the average time for each timer
   if (rank == 0) {
@@ -144,9 +144,9 @@ void Timings::print() {
     double walltotal = 0.0, cputotal = 0.0;
 
     MPI_Reduce(&tptr->wallTime, &walltotal, 1, MPI_DOUBLE, MPI_MAX, 0,
-        MPI_COMM_WORLD);
+        comm);
     MPI_Reduce(&tptr->cpuTime, &cputotal, 1, MPI_DOUBLE, MPI_MAX, 0,
-        MPI_COMM_WORLD);
+        comm);
 
     if (rank == 0) {
       cout << tptr->name.c_str() << " ";
@@ -166,17 +166,17 @@ void Timings::print() {
     double wallavg = 0.0, cpuavg = 0.0;
 
     MPI_Reduce(&tptr->wallTime, &wallmax, 1, MPI_DOUBLE, MPI_MAX, 0,
-        MPI_COMM_WORLD);
+        comm);
     MPI_Reduce(&tptr->cpuTime, &cpumax, 1, MPI_DOUBLE, MPI_MAX, 0,
-        MPI_COMM_WORLD);
+        comm);
     MPI_Reduce(&tptr->wallTime, &wallmin, 1, MPI_DOUBLE, MPI_MIN, 0,
-        MPI_COMM_WORLD);
+        comm);
     MPI_Reduce(&tptr->cpuTime, &cpumin, 1, MPI_DOUBLE, MPI_MIN, 0,
-        MPI_COMM_WORLD);
+        comm);
     MPI_Reduce(&tptr->wallTime, &wallavg, 1, MPI_DOUBLE, MPI_SUM, 0,
-        MPI_COMM_WORLD);
+        comm);
     MPI_Reduce(&tptr->cpuTime, &cpuavg, 1, MPI_DOUBLE, MPI_SUM, 0,
-        MPI_COMM_WORLD);
+        comm);
 
     if (rank == 0) {
       cout << tptr->name.c_str() << " ";
