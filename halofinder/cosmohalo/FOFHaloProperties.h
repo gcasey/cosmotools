@@ -51,11 +51,8 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef FOFHaloProperties_h
 #define FOFHaloProperties_h
 
-#ifdef USE_VTK_COSMO
-#include "CosmoDefinition.h"
-#else
+
 #include "Definition.h"
-#endif
 
 #include "ChainingMesh.h"
 #include <string>
@@ -65,11 +62,9 @@ using namespace std;
 
 namespace cosmologytools {
 
-#ifdef USE_VTK_COSMO
-class COSMO_EXPORT FOFHaloProperties {
-#else
+
 class FOFHaloProperties {
-#endif
+
 public:
   FOFHaloProperties();
   ~FOFHaloProperties();
@@ -184,7 +179,6 @@ public:
   POSVEL_T* pmass,
   ID_T* tag);
 
-#ifndef USE_VTK_COSMO
   // Print information about halos for debugging and selection
   void FOFHaloCatalog(
   vector<int>* haloCenter,
@@ -196,7 +190,6 @@ public:
   void printHaloSizes(int minSize);
   void printLocations(int haloIndex);
   void printBoundingBox(int haloIndex);
-#endif
 
 private:
   int    myProc;                // My processor number

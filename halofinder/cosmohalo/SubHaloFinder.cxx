@@ -54,9 +54,8 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "FOFHaloProperties.h"
 #include "HaloCenterFinder.h"
 
-#ifndef USE_VTK_COSMO
 #include "Timings.h"
-#endif
+
 
 using namespace std;
 

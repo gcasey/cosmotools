@@ -44,14 +44,6 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #ifndef Definition_h
 #define Definition_h
-//
-//#ifndef USE_SERIAL_COSMO
-//#ifdef USE_VTK_COSMO
-//#include "vtkMPI.h"
-//#else
-//#include <rru_mpi.h>
-//#endif
-//#endif
 
 #include "BasicDefinition.h"
 

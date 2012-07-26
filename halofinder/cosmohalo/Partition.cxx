@@ -87,19 +87,6 @@ void Partition::initialize(MPI_Comm comm)
   if(!initialized)
     {
 #ifndef USE_SERIAL_COSMO
-
-#ifdef USE_VTK_COSMO
-    // this is for when it is compiled against MPI but single processor
-    // on ParaView (client only, it won't MPI_Init itself)
-    int temp;
-    MPI_Initialized(&temp);
-    if(!temp)
-      {
-      temp = 0;
-      MPI_Init(&temp, 0);
-      }
-#endif
-
     // Start up MPI
     //MPI_Init(&argc, &argv);
     MPI_Comm_rank(comm, &myProc);
@@ -140,11 +127,9 @@ void Partition::initialize(MPI_Comm comm)
     // Set all my neighbor processor ids for communication
     setNeighbors();
 
-#ifndef USE_VTK_COSMO
     if (myProc == 0)
       cout << "Partition 3D: [" << decompSize[0] << ":"
            << decompSize[1] << ":" << decompSize[2] << "]" << endl;
-#endif
 
     initialized = 1;
     }

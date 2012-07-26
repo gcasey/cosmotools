@@ -68,28 +68,17 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "Message.h"
 
-#ifdef USE_VTK_COSMO
-#include "CosmoDefinition.h"
-#include "vtkstd/string"
-#include "vtkstd/vector"
 
-using namespace vtkstd;
-#else
 #include "Definition.h"
 #include <string>
 #include <vector>
 
 using namespace std;
-#endif
+
 
 namespace cosmologytools {
 
-
-#ifdef USE_VTK_COSMO
-class COSMO_EXPORT ParticleExchange {
-#else
 class ParticleExchange {
-#endif
 public:
   ParticleExchange();
   ~ParticleExchange();

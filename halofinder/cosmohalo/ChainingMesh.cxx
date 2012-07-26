@@ -297,12 +297,11 @@ void ChainingMesh::printChainingMeshCentroids()
           if (centroid[dim] != 0.0)
             centroid[dim] /= this->bucketCount[i][j][k];
         }
-#ifndef USE_VTK_COSMO
+
         cout << "Bucket " << i << "," << j << "," << k
              << " count = " << bucketCount[i][j][k]
              << " centroid = " << centroid[0] << "," << centroid[1] << ","
              << centroid[2] << endl;
-#endif
       }
     }
   }

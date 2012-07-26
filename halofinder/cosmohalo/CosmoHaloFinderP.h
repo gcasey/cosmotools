@@ -70,11 +70,8 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef CosmoHaloFinderP_h
 #define CosmoHaloFinderP_h
 
-#ifdef USE_VTK_COSMO
-#include "CosmoDefinition.h"
-#else
+
 #include "Definition.h"
-#endif
 
 #include "CosmoHaloFinder.h"
 #include "CosmoHalo.h"
@@ -86,11 +83,8 @@ using namespace std;
 
 namespace cosmologytools {
 
-#ifdef USE_VTK_COSMO
-class COSMO_EXPORT CosmoHaloFinderP {
-#else
+
 class CosmoHaloFinderP {
-#endif
 public:
   CosmoHaloFinderP();
   ~CosmoHaloFinderP();
@@ -121,10 +115,9 @@ public:
   void sendMixedHaloResults(ID_T* buffer, int bufSize);
   int compareHalos(CosmoHalo* halo1, CosmoHalo* halo2);
 
-#ifndef USE_VTK_COSMO
   // Write the particles with mass field containing halo tags
   void writeTaggedParticles(bool clearSerial=true);
-#endif
+
 
   // Set alive particle vectors which were created elsewhere
   void setParticles(

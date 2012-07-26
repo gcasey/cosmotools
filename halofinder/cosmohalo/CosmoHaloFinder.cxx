@@ -50,10 +50,9 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "CosmoHaloFinder.h"
 
-#ifndef USE_VTK_COSMO
+
 #ifdef DEBUG
 #include <sys/time.h>
-#endif
 #endif
 
 using namespace std;
@@ -97,7 +96,7 @@ void CosmoHaloFinder::clearHaloTag()
   ht = 0;
 }
 
-#ifndef USE_VTK_COSMO
+
 /****************************************************************************/
 void CosmoHaloFinder::Execute()
 {
@@ -290,7 +289,6 @@ void CosmoHaloFinder::Writing()
   // done
   return;
 }
-#endif  // #ifndef USE_VTK_COSMO
 
 /****************************************************************************/
 void CosmoHaloFinder::Finding()
@@ -298,12 +296,11 @@ void CosmoHaloFinder::Finding()
   //
   // REORDER particles based on spatial locality
   //
-#ifndef USE_VTK_COSMO
+
 #ifdef DEBUG
   timeval tim;
   gettimeofday(&tim, NULL);
   double t1=tim.tv_sec+(tim.tv_usec/1000000.0);
-#endif
 #endif
 
   v = new ValueIdPair[npart];
@@ -318,22 +315,19 @@ void CosmoHaloFinder::Finding()
 
   delete [] v;
 
-#ifndef USE_VTK_COSMO
+
 #ifdef DEBUG
   gettimeofday(&tim, NULL);
   double t2=tim.tv_sec+(tim.tv_usec/1000000.0);
   printf("reorder... %.2lfs\n", t2-t1);
 #endif
-#endif
 
   //
   // COMPUTE interval bounding box
   //
-#ifndef USE_VTK_COSMO
 #ifdef DEBUG
   gettimeofday(&tim, NULL);
   t1=tim.tv_sec+(tim.tv_usec/1000000.0);
-#endif
 #endif
 
   lb = new floatptr[numDataDims];
@@ -346,22 +340,18 @@ void CosmoHaloFinder::Finding()
 
   ComputeLU(0, npart);
 
-#ifndef USE_VTK_COSMO
 #ifdef DEBUG
   gettimeofday(&tim, NULL);
   t2=tim.tv_sec+(tim.tv_usec/1000000.0);
   printf("computeLU... %.2lfs\n", t2-t1);
 #endif
-#endif
 
   //
   // FIND HALOS using friends-of-friends metric
   //
-#ifndef USE_VTK_COSMO
 #ifdef DEBUG
   gettimeofday(&tim, NULL);
   t1=tim.tv_sec+(tim.tv_usec/1000000.0);
-#endif
 #endif
 
   // create ht[] to store halo assignment.
@@ -380,12 +370,10 @@ void CosmoHaloFinder::Finding()
 
   myFOF(0, npart, dataX);
 
-#ifndef USE_VTK_COSMO
 #ifdef DEBUG
   gettimeofday(&tim, NULL);
   t2=tim.tv_sec+(tim.tv_usec/1000000.0);
   printf("myFOF... %.2lfs\n", t2-t1);
-#endif
 #endif
 
   //

@@ -107,13 +107,11 @@ void ParticleExchange::setParameters(POSVEL_T rL, POSVEL_T deadSz)
   this->boxSize = rL;
   this->deadSize = deadSz;
 
-#ifndef USE_VTK_COSMO
   if (this->myProc == MASTER) {
     cout << endl << "------------------------------------" << endl;
     cout << "boxSize:  " << this->boxSize << endl;
     cout << "deltaBox: " << this->deadSize << endl;
   }
-#endif
 }
 
 /////////////////////////////////////////////////////////////////////////
@@ -243,12 +241,10 @@ void ParticleExchange::calculateOffsetFactor()
 
 void ParticleExchange::initialize()
 {
-#ifndef USE_VTK_COSMO
 #ifdef DEBUG
   if (this->myProc == MASTER)
     cout << "Decomposition: [" << this->layoutSize[0] << ":"
          << this->layoutSize[1] << ":" << this->layoutSize[2] << "]" << endl;
-#endif
 #endif
 
   // Set subextents on particle locations for this processor
@@ -513,7 +509,6 @@ void ParticleExchange::exchangeParticles()
                 1, MPI_LONG, MPI_SUM, Partition::getComm());
 #endif
 
-#ifndef USE_VTK_COSMO
 #ifdef DEBUG
   cout << "Exchange Particles Rank " << setw(3) << this->myProc
        << " #alive = " << this->numberOfAliveParticles
@@ -524,7 +519,6 @@ void ParticleExchange::exchangeParticles()
     cout << "TotalAliveParticles " << totalAliveParticles << endl;
     cout << "TotalDeadParticles  " << totalDeadParticles << endl << endl;
   }
-#endif
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -604,13 +598,11 @@ void ParticleExchange::exchangeNeighborParticles()
   Message* sendMessage = new Message(bufferSize);
   Message* recvMessage = new Message(bufferSize);
 
-#ifndef USE_VTK_COSMO
   //debug statement added by Adrian to see how much buffer space we're using
   if(this->myProc == MASTER) {
     printf("PXCH buffer = 2*%d = %f MB\n",bufferSize,
            2.0*bufferSize/1024.0/1024.0);
   }
-#endif
 
 #ifndef USE_SERIAL_COSMO
   MPI_Barrier(Partition::getComm());

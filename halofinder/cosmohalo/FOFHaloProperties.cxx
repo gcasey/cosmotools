@@ -52,9 +52,8 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "Partition.h"
 #include "FOFHaloProperties.h"
 #include "HaloCenterFinder.h"
-#ifndef USE_VTK_COSMO
 #include "Timings.h"
-#endif
+
 
 using namespace std;
 
@@ -546,7 +545,6 @@ POSVEL_T FOFHaloProperties::incrementalMean(int halo, POSVEL_T* data)
   return (POSVEL_T) dataMean;
 }
 
-#ifndef USE_VTK_COSMO
 /////////////////////////////////////////////////////////////////////////
 //
 // Write the halo catalog file
@@ -658,8 +656,6 @@ void FOFHaloProperties::extractLocation(
   }
 }
 
-#endif
-
 /////////////////////////////////////////////////////////////////////////
 //
 // Copy locations, velocities and tags of halo particles to the allocated arrays
@@ -692,8 +688,6 @@ void FOFHaloProperties::extractInformation(
     p = this->haloList[p];
   }
 }
-
-#ifndef USE_VTK_COSMO
 
 /////////////////////////////////////////////////////////////////////////
 //
@@ -752,7 +746,5 @@ void FOFHaloProperties::printBoundingBox(int halo)
          << minBox[1] << ":" << maxBox[1] << "  "
          << minBox[2] << ":" << maxBox[2] << "  " << endl;
 }
-
-#endif
 
 }

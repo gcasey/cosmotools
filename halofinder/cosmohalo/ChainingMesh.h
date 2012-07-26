@@ -56,11 +56,8 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef ChainingMesh_h
 #define ChainingMesh_h
 
-#ifdef USE_VTK_COSMO
-#include "CosmoDefinition.h"
-#else
 #include "Definition.h"
-#endif
+
 
 #include <string>
 #include <vector>
@@ -70,11 +67,9 @@ using namespace std;
 namespace cosmologytools {
 
 
-#ifdef USE_VTK_COSMO
-class COSMO_EXPORT ChainingMesh {
-#else
+
 class ChainingMesh {
-#endif
+
 public:
   // Chaining mesh for all particles on a processor
   ChainingMesh(

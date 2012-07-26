@@ -61,11 +61,8 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef HaloCenterFinder_h
 #define HaloCenterFinder_h
 
-#ifdef USE_VTK_COSMO
-#include "CosmoDefinition.h"
-#else
 #include "Definition.h"
-#endif
+
 
 #include "ChainingMesh.h"
 #include <string>
@@ -75,11 +72,8 @@ using namespace std;
 
 namespace cosmologytools {
 
-#ifdef USE_VTK_COSMO
-class COSMO_EXPORT HaloCenterFinder {
-#else
+
 class HaloCenterFinder {
-#endif
 public:
   HaloCenterFinder();
   ~HaloCenterFinder();

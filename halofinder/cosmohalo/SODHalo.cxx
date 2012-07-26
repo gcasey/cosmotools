@@ -303,7 +303,6 @@ void SODHalo::calculateMassProfile()
       this->maxRadius = limit;
   }
 
-#ifndef USE_VTK_COSMO
   if (this->maxRadius < requiredMaxRadius) {
     cout << "Rank: " << this->myProc
          << " Reset max radius from " << requiredMaxRadius
@@ -311,7 +310,6 @@ void SODHalo::calculateMassProfile()
     cout << "Rank: " << this->myProc
          << "Might need to make the dead size (overload) larger" << endl;
   }
-#endif
 
   // Calculate the delta radius in log scale
   // Number of bins was increased by one for particles less than the min

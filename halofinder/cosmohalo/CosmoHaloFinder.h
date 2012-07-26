@@ -108,11 +108,8 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <string>
 
-#ifdef USE_VTK_COSMO
-#include "CosmoDefinition.h"
-#else
 #include "Definition.h"
-#endif
+
 
 #define numDataDims 3
 #define dataX 0
@@ -149,11 +146,8 @@ public:
 
 /****************************************************************************/
 
-#ifdef USE_VTK_COSMO
-class COSMO_EXPORT CosmoHaloFinder
-#else
+
 class CosmoHaloFinder
-#endif
 {
 public:
   // create a finder
@@ -163,13 +157,11 @@ public:
   void Finding();
 
   // Read alive particles
-#ifndef USE_VTK_COSMO
   void Reading();
   void Writing();
 
   // execute the finder
   void Execute();
-#endif
 
   void setInFile(string inFile)         { infile = inFile.c_str(); }
   void setOutFile(string outFile)       { outfile = outFile.c_str(); }

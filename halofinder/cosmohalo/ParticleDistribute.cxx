@@ -60,11 +60,6 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "Partition.h"
 #include "ParticleDistribute.h"
 
-#ifdef USE_VTK_COSMO
-#include "vtkStdString.h"
-#include "vtkSetGet.h"
-#endif
-
 #include <cstring>
 using namespace std;
 
@@ -133,12 +128,12 @@ void ParticleDistribute::setParameters(
   else if (dataType == "BLOCK")
     this->inputType = BLOCK;
 
-#ifndef USE_VTK_COSMO
+
   if (this->myProc == MASTER) {
     cout << endl << "------------------------------------" << endl;
     cout << "boxSize:  " << this->boxSize << endl;
   }
-#endif
+
 }
 
 /////////////////////////////////////////////////////////////////////////
@@ -164,13 +159,13 @@ void ParticleDistribute::setConvertParameters(
 
 void ParticleDistribute::initialize()
 {
-#ifndef USE_VTK_COSMO
+
 #ifdef DEBUG
   if (this->myProc == MASTER)
     cout << "Decomposition: [" << this->layoutSize[0] << ":"
          << this->layoutSize[1] << ":" << this->layoutSize[2] << "]" << endl;
 #endif
-#endif
+
 
   // Set subextents on particle locations for this processor
   POSVEL_T boxStep[DIMENSION];
@@ -298,9 +293,7 @@ void ParticleDistribute::readParticlesAllToAll(int reserveQ)
   reserveSize /= this->processorsPerFile;
 
   if(reserveQ) {
-#ifndef USE_VTK_COSMO
     cout << "readParticlesRoundRobin reserving vectors" << endl;
-#endif
     this->xx->reserve(reserveSize);
     this->yy->reserve(reserveSize);
     this->zz->reserve(reserveSize);
@@ -331,10 +324,10 @@ void ParticleDistribute::readParticlesAllToAll(int reserveQ)
     if ((int)this->inFiles.size() > file) {
       inStream = new ifstream(this->inFiles[file].c_str(), ios::in|ios::binary);
 
-#ifndef USE_VTK_COSMO
+
       cout << "Rank " << this->myProc << " open file " << inFiles[file]
            << " with " << this->fileParticles[file] << " particles" << endl;
-#endif
+
 
       // Number of particles read at one time depends on MPI buffer size
       numberOfParticles = this->fileParticles[file];
@@ -345,9 +338,9 @@ void ParticleDistribute::readParticlesAllToAll(int reserveQ)
       remainingParticles = this->fileParticles[file];
 
     } else {
-#ifndef USE_VTK_COSMO
+
       cout << "Rank " << this->myProc << " no file to open " << endl;
-#endif
+
     }
 
     for (int piece = 0; piece < this->maxReadsPerFile; piece++) {
@@ -473,7 +466,7 @@ void ParticleDistribute::readParticlesAllToAll(int reserveQ)
                 (void*) &totalAliveParticles,
                 1, MPI_LONG, MPI_SUM, Partition::getComm());
 
-#ifndef USE_VTK_COSMO
+
 #ifdef DEBUG
   cout << "Rank " << setw(3) << this->myProc
        << " #alive = " << this->numberOfAliveParticles << endl;
@@ -482,7 +475,6 @@ void ParticleDistribute::readParticlesAllToAll(int reserveQ)
   if (this->myProc == MASTER) {
     cout << "TotalAliveParticles " << totalAliveParticles << endl;
   }
-#endif
 
   MPI_Type_free(&CosmoParticleType);
 
@@ -567,9 +559,7 @@ void ParticleDistribute::readParticlesRoundRobin(int reserveQ)
   reserveSize /= this->processorsPerFile;
 
   if(reserveQ) {
-#ifndef USE_VTK_COSMO
     cout << "readParticlesRoundRobin reserving vectors" << endl;
-#endif
     this->xx->reserve(reserveSize);
     this->yy->reserve(reserveSize);
     this->zz->reserve(reserveSize);
@@ -600,10 +590,8 @@ void ParticleDistribute::readParticlesRoundRobin(int reserveQ)
     if ((int)this->inFiles.size() > file) {
       inStream = new ifstream(this->inFiles[file].c_str(), ios::in|ios::binary);
 
-#ifndef USE_VTK_COSMO
       cout << "Rank " << this->myProc << " open file " << inFiles[file]
            << " with " << this->fileParticles[file] << " particles" << endl;
-#endif
 
       // Number of particles read at one time depends on MPI buffer size
       numberOfParticles = this->fileParticles[file];
@@ -614,9 +602,7 @@ void ParticleDistribute::readParticlesRoundRobin(int reserveQ)
       remainingParticles = this->fileParticles[file];
 
     } else {
-#ifndef USE_VTK_COSMO
       cout << "Rank " << this->myProc << " no file to open " << endl;
-#endif
     }
 
     for (int piece = 0; piece < this->maxReadsPerFile; piece++) {
@@ -687,7 +673,7 @@ void ParticleDistribute::readParticlesRoundRobin(int reserveQ)
                 1, MPI_LONG, MPI_SUM, Partition::getComm());
 #endif
 
-#ifndef USE_VTK_COSMO
+
 #ifdef DEBUG
   cout << "Rank " << setw(3) << this->myProc
        << " #alive = " << this->numberOfAliveParticles << endl;
@@ -696,7 +682,7 @@ void ParticleDistribute::readParticlesRoundRobin(int reserveQ)
   if (this->myProc == MASTER) {
     cout << "TotalAliveParticles " << totalAliveParticles << endl;
   }
-#endif
+
   }
 }
 
@@ -795,27 +781,20 @@ void ParticleDistribute::partitionInputFiles(bool force1PPF)
   this->numberOfFiles = (int)files.size();
 
   if (this->numberOfFiles == 0) {
-#ifdef USE_VTK_COSMO
-    vtkStdString temp = "Processor ";
-    temp += this->myProc;
-    temp += " found no input files.\n";
-    vtkOutputWindowDisplayErrorText(temp.c_str());
 
-    return;
-#else
     cout << "Rank " << this->myProc << " found no input files" << endl;
     exit(1);
-#endif
+
   }
 
-#ifndef USE_VTK_COSMO
+
 #ifdef DEBUG
   if (this->myProc == MASTER) {
     for (int i = 0; i < this->numberOfFiles; i++)
       cout << "   File " << i << ": " << files[i] << endl;
   }
 #endif
-#endif
+
 
   // Divide the files between all the processors
   // If there are 1 or more files per processor set the
@@ -909,19 +888,8 @@ void ParticleDistribute::findFileParticleCount()
     ifstream *inStream = new ifstream(this->inFiles[i].c_str(), ios::in);
     if (inStream->fail()) {
       delete inStream;
-#ifdef USE_VTK_COSMO
-      vtkStdString message = "File ";
-      message += this->inFiles[i];
-      message += " cannot be opened.\n";
-      vtkOutputWindowDisplayErrorText(message.c_str());
-
-      this->totalParticles = 0;
-      this->maxParticles = 0;
-      return;
-#else
       cout << "File: " << this->inFiles[i] << " cannot be opened" << endl;
       exit (-1);
-#endif
     }
 
     if (this->inputType == RECORD) {
@@ -988,14 +956,14 @@ void ParticleDistribute::findFileParticleCount()
                 1, MPI_INT, MPI_MAX, Partition::getComm());
 #endif
 
-#ifndef USE_VTK_COSMO
+
 #ifdef DEBUG
   if (this->myProc == MASTER) {
     cout << "Total particle count: " << this->totalParticles << endl;
     cout << "Max particle count:   " << this->maxParticles << endl;
   }
 #endif
-#endif
+
 }
 
 /////////////////////////////////////////////////////////////////////////
@@ -1086,13 +1054,8 @@ void ParticleDistribute::readFromRecordFile(
                    COSMO_FLOAT * sizeof(POSVEL_T));
 
     if (inStream->gcount() != COSMO_FLOAT * sizeof(POSVEL_T)) {
-#ifdef USE_VTK_COSMO
-      vtkOutputWindowDisplayErrorText("Premature end-of-file.\n");
-      return;
-#else
       cout << "Premature end-of-file" << endl;
       exit (-1);
-#endif
     }
 
     // Convert units if requested
@@ -1105,23 +1068,18 @@ void ParticleDistribute::readFromRecordFile(
                    COSMO_INT * sizeof(ID_T));
 
     if (inStream->gcount() != COSMO_INT * sizeof(ID_T)) {
-#ifdef USE_VTK_COSMO
-      vtkOutputWindowDisplayErrorText("Premature end-of-file.\n");
-      return;
-#else
       cout << "Premature end-of-file" << endl;
       exit (-1);
-#endif
     }
 
     // If the location is not within the bounding box wrap around
     for (int i = 0; i <= 4; i = i + 2) {
       if (fBlock[i] >= this->boxSize) {
-#ifndef USE_VTK_COSMO
+
 #ifdef DEBUG
         cout << "Location at " << i << " changed from " << fBlock[i] << endl;
 #endif
-#endif
+
         fBlock[i] -= this->boxSize;
         changeCount++;
       }
@@ -1329,13 +1287,8 @@ void ParticleDistribute::readFromRecordFile(
                    COSMO_FLOAT * sizeof(POSVEL_T));
 
     if (inStream->gcount() != COSMO_FLOAT * sizeof(POSVEL_T)) {
-#ifdef USE_VTK_COSMO
-      vtkOutputWindowDisplayErrorText("Premature end-of-file.\n");
-      return;
-#else
       cout << "Premature end-of-file" << endl;
       exit (-1);
-#endif
     }
 
     // Convert units if requested
@@ -1348,22 +1301,15 @@ void ParticleDistribute::readFromRecordFile(
                    COSMO_INT * sizeof(ID_T));
 
     if (inStream->gcount() != COSMO_INT * sizeof(ID_T)) {
-#ifdef USE_VTK_COSMO
-      vtkOutputWindowDisplayErrorText("Premature end-of-file.\n");
-      return;
-#else
       cout << "Premature end-of-file" << endl;
       exit (-1);
-#endif
     }
 
     // If the location is not within the bounding box wrap around
     for (int i = 0; i <= 4; i = i + 2) {
       if (fBlock[i] >= this->boxSize) {
-#ifndef USE_VTK_COSMO
 #ifdef DEBUG
         cout << "Location at " << i << " changed from " << fBlock[i] << endl;
-#endif
 #endif
         fBlock[i] -= this->boxSize;
         changeCount++;
@@ -1658,9 +1604,7 @@ void ParticleDistribute::readParticlesOneToOne(int reserveQ)
   int reserveSize = (int) (this->maxParticles * DEAD_FACTOR);
 
   if(reserveQ) {
-#ifndef USE_VTK_COSMO
     cout << "readParticlesOneToOne reserving vectors" << endl;
-#endif
     this->xx->reserve(reserveSize);
     this->yy->reserve(reserveSize);
     this->zz->reserve(reserveSize);
@@ -1695,10 +1639,8 @@ void ParticleDistribute::readFromRecordFile()
   ifstream inStream(this->inFiles[0].c_str(), ios::in);
   int numberOfParticles = this->fileParticles[0];
 
-#ifndef USE_VTK_COSMO
   cout << "Rank " << this->myProc << " open file " << this->inFiles[0]
        << " with " << numberOfParticles << " particles" << endl;
-#endif
 
   POSVEL_T* fBlock = new POSVEL_T[COSMO_FLOAT];
   ID_T* iBlock = new ID_T[COSMO_INT];
@@ -1711,17 +1653,8 @@ void ParticleDistribute::readFromRecordFile()
                    COSMO_FLOAT * sizeof(POSVEL_T));
 
     if (inStream.gcount() != COSMO_FLOAT * sizeof(POSVEL_T)) {
-#ifdef USE_VTK_COSMO
-      vtkOutputWindowDisplayErrorText("Premature end-of-file.\n");
-      inStream.close();
-      delete [] fBlock;
-      delete [] iBlock;
-
-      return;
-#else
       cout << "Premature end-of-file" << endl;
       exit (-1);
-#endif
     }
 
     // Convert units if requested
@@ -1734,17 +1667,8 @@ void ParticleDistribute::readFromRecordFile()
                    COSMO_INT * sizeof(ID_T));
 
     if (inStream.gcount() != COSMO_INT * sizeof(ID_T)) {
-#ifdef USE_VTK_COSMO
-      vtkOutputWindowDisplayErrorText("Premature end-of-file.\n");
-      inStream.close();
-      delete [] fBlock;
-      delete [] iBlock;
-
-      return;
-#else
       cout << "Premature end-of-file" << endl;
       exit (-1);
-#endif
     }
 
     // Store information in buffer if within range on this processor
@@ -1806,10 +1730,8 @@ void ParticleDistribute::readFromBlockFile()
   ifstream inStream(this->inFiles[0].c_str(), ios::in);
   int numberOfParticles = this->fileParticles[0];
 
-#ifndef USE_VTK_COSMO
   cout << "Rank " << this->myProc << " open file " << this->inFiles[0]
        << " with " << numberOfParticles << " particles" << endl;
-#endif
 
   // Calculate skips to first location, velocity and tag
   int skipToLocation = 0;
@@ -1960,11 +1882,7 @@ void ParticleDistribute::readGadgetHeader(ifstream* gStr)
   // Read the Gadget header size to verify block
   readData(this->gadgetSwap, (void*) &blockSize2, GADGET_SKIP, 1, gStr);
   if (blockSize != blockSize2)
-#ifdef USE_VTK_COSMO
-    vtkOutputWindowDisplayErrorText("Mismatch of header size and header structure.\n");
-#else
     cout << "Mismatch of header size and header structure" << endl;
-#endif
 
   // Every type particle will have location, velocity and tag so sum up
   this->gadgetParticleCount = 0;

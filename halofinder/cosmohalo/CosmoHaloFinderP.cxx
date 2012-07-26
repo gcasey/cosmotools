@@ -208,14 +208,14 @@ void CosmoHaloFinderP::setParameters(
   // the problem is np^3
   this->normalizeFactor = (POSVEL_T)((1.0 * _np) / _rL);
 
-#ifndef USE_VTK_COSMO
+
   if (this->myProc == MASTER) {
     cout << endl << "------------------------------------" << endl;
     cout << "np:       " << this->np << endl;
     cout << "bb:       " << this->bb << endl;
     cout << "pmin:     " << this->pmin << endl << endl;
   }
-#endif
+
 }
 
 /////////////////////////////////////////////////////////////////////////
@@ -281,11 +281,11 @@ void CosmoHaloFinderP::executeHaloFinder()
   this->haloFinder.setMyProc(this->myProc);
   this->haloFinder.setOutFile(this->outFile);
 
-#ifndef USE_VTK_COSMO
+
   cout << "Rank " << setw(3) << this->myProc
        << " RUNNING SERIAL HALO FINDER on "
        << particleCount << " particles" << endl;
-#endif
+
 
 #ifndef USE_SERIAL_COSMO
   MPI_Barrier(Partition::getComm());
@@ -464,14 +464,14 @@ void CosmoHaloFinderP::buildHaloStructure()
     }
   }
 
-#ifndef USE_VTK_COSMO
+
 #ifdef DEBUG
   cout << "Rank " << this->myProc
        << " #alive halos = " << this->numberOfAliveHalos
        << " #dead halos = " << this->numberOfDeadHalos
        << " #mixed halos = " << this->numberOfMixedHalos << endl;
 #endif
-#endif
+
 }
 
 /////////////////////////////////////////////////////////////////////////
@@ -674,13 +674,11 @@ void CosmoHaloFinderP::mergeHalos()
                 1, MPI_INT, MPI_SUM, Partition::getComm());
 #endif
 
-#ifndef USE_VTK_COSMO
   if (this->myProc == MASTER) {
     cout << endl;
     cout << "Total halos found:    " << totalAliveHalos << endl;
     cout << "Total halo particles: " << totalAliveHaloParticles << endl;
   }
-#endif
 
   for (unsigned int i = 0; i < this->myMixedHalos.size(); i++)
     delete this->myMixedHalos[i];
@@ -782,9 +780,8 @@ void CosmoHaloFinderP::collectMixedHalos
       notReceived--;
     }
 
-#ifndef USE_VTK_COSMO
+
     cout << "Number of halos to merge: " << this->allMixedHalos.size() << endl;
-#endif
   }
 
   // Other processors bundle up mixed and send to MASTER
@@ -833,7 +830,7 @@ void CosmoHaloFinderP::assignMixedHalos()
   // MASTER has all data and runs algorithm to make decisions
   if (this->myProc == MASTER) {
 
-#ifndef USE_VTK_COSMO
+
 #ifdef DEBUG
     for (int m = 0; m < (int) this->allMixedHalos.size(); m++) {
       vector<ID_T>* tags = this->allMixedHalos[m]->getTags();
@@ -844,7 +841,6 @@ void CosmoHaloFinderP::assignMixedHalos()
            << " alive=" << this->allMixedHalos[m]->getAliveCount()
            << " dead=" << this->allMixedHalos[m]->getDeadCount() << endl;
     }
-#endif
 #endif
 
     // Iterate over mixed halo vector and match and mark
@@ -884,7 +880,6 @@ void CosmoHaloFinderP::assignMixedHalos()
       }
     }
 
-#ifndef USE_VTK_COSMO
 #ifdef DEBUG
     for (unsigned int m = 0; m < this->allMixedHalos.size(); m++) {
 
@@ -900,7 +895,6 @@ void CosmoHaloFinderP::assignMixedHalos()
         cout << (*iter) << " ";
       cout << endl;
     }
-#endif
 #endif
   }
 }
@@ -1069,7 +1063,6 @@ void CosmoHaloFinderP::sendMixedHaloResults
 #endif // USE_SERIAL_COSMO
 }
 
-#ifndef USE_VTK_COSMO
 /////////////////////////////////////////////////////////////////////////
 //
 // Write the output of the halo finder in the form of the input .cosmo file
@@ -1175,6 +1168,6 @@ void CosmoHaloFinderP::writeTaggedParticles(bool clearSerial)
     this->haloFinder.clearHaloTag();
   }
 }
-#endif // USE_VTK_COSMO
+
 
 } /* end cosmologytools namespace */
