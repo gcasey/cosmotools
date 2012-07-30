@@ -13,8 +13,12 @@ set(PACKAGE_sfprobe_LIBRARIES
 
 set(SOURCES
     ExtentPartitioner.cxx
-    StructureFormationProbe.cxx
+    ExtentUtilities.cxx
+    LangrangianTesselator.cxx
     ParallelStructureFormationProbe.cxx
+    SimpleMesh.cxx
+    StructureFormationProbe.cxx
+    TetrahedronUtilities.cxx
     )
 
 ## Move header files to include directory in the build tree
