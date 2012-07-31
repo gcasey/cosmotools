@@ -8,7 +8,7 @@ project(mtreeviz)
 # VTK is used for infovis components.
 find_package(VTK COMPONENTS
    vtkCommonDataModel
-   vtkViewsInfovis
+#   vtkViewsInfovis
    vtkRenderingCore
    vtkRenderingFreeTypeOpenGL
    vtkRenderingVolumeOpenGL
@@ -20,7 +20,7 @@ include_directories(SYSTEM ${VTK_INCLUDE_DIRS})
 add_executable(mtreeviz mtreeviz.cxx)
 target_link_libraries(mtreeviz
     vtkCommonDataModel
-    vtkViewsInfovis
+#    vtkViewsInfovis
     vtkRenderingCore
     vtkRenderingFreeTypeOpenGL
     vtkRenderingVolumeOpenGL

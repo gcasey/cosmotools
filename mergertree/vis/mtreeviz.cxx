@@ -30,8 +30,8 @@
 #include "vtkCellData.h"
 #include "vtkDataSetAttributes.h"
 #include "vtkDoubleArray.h"
-#include "vtkGraphLayout.h"
-#include "vtkGraphLayoutView.h"
+//#include "vtkGraphLayout.h"
+//#include "vtkGraphLayoutView.h"
 #include "vtkGraphToPolyData.h"
 #include "vtkIdList.h"
 #include "vtkMutableDirectedGraph.h"
@@ -43,7 +43,7 @@
 #include "vtkRenderer.h"
 #include "vtkSmartPointer.h"
 #include "vtkTree.h"
-#include "vtkTreeLayoutStrategy.h"
+//#include "vtkTreeLayoutStrategy.h"
 #include "vtkUnstructuredGrid.h"
 #include "vtkUnstructuredGridWriter.h"
 
@@ -186,11 +186,31 @@ void BuildGraph(vtkMutableDirectedGraph *g)
   double *velptr = static_cast<double*>(velocities->GetPointer(0));
   double *vptr   = static_cast<double*>(volumes->GetPointer(0));
 
+// HACK: Attempting to layout the graph nicer
+
+  int currentPos = 0;
+  std::map< int, double> Halo2XAxis;
+  for( int i=0; i < GraphNodes.size(); ++i )
+    {
+    int haloIdx = static_cast<int>(GraphNodes[i].OriginalHaloIdx);
+    if( Halo2XAxis.find(haloIdx) == Halo2XAxis.end() )
+      {
+      Halo2XAxis[ haloIdx ] = currentPos;
+      ++currentPos;
+      }
+    } // END for
+// END HACK
+
   // STEP 0: Insert nodes
   double pos[3];
   for( int i=0; i < GraphNodes.size(); ++i )
     {
     GraphNodes[i].GetGraphNodePosition(pos);
+
+// HACK: Attempt to make graph look nicer
+    pos[0] = Halo2XAxis[ static_cast<int>(GraphNodes[i].OriginalHaloIdx) ];
+// END HACK
+
     vptr[ i ] = GraphNodes[ i ].Volume;
 
     velptr[ i*3   ] = GraphNodes[ i ].VelX;
@@ -269,23 +289,23 @@ int main(int argc, char **argv)
   writer->Delete();
 
   // STEP 3: Visualize the graph
-  vtkSmartPointer<vtkTree> t = vtkSmartPointer<vtkTree>::New();
-  if( t->CheckedShallowCopy( g.GetPointer() ) )
-    {
-    std::cout << "Graph is a tree!\n";
-    std::cout.flush();
-    }
-  vtkSmartPointer<vtkGraphLayoutView> graphLayoutView =
-    vtkSmartPointer<vtkGraphLayoutView>::New();
-
-  graphLayoutView->SetVertexScalarBarVisibility(true);
-  graphLayoutView->SetLayoutStrategyToTree();
-  graphLayoutView->AddRepresentationFromInput(t);
-  graphLayoutView->SetColorVertices(true);
-  graphLayoutView->SetVertexColorArrayName("HaloDensity");
-  graphLayoutView->ResetCamera();
-  graphLayoutView->Render();
-  graphLayoutView->GetInteractor()->Start();
+//  vtkSmartPointer<vtkTree> t = vtkSmartPointer<vtkTree>::New();
+//  if( t->CheckedShallowCopy( g.GetPointer() ) )
+//    {
+//    std::cout << "Graph is a tree!\n";
+//    std::cout.flush();
+//    }
+//  vtkSmartPointer<vtkGraphLayoutView> graphLayoutView =
+//    vtkSmartPointer<vtkGraphLayoutView>::New();
+//
+//  graphLayoutView->SetVertexScalarBarVisibility(true);
+//  graphLayoutView->SetLayoutStrategyToTree();
+//  graphLayoutView->AddRepresentationFromInput(t);
+//  graphLayoutView->SetColorVertices(true);
+//  graphLayoutView->SetVertexColorArrayName("HaloDensity");
+//  graphLayoutView->ResetCamera();
+//  graphLayoutView->Render();
+//  graphLayoutView->GetInteractor()->Start();
 
   graphGrid->Delete();
   return EXIT_SUCCESS;
