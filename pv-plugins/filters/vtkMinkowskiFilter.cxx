@@ -66,8 +66,10 @@ int vtkMinkowskiFilter::RequestData(vtkInformation *vtkNotUsed(request),
   VTK_CREATE(vtkDoubleArray, T);
   VTK_CREATE(vtkDoubleArray, B);
   VTK_CREATE(vtkDoubleArray, L);
+  VTK_CREATE(vtkDoubleArray, P);
+  VTK_CREATE(vtkDoubleArray, F);
 
-  compute_mf(input, S, V, C, X, G, T, B, L);
+  compute_mf(input, S, V, C, X, G, T, B, L, P, F);
 
   output->CopyStructure(input);
   output->GetPointData()->PassData(input->GetPointData());
@@ -80,6 +82,8 @@ int vtkMinkowskiFilter::RequestData(vtkInformation *vtkNotUsed(request),
   output->GetCellData()->AddArray(T);
   output->GetCellData()->AddArray(B);
   output->GetCellData()->AddArray(L);
+  output->GetCellData()->AddArray(P);
+  output->GetCellData()->AddArray(F);
 
   return 1;
 }
@@ -99,12 +103,13 @@ int vtkMinkowskiFilter::FillOutputPortInformation(int port, vtkInformation* info
 void vtkMinkowskiFilter::compute_mf(vtkUnstructuredGrid *ugrid, 
     vtkDoubleArray *S, vtkDoubleArray *V, vtkDoubleArray *C, 
     vtkDoubleArray *X, vtkDoubleArray *G, vtkDoubleArray *T,
-    vtkDoubleArray *B, vtkDoubleArray *L)
+    vtkDoubleArray *B, vtkDoubleArray *L, vtkDoubleArray *P,
+    vtkDoubleArray *F)
 {
   int i;
   int num_cells = ugrid->GetNumberOfCells();
   double *S_array, *V_array, *C_array, *X_array, *G_array, 
-         *T_array, *B_array, *L_array;
+         *T_array, *B_array, *L_array, *P_array, *F_array;
 
   S_array = new double[num_cells];
   V_array = new double[num_cells];
@@ -114,6 +119,8 @@ void vtkMinkowskiFilter::compute_mf(vtkUnstructuredGrid *ugrid,
   T_array = new double[num_cells];
   B_array = new double[num_cells];
   L_array = new double[num_cells];
+  P_array = new double[num_cells];
+  F_array = new double[num_cells];
 
   vtkCellData *cell_data = ugrid->GetCellData();
   vtkFloatArray *vol_array = vtkFloatArray::SafeDownCast(
@@ -132,6 +139,8 @@ void vtkMinkowskiFilter::compute_mf(vtkUnstructuredGrid *ugrid,
     T_array[i] = compute_T(V_array[i], S_array[i]);
     B_array[i] = compute_B(S_array[i], C_array[i]);
     T_array[i] = compute_L(C_array[i], G_array[i]);
+    P_array[i] = compute_P(B_array[i], T_array[i]);
+    F_array[i] = compute_F(B_array[i], L_array[i]);
   }
 
   S->SetName("S");
@@ -174,6 +183,15 @@ void vtkMinkowskiFilter::compute_mf(vtkUnstructuredGrid *ugrid,
   L->SetNumberOfTuples(num_cells);
   L->SetVoidArray(L_array, num_cells, 0);
   
+  P->SetName("P");
+  P->SetNumberOfComponents(1);
+  P->SetNumberOfTuples(num_cells);
+  P->SetVoidArray(P_array, num_cells, 0);
+
+  F->SetName("F");
+  F->SetNumberOfComponents(1);
+  F->SetNumberOfTuples(num_cells);
+  F->SetVoidArray(F_array, num_cells, 0);
 }
 
 double vtkMinkowskiFilter::compute_S(vtkPolyhedron *cell)
@@ -315,6 +333,16 @@ double vtkMinkowskiFilter::compute_B(double S, double C)
 double vtkMinkowskiFilter::compute_L(double C, double G)
 {
   return C / (4 * vtkMath::Pi() * (G + 1));
+}
+
+double vtkMinkowskiFilter::compute_P(double B, double T)
+{
+  return (B - T) / (B + T);
+}
+
+double vtkMinkowskiFilter::compute_F(double B, double L)
+{
+  return (L - B) / (L + B);
 }
 
 double vtkMinkowskiFilter::compute_face_area(vtkCell *face)
