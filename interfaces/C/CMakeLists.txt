@@ -29,6 +29,7 @@ FortranCInterface_HEADER(
         CosmologyGetHaloIds
         CosmologyGetSubHaloIds
         CosmologyInit
+        CosmologySetAnalysisTimeSteps
         CosmologySetHaloFinder
         CosmologySetMemoryLayout
         CosmologySetParticles

@@ -19,6 +19,9 @@ CosmologyToolsManager::CosmologyToolsManager()
   this->Particles             = new SimulationParticles();
   this->HaloFinder            = HaloFinders::COSMO;
   this->HaloTracker           = new ForwardHaloTracker();
+
+  this->TimeSteps = NULL;
+  this->NumTimeSteps = 0;
 }
 
 //-----------------------------------------------------------------------------
@@ -33,6 +36,23 @@ CosmologyToolsManager::~CosmologyToolsManager()
     {
     delete this->HaloTracker;
     }
+}
+
+//-----------------------------------------------------------------------------
+void CosmologyToolsManager::SetAnalysisTimeSteps(
+        INTEGER *timeSteps, INTEGER numTimeSteps)
+{
+  assert("pre: timesteps is NULL!" && (timeSteps != NULL) );
+  assert("pre: numTimeSteps > 0" && (numTimeSteps > 0) );
+
+  this->TimeSteps = timeSteps;
+  this->NumTimeSteps = numTimeSteps;
+
+  // Set explicit time-steps for the halo-tracker
+  this->HaloTracker->SetExplicitTrackerTimeSteps(
+      this->TimeSteps,this->NumTimeSteps);
+
+  // TODO: Set explicit time-steps also for the halo-finder ?
 }
 
 //-----------------------------------------------------------------------------

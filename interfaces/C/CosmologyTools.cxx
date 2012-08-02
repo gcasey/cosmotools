@@ -45,6 +45,16 @@ void CosmologyDisableVis()
 }
 
 //------------------------------------------------------------------------------
+void CosmologySetAnalysisTimeSteps(int *tsteps, int N)
+{
+  assert("pre: CosmoToolsManager is NULL" && (CosmoToolsManager != NULL) );
+  assert("pre: user-supplied array is NULL" && (tsteps != NULL) );
+  assert("pre: number of timesteps N > 0" && (N > 0) );
+
+  CosmoToolsManager->SetAnalysisTimeSteps(tsteps,N);
+}
+
+//------------------------------------------------------------------------------
 void CosmologySetParticles(
     INTEGER *tstep, REAL *redshift,
     REAL *px, REAL *py, REAL *pz,

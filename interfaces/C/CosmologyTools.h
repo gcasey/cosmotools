@@ -70,6 +70,13 @@ void CosmologySetParticles(
 void CosmologySetMemoryLayout(int* memoryLayout);
 
 /**
+ * @brief Sets the analysis time-steps the cosmology tools executes
+ * @param tsteps user-supplied array of time-steps
+ * @param N the number of time-steps, i.e., size of the array.
+ */
+void CosmologySetAnalysisTimeSteps(int *tsteps, int N);
+
+/**
  * @brief Sets the frequency at which the tracker will be invoked.
  * @param frequency the frequency for the halo tracker
  */

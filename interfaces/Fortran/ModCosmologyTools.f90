@@ -90,6 +90,19 @@ contains
 
 !-------------------------------------------------------------------------------
 ! Description:
+! Sets the analysis timesteps the cosmology tools library will execute
+!
+! IN tsteps -- user-supplied array of timte-stesp
+! IN N      -- the number of timesteps
+!-------------------------------------------------------------------------------
+  subroutine ModCosmologySetAnalysisTimesteps(tsteps,N)
+    implicit none
+    integer :: tsteps(:), N
+    call CosmologySetAnalysisTimeSteps(tsteps,N)
+  end subroutine ModCosmologySetAnalysisTimesteps
+
+!-------------------------------------------------------------------------------
+! Description:
 ! Sets the particles at the given timestep/redshift
 !
 ! IN tstep    -- the current discrete timestep

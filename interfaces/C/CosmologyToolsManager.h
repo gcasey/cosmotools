@@ -48,6 +48,14 @@ public:
   GetMacro(Particles,SimulationParticles*);
 
   /**
+   * @brief Sets the analysis timesteps explicitely.
+   * @param timeSteps user-supplied buffer of timesteps.
+   * @param numTimeSteps the number of time-steps.
+   */
+  void SetAnalysisTimeSteps(
+          INTEGER *timeSteps, INTEGER numTimeSteps);
+
+  /**
    * @brief Sets the particles at the given timeste/redshift.
    * @param tstep the current discrete time-step
    * @param redshift the redshift at the given time-step
@@ -90,6 +98,11 @@ protected:
   int Layout;
   MPI_Comm Communicator;
   bool EnableVis;
+
+  INTEGER *TimeSteps;
+  INTEGER NumTimeSteps;
+
+
   SimulationParticles *Particles;
 
   ForwardHaloTracker *HaloTracker;
