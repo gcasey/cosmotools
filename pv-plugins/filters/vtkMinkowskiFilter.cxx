@@ -16,7 +16,6 @@
 #include <vtkInformation.h>
 #include <vtkInformationVector.h>
 #include <vtkUnstructuredGrid.h>
-#include <vtkMultiProcessController.h>
 #include <vtkUnstructuredGrid.h>
 #include <vtkStreamingDemandDrivenPipeline.h>
 
@@ -138,7 +137,7 @@ void vtkMinkowskiFilter::compute_mf(vtkUnstructuredGrid *ugrid,
     G_array[i] = compute_G(X_array[i]);
     T_array[i] = compute_T(V_array[i], S_array[i]);
     B_array[i] = compute_B(S_array[i], C_array[i]);
-    T_array[i] = compute_L(C_array[i], G_array[i]);
+    L_array[i] = compute_L(C_array[i], G_array[i]);
     P_array[i] = compute_P(B_array[i], T_array[i]);
     F_array[i] = compute_F(B_array[i], L_array[i]);
   }
