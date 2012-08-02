@@ -98,6 +98,16 @@ protected:
                         // used to deal with artifacts on the periodic boundary.
 
   /**
+   * @brief Given the IDs of two tetrahedra, this methods returns true if their
+   * respective volumes have opposite signs.
+   * @param tetIdx1 the ID of the first tet
+   * @param tetIdx2 the ID of the second tet
+   * @return status true if the volumes of the two tets have opposite volume,
+   * else false.
+   */
+  bool VolumesHaveOppositeSigns(INTEGER tetIdx1, INTEGER tetIdx2);
+
+  /**
    * @brief Given the tet connectivity in langrangian space, this method returns
    * the xyz coordinates of the tet nodes in euler-space corresponding to the
    * user-supplied particles vector. If the tet is mapped successfully this
@@ -116,7 +126,13 @@ protected:
    */
   bool IsNodeWithinPeriodicBoundaryFringe( INTEGER nodeIdx );
 
+  // Mapping of global particle IDs to the particle storage locations in the
+  // user-supplied array.
   std::map< INTEGER, INTEGER > Global2PositionMap;
+
+  // Mapping of Langrange mesh entities (nodes/cells) to the euler mesh
+  std::map<INTEGER,INTEGER> LangrangeNode2EulerNode;
+  std::map< INTEGER, INTEGER > LangrangeTet2EulerTet;
 
   LangrangianTesselator *Langrange; // langrangian tesselator (computed)
 

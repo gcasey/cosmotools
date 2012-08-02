@@ -140,7 +140,8 @@ void StructureFormationProbe::BuildEulerMesh()
     "pre: Must construct a langrangian mesh first before an euler mesh!" &&
     (this->Langrange != NULL) );
 
-
+  this->LangrangeNode2EulerNode.clear();
+  this->LangrangeTet2EulerTet.clear();
   this->EulerMesh.Clear();
   this->Volumes.clear();
 
@@ -155,9 +156,6 @@ void StructureFormationProbe::BuildEulerMesh()
       this->EulerMesh.Stride*this->Langrange->GetNumTets());
   this->Volumes.reserve(this->Langrange->GetNumTets());
 
-  // Mapping of nodes on the langrange mesh to the euler mesh
-  std::map<INTEGER,INTEGER> LangrangeID2EulerMeshID;
-
   for(INTEGER idx=0; idx < this->Langrange->GetNumTets(); ++idx)
     {
     INTEGER tet[4];
@@ -169,10 +167,10 @@ void StructureFormationProbe::BuildEulerMesh()
       // Insert vertices & tetrahedra in the mesh
       for( int node=0; node < 4; ++node )
         {
-
         // Langrange index
         INTEGER lidx = tet[ node ];
-        if(LangrangeID2EulerMeshID.find(lidx)==LangrangeID2EulerMeshID.end())
+        if(this->LangrangeNode2EulerNode.find(lidx)==
+           this->LangrangeNode2EulerNode.end())
           {
           this->EulerMesh.Nodes.push_back(nodes[node*3]);
           this->EulerMesh.Nodes.push_back(nodes[node*3+1]);
@@ -180,16 +178,18 @@ void StructureFormationProbe::BuildEulerMesh()
 
           // Euler index
           INTEGER eidx = this->EulerMesh.GetNumberOfNodes()-1;
-          LangrangeID2EulerMeshID[ lidx ] = eidx;
+          this->LangrangeNode2EulerNode[ lidx ] = eidx;
           tet[ node ] = eidx;
           } // END if this node has not been mapped
         else
           {
-          tet[ node ] = LangrangeID2EulerMeshID[ lidx ];
+          tet[ node ] = this->LangrangeNode2EulerNode[ lidx ];
           } // END else if node has already been mapped
 
         this->EulerMesh.Connectivity.push_back( tet[ node ] );
         } // END for all tet nodes
+
+      this->LangrangeTet2EulerTet[idx]=this->EulerMesh.GetNumberOfCells()-1;
 
       // Compute the volume of the added tetrahedron
       this->Volumes.push_back(
@@ -204,7 +204,6 @@ void StructureFormationProbe::BuildEulerMesh()
 
     } // END for all langrangian tets
 
-  LangrangeID2EulerMeshID.clear();
 }
 
 //------------------------------------------------------------------------------
@@ -229,7 +228,96 @@ void StructureFormationProbe::GetEulerMesh(
 void StructureFormationProbe::ExtractCausticSurfaces(
         std::vector<REAL> &nodes, std::vector<INTEGER> &triangles)
 {
-  // TODO: implement this
+  // Sanity check
+  assert("pre: Must construct a langrangian mesh first before an euler mesh!"
+         && (this->Langrange != NULL) );
+
+  // STEP 0: Initialize supplied vectors
+  nodes.clear();
+  triangles.clear();
+
+  // STEP 1: Get Langrange Mesh faces
+  std::vector< INTEGER > faces;
+  this->Langrange->GetFaces( faces );
+
+  // STEP 2: Loop through Langrange mesh faces and determine if they correspond
+  // to a face on the caustics surface mesh.
+  std::vector<INTEGER> tets;
+  INTEGER face[3];
+  for(INTEGER fidx=0; fidx < faces.size()/3; ++fidx)
+    {
+    for( int node=0; node < 3; ++node )
+      {
+      face[node] = faces[fidx*3+node];
+      } // END for all face nodes
+
+    this->Langrange->GetAdjacentTets(face,tets);
+    assert("pre: face has more than 2 adjacent tets!" &&
+            (tets.size() >= 1) && (tets.size() <= 2) );
+
+    if( tets.size() != 2 )
+      {
+      // This is a boundary face, skip!
+      continue;
+      }
+
+    if( (this->LangrangeTet2EulerTet.find(tets[0])==
+         this->LangrangeTet2EulerTet.end()) ||
+        (this->LangrangeTet2EulerTet.find(tets[1]) ==
+         this->LangrangeTet2EulerTet.end()) )
+      {
+      // This face abutts a tet that wasn't mapped to the euler mesh, skip!
+      continue;
+      }
+
+    // Get the tet indices in the euler mesh
+    INTEGER tetIdx1 = this->LangrangeTet2EulerTet[tets[0]];
+    INTEGER tetIdx2 = this->LangrangeTet2EulerTet[tets[1]];
+
+    std::map<INTEGER,INTEGER> eulerMesh2CausticSurface;
+
+    if( this->VolumesHaveOppositeSigns(tetIdx1,tetIdx2) )
+      {
+      INTEGER t[3];
+      for( int tnode=0; tnode < 3; ++tnode)
+        {
+        assert("caustics surface mesh node cannot be found in Euler mesh!" &&
+                this->LangrangeNode2EulerNode.find(face[tnode]) !=
+                this->LangrangeNode2EulerNode.end());
+
+        // Get the node index w.r.t. the euler mesh
+        INTEGER nodeIdx = face[tnode];
+        //        INTEGER nodeIdx = this->LangrangeNode2EulerNode[face[tnode]];
+
+        if( eulerMesh2CausticSurface.find(nodeIdx) ==
+             eulerMesh2CausticSurface.end() )
+          {
+          nodes.push_back(this->EulerMesh.Nodes[nodeIdx*3 ]);
+          nodes.push_back(this->EulerMesh.Nodes[nodeIdx*3+1]);
+          nodes.push_back(this->EulerMesh.Nodes[nodeIdx*3+2]);
+          eulerMesh2CausticSurface[nodeIdx] = nodes.size()-1;
+          } // END if
+        t[tnode] = eulerMesh2CausticSurface[nodeIdx];
+        triangles.push_back( t[tnode] );
+        } // END for all tnodes
+
+      } // END if the volumes of the adjacent tets is opposite
+
+    } // END for all mesh faces
+}
+
+//------------------------------------------------------------------------------
+bool StructureFormationProbe::VolumesHaveOppositeSigns(
+        INTEGER tetIdx1, INTEGER tetIdx2)
+{
+  assert("pre: tet index 1 is out-of-bounds!" &&
+     (tetIdx1 >= 0) && (tetIdx1 < this->Volumes.size() ) );
+  assert("pre: tet index 2 is out-of-bounds!" &&
+     (tetIdx2 >= 0) && (tetIdx2 < this->Volumes.size() ) );
+
+  REAL v1 = this->Volumes[tetIdx1];
+  REAL v2 = this->Volumes[tetIdx2];
+  return( ((v1*v2) < 0.0f) );
 }
 
 } /* namespace cosmologytools */
