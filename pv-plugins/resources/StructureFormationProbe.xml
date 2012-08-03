@@ -43,6 +43,7 @@
 
     <IntVectorProperty name="Fringe"
                        label="Fringe"
+                       command="SetFringe"
                        number_of_elements="1"
                        default_values="1">
       <IntRangeDomain name="range" min="0" max="5" />
