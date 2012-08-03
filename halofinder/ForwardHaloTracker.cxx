@@ -80,6 +80,17 @@ void ForwardHaloTracker::RegisterParticles(
     INTEGER* id, INTEGER* mask, INTEGER* state,
     INTEGER N)
 {
+  // Sanity checks
+  assert("pre: x particles positions array is NULL!" && (px != NULL) );
+  assert("pre: y particles positions array is NULL!" && (py != NULL));
+  assert("pre: z particles positions array is NULL!" && (pz != NULL) );
+  assert("pre: vx paritlces velocities array is NULL!" && (vx != NULL) );
+  assert("pre: vy particles velocities array is NULL!" && (vy != NULL) );
+  assert("pre: vz particles velocities array is NULL!" && (vz != NULL) );
+  assert("pre: mass particles array is NULL!" && (mass != NULL) );
+  assert("pre: mask particles array is NULL!" && (mask != NULL) );
+  assert("pre: state particles arrray is NULL!" && (state != NULL) );
+
   if( this->IsTrackerTimeStep( tstep ) )
     {
     this->NumberOfParticles = N;
