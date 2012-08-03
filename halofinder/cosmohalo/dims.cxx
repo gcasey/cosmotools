@@ -17,7 +17,7 @@ int MY_Dims_init_3D(int nnodes, int ndim, int *dims) {
     tmp_nnodes *= dims[i];
   }
 
-  assert(tmp_nnodes = nnodes);
+  assert(tmp_nnodes == nnodes);
 
   dims_init = 1;
 
