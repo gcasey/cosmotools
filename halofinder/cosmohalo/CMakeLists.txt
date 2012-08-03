@@ -51,7 +51,6 @@ set(Cosmo_SOURCES
   dims.cxx
   FOFHaloProperties.cxx
   ForceLaw.cxx
-  ForceTree.cxx
   GridExchange.cxx
   HaloCenterFinder.cxx
   HaloFinderInput.cxx
@@ -60,7 +59,6 @@ set(Cosmo_SOURCES
   Partition.cxx
   ParticleDistribute.cxx
   ParticleExchange.cxx
-  RCBForceTree.cxx
   RCOForceTree.cxx
   SODHalo.cxx
   SubHaloFinder.cxx
