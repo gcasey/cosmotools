@@ -4,6 +4,7 @@
 #include "TetrahedronUtilities.h"
 
 // C++ includes
+#include <iostream>
 #include <cassert>
 #include <cmath>
 #include <cstdlib>
@@ -77,6 +78,32 @@ LangrangianTesselator* StructureFormationProbe::GetLangrangeTesselator()
 }
 
 //------------------------------------------------------------------------------
+bool StructureFormationProbe::IsNodeWithinFringeBounds(INTEGER nodeIdx)
+{
+  assert("pre: Langrange tesselator object is NULL" &&
+         (this->Langrange != NULL) );
+
+  INTEGER idx = this->Global2PositionMap[ nodeIdx ];
+
+  REAL pnt[3];
+  pnt[0] = this->Particles[idx*3];
+  pnt[1] = this->Particles[idx*3+1];
+  pnt[2] = this->Particles[idx*3+2];
+
+  std::cout << "FRINGE: " << this->Fringe << std::endl;
+  std::cout.flush();
+
+  REAL iBounds[6];
+  this->Langrange->GetBounds(iBounds,this->Fringe);
+
+  return(
+      (pnt[0] >= iBounds[0]) && (pnt[0] <= iBounds[1]) &&
+      (pnt[1] >= iBounds[2]) && (pnt[1] <= iBounds[3]) &&
+      (pnt[2] >= iBounds[4]) && (pnt[2] <= iBounds[5])
+      );
+}
+
+//------------------------------------------------------------------------------
 bool StructureFormationProbe::IsNodeWithinPeriodicBoundaryFringe(
           INTEGER nodeIdx )
 {
@@ -117,10 +144,14 @@ bool StructureFormationProbe::MapTetToEulerSpace(
       return false;
       }
 
-    if( this->IsNodeWithinPeriodicBoundaryFringe(tet[node]) )
+    if( !this->IsNodeWithinFringeBounds(tet[node]))
       {
       return false;
       }
+//    if( this->IsNodeWithinPeriodicBoundaryFringe(tet[node]) )
+//      {
+//      return false;
+//      }
 
     INTEGER ppos = this->Global2PositionMap[ tet[node] ];
     for( int dim=0; dim < 3; ++dim )

@@ -146,7 +146,7 @@ void LangrangianTesselator::BuildFaceAdjacency()
 }
 
 //------------------------------------------------------------------------------
-void LangrangianTesselator::GetBounds(REAL bounds[6])
+void LangrangianTesselator::GetBounds(REAL bounds[6], INTEGER fringe)
 {
   REAL min[3];
   INTEGER minijk[3];
@@ -154,14 +154,14 @@ void LangrangianTesselator::GetBounds(REAL bounds[6])
   REAL max[3];
   INTEGER maxijk[3];
 
-  minijk[0] = IMIN(this->Extent);
-  minijk[1] = JMIN(this->Extent);
-  minijk[2] = KMIN(this->Extent);
+  minijk[0] = IMIN(this->Extent)+fringe;
+  minijk[1] = JMIN(this->Extent)+fringe;
+  minijk[2] = KMIN(this->Extent)+fringe;
   this->GetPoint(minijk,min);
 
-  maxijk[0] = IMAX(this->Extent);
-  maxijk[1] = JMAX(this->Extent);
-  maxijk[2] = KMAX(this->Extent);
+  maxijk[0] = IMAX(this->Extent)-fringe;
+  maxijk[1] = JMAX(this->Extent)-fringe;
+  maxijk[2] = KMAX(this->Extent)-fringe;
   this->GetPoint(maxijk,max);
 
   bounds[0] = min[0];

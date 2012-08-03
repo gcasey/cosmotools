@@ -47,16 +47,17 @@ public:
   GetMacro(Extent,const INTEGER*);
 
   /**
-   * @brief Returns the total number of tetrahedra generate
+ * @brief Returns the total number of tetrahedra generate
    */
   GetMacro(NumTets,INTEGER);
 
   /**
    * @brief Returns the bounds of langrangian domain
    * @param bounds user-supplied array where the bounds will be stored
+   * @param fringe optional parameter to get interior fringe bounds
    * @note the bounds are stored [xmin xmax ymin ymax zmin zmax]
    */
-  void GetBounds(REAL bounds[6]);
+void GetBounds(REAL bounds[6], INTEGER fringe=0);
 
   /**
    * @brief Constructs the tesselation.
