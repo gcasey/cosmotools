@@ -34,15 +34,12 @@ set(Cosmo_LIBS  ${MPI_LIBRARIES})
 ## List of executables
 set(Cosmo_PROGRAMS
   BinHalos.cxx
-  ForceRandom.cxx
-  ForceSpeed.cxx
   NToN.cxx
   OneToN.cxx
   )
 
 ## Set cosmo sources
 set(Cosmo_SOURCES
-  BHForceTree.cxx
   BHTree.cxx
   bigchunk.cxx
   ChainingMesh.cxx
@@ -50,7 +47,6 @@ set(Cosmo_SOURCES
   CosmoHaloFinderP.cxx
   dims.cxx
   FOFHaloProperties.cxx
-  ForceLaw.cxx
   GridExchange.cxx
   HaloCenterFinder.cxx
   HaloFinderInput.cxx
@@ -59,7 +55,6 @@ set(Cosmo_SOURCES
   Partition.cxx
   ParticleDistribute.cxx
   ParticleExchange.cxx
-  RCOForceTree.cxx
   SODHalo.cxx
   SubHaloFinder.cxx
   Timer.cxx
