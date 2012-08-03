@@ -48,14 +48,20 @@ void CosmologyDisableVis();
  * @param vx x-component of the particle velocity vector
  * @param vy y-component of the particle velocity vector
  * @param vz z-component of the particle velocity vector
+ * @param mass the particles masses
+ * @param potential the particle potential
  * @param GlobalParticlesIds the global IDs of each particle
+ * @param mask the particles mask
+ * @param state the particles state
  * @param NumberOfParticles the total number of particles
  */
 void CosmologySetParticles(
       INTEGER *tstep, REAL *redshift,
       REAL *px, REAL *py, REAL *pz,
       REAL *vx, REAL *vy, REAL *vz,
+      REAL *mass, REAL *potential,
       INTEGER *GlobalParticlesIds,
+      INTEGER *mask, INTEGER *state,
       INTEGER *NumberOfParticles);
 
 /**

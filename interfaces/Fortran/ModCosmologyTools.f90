@@ -105,23 +105,27 @@ contains
 ! Description:
 ! Sets the particles at the given timestep/redshift
 !
-! IN tstep    -- the current discrete timestep
-! IN redshift -- the redshift at the given timestep
-! IN x        -- x-component of the particle position vector
-! IN y        -- y-component of the particle position vector
-! IN z        -- z-component of the particle position vector
-! IN vx       -- x-component of the particles velocity vector
-! IN vy       -- y-component of the particles velocity vector
-! IN vz       -- z-component of the particles velocity vector
-! IN ids      -- the global IDs of each particle
-! IN N        -- the total number of particles
+! IN tstep     -- the current discrete timestep
+! IN redshift  -- the redshift at the given timestep
+! IN x         -- x-component of the particle position vector
+! IN y         -- y-component of the particle position vector
+! IN z         -- z-component of the particle position vector
+! IN vx        -- x-component of the particles velocity vector
+! IN vy        -- y-component of the particles velocity vector
+! IN vz        -- z-component of the particles velocity vector
+! IN mass      -- particle masses
+! IN potential -- particle potential
+! IN ids       -- the global IDs of each particle
+! IN mask      -- particle mask
+! IN state     -- particle state
+! IN N         -- the total number of particles
 !-------------------------------------------------------------------------------
-  subroutine ModCosmologySetParticles(tstep,redshift,x,y,z,vx,vy,vz,ids,N)
+  subroutine ModCosmologySetParticles(tstep,redshift,x,y,z,vx,vy,vz,mass,potential,ids,mask,state,N)
     implicit none
-    integer :: tstep, N, ids(:)
-    real :: redshift, x(:), y(:), z(:), vx(:), vy(:), vz(:)
+    integer :: tstep, N, ids(:), mask(:), state(:)
+    real :: redshift, x(:), y(:), z(:), vx(:), vy(:), vz(:), mass(:), potential(:)
 
-    call CosmologySetParticles(tstep,redshift,x,y,z,vx,vy,vz,ids,N)
+    call CosmologySetParticles(tstep,redshift,x,y,z,vx,vy,vz,mass,potential,ids,mask,state,N)
   end subroutine ModCosmologySetParticles
 
 !-------------------------------------------------------------------------------

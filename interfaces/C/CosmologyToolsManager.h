@@ -72,7 +72,9 @@ public:
       INTEGER tstep, REAL redshift,
       REAL *px, REAL *py, REAL *pz,
       REAL *vx, REAL *vy, REAL *vz,
+      REAL *mass, REAL *potential,
       INTEGER *GlobalParticlesIds,
+      INTEGER *mask, INTEGER *state,
       INTEGER NumberOfParticles);
 
   /**

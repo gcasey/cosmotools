@@ -60,7 +60,10 @@ void CosmologyToolsManager::SetParticles(
     INTEGER tstep, REAL redshift,
     REAL *px, REAL *py, REAL *pz,
     REAL *vx, REAL *vy, REAL *vz,
+    REAL *mass, REAL *potential,
     INTEGER *GlobalParticlesIds,
+    INTEGER *mask,
+    INTEGER *state,
     INTEGER NumberOfParticles)
 {
   assert("pre: internal particles data is NULL" && (this->Particles!=NULL));
@@ -73,14 +76,18 @@ void CosmologyToolsManager::SetParticles(
   this->Particles->VX           = vx;
   this->Particles->VY           = vy;
   this->Particles->VZ           = vz;
+  this->Particles->Mass         = mass;
+  this->Particles->Potential    = potential;
   this->Particles->GlobalIds    = GlobalParticlesIds;
+  this->Particles->Mask         = mask;
+  this->Particles->State        = state;
   this->Particles->NumParticles = NumberOfParticles;
   this->Particles->AllocateHaloAndSubHaloArrays();
 
   this->HaloTracker->RegisterParticles(
       tstep,redshift,px,py,pz,
-      vx,vy,vz,NULL,NULL,
-      GlobalParticlesIds,NULL,NULL,
+      vx,vy,vz,mass,potential,
+      GlobalParticlesIds,mask,state,
       NumberOfParticles);
 }
 

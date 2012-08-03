@@ -59,14 +59,19 @@ void CosmologySetParticles(
     INTEGER *tstep, REAL *redshift,
     REAL *px, REAL *py, REAL *pz,
     REAL *vx, REAL *vy, REAL *vz,
+    REAL *mass, REAL *potential,
     INTEGER *GlobalParticlesIds,
+    INTEGER *mask,
+    INTEGER *state,
     INTEGER *NumberOfParticles)
 {
   assert("pre: CosmoToolsManager is NULL" && (CosmoToolsManager != NULL) );
   CosmoToolsManager->SetParticles(
       *tstep, *redshift,
       px, py,pz, vx,vy,vz,
+      mass, potential,
       GlobalParticlesIds,
+      mask, state,
       *NumberOfParticles );
 }
 

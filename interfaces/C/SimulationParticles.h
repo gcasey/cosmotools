@@ -40,7 +40,14 @@ public:
   REAL *VX;             /** vx-component of the particles position vector */
   REAL *VY;             /** vy-component of the particles position vector */
   REAL *VZ;             /** vz-component of the particles position vector */
+  REAL *Mass;           /** particle masses */
+  REAL *Potential;      /** particle potential */
   INTEGER *GlobalIds;   /** list of global ids */
+
+  // TODO: Are both mask & state arrays needed?
+  INTEGER *Mask;        /** particle mask array */
+  INTEGER *State;       /** particle state array? */
+
   INTEGER NumParticles; /** the total number of particles */
 
   INTEGER *HaloTags;    /** List of halo ids for each particle (computed) */
