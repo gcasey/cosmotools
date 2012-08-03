@@ -286,8 +286,7 @@ void StructureFormationProbe::ExtractCausticSurfaces(
                 this->LangrangeNode2EulerNode.end());
 
         // Get the node index w.r.t. the euler mesh
-        INTEGER nodeIdx = face[tnode];
-        //        INTEGER nodeIdx = this->LangrangeNode2EulerNode[face[tnode]];
+       INTEGER nodeIdx = this->LangrangeNode2EulerNode[face[tnode]];
 
         if( eulerMesh2CausticSurface.find(nodeIdx) ==
              eulerMesh2CausticSurface.end() )
@@ -295,7 +294,7 @@ void StructureFormationProbe::ExtractCausticSurfaces(
           nodes.push_back(this->EulerMesh.Nodes[nodeIdx*3 ]);
           nodes.push_back(this->EulerMesh.Nodes[nodeIdx*3+1]);
           nodes.push_back(this->EulerMesh.Nodes[nodeIdx*3+2]);
-          eulerMesh2CausticSurface[nodeIdx] = nodes.size()-1;
+          eulerMesh2CausticSurface[nodeIdx] = (nodes.size()/3)-1;
           } // END if
         t[tnode] = eulerMesh2CausticSurface[nodeIdx];
         triangles.push_back( t[tnode] );

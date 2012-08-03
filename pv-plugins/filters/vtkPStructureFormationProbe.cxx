@@ -355,7 +355,7 @@ void vtkPStructureFormationProbe::ExtractCausticSurfaces(
 
   vtkPoints *meshNodes       = vtkPoints::New();
   meshNodes->SetNumberOfPoints(nodes.size());
-  for(vtkIdType nodeIdx=0; nodeIdx < nodes.size(); ++nodeIdx)
+  for(vtkIdType nodeIdx=0; nodeIdx < nodes.size()/3; ++nodeIdx)
     {
     meshNodes->SetPoint(nodeIdx,&nodes[nodeIdx*3]);
     }
