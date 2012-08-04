@@ -18,6 +18,7 @@
 #include <vtkUnstructuredGrid.h>
 #include <vtkUnstructuredGrid.h>
 #include <vtkStreamingDemandDrivenPipeline.h>
+#include <vtkObjectFactory.h>
 
 #include <vtkSmartPointer.h>
 #define VTK_CREATE(type, name) \
