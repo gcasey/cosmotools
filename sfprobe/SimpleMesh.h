@@ -54,6 +54,20 @@ public:
     }
 
   /**
+   * @brief
+   * @param pntIdx
+   * @param pnt
+   */
+  void GetNode(INTEGER pntIdx, REAL pnt[3]);
+
+  /**
+   * @brief Returns the IDs of the cell corresponding to the given cell index.
+   * @param cellIdx the index of the cell
+   * @param cellIds the IDs of the cell
+   */
+  void GetCell( INTEGER cellIdx, std::vector<INTEGER> &cellIds);
+
+  /**
    * @brief Clears all data of this mesh.
    * @post this->Empty()==true.
    */
