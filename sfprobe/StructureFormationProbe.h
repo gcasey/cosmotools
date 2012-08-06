@@ -119,8 +119,8 @@ protected:
   bool MapTetToEulerSpace(INTEGER tet[4], REAL nodes[12]);
 
   /**
-   * @brief Checks if the node is within an interior box constructed based on the
-   * langrangian grid box extent domain.
+   * @brief Checks if the node is within an interior box constructed based on
+   * the langrangian grid box extent domain.
    * @param nodeIdx
    * @return
    */
