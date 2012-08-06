@@ -2,6 +2,7 @@
 
 #include "ExtentUtilities.h"
 #include "TetrahedronUtilities.h"
+#include "VirtualGrid.h"
 
 // C++ includes
 #include <iostream>
@@ -19,6 +20,7 @@ StructureFormationProbe::StructureFormationProbe()
   this->Particles    = NULL;
   this->GlobalIds    = NULL;
   this->Langrange    = NULL;
+  this->VGrid        = NULL;
   this->NumParticles = 0;
   this->Fringe       = 1;
 }
@@ -30,6 +32,12 @@ StructureFormationProbe::~StructureFormationProbe()
     {
     delete this->Langrange;
     }
+
+  if( this->VGrid != NULL )
+    {
+    delete this->VGrid;
+    }
+
   this->EulerMesh.Clear();
   this->Volumes.clear();
 }
@@ -235,13 +243,87 @@ void StructureFormationProbe::BuildEulerMesh()
 
     } // END for all langrangian tets
 
+  // Build virtual-grid that covers for this euler mesh instance
+  this->BuildVirtualGrid();
 }
 
 //------------------------------------------------------------------------------
-INTEGER StructureFormationProbe::GetNumberOfStreams(REAL pnt[3])
+void StructureFormationProbe::BuildVirtualGrid()
 {
-  // TODO: implement this
-  return 0;
+  assert( "pre: Langrangian mesh must be constructed!" &&
+          (this->Langrange != NULL) );
+
+  if( this->VGrid != NULL )
+    {
+    delete this->VGrid;
+    }
+
+  INTEGER dims[3];
+  ExtentUtilities::GetExtentDimensions(
+      const_cast<INTEGER*>(this->Langrange->GetExtent()),dims);
+
+  this->VGrid = new VirtualGrid();
+  this->VGrid->SetDimensions(dims);
+  this->VGrid->RegisterMesh(this->EulerMesh);
+}
+
+//------------------------------------------------------------------------------
+void StructureFormationProbe::ProbePoint(
+    REAL pnt[3], INTEGER &nStreams, REAL &rho)
+{
+  // STEP 0: If a virtual grid is not built, build it
+  if( this->VGrid == NULL )
+    {
+    this->BuildVirtualGrid();
+    }
+
+  // STEP 1: Initialize output variables
+  nStreams = 0;
+  rho      = 0.0;
+
+  REAL volumeSum = 0.0; // sum of all tet volumes containing the point, needed
+                        // to compute rho
+
+  // STEP 2: Get the candidate cells for the given point
+  std::vector<INTEGER> tets;
+  this->VGrid->GetCandidateCellsForPoint(pnt,tets);
+
+  // STEP 3: Loop through all candidate cells and:
+  // (1) Compute the number of streams
+  // (2) Compute the local density, rho
+  for(unsigned int t=0; t < tets.size(); ++t)
+    {
+    INTEGER tetIdx = tets[ t ];
+    if( this->PointInTet(pnt,tetIdx) )
+      {
+      ++nStreams;
+      volumeSum += this->Volumes[tetIdx];
+      }
+    } // END for all candidate cells
+
+  // STEP 4: If the number of streams is greater than 1, compute rho
+  if( nStreams > 0 )
+    {
+    rho = ( volumeSum/static_cast<REAL>(nStreams) );
+    }
+
+}
+
+//------------------------------------------------------------------------------
+bool StructureFormationProbe::PointInTet(REAL pnt[3], INTEGER tetIdx)
+{
+  // STEP 0: Get the coordinates of the tetrahderon nodes
+  REAL V0[3]; REAL V1[3]; REAL V2[3]; REAL V3[3];
+  this->EulerMesh.GetTetNodes(tetIdx,V0,V1,V2,V3);
+
+  // STEP 1: Check if the point is inside the tet. First do a fast approximate
+  // bounding-box test and if that passes, do the more expensive HasPoint test
+  if( TetrahedronUtilities::PointInTetBoundingBox(pnt,V0,V1,V2,V3) &&
+      TetrahedronUtilities::HasPoint(pnt,V0,V1,V2,V3) )
+    {
+    return true;
+    }
+  return false;
 }
 
 //------------------------------------------------------------------------------

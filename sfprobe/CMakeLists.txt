@@ -19,6 +19,7 @@ set(SOURCES
     SimpleMesh.cxx
     StructureFormationProbe.cxx
     TetrahedronUtilities.cxx
+    VirtualGrid.cxx
     )
 
 ## Move header files to include directory in the build tree
