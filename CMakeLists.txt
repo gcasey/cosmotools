@@ -90,8 +90,15 @@ set(cosmopackages
     tess
     mergertree
     interfaces
-    pv-plugins
     )
+
+option(BUILD_PV_PLUGINS "Build ParaView Plugins" OFF)
+if(${BUILD_PV_PLUGINS})
+ set(cosmopackages
+     ${cosmopackages}
+     pv-plugins
+     )
+endif()
 
 ## Loop through all packages
 set(emptyList)
