@@ -59,6 +59,13 @@ public:
       INTEGER idx, INTEGER ext[6], INTEGER ijk[3]);
 
   /**
+   * @brief Returns the dimensions of the grid of the corresponding extent.
+   * @param ext the extent of the grid (in)
+   * @param dims the dimensions of the grid (out)
+   */
+  static void GetExtentDimensions(INTEGER ext[6],INTEGER dims[3]);
+
+  /**
    * @brief Computes the number of nodes in the given extent.
    * @param ext the user-supplied extent.
    * @return N the number of nodes in the grid corresponding to the given

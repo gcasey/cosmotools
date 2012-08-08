@@ -75,6 +75,18 @@ void ExtentUtilities::GetStructuredCoordinates(
 }
 
 //------------------------------------------------------------------------------
+void ExtentUtilities::GetExtentDimensions(INTEGER ext[6], INTEGER dim[3])
+{
+  assert("pre: given extent must be a 3-D extent" &&
+          ExtentUtilities::Is3DExtent(ext));
+
+  for( int i=0; i < 3; ++i )
+    {
+    dim[i] = ext[i*2+1]-ext[i*2]+1;
+    } // END for all dimensions
+}
+
+//------------------------------------------------------------------------------
 INTEGER ExtentUtilities::ComputeNumberOfNodes( int ext[6] )
 {
   assert( "pre: given extent must be a 3-D extent" &&
