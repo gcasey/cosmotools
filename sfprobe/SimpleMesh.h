@@ -54,9 +54,15 @@ public:
     }
 
   /**
-   * @brief
-   * @param pntIdx
-   * @param pnt
+   * @brief Computes the bounds of the mesh
+   * @param bounds array storing [xmin,xmax,ymin,ymax,zmin,zmax]
+   */
+  void GetMeshBounds(REAL bounds[6]);
+
+  /**
+   * @brief Returns the cartesian coordinates of the node at the given index.
+   * @param pntIdx the index of the node in query (in)
+   * @param pnt the cartesian nodes of the point (out)
    */
   void GetNode(INTEGER pntIdx, REAL pnt[3]);
 
@@ -65,7 +71,7 @@ public:
    * @param cellIdx the index of the cell
    * @param cellIds the IDs of the cell
    */
-  void GetCell( INTEGER cellIdx, std::vector<INTEGER> &cellIds);
+  void GetCell(INTEGER cellIdx, std::vector<INTEGER> &cellIds);
 
   /**
    * @brief Clears all data of this mesh.

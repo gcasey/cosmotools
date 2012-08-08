@@ -1,5 +1,6 @@
 #include "SimpleMesh.h"
 
+#include <limits>
 #include <cassert>
 
 namespace cosmologytools {
@@ -40,5 +41,36 @@ void SimpleMesh::GetNode(INTEGER pntIdx, REAL pnt[3])
   pnt[1] = this->Nodes[ pntIdx*3+1];
   pnt[2] = this->Nodes[ pntIdx*3+2];
 }
+
+//------------------------------------------------------------------------------
+void SimpleMesh::GetMeshBounds(REAL bounds[6])
+{
+
+ // Initialize bounds
+ bounds[0] = std::numeric_limits<REAL>::max(); // xmin
+ bounds[1] = std::numeric_limits<REAL>::min(); // xmax
+ bounds[2] = std::numeric_limits<REAL>::max(); // ymin
+ bounds[3] = std::numeric_limits<REAL>::min(); // ymax
+ bounds[4] = std::numeric_limits<REAL>::max(); // zmin
+ bounds[5] = std::numeric_limits<REAL>::min(); // zmax
+
+ REAL pnt[3];
+ for(INTEGER node=0; node < this->GetNumberOfNodes(); ++node)
+   {
+   this->GetNode(node,pnt);
+   for( int i=0; i < 3; ++i )
+     {
+     if(pnt[i] < bounds[i*2])
+       {
+       bounds[i*2] = pnt[i];
+       }
+     else if(pnt[i] > bounds[i*2+1])
+       {
+       bounds[i*2+1] = pnt[i];
+       }
+     } // END for all dimensions
+   } // END for all nodes
+}
+
 
 } /* namespace cosmologytools */
