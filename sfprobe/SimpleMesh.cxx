@@ -32,6 +32,43 @@ void SimpleMesh::GetCell(INTEGER cellIdx, std::vector<INTEGER> &cellIds)
 }
 
 //------------------------------------------------------------------------------
+void SimpleMesh::GetTriangleNodes(
+      INTEGER cellIdx,REAL V0[3],REAL V1[3], REAL V2[3])
+{
+  assert("pre: cellIdx is out-of-bounds!" &&
+         (cellIdx >= 0) && (cellIdx < this->GetNumberOfCells()));
+  assert("pre: stride must equal 3, not a triangular mesh" &&
+         (this->Stride == 3));
+
+  std::vector<INTEGER> cellIds;
+  this->GetCell( cellIdx, cellIds );
+  assert("pre: cellIds.size()==3" && (cellIds.size()==3) );
+
+  this->GetNode(cellIds[0],V0);
+  this->GetNode(cellIds[1],V1);
+  this->GetNode(cellIds[2],V2);
+}
+
+//------------------------------------------------------------------------------
+void SimpleMesh::GetTetNodes(
+      INTEGER cellIdx,REAL V0[3],REAL V1[3],REAL V2[3],REAL V3[3])
+{
+  assert("pre: cellIdx is out-of-bounds!" &&
+         (cellIdx >= 0) && (cellIdx < this->GetNumberOfCells()));
+  assert("pre: stride must equal 4, not a tetrahedral mesh" &&
+         (this->Stride == 4));
+
+  std::vector<INTEGER> cellIds;
+  this->GetCell( cellIdx, cellIds );
+  assert("pre: cellIds.size()==4" && (cellIds.size()==4) );
+
+  this->GetNode(cellIds[0],V0);
+  this->GetNode(cellIds[1],V1);
+  this->GetNode(cellIds[2],V2);
+  this->GetNode(cellIds[3],V3);
+}
+
+//------------------------------------------------------------------------------
 void SimpleMesh::GetNode(INTEGER pntIdx, REAL pnt[3])
 {
   assert("pre: pntIdx is out-of-bounds!" &&

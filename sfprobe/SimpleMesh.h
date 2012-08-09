@@ -74,6 +74,31 @@ public:
   void GetCell(INTEGER cellIdx, std::vector<INTEGER> &cellIds);
 
   /**
+   * @brief A convenience method to return the coordinates of the triangle nodes
+   * @param cellIdx the index of the triangle cell (in)
+   * @param V0 xyz coordinates of node 0 (out)
+   * @param V1 xyz coordinates of node 1 (out)
+   * @param V2 xyz coordinates of node 2 (out)
+   * @pre (cellIdx >= 0) && (cellIdx < this->GetNumberOfCells)
+   * @pre (this->Stride == 3) i.e., the mesh must be triangular
+   */
+  void GetTriangleNodes(
+      INTEGER cellIdx, REAL V0[3], REAL V1[3], REAL V2[3]);
+
+  /**
+   * @brief A convenience method to return the coordinates of the tet nodes
+   * @param cellIdx the index of the tetrahedron cell (in)
+   * @param V0 xyz coordinates of node 0 (out)
+   * @param V1 xyz coordinates of node 1 (out)
+   * @param V2 xyz coordinates of node 2 (out)
+   * @param V3 xyz coordinates of node 3 (out)
+   * @pre (cellIdx >= 0) && (cellIdx < this->GetNumberOfCells)
+   * @pre (this->Stride == 4) i.e., the mesh must be a tetrahedral mesh
+   */
+  void GetTetNodes(
+     INTEGER cellIdx, REAL V0[3], REAL V1[3], REAL V2[3], REAL V3[3]);
+
+  /**
    * @brief Clears all data of this mesh.
    * @post this->Empty()==true.
    */
