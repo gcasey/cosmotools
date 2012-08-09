@@ -20,6 +20,93 @@ TetrahedronUtilities::~TetrahedronUtilities()
 }
 
 //-----------------------------------------------------------------------------
+#define CHECK_POINT(V,bounds) {     \
+    for(int i=0; i < 3; ++i) {      \
+      if(V[i] < bounds[i*2])         \
+        bounds[i*2]=V[i];            \
+      else if(V[i] > bounds[i*2+1]) \
+        bounds[i*2+1]=V[i];          \
+    } /* END for all dimensions */   \
+}
+
+bool TetrahedronUtilities::PointInTetBoundingBox(
+    REAL pnt[3],REAL V0[3],REAL V1[3], REAL V2[3], REAL V3[3])
+{
+    // STEP 0: Initialize bounds
+    REAL bounds[6];
+    for( int i=0; i < 3; ++i )
+      {
+      bounds[i*2]=bounds[i*2+1]=V0[i];
+      } // END for all dimensions
+
+    // STEP 1: Compute bounding box
+    CHECK_POINT(V1,bounds);
+    CHECK_POINT(V2,bounds);
+    CHECK_POINT(V3,bounds);
+
+    // STEP 2: Check if the point is inside the bounding-box
+    for( int i=0; i < 3; ++i )
+      {
+      if( (pnt[i] < bounds[i*2]) || (pnt[i] > bounds[i*2+1]) )
+        return false;
+      } // END for all dimensions
+
+    return true;
+}
+
+//-----------------------------------------------------------------------------
+bool TetrahedronUtilities::HasPoint(
+    REAL pnt[3],REAL V0[3],REAL V1[3], REAL V2[3], REAL V3[3])
+{
+  bool status = false;
+
+  REAL d0 = TetrahedronUtilities::Determinant(
+                V0[0],V1[0],V2[0],V3[0],
+                V0[1],V1[1],V2[1],V3[1],
+                V0[2],V1[2],V2[2],V3[2],
+                1.,1.,1.,1.
+                );
+
+  REAL d1 = TetrahedronUtilities::Determinant(
+              pnt[0],V1[0],V2[0],V3[0],
+              pnt[1],V1[1],V2[1],V3[1],
+              pnt[2],V1[2],V2[2],V3[2],
+              1.,1.,1.,1.
+              );
+
+  REAL d2 = TetrahedronUtilities::Determinant(
+              V0[0],pnt[0],V2[0],V3[0],
+              V0[1],pnt[1],V2[1],V3[1],
+              V0[2],pnt[2],V2[2],V3[2],
+              1.,1.,1.,1.
+              );
+
+  REAL d3 = TetrahedronUtilities::Determinant(
+              V0[0],V1[0],pnt[0],V3[0],
+              V0[1],V1[1],pnt[1],V3[1],
+              V0[2],V1[2],pnt[2],V3[2],
+              1.,1.,1.,1.
+              );
+
+  REAL d4 = TetrahedronUtilities::Determinant(
+              V0[0],V1[0],V2[0],pnt[0],
+              V0[1],V1[1],V2[1],pnt[1],
+              V0[2],V1[2],V2[2],pnt[2],
+              1.,1.,1.,1.
+              );
+
+  if(TetrahedronUtilities::SameSign(d0,d1) &&
+     TetrahedronUtilities::SameSign(d1,d2) &&
+     TetrahedronUtilities::SameSign(d2,d3) &&
+     TetrahedronUtilities::SameSign(d3,d4) )
+    {
+    status = true;
+    }
+
+  return status;
+}
+
+//-----------------------------------------------------------------------------
 REAL TetrahedronUtilities::ComputeVolume(
       REAL v0[3], REAL v1[3], REAL v2[3], REAL v3[3] )
 {
