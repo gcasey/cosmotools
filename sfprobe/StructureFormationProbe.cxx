@@ -297,7 +297,7 @@ void StructureFormationProbe::ProbePoint(
     if( this->PointInTet(pnt,tetIdx) )
       {
       ++nStreams;
-      volumeSum += this->Volumes[tetIdx];
+      volumeSum += std::fabs(this->Volumes[tetIdx]);
       }
     } // END for all candidate cells
 
