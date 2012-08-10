@@ -56,6 +56,18 @@ void VirtualGrid::RegisterMesh(SimpleMesh &M)
         static_cast<INTEGER>(std::ceil(distance/this->Dimensions[i]));
     } // END for all dimensions
 
+//  std::cout << "VIRTUAL GRID PARAMETERS:";
+//  std::cout << "\nX-BOUNDS: " << this->Bounds[0] << " - " << this->Bounds[1];
+//  std::cout << "\nY-BOUNDS: " << this->Bounds[2] << " - " << this->Bounds[3];
+//  std::cout << "\nZ-BOUNDS: " << this->Bounds[4] << " - " << this->Bounds[5];
+//  std::cout << "\nX-SPACING:" << this->Spacing[0];
+//  std::cout << "\nY-SPACING: " << this->Spacing[1];
+//  std::cout << "\nZ-SPACING: " << this->Spacing[2];
+//  std::cout << "\nDIMS:" << this->Dimensions[0] << " ";
+//  std::cout << this->Dimensions[1] << " " << this->Dimensions[2];
+//  std::cout << std::endl;
+//  std::cout.flush();
+
   // STEP 2: Allocate buckets
   INTEGER ext[6];
   this->GetExtent( ext );
@@ -73,19 +85,20 @@ void VirtualGrid::RegisterMesh(SimpleMesh &M)
 }
 
 //-----------------------------------------------------------------------------
-#define PROCESSNODE(V,min,max) {          \
-  INTEGER nodeijk[3];                      \
-  if( this->FindBucket(V,nodeijk)) {      \
-    for(int dim=0; dim < 3; ++dim) {      \
-      if( nodeijk[dim] < min[dim])        \
-        min[dim] = nodeijk[dim];          \
-      else if( nodeijk[dim] > max[dim])  \
-        max[dim] = nodeijk[dim];          \
-    } /* END for */                       \
-  }  /* END if */                         \
-  else {                                 \
-    return false;                       \
-  }                                       \
+#define PROCESSNODE(V,min,max) {                          \
+  INTEGER nodeijk[3];                                      \
+  if( this->FindBucket(V,nodeijk)) {                      \
+    for(int dim=0; dim < 3; ++dim) {                      \
+      if( nodeijk[dim] < min[dim])                        \
+        min[dim] = nodeijk[dim];                          \
+      else if( nodeijk[dim] > max[dim])                  \
+        max[dim] = nodeijk[dim];                          \
+    } /* END for */                                       \
+  }  /* END if */                                         \
+  else {                                                 \
+    std::cerr << "Cell node outside of virtual grid!\n"; \
+    return false;                                       \
+  }                                                      \
 }
 
 bool VirtualGrid::InjectCell(INTEGER cellIdx, SimpleMesh &M)
@@ -186,14 +199,16 @@ bool VirtualGrid::FindBucket(REAL pnt[3], INTEGER ijk[3])
     if( d[i] < 0.0 )
       {
       // pnt is outside virtual grid
+      std::cout << std::endl;
       return false;
       }
     ijk[i] = static_cast<INTEGER>(std::floor((d[i]/this->Spacing[i])));
-    if( !this->WithinCellExtent(ijk) )
-      {
-      return false;
-      }
     } // END for all directions
+
+  if( !this->WithinCellExtent(ijk) )
+    {
+    return false;
+    }
   return true;
 }
 
