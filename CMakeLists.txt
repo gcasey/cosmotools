@@ -92,6 +92,18 @@ set(cosmopackages
     interfaces
     )
 
+## Sets whether or not VTK programs will be built
+option(BUILD_VTK_PROGRAMS "Build VTK Programs" OFF)
+if(${BUILD_VTK_PROGRAMS})
+ find_package(VTK COMPONENTS
+    vtkCommonDataModel
+    vtkFiltersCosmo
+    )
+ set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS ${VTK_DEFINITIONS})
+ include_directories(SYSTEM ${VTK_INCLUDE_DIRS})
+endif()
+
+## Sets whetther or not ParaView plugins will be built
 option(BUILD_PV_PLUGINS "Build ParaView Plugins" OFF)
 if(${BUILD_PV_PLUGINS})
  set(cosmopackages
