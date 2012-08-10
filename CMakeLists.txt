@@ -98,6 +98,7 @@ if(${BUILD_VTK_PROGRAMS})
  find_package(VTK COMPONENTS
     vtkCommonDataModel
     vtkFiltersCosmo
+    vtkIOXML
     )
  set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS ${VTK_DEFINITIONS})
  include_directories(SYSTEM ${VTK_INCLUDE_DIRS})

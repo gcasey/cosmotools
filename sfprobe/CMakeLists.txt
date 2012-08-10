@@ -36,5 +36,4 @@ else()
 endif()
 target_link_libraries(sfprobe ${MPI_LIBRARIES})
 
-add_executable(sfprobe.app sfprobe.cxx)
-target_link_libraries(sfprobe.app sfprobe ${MPI_LIBRARIES})
+add_subdirectory(executables)
