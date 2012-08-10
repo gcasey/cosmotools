@@ -40,6 +40,7 @@
 class vtkInformation;
 class vtkInformationVector;
 class vtkMultiProcessController;
+class vtkUniformGrid;
 class vtkUnstructuredGrid;
 
 class VTK_EXPORT vtkPStructureFormationProbe :
@@ -80,6 +81,11 @@ public:
   // Set/Get whether or not to shift the global numbering to start from 0.
   vtkSetMacro(ShiftGlobalNumberingToZero,int);
   vtkGetMacro(ShiftGlobalNumberingToZero,int);
+
+  // Description:
+  // Set/Get whether to probe the langrangian mesh.
+  vtkSetMacro(ProbeLangrangianMesh,int);
+  vtkGetMacro(ProbeLangrangianMesh,int);
 
 protected:
   vtkPStructureFormationProbe();
@@ -127,12 +133,17 @@ protected:
         vtkUnstructuredGrid *tesselation,
         vtkUnstructuredGrid *caustics);
 
+  // Description:
+  // Probes the langrangian grid on the euler mesh and computes the number of
+  // streams and local density at each grid point.
+  void ProbeGrid(vtkUniformGrid *probeGrid);
 
   // User-supplied parameters
   int DomainSpace;
   int ShiftGlobalNumberingToZero;
   int Extent[6];
   int Fringe;
+  int ProbeLangrangianMesh;
 
   // Computed ivars
   double Bounds[6];

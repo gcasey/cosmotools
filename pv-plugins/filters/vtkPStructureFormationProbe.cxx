@@ -11,13 +11,16 @@
 #include "vtkObjectFactory.h"
 #include "vtkPointData.h"
 #include "vtkPoints.h"
+#include "vtkStreamingDemandDrivenPipeline.h"
 #include "vtkStructuredData.h"
+#include "vtkUniformGrid.h"
 #include "vtkUnstructuredGrid.h"
 
 
 // sfprobe includes
 #include "ExtentUtilities.h"
 #include "TetrahedronUtilities.h"
+#include "LangrangianTesselator.h"
 
 // C/C++ includes
 #include <cassert>
@@ -38,10 +41,11 @@ vtkPStructureFormationProbe::vtkPStructureFormationProbe()
   this->N                          = 0;
   this->ShiftGlobalNumberingToZero = 1;
   this->Fringe                     = 1;
+  this->ProbeLangrangianMesh       = 1;
 
   this->Controller = vtkMultiProcessController::GetGlobalController();
   this->SetNumberOfInputPorts(1);
-  this->SetNumberOfOutputPorts(2);
+  this->SetNumberOfOutputPorts(3);
 }
 
 //------------------------------------------------------------------------------
@@ -81,10 +85,21 @@ int vtkPStructureFormationProbe::FillInputPortInformation(
 
 //------------------------------------------------------------------------------
 int vtkPStructureFormationProbe::FillOutputPortInformation(
-                                  int vtkNotUsed(port), vtkInformation *info)
+                                  int port, vtkInformation *info)
 {
   assert( "pre: info is NULL" && (info != NULL) );
-  info->Set(vtkDataObject::DATA_TYPE_NAME(),"vtkUnstructuredGrid");
+  switch( port )
+    {
+    case 0:
+    case 1:
+      info->Set(vtkDataObject::DATA_TYPE_NAME(),"vtkUnstructuredGrid");
+      break;
+    case 2:
+      info->Set(vtkDataObject::DATA_TYPE_NAME(),"vtkUniformGrid");
+      break;
+    default:
+      vtkErrorMacro("output port index out-of-bounds!");
+    }
   return 1;
 }
 
@@ -115,6 +130,13 @@ int vtkPStructureFormationProbe::RequestData(
       vtkUnstructuredGrid::SafeDownCast(
           output2->Get( vtkDataObject::DATA_OBJECT() ) );
 
+  // STE 3: Get 3rd output (probe grid)
+  vtkInformation *output3 = outputVector->GetInformationObject( 2 );
+  assert( "pre: output information object is NULL" && (output3 != NULL) );
+  vtkUniformGrid *probedGrid =
+      vtkUniformGrid::SafeDownCast(
+            output3->Get(vtkDataObject::DATA_OBJECT() ) );
+
   // STEP 3: Extract input deck to the structure formation probe code
   this->ExtractInputDeck( particles );
   if( this->SFProbe == NULL )
@@ -131,6 +153,14 @@ int vtkPStructureFormationProbe::RequestData(
 
   // STEP 6: Extract the caustic surfaces
   this->ExtractCausticSurfaces(particles, tesselation, caustics);
+
+  // STEP 7: Probe grid
+  this->ProbeGrid( probedGrid );
+  // set some image pipeline keys
+  output3->Set(vtkDataObject::ORIGIN(),probedGrid->GetOrigin(),3);
+  output3->Set(vtkDataObject::SPACING(),probedGrid->GetSpacing(),3);
+  output3->Set(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),
+                  probedGrid->GetExtent(),6);
 
   this->Controller->Barrier();
   return 1;
@@ -256,6 +286,82 @@ void vtkPStructureFormationProbe::GetLangrangianMesh(
 }
 
 //------------------------------------------------------------------------------
+void vtkPStructureFormationProbe::ProbeGrid(vtkUniformGrid *probeGrid)
+{
+  assert("pre: Structure formation probe is NULL" && (this->SFProbe != NULL));
+  assert("pre: probe grid should not be NULL" && (probeGrid != NULL) );
+
+  if( this->ProbeLangrangianMesh != 1 )
+    {
+    return;
+    }
+
+  // STEP 0: Get langrangian grid parameters, origin, spacing etc.
+  double origin[3];
+  double spacing[3];
+  int ext[6];
+  int dims[3];
+
+  cosmologytools::LangrangianTesselator *langrangianMesh =
+                            this->SFProbe->GetLangrangeTesselator();
+  assert("pre: langrangian mesh should not be NULL!" &&
+          (langrangianMesh != NULL) );
+
+  for( int i=0; i < 3; ++i )
+    {
+    spacing[i]   = langrangianMesh->GetSpacing()[i];
+    origin[i]    = langrangianMesh->GetOrigin()[i];
+    ext[ i*2   ] = langrangianMesh->GetExtent()[i*2];
+    ext[ i*2+1 ] = langrangianMesh->GetExtent()[i*2+1];
+    }
+
+  // STEP 1: Construct probe grid
+  probeGrid->SetOrigin(origin);
+  probeGrid->SetSpacing(spacing);
+  probeGrid->SetExtent(ext);
+
+  // STEP 2: Create arrays to store the number of streams and the local
+  // density rho
+  vtkIntArray *numberOfStreams = vtkIntArray::New();
+  numberOfStreams->SetName("NumberOfStreams");
+  numberOfStreams->SetNumberOfComponents( 1 );
+  numberOfStreams->SetNumberOfTuples( probeGrid->GetNumberOfPoints() );
+  int *nstreamPtr = numberOfStreams->GetPointer(0);
+
+  vtkDoubleArray *rho = vtkDoubleArray::New();
+  rho->SetName("rho");
+  rho->SetNumberOfComponents( 1 );
+  rho->SetNumberOfTuples( probeGrid->GetNumberOfPoints() );
+  double *rhoPtr = rho->GetPointer(0);
+
+  // STEP 3: Loop through each grid point and probe it on the euler mesh
+  vtkIdType pntIdx = 0;
+  for( ; pntIdx < probeGrid->GetNumberOfPoints(); ++pntIdx )
+    {
+    double pnt[3];
+    probeGrid->GetPoint(pntIdx,pnt);
+
+    REAL rpnt[3];
+    rpnt[0] = pnt[0];
+    rpnt[1] = pnt[1];
+    rpnt[2] = pnt[2];
+
+    INTEGER nStream = 0;
+    REAL lrho = 0.0;
+    this->SFProbe->ProbePoint(rpnt,nStream,lrho);
+
+    nstreamPtr[ pntIdx ] = static_cast<int>(nStream);
+    rhoPtr[ pntIdx ]     = static_cast<double>(lrho);
+    } // END for all points
+
+  // STEP 4: Add probed data arrays to grid
+  probeGrid->GetPointData()->AddArray( numberOfStreams );
+  numberOfStreams->Delete();
+  probeGrid->GetPointData()->AddArray( rho );
+  rho->Delete();
+}
+
+//------------------------------------------------------------------------------
 void vtkPStructureFormationProbe::ConstructOutputMesh(
     vtkUnstructuredGrid *tess)
 {
@@ -348,10 +454,7 @@ void vtkPStructureFormationProbe::ExtractCausticSurfaces(
 
   std::vector<REAL> nodes;
   std::vector<INTEGER> faces;
-  std::cout << "Extracting caustic surfaces....";
   this->SFProbe->ExtractCausticSurfaces(nodes,faces);
-  std::cout << "[DONE]\n";
-  std::cout.flush();
 
   vtkPoints *meshNodes       = vtkPoints::New();
   meshNodes->SetNumberOfPoints(nodes.size());

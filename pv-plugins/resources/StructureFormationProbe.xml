@@ -18,6 +18,20 @@
       </Documentation>
      </InputProperty>
 
+   <IntVectorProperty name="ProbeGrid"
+                      label="Probe Langrangian grid"
+                      command="SetProbeLangrangianMesh"
+                      number_of_elements="1"
+                      default_values="1">
+      <BooleanDomain name="bool" />
+      <Documentation>
+        Sets whether the langrangian will be probed. If this property is ON,
+        the third output will consists of a uniform grid where at each node,
+        it will store the number of streams and local densiry, rho, about the
+        given point.
+      </Documentation>
+   </IntVectorProperty>
+
    <IntVectorProperty name="ShiftGlobalNumberingToZero"
                       label="Shift Global Numbering to Zero"
                       command="SetShiftGlobalNumberingToZero"
