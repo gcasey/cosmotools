@@ -260,9 +260,6 @@ void StructureFormationProbe::BuildVirtualGrid()
       const_cast<INTEGER*>(this->Langrange->GetExtent()),dims);
 
   this->VGrid = new VirtualGrid();
-  std::cout << "Virtual grid dimensions:";
-  std::cout << dims[0] << " " << dims[1] << " " << dims[2] << std::endl;
-  std::cout.flush();
   this->VGrid->SetDimensions(dims);
   this->VGrid->RegisterMesh(this->EulerMesh);
 }
