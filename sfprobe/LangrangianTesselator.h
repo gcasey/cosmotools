@@ -57,7 +57,7 @@ public:
    * @param fringe optional parameter to get interior fringe bounds
    * @note the bounds are stored [xmin xmax ymin ymax zmin zmax]
    */
-void GetBounds(REAL bounds[6], INTEGER fringe=0);
+  void GetBounds(REAL bounds[6], INTEGER fringe=0);
 
   /**
    * @brief Constructs the tesselation.
