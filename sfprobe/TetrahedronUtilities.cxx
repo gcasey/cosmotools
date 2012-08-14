@@ -58,7 +58,6 @@ bool TetrahedronUtilities::PointInTetBoundingBox(
 bool TetrahedronUtilities::HasPoint(
     REAL pnt[3],REAL V0[3],REAL V1[3], REAL V2[3], REAL V3[3])
 {
-  bool status = false;
 
   REAL d0 = TetrahedronUtilities::Determinant(
                 V0[0],V1[0],V2[0],V3[0],
@@ -73,6 +72,10 @@ bool TetrahedronUtilities::HasPoint(
               pnt[2],V1[2],V2[2],V3[2],
               1.,1.,1.,1.
               );
+  if( !TetrahedronUtilities::SameSign(d0,d1) )
+    {
+    return false;
+    }
 
   REAL d2 = TetrahedronUtilities::Determinant(
               V0[0],pnt[0],V2[0],V3[0],
@@ -80,6 +83,10 @@ bool TetrahedronUtilities::HasPoint(
               V0[2],pnt[2],V2[2],V3[2],
               1.,1.,1.,1.
               );
+  if( !TetrahedronUtilities::SameSign(d1,d2))
+    {
+    return false;
+    }
 
   REAL d3 = TetrahedronUtilities::Determinant(
               V0[0],V1[0],pnt[0],V3[0],
@@ -87,6 +94,10 @@ bool TetrahedronUtilities::HasPoint(
               V0[2],V1[2],pnt[2],V3[2],
               1.,1.,1.,1.
               );
+  if( !TetrahedronUtilities::SameSign(d2,d3) )
+    {
+    return false;
+    }
 
   REAL d4 = TetrahedronUtilities::Determinant(
               V0[0],V1[0],V2[0],pnt[0],
@@ -94,16 +105,13 @@ bool TetrahedronUtilities::HasPoint(
               V0[2],V1[2],V2[2],pnt[2],
               1.,1.,1.,1.
               );
-
-  if(TetrahedronUtilities::SameSign(d0,d1) &&
-     TetrahedronUtilities::SameSign(d1,d2) &&
-     TetrahedronUtilities::SameSign(d2,d3) &&
-     TetrahedronUtilities::SameSign(d3,d4) )
+  if( !TetrahedronUtilities::SameSign(d3,d4))
     {
-    status = true;
+    return false;
     }
 
-  return status;
+  // All 5 determinants have the same sign
+  return true;
 }
 
 //-----------------------------------------------------------------------------
