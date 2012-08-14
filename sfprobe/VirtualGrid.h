@@ -14,6 +14,7 @@
 // C/C++ includes
 #include <vector>
 #include <set>
+#include <string>
 
 namespace cosmologytools {
 
@@ -40,6 +41,12 @@ public:
    */
   void GetCandidateCellsForPoint(
         REAL pnt[3],std::vector<INTEGER> &cells);
+
+  /**
+   * @brief Returns this virtual grid as a legacy VTK grid.
+   * @return s a string representation of this instance of virtual grid.
+   */
+  std::string ToLegacyVtkString();
 
 protected:
   INTEGER Dimensions[3];

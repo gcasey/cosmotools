@@ -3,10 +3,11 @@
 #include "SimpleMesh.h"
 
 // C/C++ includes
-#include <iostream>
 #include <cassert>
-#include <limits>
 #include <cmath>
+#include <iostream>
+#include <limits>
+#include <sstream>
 
 namespace cosmologytools
 {
@@ -53,7 +54,7 @@ void VirtualGrid::RegisterMesh(SimpleMesh &M)
     {
     REAL distance     = this->Bounds[i*2+1]-this->Bounds[i*2];
     this->Spacing[i] =
-        static_cast<INTEGER>(std::ceil(distance/this->Dimensions[i]));
+      static_cast<REAL>(distance/static_cast<REAL>(this->Dimensions[i]));
     } // END for all dimensions
 
 //  std::cout << "VIRTUAL GRID PARAMETERS:";
@@ -160,6 +161,24 @@ bool VirtualGrid::InjectCell(INTEGER cellIdx, SimpleMesh &M)
 }
 
 //-----------------------------------------------------------------------------
+std::string VirtualGrid::ToLegacyVtkString()
+{
+  std::ostringstream oss;
+  oss.str("");
+  oss << "# vtk DataFile Version 3.0\n";
+  oss << "vtk output\n";
+  oss << "ASCII\n";
+  oss << "DATASET STRUCTURED_POINTS\n";
+  oss << "DIMENSIONS " << this->Dimensions[0] << " ";
+  oss << this->Dimensions[1] << " " << this->Dimensions[2] << std::endl;
+  oss << "SPACING "<< this->Spacing[0] << " ";
+  oss << this->Spacing[1] << " " << this->Spacing[2] << std::endl;
+  oss << "ORIGIN " << this->Bounds[0] << " " << this->Bounds[2];
+  oss << " " << this->Bounds[4] << std::endl;
+  return( oss.str() );
+}
+
+//-----------------------------------------------------------------------------
 void VirtualGrid::GetCandidateCellsForPoint(
         REAL pnt[3], std::vector<INTEGER> &cells)
 {
@@ -199,7 +218,6 @@ bool VirtualGrid::FindBucket(REAL pnt[3], INTEGER ijk[3])
     if( d[i] < 0.0 )
       {
       // pnt is outside virtual grid
-      std::cout << std::endl;
       return false;
       }
     ijk[i] = static_cast<INTEGER>(std::floor((d[i]/this->Spacing[i])));
