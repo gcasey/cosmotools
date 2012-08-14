@@ -4,6 +4,8 @@ project(pv-plugins)
 ## Find ParaView build and import cmake configurations, macros, etc.
 find_package(ParaView REQUIRED)
 include(${PARAVIEW_USE_FILE})
+include(ParaViewBranding)
+include(ParaViewPlugins)
 
 ## Set the plugin name and version
 set(PLUGIN_NAME PVCosmologyToolsPlugins)
@@ -55,7 +57,7 @@ set(RequiredLibs
     )
 
 ## Add the paraview plugin
-ADD_PARAVIEW_PLUGIN(${PLUGIN_NAME} ${PLUGIN_VERSION}
+add_paraview_plugin(${PLUGIN_NAME} ${PLUGIN_VERSION}
     GUI_RESOURCE_FILES ${GUIXML}
     SERVER_MANAGER_XML ${SMXML}
     SERVER_MANAGER_SOURCES ${SMSRC}
