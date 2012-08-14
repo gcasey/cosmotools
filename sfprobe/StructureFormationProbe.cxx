@@ -5,24 +5,30 @@
 #include "VirtualGrid.h"
 
 // C++ includes
-#include <iostream>
 #include <cassert>
 #include <cmath>
 #include <cstdlib>
 #include <fstream>
+#include <iostream>
 #include <sstream>
+#include <sstream>
+#include <string>
 
 namespace cosmologytools {
 
 //------------------------------------------------------------------------------
 StructureFormationProbe::StructureFormationProbe()
 {
-  this->Particles    = NULL;
-  this->GlobalIds    = NULL;
-  this->Langrange    = NULL;
-  this->VGrid        = NULL;
-  this->NumParticles = 0;
-  this->Fringe       = 1;
+  this->Particles       = NULL;
+  this->GlobalIds       = NULL;
+  this->Langrange       = NULL;
+  this->VGrid           = NULL;
+  this->NumParticles    = 0;
+  this->Fringe          = 1;
+
+  this->NumPointsProbed = 0;
+  this->NumTetsChecked  = 0;
+  this->TimeStepCounter = 0;
 }
 
 //------------------------------------------------------------------------------
@@ -242,6 +248,7 @@ void StructureFormationProbe::BuildEulerMesh()
 
   // Build virtual-grid that covers for this euler mesh instance
   this->BuildVirtualGrid();
+  ++this->TimeStepCounter;
 }
 
 //------------------------------------------------------------------------------
@@ -262,6 +269,13 @@ void StructureFormationProbe::BuildVirtualGrid()
   this->VGrid = new VirtualGrid();
   this->VGrid->SetDimensions(dims);
   this->VGrid->RegisterMesh(this->EulerMesh);
+
+  std::ostringstream oss;
+  oss << "vgrid_" << this->TimeStepCounter << ".vtk";
+  std::ofstream ofs;
+  ofs.open(oss.str().c_str());
+  ofs << this->VGrid->ToLegacyVtkString() << std::endl;
+  ofs.close();
 }
 
 //------------------------------------------------------------------------------
@@ -273,6 +287,8 @@ void StructureFormationProbe::ProbePoint(
     {
     this->BuildVirtualGrid();
     }
+
+  ++this->NumPointsProbed;
 
   // STEP 1: Initialize output variables
   nStreams = 0;
@@ -290,6 +306,8 @@ void StructureFormationProbe::ProbePoint(
   // (2) Compute the local density, rho
   for(unsigned int t=0; t < tets.size(); ++t)
     {
+    ++this->NumTetsChecked;
+
     INTEGER tetIdx = tets[ t ];
     if( this->PointInTet(pnt,tetIdx) )
       {

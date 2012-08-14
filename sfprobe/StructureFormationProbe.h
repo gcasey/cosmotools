@@ -30,6 +30,16 @@ public:
   GetNSetMacro(Fringe,INTEGER);
 
   /**
+   * @brief Get macro for the total number of points probed
+   */
+  GetMacro(NumPointsProbed,int);
+
+  /**
+   * @brief Get macro for the total number of tets checked.
+   */
+  GetMacro(NumTetsChecked,int);
+
+  /**
    * @brief Sets the particle (positions) and corresponding global Ids.
    * @param particles the particles position vector strided by 3.
    * @param GlobalIds list of the global Ids corresponding to each particle.
@@ -163,6 +173,11 @@ protected:
   SimpleMesh EulerMesh;
   VirtualGrid *VGrid;
   std::vector< REAL > Volumes;
+
+  // These variable are only used to compute statistics
+  int TimeStepCounter;
+  int NumPointsProbed;
+  int NumTetsChecked;
 
 private:
   DISABLE_COPY_AND_ASSIGNMENT(StructureFormationProbe);
