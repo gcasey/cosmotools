@@ -229,6 +229,9 @@ void WriteEuler(
   INTEGER numNodes = static_cast<INTEGER>(nodes.size()/3);
   INTEGER numTets  = static_cast<INTEGER>(vol.size());
 
+  std::cout << "Number of Euler tets: " << numTets;
+  std::cout.flush();
+
   vtkIntArray *cellIds = vtkIntArray::New();
   cellIds->SetName("CELLID");
   cellIds->SetNumberOfComponents(1);
@@ -360,12 +363,16 @@ void WriteProbedGridData(
   double spacing[3];
   int ext[6];
 
+  REAL bounds[6];
+  p->GetLangrangeTesselator()->GetBounds(bounds);
+
   for(int i=0; i < 3; ++i)
     {
-    origin[i]  = p->GetLangrangeTesselator()->GetOrigin()[i];
-    spacing[i] = p->GetLangrangeTesselator()->GetSpacing()[i];
-    ext[i*2]   = p->GetLangrangeTesselator()->GetExtent()[i*2];
-    ext[i*2+1] = p->GetLangrangeTesselator()->GetExtent()[i*2+1];
+    origin[i]  = bounds[i*2];
+    REAL dx    = bounds[i*2+1]-bounds[i*2];
+    spacing[i] = static_cast<double>(dx/Parameters.GDIM);
+    ext[i*2]   = 0;
+    ext[i*2+1] = Parameters.GDIM;
     }
 
   vtkUniformGrid *probeGrid = vtkUniformGrid::New();
@@ -385,8 +392,9 @@ void WriteProbedGridData(
   rho->SetNumberOfTuples( probeGrid->GetNumberOfPoints() );
   double *rhoPtr = rho->GetPointer(0);
 
-  vtkIdType pntIdx = 0;
-  for( ; pntIdx < probeGrid->GetNumberOfPoints(); ++pntIdx )
+
+  #pragma omp parallel for
+  for(vtkIdType pntIdx=0; pntIdx < probeGrid->GetNumberOfPoints(); ++pntIdx )
     {
     double pnt[3];
     probeGrid->GetPoint(pntIdx,pnt);
@@ -477,23 +485,55 @@ int main(int argc, char **argv)
       std::cout.flush();
 
       Probe->BuildLangrangianMesh(Origin,h,ext);
+      std::cout << "Number of Langrangian tets: ";
+      std::cout << Probe->GetLangrangeTesselator()->GetNumTets() << std::endl;
+      std::cout.flush();
       }
 
     // STEP 4: Set particles for this time-step
+    std::cout << "Set Particles...";
+    std::cout.flush();
     Probe->SetParticles(
         Particles.Positions,Particles.GlobalIDs,Particles.N);
+    std::cout << "[DONE]\n";
+    std::cout.flush();
 
     // STEP 5: Build euler mesh
+    std::cout << "Build euler mesh...";
+    std::cout.flush();
     Probe->BuildEulerMesh();
+    std::cout << "[DONE]\n";
+    std::cout.flush();
 
     // STEP 6: Write euler mesh
+    std::cout << "Write Euler mesh...";
+    std::cout.flush();
     WriteEuler(Probe, i);
+    std::cout << "[DONE]\n";
+    std::cout.flush();
 
     // STEP 7: Write caustics
+    std::cout << "Extract caustic surfaces...";
+    std::cout.flush();
     WriteCaustics(Probe,i);
+    std::cout << "[DONE]\n";
+    std::cout.flush();
 
     // STEP 8: Write probed data
+    std::cout << "Write Probed grid...";
+    std::cout.flush();
     WriteProbedGridData(Probe,i);
+    std::cout << "[DONE]\n";
+    std::cout.flush();
+
+    // STEP 9: Statistics:
+    std::cout << "NumPoints probed=" << Probe->GetNumPointsProbed();
+    std::cout << std::endl;
+    std::cout << "NumTets checked=" << Probe->GetNumTetsChecked();
+    std::cout << std::endl;
+    std::cout << "Avg. NumTets per point=";
+    std::cout << Probe->GetNumTetsChecked()/Probe->GetNumPointsProbed();
+    std::cout << std::endl;
     }
 
   delete Probe;
