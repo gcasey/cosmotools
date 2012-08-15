@@ -127,16 +127,17 @@ CosmoHaloFinderP::~CosmoHaloFinderP()
   if (this->haloStart != NULL) delete [] this->haloStart;
   if (this->haloSize  != NULL) delete [] this->haloSize;
 
-  if (this->haloData != NULL) {
-    for (int dim = 0; dim < DIMENSION; dim++)
-      {
-      if( this->haloData[dim] != NULL )
-        {
-        delete [] haloData[dim];
-        }
-      }
-    delete [] haloData;
-  }
+//  if (this->haloData != NULL) {
+//    for (int dim = 0; dim < DIMENSION; dim++)
+//      {
+//      if( this->haloData[dim] != NULL )
+//        {
+//        delete [] haloData[dim];
+//        }
+//      }
+//    delete [] haloData;
+//  }
+
 }
 
 /////////////////////////////////////////////////////////////////////////
