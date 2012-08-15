@@ -146,7 +146,10 @@ int vtkPStructureFormationProbe::RequestData(
     }
 
   // STEP 4: Build Langrange tesselation
-  this->BuildLangrangeTesselation();
+  if( this->SFProbe->GetLangrangeTesselator() == NULL )
+    {
+    this->BuildLangrangeTesselation();
+    }
 
   // STEP 5: Construct the output mesh
   this->ConstructOutputMesh(tesselation);
