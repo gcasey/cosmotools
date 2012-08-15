@@ -41,7 +41,7 @@ vtkPStructureFormationProbe::vtkPStructureFormationProbe()
   this->N                          = 0;
   this->ShiftGlobalNumberingToZero = 1;
   this->Fringe                     = 1;
-  this->ProbeLangrangianMesh       = 1;
+  this->ProbeGrid       = 1;
 
   this->Controller = vtkMultiProcessController::GetGlobalController();
   this->SetNumberOfInputPorts(1);
@@ -155,7 +155,7 @@ int vtkPStructureFormationProbe::RequestData(
   this->ExtractCausticSurfaces(particles, tesselation, caustics);
 
   // STEP 7: Probe grid
-  this->ProbeGrid( probedGrid );
+  this->ProbeUniformGrid( probedGrid );
   // set some image pipeline keys
   output3->Set(vtkDataObject::ORIGIN(),probedGrid->GetOrigin(),3);
   output3->Set(vtkDataObject::SPACING(),probedGrid->GetSpacing(),3);
@@ -286,12 +286,13 @@ void vtkPStructureFormationProbe::GetLangrangianMesh(
 }
 
 //------------------------------------------------------------------------------
-void vtkPStructureFormationProbe::ProbeGrid(vtkUniformGrid *probeGrid)
+void vtkPStructureFormationProbe::ProbeUniformGrid(
+        vtkUniformGrid *probeGrid)
 {
   assert("pre: Structure formation probe is NULL" && (this->SFProbe != NULL));
   assert("pre: probe grid should not be NULL" && (probeGrid != NULL) );
 
-  if( this->ProbeLangrangianMesh != 1 )
+  if( this->ProbeGrid != 1 )
     {
     return;
     }
@@ -300,19 +301,23 @@ void vtkPStructureFormationProbe::ProbeGrid(vtkUniformGrid *probeGrid)
   double origin[3];
   double spacing[3];
   int ext[6];
-  int dims[3];
 
   cosmologytools::LangrangianTesselator *langrangianMesh =
                             this->SFProbe->GetLangrangeTesselator();
   assert("pre: langrangian mesh should not be NULL!" &&
           (langrangianMesh != NULL) );
 
+  REAL bounds[6];
+  langrangianMesh->GetBounds(bounds);
+
   for( int i=0; i < 3; ++i )
     {
-    spacing[i]   = langrangianMesh->GetSpacing()[i];
-    origin[i]    = langrangianMesh->GetOrigin()[i];
-    ext[ i*2   ] = langrangianMesh->GetExtent()[i*2];
-    ext[ i*2+1 ] = langrangianMesh->GetExtent()[i*2+1];
+    origin[i] = bounds[i*2];
+    REAL dx   = bounds[i*2+1]-bounds[i*2];
+    ext[ i*2   ] = this->ProbeGridExtent[i*2];
+    ext[ i*2+1 ] = this->ProbeGridExtent[i*2+1];
+    int ndim     = ext[i*2+1]-ext[i*2]+1;
+    spacing[i]   = static_cast<double>(dx/static_cast<double>(ndim));
     }
 
   // STEP 1: Construct probe grid

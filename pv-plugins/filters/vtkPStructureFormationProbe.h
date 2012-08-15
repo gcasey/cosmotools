@@ -63,6 +63,11 @@ public:
   vtkGetVector6Macro(Extent,int);
 
   // Description:
+  // Set/Get the extent for the probe grid.
+  vtkSetVector6Macro(ProbeGridExtent,int);
+  vtkGetVector6Macro(ProbeGridExtent,int);
+
+  // Description:
   // Set the domain space, either LANGRANGE or EULER.
   vtkSetMacro(DomainSpace,int);
   vtkGetMacro(DomainSpace,int);
@@ -83,9 +88,9 @@ public:
   vtkGetMacro(ShiftGlobalNumberingToZero,int);
 
   // Description:
-  // Set/Get whether to probe the langrangian mesh.
-  vtkSetMacro(ProbeLangrangianMesh,int);
-  vtkGetMacro(ProbeLangrangianMesh,int);
+  // Set/Get whether to probe the grid with the given probe grid extent.
+  vtkSetMacro(ProbeGrid,int);
+  vtkGetMacro(ProbeGrid,int);
 
 protected:
   vtkPStructureFormationProbe();
@@ -136,14 +141,15 @@ protected:
   // Description:
   // Probes the langrangian grid on the euler mesh and computes the number of
   // streams and local density at each grid point.
-  void ProbeGrid(vtkUniformGrid *probeGrid);
+  void ProbeUniformGrid(vtkUniformGrid *probeGrid);
 
   // User-supplied parameters
   int DomainSpace;
   int ShiftGlobalNumberingToZero;
   int Extent[6];
+  int ProbeGridExtent[6];
   int Fringe;
-  int ProbeLangrangianMesh;
+  int ProbeGrid;
 
   // Computed ivars
   double Bounds[6];

@@ -19,8 +19,8 @@
      </InputProperty>
 
    <IntVectorProperty name="ProbeGrid"
-                      label="Probe Langrangian grid"
-                      command="SetProbeLangrangianMesh"
+                      label="Probe Grid"
+                      command="SetProbeGrid"
                       number_of_elements="1"
                       default_values="1">
       <BooleanDomain name="bool" />
@@ -31,6 +31,17 @@
         given point.
       </Documentation>
    </IntVectorProperty>
+
+   <IntVectorProperty name="ProbeExtent"
+                      label="Probe Grid Extent"
+                      command="SetProbeGridExtent"
+                      number_of_elements="6"
+                      default_values="0 5 0 5 0 5">
+       <IntRangeDomain name="range" />
+       <Documentation>
+         This property sets the extent of the domain.
+       </Documentation>
+    </IntVectorProperty>
 
    <IntVectorProperty name="ShiftGlobalNumberingToZero"
                       label="Shift Global Numbering to Zero"
@@ -45,7 +56,7 @@
    </IntVectorProperty>
 
    <IntVectorProperty name="Extent"
-                      label="Extent"
+                      label="Langrangian Extent"
                       command="SetExtent"
                       number_of_elements="6"
                       default_values="0 5 0 5 0 5">
