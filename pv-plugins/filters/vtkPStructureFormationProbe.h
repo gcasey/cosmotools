@@ -143,6 +143,35 @@ protected:
   // streams and local density at each grid point.
   void ProbeUniformGrid(vtkUniformGrid *probeGrid);
 
+  // Description:
+  // Checks if a fringe has changed
+  bool FringeHasChanged()
+    {return( (this->CurrentFringe != this->Fringe) );};
+
+  // Description:
+  // Returns true if the two extents, ext1 and ext2 are different, else, false.
+  bool ExtentsAreDifferent( int ext1[6], int ext2[6] )
+    {
+    for(int i=0; i < 6; ++i)
+      {
+      if( ext1[i] != ext2[i] )
+        {
+        return true;
+        } // END if
+      } // END for all dimensions
+
+    // The extents are equal
+    return false;
+    }
+
+  // Description:
+  // Returns true if this is a new timestep, else, false.
+  bool NewTimeStep(int tstep)
+    { return( (this->CurrentTimeStep != tstep) ); };
+
+  vtkSetVector6Macro(CurrentProbeGridExtent,int);
+  vtkSetVector6Macro(CurrentLangrangianExtent,int);
+
   // User-supplied parameters
   int DomainSpace;
   int ShiftGlobalNumberingToZero;
@@ -150,6 +179,11 @@ protected:
   int ProbeGridExtent[6];
   int Fringe;
   int ProbeGrid;
+
+  int CurrentTimeStep;
+  int CurrentFringe; // used to detect when fringe changes
+  int CurrentProbeGridExtent[6];
+  int CurrentLangrangianExtent[6];
 
   // Computed ivars
   double Bounds[6];

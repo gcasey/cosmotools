@@ -29,19 +29,21 @@ vtkStandardNewMacro(vtkPStructureFormationProbe);
 
 vtkPStructureFormationProbe::vtkPStructureFormationProbe()
 {
-  this->DomainSpace = LANGRANGE;
-  for( int i=0; i < 6; ++i )
+   for( int i=0; i < 6; ++i )
     {
     this->Extent[i] = 0;
     }
 
+  this->DomainSpace                = EULER;
   this->SFProbe                    = NULL;
   this->Particles                  = NULL;
   this->GlobalIds                  = NULL;
   this->N                          = 0;
   this->ShiftGlobalNumberingToZero = 1;
   this->Fringe                     = 1;
-  this->ProbeGrid       = 1;
+  this->CurrentFringe              = -1;
+  this->ProbeGrid                  = 1;
+  this->CurrentTimeStep            = -1;
 
   this->Controller = vtkMultiProcessController::GetGlobalController();
   this->SetNumberOfInputPorts(1);
@@ -108,6 +110,9 @@ int vtkPStructureFormationProbe::RequestData(
     vtkInformation *request,vtkInformationVector **inputVector,
     vtkInformationVector *outputVector)
 {
+  std::cout << "===\n";
+  std::cout.flush();
+
   // STEP 0: Get input object
   vtkInformation *input = inputVector[0]->GetInformationObject( 0 );
   assert("pre: input information object is NULL" && (input != NULL) );
@@ -116,54 +121,125 @@ int vtkPStructureFormationProbe::RequestData(
           input->Get( vtkDataObject::DATA_OBJECT() ) );
   assert("pre: input particles is NULL!" && (particles != NULL) );
 
-  // STEP 1: Get 1st output object (tesselation)
+  // STEP 1: Get current time-step
+  int timeStep  = 0;
+  if(input->Has(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP()))
+    {
+    timeStep = static_cast<int>(
+      input->Get(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP()));
+    }
+  std::cout << "TimeStep=" << timeStep << std::endl;
+  std::cout.flush();
+
+  // STEP 2: Get 1st output object (tesselation)
   vtkInformation *output1 = outputVector->GetInformationObject( 0 );
   assert( "pre: output information object is NULL" && (output1 != NULL) );
   vtkUnstructuredGrid *tesselation =
       vtkUnstructuredGrid::SafeDownCast(
           output1->Get( vtkDataObject::DATA_OBJECT() ) );
 
-  // STEP 2: Get 2nd output object (surface caustics)
+  // STEP 3: Get 2nd output object (surface caustics)
   vtkInformation *output2 = outputVector->GetInformationObject( 1 );
   assert( "pre: output information object is NULL" && (output2 != NULL) );
   vtkUnstructuredGrid *caustics =
       vtkUnstructuredGrid::SafeDownCast(
           output2->Get( vtkDataObject::DATA_OBJECT() ) );
 
-  // STE 3: Get 3rd output (probe grid)
+  // STEP 4: Get 3rd output (probe grid)
   vtkInformation *output3 = outputVector->GetInformationObject( 2 );
   assert( "pre: output information object is NULL" && (output3 != NULL) );
   vtkUniformGrid *probedGrid =
       vtkUniformGrid::SafeDownCast(
             output3->Get(vtkDataObject::DATA_OBJECT() ) );
 
-  // STEP 3: Extract input deck to the structure formation probe code
+  // Flag used to indicate that the remaining steps of the algorithm must
+  // re-execute
+  bool reExecute = false;
+
+  // STEP 5: Check if we need to re-execute for the given time-step
+  if( this->NewTimeStep(timeStep) )
+    {
+    this->CurrentTimeStep = timeStep;
+    reExecute = true;
+    }
+
+  // STEP 6: Extract input deck to the structure formation probe code
   this->ExtractInputDeck( particles );
   if( this->SFProbe == NULL )
     {
     this->SFProbe = new cosmologytools::StructureFormationProbe();
     }
-  this->SFProbe->SetFringe( this->Fringe );
 
-  // STEP 4: Build Langrange tesselation
-  if( this->SFProbe->GetLangrangeTesselator() == NULL )
+  // STEP 7: Build Langrange tesselation
+  // This should execute iff it is the first time-step, or if the langrangian
+  // grid parameters have changed
+  if( this->SFProbe->GetLangrangeTesselator() == NULL ||
+       this->ExtentsAreDifferent(
+         this->Extent,this->CurrentLangrangianExtent) )
     {
+    // Update current langrangian extent
+    this->SetCurrentLangrangianExtent( this->Extent );
+
+    std::cout << "Building Langrangian mesh...";
     this->BuildLangrangeTesselation();
+    std::cout << "[DONE]\n";
+    std::cout.flush();
+
+    // Force down-stream calculations to execute
+    reExecute = true;
     }
 
-  // STEP 5: Construct the output mesh
-  this->ConstructOutputMesh(tesselation);
+  // STEP 8: Construct the output mesh
+  // This should execute iff the fringe has changed, or something changed
+  // upstream, i.e., the langrangian mesh
+  if( reExecute || this->FringeHasChanged() )
+    {
+    std::cout << "Build output tesselation mesh...";
+    this->CurrentFringe = this->Fringe;
+    this->SFProbe->SetFringe( this->Fringe );
+    this->ConstructOutputMesh(tesselation);
+    std::cout << "[DONE]\n";
+    std::cout.flush();
+    // Force down-stream calculations to execute
+    reExecute = true;
+    }
 
-  // STEP 6: Extract the caustic surfaces
-  this->ExtractCausticSurfaces(particles, tesselation, caustics);
+  // STEP 9: Extract the caustic surfaces
+  if( reExecute )
+    {
+    // Note, it only makese sent to extract caustic faces in euler space
+    if( this->DomainSpace == EULER )
+      {
+      std::cout << "Extracting caustic surfaces...";
+      this->ExtractCausticSurfaces(particles,tesselation,caustics);
+      std::cout << "[DONE]\n";
+      std::cout.flush();
+      } // END if in Euler space
+    }
 
-  // STEP 7: Probe grid
-  this->ProbeUniformGrid( probedGrid );
-  // set some image pipeline keys
-  output3->Set(vtkDataObject::ORIGIN(),probedGrid->GetOrigin(),3);
-  output3->Set(vtkDataObject::SPACING(),probedGrid->GetSpacing(),3);
-  output3->Set(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),
-                  probedGrid->GetExtent(),6);
+
+  // STEP 10: Probe grid
+  if( reExecute || this->ExtentsAreDifferent(
+                      this->ProbeGridExtent,this->CurrentProbeGridExtent))
+    {
+    // Update current probe grid extent
+    this->SetCurrentProbeGridExtent( this->ProbeGridExtent );
+
+    // Note, it only makes sense to probe the grid in euler space
+    if( this->DomainSpace == EULER )
+      {
+      std::cout << "Probing uniform grid...";
+      this->ProbeUniformGrid( probedGrid );
+      std::cout << "[DONE]\n";
+      std::cout.flush();
+
+      // set some image pipeline keys
+      output3->Set(vtkDataObject::ORIGIN(),probedGrid->GetOrigin(),3);
+      output3->Set(vtkDataObject::SPACING(),probedGrid->GetSpacing(),3);
+      output3->Set(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),
+                      probedGrid->GetExtent(),6);
+      } // END if in Euler space
+    }
 
   this->Controller->Barrier();
   return 1;

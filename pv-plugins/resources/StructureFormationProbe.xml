@@ -71,27 +71,12 @@
                        command="SetFringe"
                        number_of_elements="1"
                        default_values="1">
-      <IntRangeDomain name="range" min="0" max="5" />
+      <IntRangeDomain name="range" min="0" max="40" />
       <Documentation>
          This property sets the fringe parameter that is used to resolve
          artifacts on periodic boundaries. By default, the value is set to 1.
       </Documentation>
     </IntVectorProperty>
-
-    <IntVectorProperty
-        name="Space"
-        command="SetDomainSpace"
-        label="Sets the desired space, euler or langrangian (initial)"
-        number_of_elements="1"
-        default_values="0">
-       <EnumerationDomain name="domain">
-        <Entry value="0" text="Lagrange"/>
-        <Entry value="1" text="Euler"/>
-       </EnumerationDomain>
-       <Documentation>
-        Sets the domain space.
-       </Documentation>
-     </IntVectorProperty>
   </SourceProxy>
  </ProxyGroup>
 </ServerMangerConfiguration>
