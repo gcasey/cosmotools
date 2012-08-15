@@ -348,20 +348,30 @@ HaloTestP::HaloTestP(int argc, char* argv[])
         exit(1);
   }
 
-  this->mass = 0;
-  this->tag = 0;
-  this->status = 0;
-  this->potential = 0;
-  this->mask = 0;
-  this->fofCenter = 0;
-  this->fofMass = 0;
-  this->fofXPos = 0;
-  this->fofYPos = 0;
-  this->fofZPos = 0;
-  this->fofXVel = 0;
-  this->fofYVel = 0;
-  this->fofZVel = 0;
-  this->fofVelDisp = 0;
+  this->xx = new vector<POSVEL_T>;
+  this->yy = new vector<POSVEL_T>;
+  this->zz = new vector<POSVEL_T>;
+  this->vx = new vector<POSVEL_T>;
+  this->vy = new vector<POSVEL_T>;
+  this->vz = new vector<POSVEL_T>;
+  this->mass = new vector<POSVEL_T>;
+  this->tag = new vector<ID_T>;
+  this->status = new vector<STATUS_T>;
+  this->potential = new vector<POTENTIAL_T>;
+  this->mask = new vector<MASK_T>;
+
+  this->fofCenter = new vector<int>;
+  this->fofMass = new vector<POSVEL_T>;
+  this->fofXPos = new vector<POSVEL_T>;
+  this->fofYPos = new vector<POSVEL_T>;
+  this->fofZPos = new vector<POSVEL_T>;
+  this->fofXVel = new vector<POSVEL_T>;
+  this->fofYVel = new vector<POSVEL_T>;
+  this->fofZVel = new vector<POSVEL_T>;
+  this->fofVelDisp = new vector<POSVEL_T>;
+  this->fofXCofMass = new vector<POSVEL_T>;
+  this->fofYCofMass = new vector<POSVEL_T>;
+  this->fofZCofMass = new vector<POSVEL_T>;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -372,28 +382,30 @@ HaloTestP::HaloTestP(int argc, char* argv[])
 
 HaloTestP::~HaloTestP()
 {
-  if (this->xx != 0) delete this->xx;
-  if (this->yy != 0) delete this->yy;
-  if (this->zz != 0) delete this->zz;
-  if (this->vx != 0) delete this->vx;
-  if (this->vy != 0) delete this->vy;
-  if (this->vz != 0) delete this->vz;
+  delete this->xx;
+  delete this->yy;
+  delete this->zz;
+  delete this->vx;
+  delete this->vy;
+  delete this->vz;
+  delete this->mass;
+  delete this->tag;
+  delete this->status;
+  delete this->potential;
+  delete this->mask;
 
-  if (this->mass != 0) delete this->mass;
-  if (this->tag != 0) delete this->tag;
-  if (this->status != 0) delete this->status;
-  if (this->potential != 0) delete this->potential;
-  if (this->mask != 0) delete this->mask;
-
-  if (this->fofCenter != 0) delete this->fofCenter;
-  if (this->fofMass != 0) delete this->fofMass;
-  if (this->fofXPos != 0) delete this->fofXPos;
-  if (this->fofYPos != 0) delete this->fofYPos;
-  if (this->fofZPos != 0) delete this->fofZPos;
-  if (this->fofXVel != 0) delete this->fofXVel;
-  if (this->fofYVel != 0) delete this->fofYVel;
-  if (this->fofZVel != 0) delete this->fofZVel;
-  if (this->fofVelDisp != 0) delete this->fofVelDisp;
+  delete this->fofCenter;
+  delete this->fofMass;
+  delete this->fofXPos;
+  delete this->fofYPos;
+  delete this->fofZPos;
+  delete this->fofXVel;
+  delete this->fofYVel;
+  delete this->fofZVel;
+  delete this->fofVelDisp;
+  delete this->fofXCofMass;
+  delete this->fofYCofMass;
+  delete this->fofZCofMass;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -411,6 +423,14 @@ void HaloTestP::DistributeParticles()
   static Timings::TimerRef dtimer = Timings::getTimer("Distribute Particles");
   Timings::startTimer(dtimer);
 
+  // The current PatricleDistribute cannot be reused at this time because
+  // it stores information about the number of particles and the names of
+  // files that were used initially
+  if (this->xx->size() != 0) {
+    cout << "DistributeParticles() may only be called one time" << endl;
+    exit(1);
+  }
+
   // Initialize classes for reading, exchanging and calculating
   this->distribute.setParameters(this->inFile, this->rL, this->dataType);
   this->distribute.setConvertParameters(this->massConvertFactor,
@@ -425,17 +445,6 @@ void HaloTestP::DistributeParticles()
   // to every other processor so that every processor chooses its own
   // In ONE_TO_ONE every processor reads its own processor in the topology
   // which has already been populated with the correct alive particles
-
-  this->xx = new vector<POSVEL_T>;
-  this->yy = new vector<POSVEL_T>;
-  this->zz = new vector<POSVEL_T>;
-  this->vx = new vector<POSVEL_T>;
-  this->vy = new vector<POSVEL_T>;
-  this->vz = new vector<POSVEL_T>;
-  this->mass = new vector<POSVEL_T>;
-  this->tag = new vector<ID_T>;
-  this->status = new vector<STATUS_T>;
-
   this->distribute.setParticles(this->xx, this->yy, this->zz, 
                                 this->vx, this->vy, this->vz,
                                 this->mass, this->tag);
@@ -448,8 +457,8 @@ void HaloTestP::DistributeParticles()
 
   // Create the mask and potential vectors which will be filled in elsewhere
   this->numberOfParticles = this->xx->size();
-  this->potential = new vector<POTENTIAL_T>(this->numberOfParticles);
-  this->mask = new vector<MASK_T>(this->numberOfParticles);
+  this->potential->resize(this->numberOfParticles);
+  this->mask->resize(this->numberOfParticles);
 
   // Exchange particles adds dead particles to all the vectors
   this->exchange.setParticles(this->xx, this->yy, this->zz, 
@@ -478,6 +487,13 @@ void HaloTestP::FOFHaloFinder()
   static Timings::TimerRef h1timer = Timings::getTimer("FOF Halo Finder");
   Timings::startTimer(h1timer);
 
+  // Just for testing memory leak by reusing this code PKF
+  vector<STATUS_T>* tempStatus = new vector<STATUS_T>(this->numberOfParticles);
+  STATUS_T* s = &(*status)[0];
+  STATUS_T* t = &(*tempStatus)[0];
+  for (int p = 0; p < this->numberOfParticles; p++)
+    t[p] = s[p];
+
   this->haloFinder.setParameters(this->outFile, this->rL, this->deadSize, 
                                  this->np, this->pmin, this->bb);
   this->haloFinder.setParticles(this->xx, this->yy, this->zz, 
@@ -489,12 +505,18 @@ void HaloTestP::FOFHaloFinder()
   this->haloFinder.executeHaloFinder();
 
   // Merge the resulting halos between processors
-  this->haloFinder.collectHalos();
+  this->haloFinder.collectHalos(this->haloIn.getOutputParticles() != 1);
   this->haloFinder.mergeHalos();
 
   // Write file of particles with mass field replaced by halo tag
   if (this->haloIn.getOutputParticles() == 1)
-    this->haloFinder.writeTaggedParticles();
+    this->haloFinder.writeTaggedParticles(true /* clearSerial */);
+
+  // Just for testing memory leak by reusing this code PKF
+  for (int p = 0; p < this->numberOfParticles; p++)
+    s[p] = t[p];
+  tempStatus->clear();
+  delete tempStatus;
 
   Timings::stopTimer(h1timer);
 }
@@ -509,6 +531,18 @@ void HaloTestP::BasicFOFHaloProperties()
 {
   static Timings::TimerRef ftimer = Timings::getTimer("FOF Properties");
   Timings::startTimer(ftimer);
+
+  this->fofMass->clear();
+  this->fofXPos->clear();
+  this->fofYPos->clear();
+  this->fofZPos->clear();
+  this->fofXVel->clear();
+  this->fofYVel->clear();
+  this->fofZVel->clear();
+  this->fofXCofMass->clear();
+  this->fofYCofMass->clear();
+  this->fofZCofMass->clear();
+  this->fofVelDisp->clear();
 
   if (this->myProc == 0)
     cout << "Run Basic FOF halo properties" << endl;
@@ -527,30 +561,19 @@ void HaloTestP::BasicFOFHaloProperties()
                          this->potential, this->tag, this->mask, this->status);
 
   // Find the mass of every FOF halo
-  this->fofMass = new vector<POSVEL_T>;
   this->fof.FOFHaloMass(this->fofMass);
 
   // Find the average position of every FOF halo
-  this->fofXPos = new vector<POSVEL_T>;
-  this->fofYPos = new vector<POSVEL_T>;
-  this->fofZPos = new vector<POSVEL_T>;
   this->fof.FOFPosition(this->fofXPos, this->fofYPos, this->fofZPos);
 
   // Find the center of mass of every FOF halo
-  this->fofXCofMass = new vector<POSVEL_T>;
-  this->fofYCofMass = new vector<POSVEL_T>;
-  this->fofZCofMass = new vector<POSVEL_T>;
   this->fof.FOFCenterOfMass(
                 this->fofXCofMass, this->fofYCofMass, this->fofZCofMass);
 
   // Find the average velocity of every FOF halo
-  this->fofXVel = new vector<POSVEL_T>;
-  this->fofYVel = new vector<POSVEL_T>;
-  this->fofZVel = new vector<POSVEL_T>;
   this->fof.FOFVelocity(this->fofXVel, this->fofYVel, this->fofZVel);
 
   // Find the velocity dispersion of every FOF halo
-  this->fofVelDisp = new vector<POSVEL_T>;
   this->fof.FOFVelocityDispersion(this->fofXVel, 
                                 this->fofYVel, this->fofZVel, this->fofVelDisp);
 
@@ -569,8 +592,9 @@ void HaloTestP::BasicFOFHaloProperties()
 
 void HaloTestP::FOFCenterFinding()
 {
+  this->fofCenter->clear();
+
   // Find the index of the particle at the FOF center using potential array
-  this->fofCenter = new vector<int>;
   if (this->haloIn.getUseMinimumPotential() == 1) {
     this->fof.FOFHaloCenterMinimumPotential(this->fofCenter);
   }
@@ -1224,6 +1248,8 @@ int main(int argc, char* argv[])
   HaloTestP haloTestP(argc, argv);
 
   // Read, distribute and exchange particles
+  // May be called only one time because permanent ParticleDistribute
+  // holds information that is not cleared
   haloTestP.DistributeParticles();
   MPI_Barrier(MPI_COMM_WORLD);
 

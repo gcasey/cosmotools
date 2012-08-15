@@ -110,7 +110,7 @@ public:
 
   // Collect the halo information from the serial halo finder
   // Save the mixed halos so as to determine which processor owns them
-  void collectHalos();
+  void collectHalos(bool clearSerial=true);
   void buildHaloStructure();
   void processMixedHalos();
 
@@ -123,7 +123,7 @@ public:
 
 #ifndef USE_VTK_COSMO
   // Write the particles with mass field containing halo tags
-  void writeTaggedParticles();
+  void writeTaggedParticles(bool clearSerial=true);
 #endif
 
   // Set alive particle vectors which were created elsewhere

@@ -127,9 +127,14 @@ CosmoHaloFinderP::~CosmoHaloFinderP()
   if (this->haloStart != NULL) delete [] this->haloStart;
   if (this->haloSize  != NULL) delete [] this->haloSize;
 
-  if (this->haloData != 0) {
+  if (this->haloData != NULL) {
     for (int dim = 0; dim < DIMENSION; dim++)
-      delete haloData[dim];
+      {
+      if( this->haloData[dim] != NULL )
+        {
+        delete [] haloData[dim];
+        }
+      }
     delete [] haloData;
   }
 }
@@ -256,6 +261,8 @@ void CosmoHaloFinderP::setParticles(
 
 void CosmoHaloFinderP::executeHaloFinder()
 {
+  this->haloFinder.clearHaloTag();
+
   // Allocate data pointer which is sent to the serial halo finder
   this->haloData = new POSVEL_T*[DIMENSION];
   for (int dim = 0; dim < DIMENSION; dim++)
@@ -285,6 +292,10 @@ void CosmoHaloFinderP::executeHaloFinder()
 
   if (this->particleCount > 0)
     this->haloFinder.Finding();
+
+  for (int dim = 0; dim < DIMENSION; dim++)
+    delete [] this->haloData[dim];
+  delete [] this->haloData;
 
 #ifndef USE_SERIAL_COSMO
   MPI_Barrier(Partition::getComm());
@@ -330,8 +341,22 @@ void CosmoHaloFinderP::executeHaloFinder()
 //
 /////////////////////////////////////////////////////////////////////////
 
-void CosmoHaloFinderP::collectHalos()
+void CosmoHaloFinderP::collectHalos(bool clearSerial)
 {
+  // Free old storage if any
+  if (this->haloSize != 0) {
+    delete [] this->haloSize;
+    this->haloSize = 0;
+  }
+  if (this->haloList != 0) {
+    delete [] this->haloList;
+    this->haloList = 0;
+  }
+  if (this->haloStart != 0) {
+    delete [] this->haloStart;
+    this->haloStart = 0;
+  }
+
   // Halo tag returned from the serial halo finder is actually the index
   // of the particle on this processor.  Must map to get to actual tag
   // which is common information between all processors.
@@ -363,8 +388,10 @@ void CosmoHaloFinderP::collectHalos()
   // Mixed halos are saved separately so that they can be merged
   processMixedHalos();
 
-  // Clear the data stored in serial halo finder
-  this->haloFinder.clearHaloTag();
+  if (clearSerial) {
+    // Clear the data stored in serial halo finder
+    this->haloFinder.clearHaloTag();
+  }
 
   delete [] this->haloAliveSize;
   delete [] this->haloDeadSize;
@@ -583,7 +610,7 @@ void CosmoHaloFinderP::processMixedHalos()
 //      id
 //      number of alive (for debugging)
 //      number of dead  (for debugging)
-//      first MERGE_COUNT particle ids (for merging)
+//      first pmin particle ids (for merging)
 //
 /////////////////////////////////////////////////////////////////////////
 
@@ -606,7 +633,7 @@ void CosmoHaloFinderP::mergeHalos()
 
   // Everyone creates the buffer for maximum halos
   // MASTER will receive into it, others will send from it
-  int haloBufSize = maxNumberOfMixed * MERGE_COUNT * 2;
+  int haloBufSize = maxNumberOfMixed * this->pmin * 2;
   ID_T* haloBuffer = new ID_T[haloBufSize];
 
   // MASTER moves its own mixed halos to mixed halo vector (change index to tag)
@@ -654,8 +681,14 @@ void CosmoHaloFinderP::mergeHalos()
   }
 #endif
 
+  for (unsigned int i = 0; i < this->myMixedHalos.size(); i++)
+    delete this->myMixedHalos[i];
+  this->myMixedHalos.clear();
+
   for (unsigned int i = 0; i < this->allMixedHalos.size(); i++)
     delete this->allMixedHalos[i];
+  this->allMixedHalos.clear();
+
   delete [] haloBuffer;
 }
 
@@ -704,7 +737,7 @@ void CosmoHaloFinderP::collectMixedHalos
 
           // Translate index of particle to tag of particle
           vector<ID_T>* tags = this->myMixedHalos[h]->getTags();
-          for (int i = 0; i < MERGE_COUNT; i++)
+          for (int i = 0; i < this->pmin; i++)
             halo->addParticle((*tags)[i]);
 
         }
@@ -742,7 +775,7 @@ void CosmoHaloFinderP::collectMixedHalos
         halo->setRankID(rank);
         this->allMixedHalos.push_back(halo);
 
-        for (int t = 0; t < MERGE_COUNT; t++)
+        for (int t = 0; t < this->pmin; t++)
           halo->addParticle(haloBuffer[index++]);
       }
       notReceived--;
@@ -768,7 +801,7 @@ void CosmoHaloFinderP::collectMixedHalos
           haloBuffer[index++] = this->myMixedHalos[h]->getDeadCount();
 
           vector<ID_T>* tags = this->myMixedHalos[h]->getTags();
-          for (int i = 0; i < MERGE_COUNT; i++) {
+          for (int i = 0; i < this->pmin; i++) {
             haloBuffer[index++] = (*tags)[i];
           }
         }
@@ -1063,7 +1096,7 @@ void CosmoHaloFinderP::sendMixedHaloResults
 //
 /////////////////////////////////////////////////////////////////////////
 
-void CosmoHaloFinderP::writeTaggedParticles()
+void CosmoHaloFinderP::writeTaggedParticles(bool clearSerial)
 {
   // Map the index of the particle on this process to the index of the
   // particle with the lowest tag value so that the written output refers
@@ -1135,7 +1168,12 @@ void CosmoHaloFinderP::writeTaggedParticles()
 
   delete outStream;
   delete [] mapIndex;
-}
 
+  if (clearSerial) {
+    // Clear the data stored in serial halo finder
+    this->haloFinder.clearHaloTag();
+  }
 }
 #endif // USE_VTK_COSMO
+
+} /* end cosmologytools namespace */
