@@ -142,8 +142,8 @@ int vtkPStructureFormationProbe::RequestData(
   if( this->SFProbe == NULL )
     {
     this->SFProbe = new cosmologytools::StructureFormationProbe();
-    this->SFProbe->SetFringe( this->Fringe );
     }
+  this->SFProbe->SetFringe( this->Fringe );
 
   // STEP 4: Build Langrange tesselation
   if( this->SFProbe->GetLangrangeTesselator() == NULL )
