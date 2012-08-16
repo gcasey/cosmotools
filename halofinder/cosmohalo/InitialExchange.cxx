@@ -77,8 +77,7 @@ namespace cosmologytools {
 
 InitialExchange::InitialExchange()
 {
-  // By default use MPI_COMM_WORLD
-  this->Communicator = MPI_COMM_WORLD;
+  this->Communicator = Partition::getComm();
 
   // Get the number of processors running this problem and rank
   this->numProc = Partition::getNumProc();
