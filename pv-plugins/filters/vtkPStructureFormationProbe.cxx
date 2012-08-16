@@ -15,6 +15,7 @@
 #include "vtkStructuredData.h"
 #include "vtkUniformGrid.h"
 #include "vtkUnstructuredGrid.h"
+#include "vtkMultiBlockDataSet.h"
 
 
 // sfprobe includes
@@ -116,7 +117,7 @@ int vtkPStructureFormationProbe::FillOutputPortInformation(
       info->Set(vtkDataObject::DATA_TYPE_NAME(),"vtkUnstructuredGrid");
       break;
     case 2:
-      info->Set(vtkDataObject::DATA_TYPE_NAME(),"vtkUniformGrid");
+      info->Set(vtkDataObject::DATA_TYPE_NAME(),"vtkMultiBlockDataSet");
       break;
     default:
       vtkErrorMacro("output port index out-of-bounds!");
@@ -167,9 +168,12 @@ int vtkPStructureFormationProbe::RequestData(
   // STEP 4: Get 3rd output (probe grid)
   vtkInformation *output3 = outputVector->GetInformationObject( 2 );
   assert( "pre: output information object is NULL" && (output3 != NULL) );
-  vtkUniformGrid *probedGrid =
-      vtkUniformGrid::SafeDownCast(
+  vtkMultiBlockDataSet *probedGrid =
+      vtkMultiBlockDataSet::SafeDownCast(
             output3->Get(vtkDataObject::DATA_OBJECT() ) );
+  // NOTE: The number of blocks should be the same as the number of ranks when
+  // we eventually run in parallel
+  probedGrid->SetNumberOfBlocks( 1 );
 
   // Flag used to indicate that the remaining steps of the algorithm must
   // re-execute
@@ -277,13 +281,9 @@ int vtkPStructureFormationProbe::RequestData(
   // Shallow-copy output objects
   tesselation->ShallowCopy( this->EulerGrid );
   caustics->ShallowCopy( this->CausticSurface );
-  probedGrid->ShallowCopy( this->AuxiliaryGrid );
 
-  // set some image pipeline keys require for properly visualize uniform grid
-  output3->Set(vtkDataObject::ORIGIN(),probedGrid->GetOrigin(),3);
-  output3->Set(vtkDataObject::SPACING(),probedGrid->GetSpacing(),3);
-  output3->Set(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),
-                  probedGrid->GetExtent(),6);
+  // Set probe grid output
+  probedGrid->SetBlock(0,this->AuxiliaryGrid);
 
   this->Controller->Barrier();
   return 1;
