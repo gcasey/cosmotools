@@ -12,10 +12,10 @@
  PURPOSE.  See the above copyright notice for more information.
 
  =========================================================================*/
-// .NAME vtkPStructureFormationProbe.h -- Structure formation filter
+// .NAME vtkPStructureFormationProbe.h -- Structure formation probe filter
 //
 // .SECTION Description
-//  A concrete instance of vtkMultiBlockDataSetAlgorithm that implements a
+//  A concrete instance of vtkUnstructuredGridAlgorithm that implements a
 //  tesselation-based approach for probing the structure of the universe. Namely,
 //  the filter implements functionality for:
 //  <ol>
@@ -23,7 +23,8 @@
 //    <li>Extracting caustic surfaces</li>
 //  </ol>
 //  The input of the filter is a set of particles and the output consists of the
-//  resulting tesselation in langrangian (initial) or euler space.
+//  resulting tesselation in eulerian space, the faces of the caustic surface,
+//  and the.
 #ifndef VTKPSTRUCTUREFORMATIONPROBE_H_
 #define VTKPSTRUCTUREFORMATIONPROBE_H_
 
