@@ -185,6 +185,11 @@ protected:
   int CurrentProbeGridExtent[6];
   int CurrentLangrangianExtent[6];
 
+  // Hold the outputs of this filter in ivars
+  vtkUnstructuredGrid *EulerGrid;
+  vtkUnstructuredGrid *CausticSurface;
+  vtkUniformGrid *AuxiliaryGrid;
+
   // Computed ivars
   double Bounds[6];
   REAL *Particles;

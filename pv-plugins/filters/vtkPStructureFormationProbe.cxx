@@ -45,6 +45,10 @@ vtkPStructureFormationProbe::vtkPStructureFormationProbe()
   this->ProbeGrid                  = 1;
   this->CurrentTimeStep            = -1;
 
+  this->EulerGrid      = NULL;
+  this->CausticSurface = NULL;
+  this->AuxiliaryGrid  = NULL;
+
   this->Controller = vtkMultiProcessController::GetGlobalController();
   this->SetNumberOfInputPorts(1);
   this->SetNumberOfOutputPorts(3);
@@ -66,6 +70,21 @@ vtkPStructureFormationProbe::~vtkPStructureFormationProbe()
   if( this->GlobalIds != NULL )
     {
     delete this->GlobalIds;
+    }
+
+  if( this->EulerGrid != NULL )
+    {
+    this->EulerGrid->Delete();
+    }
+
+  if( this->CausticSurface != NULL )
+    {
+    this->CausticSurface->Delete();
+    }
+
+  if( this->AuxiliaryGrid != NULL )
+    {
+    this->AuxiliaryGrid->Delete();
     }
 }
 
@@ -194,10 +213,16 @@ int vtkPStructureFormationProbe::RequestData(
   // upstream, i.e., the langrangian mesh
   if( reExecute || this->FringeHasChanged() )
     {
+    if( this->EulerGrid != NULL )
+      {
+      this->EulerGrid->Delete();
+      }
+    this->EulerGrid = vtkUnstructuredGrid::New();
+
     std::cout << "Build output tesselation mesh...";
     this->CurrentFringe = this->Fringe;
     this->SFProbe->SetFringe( this->Fringe );
-    this->ConstructOutputMesh(tesselation);
+    this->ConstructOutputMesh(this->EulerGrid);
     std::cout << "[DONE]\n";
     std::cout.flush();
     // Force down-stream calculations to execute
@@ -210,8 +235,15 @@ int vtkPStructureFormationProbe::RequestData(
     // Note, it only makese sent to extract caustic faces in euler space
     if( this->DomainSpace == EULER )
       {
+      if( this->CausticSurface != NULL )
+        {
+        this->CausticSurface->Delete();
+        }
+      this->CausticSurface = vtkUnstructuredGrid::New();
+
       std::cout << "Extracting caustic surfaces...";
-      this->ExtractCausticSurfaces(particles,tesselation,caustics);
+      this->ExtractCausticSurfaces(particles,
+          this->EulerGrid,this->CausticSurface);
       std::cout << "[DONE]\n";
       std::cout.flush();
       } // END if in Euler space
@@ -222,6 +254,13 @@ int vtkPStructureFormationProbe::RequestData(
   if( reExecute || this->ExtentsAreDifferent(
                       this->ProbeGridExtent,this->CurrentProbeGridExtent))
     {
+
+    if( this->AuxiliaryGrid != NULL )
+      {
+      this->AuxiliaryGrid->Delete();
+      }
+    this->AuxiliaryGrid = vtkUniformGrid::New();
+
     // Update current probe grid extent
     this->SetCurrentProbeGridExtent( this->ProbeGridExtent );
 
@@ -229,17 +268,22 @@ int vtkPStructureFormationProbe::RequestData(
     if( this->DomainSpace == EULER )
       {
       std::cout << "Probing uniform grid...";
-      this->ProbeUniformGrid( probedGrid );
+      this->ProbeUniformGrid( this->AuxiliaryGrid );
       std::cout << "[DONE]\n";
       std::cout.flush();
-
-      // set some image pipeline keys
-      output3->Set(vtkDataObject::ORIGIN(),probedGrid->GetOrigin(),3);
-      output3->Set(vtkDataObject::SPACING(),probedGrid->GetSpacing(),3);
-      output3->Set(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),
-                      probedGrid->GetExtent(),6);
       } // END if in Euler space
     }
+
+  // Shallow-copy output objects
+  tesselation->ShallowCopy( this->EulerGrid );
+  caustics->ShallowCopy( this->CausticSurface );
+  probedGrid->ShallowCopy( this->AuxiliaryGrid );
+
+  // set some image pipeline keys require for properly visualize uniform grid
+  output3->Set(vtkDataObject::ORIGIN(),probedGrid->GetOrigin(),3);
+  output3->Set(vtkDataObject::SPACING(),probedGrid->GetSpacing(),3);
+  output3->Set(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),
+                  probedGrid->GetExtent(),6);
 
   this->Controller->Barrier();
   return 1;
