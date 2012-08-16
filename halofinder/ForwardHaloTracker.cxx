@@ -95,6 +95,7 @@ void ForwardHaloTracker::RegisterParticles(
     {
     this->NumberOfParticles = N;
 
+    Partition::initialize(this->Communicator);
     CosmoHaloFinderP *haloFinder = new CosmoHaloFinderP;
 
     // Create vectors from the pointers since the halo-finder accepts vectors
