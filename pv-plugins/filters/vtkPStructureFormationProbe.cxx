@@ -64,12 +64,12 @@ vtkPStructureFormationProbe::~vtkPStructureFormationProbe()
 
   if( this->Particles != NULL )
     {
-    delete this->Particles;
+    delete [] this->Particles;
     }
 
   if( this->GlobalIds != NULL )
     {
-    delete this->GlobalIds;
+    delete [] this->GlobalIds;
     }
 
   if( this->EulerGrid != NULL )
