@@ -45,31 +45,32 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef BasicDefinition_h
 #define BasicDefinition_h
 
-#include <stdint.h>
-
-#ifdef ID_64
-   typedef      int64_t ID_T;           // Particle and halo ids
-#else
-   typedef      int32_t ID_T;           // Particle and halo ids
-#endif
-
-
-#ifdef POSVEL_64
-   typedef      double  POSVEL_T;       // Position,velocity
-   typedef      double  POTENTIAL_T;    // Potential
-#else
-   typedef      float   POSVEL_T;       // Position,velocity
-   typedef      float   POTENTIAL_T;    // Potential
-#endif
-
-#ifdef GRID_64
-   typedef      double  GRID_T;         // Grid types
-#else
-   typedef      float   GRID_T;         // Grid types
-#endif
-
-typedef int32_t         STATUS_T; // Dead (which neighbor) or alive particles
-typedef uint16_t        MASK_T;   // Other particle information
+#include "CosmologyToolsDefinitions.h"
+//#include <stdint.h>
+//
+//#ifdef ID_64
+//   typedef      int64_t ID_T;           // Particle and halo ids
+//#else
+//   typedef      int32_t ID_T;           // Particle and halo ids
+//#endif
+//
+//
+//#ifdef POSVEL_64
+//   typedef      double  POSVEL_T;       // Position,velocity
+//   typedef      double  POTENTIAL_T;    // Potential
+//#else
+//   typedef      float   POSVEL_T;       // Position,velocity
+//   typedef      float   POTENTIAL_T;    // Potential
+//#endif
+//
+//#ifdef GRID_64
+//   typedef      double  GRID_T;         // Grid types
+//#else
+//   typedef      float   GRID_T;         // Grid types
+//#endif
+//
+//typedef int32_t         STATUS_T; // Dead (which neighbor) or alive particles
+//typedef uint16_t        MASK_T;   // Other particle information
 
 
 ///////////////////////////////////////////////////////////////////////////

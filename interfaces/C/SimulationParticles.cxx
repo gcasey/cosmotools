@@ -11,7 +11,8 @@ SimulationParticles::SimulationParticles()
   this->VX = this->VY = this->VZ = NULL;
   this->Mass = this->Potential = NULL;
   this->GlobalIds           = NULL;
-  this->Mask = this->State = NULL;
+  this->Mask = NULL;
+  this->State = NULL;
   this->HaloTags            = NULL;
   this->SubHaloTags         = NULL;
   this->NumParticles        = 0;
@@ -30,7 +31,8 @@ SimulationParticles::~SimulationParticles()
   this->VX = this->VY = this->VZ = NULL;
   this->Mass = this->Potential = NULL;
   this->GlobalIds    = NULL;
-  this->Mask = this->State = NULL;
+  this->Mask = NULL;
+  this->State = NULL;
   this->NumParticles = 0;
 
   if( this->HaloTags != NULL )

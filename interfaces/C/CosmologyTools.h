@@ -57,11 +57,11 @@ void CosmologyDisableVis();
  */
 void CosmologySetParticles(
       INTEGER *tstep, REAL *redshift,
-      REAL *px, REAL *py, REAL *pz,
-      REAL *vx, REAL *vy, REAL *vz,
-      REAL *mass, REAL *potential,
-      INTEGER *GlobalParticlesIds,
-      INTEGER *mask, INTEGER *state,
+      POSVEL_T *px, POSVEL_T *py, POSVEL_T *pz,
+      POSVEL_T *vx, POSVEL_T *vy, POSVEL_T *vz,
+      POSVEL_T *mass, POTENTIAL_T *potential,
+      ID_T *GlobalParticlesIds,
+      MASK_T *mask, STATUS_T *state,
       INTEGER *NumberOfParticles);
 
 /**
@@ -80,7 +80,7 @@ void CosmologySetMemoryLayout(int* memoryLayout);
  * @param tsteps user-supplied array of time-steps
  * @param N the number of time-steps, i.e., size of the array.
  */
-void CosmologySetAnalysisTimeSteps(int *tsteps, int N);
+void CosmologySetAnalysisTimeSteps(INTEGER *tsteps, INTEGER N);
 
 /**
  * @brief Sets the frequency at which the tracker will be invoked.

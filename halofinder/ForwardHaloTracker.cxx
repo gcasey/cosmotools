@@ -73,11 +73,11 @@ bool ForwardHaloTracker::IsTrackerTimeStep(const int tstep)
 
 //------------------------------------------------------------------------------
 void ForwardHaloTracker::RegisterParticles(
-    const int tstep, const double redShift,
-    REAL* px, REAL* py, REAL *pz,
-    REAL* vx, REAL* vy, REAL *vz,
-    REAL* mass, REAL* potential,
-    INTEGER* id, INTEGER* mask, INTEGER* state,
+    const INTEGER tstep, const POSVEL_T redShift,
+    POSVEL_T* px, POSVEL_T* py, POSVEL_T*pz,
+    POSVEL_T* vx, POSVEL_T* vy, POSVEL_T*vz,
+    REAL* mass, POTENTIAL_T* potential,
+    ID_T* id, MASK_T* mask, STATUS_T* state,
     INTEGER N)
 {
   // Sanity checks
@@ -206,15 +206,15 @@ void ForwardHaloTracker::GetHaloInformation(
 
     // TODO: we should change the way we access the halo-finder information
     // here. We need to have a more efficient and intuitive API.
-    REAL *xlocHalo = new REAL[ NumParticlesInHalo ];
-    REAL *ylocHalo = new REAL[ NumParticlesInHalo ];
-    REAL *zlocHalo = new REAL[ NumParticlesInHalo ];
-    REAL *xVelHalo = new REAL[ NumParticlesInHalo ];
-    REAL *yVelHalo = new REAL[ NumParticlesInHalo ];
-    REAL *zVelHalo = new REAL[ NumParticlesInHalo ];
-    REAL *massHalo = new REAL[ NumParticlesInHalo ];
-    int  *id       = new int[ NumParticlesInHalo ];
-    int *actualIdx = new int[ NumParticlesInHalo ];
+    POSVEL_T *xlocHalo = new POSVEL_T[ NumParticlesInHalo ];
+    POSVEL_T *ylocHalo = new POSVEL_T[ NumParticlesInHalo ];
+    POSVEL_T *zlocHalo = new POSVEL_T[ NumParticlesInHalo ];
+    POSVEL_T *xVelHalo = new POSVEL_T[ NumParticlesInHalo ];
+    POSVEL_T *yVelHalo = new POSVEL_T[ NumParticlesInHalo ];
+    POSVEL_T *zVelHalo = new POSVEL_T[ NumParticlesInHalo ];
+    POSVEL_T *massHalo = new POSVEL_T[ NumParticlesInHalo ];
+    ID_T  *id          = new ID_T[ NumParticlesInHalo ];
+    int *actualIdx     = new int[ NumParticlesInHalo ];
 
     fof->extractInformation(
         internalHaloIdx,actualIdx,

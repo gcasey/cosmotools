@@ -43,7 +43,7 @@ public:
    * @note extent is a flat array that stores[imin imax jmin jmax kmin kmax]
    * @pre extent is expected to be a 3-D extent
    */
-  void SetGridExtent(int extent[6]);
+  void SetGridExtent(INTEGER extent[6]);
   GetMacro(Extent,const INTEGER*);
 
   /**

@@ -75,7 +75,7 @@ LangrangianTesselator::~LangrangianTesselator()
 }
 
 //-----------------------------------------------------------------------------
-void LangrangianTesselator::SetGridExtent(int extent[6])
+void LangrangianTesselator::SetGridExtent(INTEGER extent[6])
 {
   memcpy(this->Extent,extent,sizeof(INTEGER)*6);
   INTEGER numVoxels = ExtentUtilities::ComputeNumberOfCells( extent );

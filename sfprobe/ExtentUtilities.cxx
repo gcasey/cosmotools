@@ -19,7 +19,7 @@ ExtentUtilities::~ExtentUtilities()
 }
 
 //------------------------------------------------------------------------------
-bool ExtentUtilities::Is3DExtent(int ext[6])
+bool ExtentUtilities::Is3DExtent(INTEGER ext[6])
 {
   bool status = false;
   if( (IMAX(ext) > IMIN(ext) ) &&
@@ -87,7 +87,7 @@ void ExtentUtilities::GetExtentDimensions(INTEGER ext[6], INTEGER dim[3])
 }
 
 //------------------------------------------------------------------------------
-INTEGER ExtentUtilities::ComputeNumberOfNodes( int ext[6] )
+INTEGER ExtentUtilities::ComputeNumberOfNodes( INTEGER ext[6] )
 {
   assert( "pre: given extent must be a 3-D extent" &&
           (ExtentUtilities::Is3DExtent(ext)) );
@@ -101,7 +101,7 @@ INTEGER ExtentUtilities::ComputeNumberOfNodes( int ext[6] )
 }
 
 //------------------------------------------------------------------------------
-INTEGER ExtentUtilities::ComputeNumberOfCells( int ext[6] )
+INTEGER ExtentUtilities::ComputeNumberOfCells( INTEGER ext[6] )
 {
   assert( "pre: given extent must be a 3-D extent" &&
           (ExtentUtilities::Is3DExtent(ext)) );

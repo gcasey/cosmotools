@@ -45,11 +45,12 @@ public:
    * @param N the total number of particles
    */
   void RegisterParticles(
-      const int tstep, const double redShift,
-      REAL* px, REAL* py, REAL *pz,
-      REAL* vx, REAL* vy, REAL *vz,
-      REAL* mass, REAL* potential, INTEGER* id,
-      INTEGER* mask, INTEGER* state,
+      const INTEGER tstep, const REAL redShift,
+      POSVEL_T* px, POSVEL_T* py, POSVEL_T *pz,
+      POSVEL_T* vx, POSVEL_T* vy, POSVEL_T *vz,
+      REAL* mass, POTENTIAL_T* potential, ID_T* id,
+      MASK_T* mask,
+      STATUS_T* state,
       INTEGER N);
 
   /**
@@ -114,17 +115,17 @@ protected:
   INTEGER Overlap;    // the ghost overlap
 
   // Registered particles, these pointers are owned by the caller!
-  std::vector< REAL > Px;
-  std::vector< REAL > Py;
-  std::vector< REAL > Pz;
-  std::vector< REAL > Vx;
-  std::vector< REAL > Vy;
-  std::vector< REAL > Vz;
-  std::vector< REAL > Mass;
-  std::vector< REAL > Potential;
-  std::vector< INTEGER > Id;
-  std::vector< short unsigned int > Mask;
-  std::vector< INTEGER > State;
+  std::vector< POSVEL_T > Px;
+  std::vector< POSVEL_T > Py;
+  std::vector< POSVEL_T > Pz;
+  std::vector< POSVEL_T > Vx;
+  std::vector< POSVEL_T > Vy;
+  std::vector< POSVEL_T > Vz;
+  std::vector< POSVEL_T > Mass;
+  std::vector< POTENTIAL_T > Potential;
+  std::vector< ID_T > Id;
+  std::vector< MASK_T > Mask;
+  std::vector< STATUS_T > State;
   INTEGER NumberOfParticles;
 
   // Tracker parameters

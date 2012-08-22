@@ -38,12 +38,12 @@ public:
   int TimeStep;
   int NumberOfHalos;
 
-  std::vector< REAL > HaloCenter;
+  std::vector< POSVEL_T > HaloCenter;
   std::vector< REAL > HaloVelocityDispersion;
   std::vector< REAL > HaloAverageVelocity;
   std::vector< REAL > HaloMass;
-  std::vector< INTEGER > GlobalIds;
-  std::vector< INTEGER > HaloTags;
+  std::vector< ID_T > GlobalIds;
+  std::vector< ID_T > HaloTags;
 
 private:
   DISABLE_COPY_AND_ASSIGNMENT(HaloDataInformation);
