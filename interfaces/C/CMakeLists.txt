@@ -6,9 +6,9 @@ foreach(header ${HEADERS})
 endforeach()
 
 set(SOURCES
- CosmologyToolsManager.cxx
+# CosmologyToolsManager.cxx
  CosmologyTools.cxx
- SimulationParticles.cxx
+# SimulationParticles.cxx
  )
 
 include_directories(${PACKAGE_halofinder_INCLUDE_DIRS})
@@ -21,21 +21,14 @@ set(RequiredLibs
 include(FortranCInterface)
 FortranCInterface_HEADER(
     CosmologyToolsAPIMangling.h SYMBOLS
-        CosmologyDisableVis
-        CosmologyEnableVis
-        CosmologyFinalize
-        CosmologyFindHalos
-        CosmologyFinit
-        CosmologyGetHaloIds
-        CosmologyGetSubHaloIds
-        CosmologyInit
-        CosmologySetAnalysisTimeSteps
-        CosmologySetHaloFinder
-        CosmologySetMemoryLayout
-        CosmologySetParticles
-        CosmologySetTrackerFrequency
-        CosmologyTrackHalos
+        cosmotools_fortran_initialize
+        cosmotools_set_analysis_config
+        cosmotools_set_domain_parameters
+        cosmotools_set_particles
+        cosmotools_coprocess
+        cosmotools_finalize
         )
+
 ## Copy the mangled header to the main includes directory
 file(COPY ${PROJECT_BINARY_DIR}/C/CosmologyToolsAPIMangling.h
       DESTINATION ${HEADER_INCLUDES_DIRECTORY} )

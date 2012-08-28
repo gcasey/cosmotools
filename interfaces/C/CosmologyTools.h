@@ -10,7 +10,7 @@
 
 using namespace cosmologytools;
 
-CosmologyToolsManager *CosmoToolsManager;
+//CosmologyToolsManager *CosmoToolsManager;
 
 
 #ifdef __cplusplus
@@ -18,117 +18,78 @@ extern "C" {
 #endif
 
 /**
- * @brief Initialize the cosmology tools interface with an MPI communicator.
- * @param comm a C MPI communicator that will be used.
+ * @brief Initialize the cosmotools in-situ library.
+ * @param comm user-supplied communicator where the analysis will take place.
+ * @note This method is typically called once, in the beginning of the program.
  */
-void CosmologyInit(MPI_Comm *comm);
+void cosmotools_initialize(MPI_Comm *comm);
 
 /**
- * @brief Initialize the cosmology tool with the given Fortran MPI communicator.
- * @param fcomm a Fortran MPI communicator that will be used.
- * @note The fortran communicator is converted to the corresponding C
- * communicator internally.
+ * @brief Initialize the cosmotools in-situ library from a fortran program.
+ * @param fcomm the user-supplied fortran communicator
+ * @see cosmotools_initialize
  */
-void CosmologyFinit(MPI_Fint *fcomm);
+void cosmotools_fortran_initialize(MPI_Fint *fcomm);
 
 /**
- * @brief Enable/Disable in-situ visualization.
- * @pre CosmoToolsManager != NULL.
+ * @brief Set the configuration file for the cosmotools library
+ * @param configfile filename and path of the configuration file
+ * @note This method is typically called once, in the beginning of the program.
  */
-void CosmologyEnableVis();
-void CosmologyDisableVis();
+void cosmotools_set_analysis_config(char *configfile);
+
 
 /**
- * @brief Sets the particles at the given timeste/redshift.
- * @param tstep the current discrete time-step
+ * @brief Set the domain parameters for the N-body
+ * @param boxlength the length of the box domain
+ * @param ghostoverlap the ghost zone overlap
+ * @param NDIM the number of points along each dimension
+ * @note This method is typically called once, in the beginning of the program.
+ */
+void cosmotools_set_domain_parameters(
+      REAL boxlength, INTEGER ghostoverlap, INTEGER NDIM);
+
+/**
+ * @brief Sets the particle information at the given time-step.
+ * @param tstep the current time-step
  * @param redshift the redshift at the given time-step
- * @param px x-component of the particles position vector
- * @param py y-component of the particles position vector
- * @param pz z-component of the particles position vector
- * @param vx x-component of the particle velocity vector
- * @param vy y-component of the particle velocity vector
- * @param vz z-component of the particle velocity vector
- * @param mass the particles masses
- * @param potential the particle potential
- * @param GlobalParticlesIds the global IDs of each particle
- * @param mask the particles mask
- * @param state the particles state
- * @param NumberOfParticles the total number of particles
+ * @param px the x-coordinate of the particle position vector
+ * @param py the y-coordinate of the particle position vector
+ * @param pz the z-coordinate of the particle position vector
+ * @param vx the x-coordinate of the particle velocity vector
+ * @param vy the y-coordinate of the particle velocity vector
+ * @param vz the z-coordinate of the particle velocity vector
+ * @param mass array of particle masses
+ * @param potential array of particle potential
+ * @param tags array of particle tags
+ * @param mask array of particle masking
+ * @param status array of particle status
+ * @param N the total number of particles for the given process
  */
-void CosmologySetParticles(
-      INTEGER *tstep, REAL *redshift,
-      POSVEL_T *px, POSVEL_T *py, POSVEL_T *pz,
-      POSVEL_T *vx, POSVEL_T *vy, POSVEL_T *vz,
-      POSVEL_T *mass, POTENTIAL_T *potential,
-      ID_T *GlobalParticlesIds,
-      MASK_T *mask, STATUS_T *state,
-      INTEGER *NumberOfParticles);
+void cosmotools_set_particles(
+        INTEGER *tstep, REAL *redshift,
+        POSVEL_T *px, POSVEL_T *py, POSVEL_T *pz,
+        POSVEL_T *vx, POSVEL_T *vy, POSVEL_T *vz,
+        REAL *mass, POTENTIAL_T *potential,
+        ID_T *tags, MASK_T *mask, STATUS_T *status,
+        ID_T *N);
 
 /**
- * @brief Sets the memory layout that the interface will be using.
- * @param memoryLayout the memory layout
- * @note The memory layout is defined as follows:
- * <ul>
- *   <li>ROWMAJOR, i.e., xyz xyz xyz...</li>
- *   <li>COLMAJOR, i.e., xxx...yyy...zzz</li>
- * </ul>
+ * @brief Called at each time-step to perform analysis.
+ * @note The analysis task(s) that will be executed at each time-step are
+ * defined on the user-supplied configuration file. Each time coprocess is
+ * called, rank 0 (w.r.t. to the given communicator) parses the configuration
+ * file and constructs a CosmoToolsParameters object. Then CosmoToolsParameters
+ * is distributed to all ranks.
  */
-void CosmologySetMemoryLayout(int* memoryLayout);
+void cosmotools_coprocess();
 
 /**
- * @brief Sets the analysis time-steps the cosmology tools executes
- * @param tsteps user-supplied array of time-steps
- * @param N the number of time-steps, i.e., size of the array.
+ * @brief Finalizes the cosmotools environment.
  */
-void CosmologySetAnalysisTimeSteps(INTEGER *tsteps, INTEGER N);
+void cosmotools_finalize();
 
-/**
- * @brief Sets the frequency at which the tracker will be invoked.
- * @param frequency the frequency for the halo tracker
- */
-void CosmologySetTrackerFrequency(int *frequency);
 
-/**
- * @brief Fills the user-supplied buffer with the halo tags for each particle.
- * @param haloTags user-supplied buffer to store the halo tags
- * @note particles that are not inside a halo will have a value of -1.
- */
-void CosmologyGetHaloIds(INTEGER *haloTags);
-
-/**
- * @brief Fills the user-supplied buffer with the subhalo tags for each particle.
- * @param subHaloTags user-supplied buffer to store the sub-halo tags
- * @note particles that aere not inside a sub-halo will have a valu of -1.
- */
-void CosmologyGetSubHaloIds(INTEGER *subHaloTags);
-
-/**
- * @brief Sets the halo-finder to use
- * @param haloFinder the halo-finder to use
- * @see HaloFinders.h for a list of halofinders to use.
- */
-void CosmologySetHaloFinder(int *haloFinder);
-
-/**
- * @brief Uses the forward halo-tracker to track halos at the prescribed
- * tracker frequency.
- * @note This method is used in combination with CosmologySetParticles
- */
-void CosmologyTrackHalos();
-
-/**
- * @brief Calls the prescribed halo finder to find the halos in the particle
- * dataset of the given time-step.
- * @note This method is used in combination with CosmologySetParticles
- */
-void CosmologyFindHalos();
-
-/**
- * @brief Finalize the cosmology tools interface.
- * @note Blocks until all processes call this method.
- * @pre CosmoToolsManager != NULL
- */
-void CosmologyFinalize();
 
 #ifdef __cplusplus
 }
