@@ -6,9 +6,7 @@ foreach(header ${HEADERS})
 endforeach()
 
 set(SOURCES
-# CosmologyToolsManager.cxx
  CosmologyTools.cxx
-# SimulationParticles.cxx
  )
 
 include_directories(${PACKAGE_halofinder_INCLUDE_DIRS})
