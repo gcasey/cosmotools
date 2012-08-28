@@ -1,0 +1,46 @@
+project(framework)
+
+## Specify global include dirs and global libraries for this project
+## such that, they can be used within other projects.
+set(PACKAGE_framework_INCLUDE_DIRS
+    ${PACKAGE_framework_INCLUDE_DIRS}
+    ${PROJECT_SOURCE_DIR}
+    CACHE INTERNAL "package include directories")
+set(PACKAGE_framework_LIBRARIES
+    ${PACKAGE_framework_LIBRARIES}
+    framework
+    CACHE INTERNAL "package libraries")
+
+## Move header files to the include directory in the build tree
+file(GLOB HEADERS lib/*.h lib/*.hpp)
+foreach(header ${HEADERS})
+  get_filename_component(headerFile ${header} NAME)
+  file(COPY ${header} DESTINATION ${HEADER_INCLUDES_DIRECTORY})
+endforeach()
+
+## Append to the include directories
+include_directories(
+    ${PROJECT_SOURCE_DIR}
+    ${PACKAGE_halofinder_INCLUDE_DIRS}
+    )
+
+## Set the required libraries for the framework
+set(RequiredLibs
+    ${PACKAGE_halofinder_LIBRARIES}
+    ${MPI_LIBRARIES}
+    )
+
+## Set Framework code sources
+set(FRAMEWORK_SRC
+    AnalysisTool.cxx
+    CosmologyToolsManager.cxx
+    SimulationParticles.cxx
+    )
+
+if(BUILD_SHARED_LIBS)
+  add_library(framework SHARED ${FRAMEWORK_SRC})
+else()
+  add_library(framework STATIC ${FRAMEWORK_SRC})
+endif()
+target_link_libraries(framework
+    ${PACKAGE_framework_LIBRARIES} ${RequiredLibs})

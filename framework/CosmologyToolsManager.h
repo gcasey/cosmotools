@@ -8,110 +8,135 @@
 #include "CosmologyToolsMacros.h"
 #include <mpi.h>
 
-namespace cosmologytools
-{
+#include <cassert>
+#include <string>
+#include <vector>
 
+namespace cosmotk {
 
-/**
- * @class MemoryLayout
- * @brief An object to hold an enum of all available memory layouts for
- * multi-dimensional arrays. Currently,two layouts are supported: (1) ROWMAJOR,
- * i.e., a c-style layout, and (2) COLMAJOR, i.e., a FORTRAN-style layout.
- */
-class MemoryLayout
-{
-public:
-  enum
-    {
-    ROWMAJOR=0,
-    COLMAJOR=1,
-    NUMBER_OF_LAYOUTS
-    };
-};
-
-// Forward declarations
+// Forward declaration
+class AnalysisTool;
 class SimulationParticles;
-class ForwardHaloTracker;
 
 class CosmologyToolsManager
 {
 public:
-  CosmologyToolsManager();
-  virtual ~CosmologyToolsManager();
-
-  // Inline class macros
-  GetNSetMacro(Layout,int);
-  GetNSetMacro(HaloFinder,int);
-  GetNSetMacro(Communicator,MPI_Comm);
-  GetNSetMacro(EnableVis,bool);
-  GetNSetMacro(HaloTrackingFrequency,int);
-  GetMacro(Particles,SimulationParticles*);
 
   /**
-   * @brief Sets the analysis timesteps explicitely.
-   * @param timeSteps user-supplied buffer of timesteps.
-   * @param numTimeSteps the number of time-steps.
+   * @brief Default Constructor
    */
-  void SetAnalysisTimeSteps(
-          INTEGER *timeSteps, INTEGER numTimeSteps);
+  CosmologyToolsManager();
 
   /**
-   * @brief Sets the particles at the given timeste/redshift.
-   * @param tstep the current discrete time-step
+   * @brief Destructor
+   */
+  ~CosmologyToolsManager();
+
+  /**
+   * @brief Initializes the cosmology environment
+   * @param comm user-supplied communicator, default uses MPI_COMM_WORLD
+   * @post this->Communicator != MPI_COMM_NULL
+   */
+  void Initialize(MPI_Comm comm=MPI_COMM_WORLD);
+
+  /**
+   * @brief Sets the configuration file to be used by this instance of the
+   * cosmology tools.
+   * @param configfile configuration file
+   */
+  void SetAnalysisConfiguration(char *configfile);
+
+  /**
+   * @brief Sets the domain parameters for this instance of cosmology tools.
+   * @param boxlength the length of the box domain
+   * @param ghostoverlap the overlap of ghost particles between partitions and
+   * across periodic boundaries
+   * @param NDIM the number of points along each dimension in lagrangian space
+   */
+  void SetDomainParameters(
+      REAL boxlength, INTEGER ghostoverlap, INTEGER NDIM);
+
+  /**
+   * @brief Sets the particle information at the given time-step.
+   * @param tstep the current time-step
    * @param redshift the redshift at the given time-step
-   * @param px x-component of the particles position vector
-   * @param py y-component of the particles position vector
-   * @param pz z-component of the particles position vector
-   * @param vx x-component of the particle velocity vector
-   * @param vy y-component of the particle velocity vector
-   * @param vz z-component of the particle velocity vector
-   * @param GlobalParticlesIds the global IDs of each particle
-   * @param NumberOfParticles the total number of particles
+   * @param px the x-coordinate of the particle position vector
+   * @param py the y-coordinate of the particle position vector
+   * @param pz the z-coordinate of the particle position vector
+   * @param vx the x-coordinate of the particle velocity vector
+   * @param vy the y-coordinate of the particle velocity vector
+   * @param vz the z-coordinate of the particle velocity vector
+   * @param mass array of particle masses
+   * @param potential array of particle potential
+   * @param tags array of particle tags
+   * @param mask array of particle masking
+   * @param status array of particle status
+   * @param N the total number of particles for the given process
    */
   void SetParticles(
-      INTEGER tstep, REAL redshift,
+      INTEGER tstep, REAL redShift,
       POSVEL_T *px, POSVEL_T *py, POSVEL_T *pz,
       POSVEL_T *vx, POSVEL_T *vy, POSVEL_T *vz,
       REAL *mass, POTENTIAL_T *potential,
-      ID_T *GlobalParticlesIds,
-      MASK_T *mask, STATUS_T *state,
-      INTEGER NumberOfParticles);
+      ID_T *tags, MASK_T *mask, STATUS_T *status,
+      ID_T N);
 
   /**
-   * @brief Uses the forward halo-tracker to track the halos at the prescribed
-   * tracker frequency.
+   * @brief Executes analysis tasks according to the configuration file.
+   * @pre this->Communicator != MPI_COMM_NULL
    */
-  void TrackHalos();
+  void CoProcess();
 
   /**
-   * @brief Calls the prescribed halo-finder to find the halos in the particle
-   * dataset of the given time-step.
+   * @brief Performs barrier synchronization.
    */
-  void FindHalos();
+  void Barrier()
+    {
+    assert("pre: communicator is NULL!"&&(this->Communicator!=MPI_COMM_NULL));
+    MPI_Barrier(this->Communicator);
+    }
 
   /**
-   * @brief Barrier synchronization with all processes.
+   * @brief Finalizes cosmology tools environment
    */
-  void Barrier() {MPI_Barrier(this->Communicator);};
-
-protected:
-  int HaloFinder;
-  int HaloTrackingFrequency;
-  int Layout;
-  MPI_Comm Communicator;
-  bool EnableVis;
-
-  INTEGER *TimeSteps;
-  INTEGER NumTimeSteps;
-
-
-  SimulationParticles *Particles;
-
-  ForwardHaloTracker *HaloTracker;
+  void Finalize();
 
 private:
+  std::string ConfigurationFile;
+  MPI_Comm Communicator;
+  int Rank;
+  int NumRanks;
+
+  // Domain parameters
+  REAL BoxLength;
+  INTEGER GhostOverlap;
+  INTEGER NDIM;
+
+  // Data-structure to store the simulation particles
+  SimulationParticles *Particles;
+
+  // List of Analysis tools
+  std::vector<AnalysisTool*> AnalysisTools;
+
+  /**
+   * @brief Clears the analysis tools
+   */
+  void ClearAnalysisTools();
+
+  /**
+   * @brief Parses the configuration file on rank 0 and distributes parameters
+   * to all ranks.
+   */
+  void ParseConfigurationFile();
+
+  /**
+   * @brief Creates analysis tools
+   */
+  void CreateAnalysisTools();
+
   DISABLE_COPY_AND_ASSIGNMENT(CosmologyToolsManager);
 };
 
-} /* namespace cosmologytools */
-#endif /* COSMOLOGYTOOLSMANAGER_H_ */
+} // END cosmotk namespace
+
+#endif
