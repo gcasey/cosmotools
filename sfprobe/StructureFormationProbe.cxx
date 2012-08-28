@@ -270,12 +270,12 @@ void StructureFormationProbe::BuildVirtualGrid()
   this->VGrid->SetDimensions(dims);
   this->VGrid->RegisterMesh(this->EulerMesh);
 
-  std::ostringstream oss;
-  oss << "vgrid_" << this->TimeStepCounter << ".vtk";
-  std::ofstream ofs;
-  ofs.open(oss.str().c_str());
-  ofs << this->VGrid->ToLegacyVtkString() << std::endl;
-  ofs.close();
+//  std::ostringstream oss;
+//  oss << "vgrid_" << this->TimeStepCounter << ".vtk";
+//  std::ofstream ofs;
+//  ofs.open(oss.str().c_str());
+//  ofs << this->VGrid->ToLegacyVtkString() << std::endl;
+//  ofs.close();
 }
 
 //------------------------------------------------------------------------------
