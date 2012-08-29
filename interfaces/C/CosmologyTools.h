@@ -4,14 +4,13 @@
 #ifndef COSMOLOGY_TOOLS_H_
 #define COSMOLOGY_TOOLS_H_
 
-#include "CosmologyToolsAPIMangling.h" // auto-generated
+#include "CosmologyToolsAPIMangling.h" // auto-generated for Fortran interface
+
+#include "CosmologyToolsDefinitions.h"
 #include "CosmologyToolsManager.h"
 #include <mpi.h>
 
-using namespace cosmologytools;
-
-//CosmologyToolsManager *CosmoToolsManager;
-
+cosmotk::CosmologyToolsManager *CosmoToolsManager;
 
 #ifdef __cplusplus
 extern "C" {

@@ -9,10 +9,12 @@ set(SOURCES
  CosmologyTools.cxx
  )
 
-include_directories(${PACKAGE_halofinder_INCLUDE_DIRS})
+include_directories(
+    ${PACKAGE_framework_INCLUDE_DIRS}
+    )
 
 set(RequiredLibs
-    ${PACKAGE_halofinder_LIBRARIES}
+    ${PACKAGE_framework_LIBRARIES}
     ${MPI_LIBRARIES})
 
 ## Setup the fortran mangling
