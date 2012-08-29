@@ -24,6 +24,7 @@ option(BUILD_SIMULATION_INTERFACE "Build Simulation inteface" OFF)
 if(${BUILD_SIMULATION_INTERFACE})
   set(cosmopackages
     ${cosmopackages}
+    framework
     interfaces
     )
 endif()
