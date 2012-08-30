@@ -7,17 +7,17 @@ VERSION 1.0
 
 # Visualization Parameters
 VISUALIZATION  YES
-SERVER         127.0.0.1
-PORT           2222
+VIZ_SERVER     127.0.0.1
+VIZ_PORT       2222
 
-## Frequency at which to update visualization every 20 time-steps.
+## Frequency at which to update visualization, e.g., every 20 time-steps.
 VIZ_FREQUENCY 20
 
 # Enable/Disable the tools that will be used at each time-step
-LANLHALOFINDER YES
-HALOTRACKER    YES
-TESS           YES
-SFPROBE        YES
+ANALYSISTOOL LANLHALOFINDER YES
+ANALYSISTOOL HALOTRACKER    NO
+ANALYSISTOOL TESS           NO
+ANALYSISTOOL SFPROBE        NO
 
 #-------------------------------------------------------------------------------
 # LANLHALOFINDER SECTION
@@ -69,7 +69,7 @@ FOF_SIZE_THRESHOLD 500
 ## Set the halofinder to use -- NOTE: the time-steps for the tracker are
 ## specified in the corresponding halo-finder section
 ## LANLHALOFINDER  0
-HALOFINDER = 0
+HALOFINDER 0
 MERGER_TREE_OUTPUT /path/to/output/filePrefix
 
 ## Indicates if merger-trees are visualized (at visualization checkpoint)

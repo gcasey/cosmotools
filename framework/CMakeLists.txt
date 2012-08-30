@@ -33,6 +33,7 @@ set(RequiredLibs
 ## Set Framework code sources
 set(FRAMEWORK_SRC
     AnalysisTool.cxx
+    CosmologyToolsConfiguration.cxx
     CosmologyToolsManager.cxx
     SimulationParticles.cxx
     )
@@ -44,3 +45,7 @@ else()
 endif()
 target_link_libraries(framework
     ${PACKAGE_framework_LIBRARIES} ${RequiredLibs})
+
+if(BUILD_TESTING)
+ add_subdirectory(testing)
+endif()

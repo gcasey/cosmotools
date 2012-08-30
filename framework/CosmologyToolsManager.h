@@ -16,6 +16,7 @@ namespace cosmotk {
 
 // Forward declaration
 class AnalysisTool;
+class CosmologyToolsConfiguration;
 class SimulationParticles;
 
 class CosmologyToolsManager
