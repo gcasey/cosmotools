@@ -28,7 +28,8 @@ SimulationParticles::~SimulationParticles()
   // the co-processing library will not delete these pointers.
   this->X  = this->Y  = this->Z  = NULL;
   this->VX = this->VY = this->VZ = NULL;
-  this->Mass = this->Potential    = NULL;
+  this->Mass         = NULL;
+  this->Potential    = NULL;
   this->GlobalIds    = NULL;
   this->Mask         = NULL;
   this->State        = NULL;

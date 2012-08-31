@@ -73,7 +73,7 @@ bool ForwardHaloTracker::IsTrackerTimeStep(const int tstep)
 
 //------------------------------------------------------------------------------
 void ForwardHaloTracker::RegisterParticles(
-    const INTEGER tstep, const POSVEL_T redShift,
+    const INTEGER tstep, const REAL redShift,
     POSVEL_T* px, POSVEL_T* py, POSVEL_T*pz,
     POSVEL_T* vx, POSVEL_T* vy, POSVEL_T*vz,
     REAL* mass, POTENTIAL_T* potential,
