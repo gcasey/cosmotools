@@ -98,6 +98,12 @@ void CosmologyToolsManager::ClearAnalysisTools()
 }
 
 //------------------------------------------------------------------------------
+void CosmologyToolsManager::CreateAnalysisTools()
+{
+  // TODO: implement this
+}
+
+//------------------------------------------------------------------------------
 void CosmologyToolsManager::CoProcess()
 {
   assert("pre: communicator is NULL!" && (this->Communicator!=MPI_COMM_NULL));
