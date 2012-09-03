@@ -1,7 +1,10 @@
 #ifndef COSMOLOGYTOOLSDEFINITIONS_H_
 #define COSMOLOGYTOOLSDEFINITIONS_H_
 
+// C/C++ required includes
 #include <stdint.h>
+#include <map>
+#include <string>
 
 /* Explicitly set precision for position/velocity
  * Behavior is controller by the user via a CMAKE build option.
@@ -57,5 +60,12 @@ typedef uint16_t MASK_T;
 #else
   typedef int32_t INTEGER;
 #endif
+
+
+/*
+ * Define dictionary as key,value pair of strings. Used to store analysis
+ * tool parameters
+ */
+typedef std::map<std::string,std::string> Dictionary;
 
 #endif /* COSMOLOGYTOOLSDEFINITIONS_H_ */
