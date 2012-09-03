@@ -67,5 +67,6 @@ typedef uint16_t MASK_T;
  * tool parameters
  */
 typedef std::map<std::string,std::string> Dictionary;
+typedef Dictionary::iterator DictionaryIterator;
 
 #endif /* COSMOLOGYTOOLSDEFINITIONS_H_ */
