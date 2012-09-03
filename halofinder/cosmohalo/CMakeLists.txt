@@ -19,16 +19,6 @@ foreach(header ${HEADERS})
   file(COPY ${header} DESTINATION ${HEADER_INCLUDES_DIRECTORY})
 endforeach()
 
-if( ${USECPP0X} )
- if( ${USEINT64} )
-  add_definitions(-DID_64)
- endif()
-endif()
-
-if(${DOUBLE_PRECISION})
-  add_definitions(-DGRID_64 -DPOSVEL_64)
-endif()
-
 set(Cosmo_LIBS  ${MPI_LIBRARIES})
 
 ## List of executables
