@@ -56,3 +56,6 @@ if(NOT BUILD_SHARED_LIBS)
  ## link with shared libraries
  add_definitions(-fPIC)
 endif()
+
+## Choose whether to build tests or not
+option(BUILD_TESTING "Build Tests." OFF)
