@@ -11,6 +11,9 @@
 #include <string>
 #include <set>
 
+// MPI include
+#include <mpi.h>
+
 namespace cosmotk
 {
 
@@ -69,10 +72,25 @@ public:
   GetNSetMacro(Parameters,Dictionary);
 
   /**
+   * @brief Set MPI Communicator
+   */
+  GetNSetMacro(Communicator,MPI_Comm);
+
+  /**
    * @brief Set visibility status, i.e., whether, the algorithm will be visible.
    */
   GetNSetMacro(VisibilityStatus,bool);
   inline bool IsVisible() {return this->VisibilityStatus;};
+
+  /**
+   * @brief Set the domain parameters
+   * @param boxLength the length of the box
+   * @param NG the size of the ghost-overlap zone
+   * @param NDIM number of points in each dimension
+   * @note domain is assumed to be square
+   */
+  void SetDomainParameters(REAL boxLength, INTEGER NG, INTEGER NDIM)
+    {this->BoxLength=boxLength; this->NG = NG; this->NDIM=NDIM;};
 
   /**
    * @brief Sets the explicit timesteps at which this algorithm will be
@@ -90,6 +108,11 @@ public:
   bool ShouldExecute(INTEGER ts);
 
   /**
+   * @brief Parses the parameters from the given dictionary.
+   */
+  virtual void ParseParameters() = 0;
+
+  /**
    * @brief Executes the analysis tool. Implementation is defined by
    * concrete classes.
    */
@@ -102,8 +125,16 @@ public:
   virtual void WriteOutput() = 0;
 
 protected:
+
+  // Domain parameters
+  REAL BoxLength;
+  INTEGER NG;
+  INTEGER NDIM;
+
+  // Name of the analysis tool, set in the constructor of concrete classes
   std::string Name;
 
+  // Common analysis tool parameters, read from the configuration file
   bool GenerateOutput;
   std::string OutputFile;
 
@@ -113,7 +144,11 @@ protected:
 
   bool VisibilityStatus;
 
+  // Storage of parameters
   Dictionary Parameters;
+
+  // MPI communicator used
+  MPI_Comm Communicator;
 
   /**
    * @brief Returns the value of the parameter with the given key
@@ -151,7 +186,8 @@ protected:
   std::string GetStringParameter(std::string key);
 
   /**
-   * @brief Parse basic parameters
+   * @brief Parse basic/common parameters for all analysis tools
+   * @note This method is intended as a helper method for concrete instances
    * @pre Parameters.empty() == false
    */
   void ParseBasicParameters();

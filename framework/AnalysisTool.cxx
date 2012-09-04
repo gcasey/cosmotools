@@ -15,15 +15,13 @@ namespace cosmotk
 
 AnalysisTool::AnalysisTool()
 {
-  this->Name       = "";
-
-  this->GenerateOutput = false;
-  this->OutputFile = "";
-
-  this->FrequencyType = EXPLICIT;
+  this->Name              = "";
+  this->GenerateOutput    = false;
+  this->OutputFile        = "";
+  this->FrequencyType     = EXPLICIT;
   this->ImplicitFrequency = 1;
-
-  this->VisibilityStatus = true;
+  this->VisibilityStatus  = true;
+  this->Communicator      = MPI_COMM_NULL;
 }
 
 //-----------------------------------------------------------------------------
