@@ -64,13 +64,19 @@ public:
   GetNSetMacro(ImplicitFrequency,int);
 
   /**
+   * @brief Set the analysis parameters.
+   */
+  GetNSetMacro(Parameters,Dictionary);
+
+  /**
    * @brief Set visibility status, i.e., whether, the algorithm will be visible.
    */
   GetNSetMacro(VisibilityStatus,bool);
   inline bool IsVisible() {return this->VisibilityStatus;};
 
   /**
-   * @brief Sets the explicit timesteps at which this algorithm will be executed.
+   * @brief Sets the explicit timesteps at which this algorithm will be
+   * executed.
    * @param timeSteps array of timesteps
    * @param N the number of timesteps.
    */
@@ -106,6 +112,49 @@ protected:
   std::set<int> ExplicitTimeSteps;
 
   bool VisibilityStatus;
+
+  Dictionary Parameters;
+
+  /**
+   * @brief Returns the value of the parameter with the given key
+   * @param key the name of the parameter in query
+   * @return the value of the parameter
+   */
+  double GetDoubleParameter(std::string key);
+
+  /**
+   * @brief Returns the value of the parameter with the given key
+   * @param key the name of the parameter in query
+   * @return the value of the parameter
+   */
+  int GetIntParameter(std::string key);
+
+  /**
+   * @brief Returns the value of the parameter with the given key
+   * @param key the name of the parameter in query
+   * @return the value of the parameter
+   */
+  std::set<int> GetIntListParameter(std::string key);
+
+  /**
+   * @brief Returns the value of the parameter with the given key
+   * @param key the name of the parameter in query
+   * @return the value of the parameter
+   */
+  bool GetBooleanParameter(std::string key);
+
+  /**
+   * @brief Returns the value of the parameter with the given key
+   * @param key the name of the parameter in query
+   * @return the value of the parameter
+   */
+  std::string GetStringParameter(std::string key);
+
+  /**
+   * @brief Parse basic parameters
+   * @pre Parameters.empty() == false
+   */
+  void ParseBasicParameters();
 
 private:
   DISABLE_COPY_AND_ASSIGNMENT(AnalysisTool);
