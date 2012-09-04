@@ -18,6 +18,7 @@ namespace cosmotk {
 class AnalysisTool;
 class CosmologyToolsConfiguration;
 class SimulationParticles;
+class CosmologyToolsConfiguration;
 
 class CosmologyToolsManager
 {
@@ -112,6 +113,9 @@ private:
   REAL BoxLength;
   INTEGER GhostOverlap;
   INTEGER NDIM;
+
+  // Storage for configuration parameters
+  CosmologyToolsConfiguration *Configuration;
 
   // Data-structure to store the simulation particles
   SimulationParticles *Particles;
