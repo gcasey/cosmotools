@@ -35,6 +35,7 @@ set(FRAMEWORK_SRC
     AnalysisTool.cxx
     CosmologyToolsConfiguration.cxx
     CosmologyToolsManager.cxx
+    LANLHaloFinderAnalysisTool.cxx
     SimulationParticles.cxx
     )
 
