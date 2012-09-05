@@ -132,6 +132,19 @@ public:
         vector<MASK_T>* mask,
         vector<STATUS_T>* state);
 
+  void setParticles(
+        POSVEL_T *xLoc,
+        POSVEL_T *yLoc,
+        POSVEL_T *zLoc,
+        POSVEL_T *xVel,
+        POSVEL_T *yVel,
+        POSVEL_T *zVel,
+        POTENTIAL_T *potential,
+        ID_T *id,
+        MASK_T *mask,
+        STATUS_T *state,
+        long NumParticles);
+
   // Return information needed by halo center finder
   int getNumberOfHalos()        { return (int)this->halos.size(); }
   int* getHalos()               { return &this->halos[0]; }

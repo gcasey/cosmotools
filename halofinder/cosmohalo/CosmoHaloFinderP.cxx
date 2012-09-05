@@ -48,6 +48,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <iomanip>
 #include <set>
 #include <math.h>
+#include <cassert>
 
 #include "Partition.h"
 #include "CosmoHaloFinderP.h"
@@ -250,6 +251,45 @@ void CosmoHaloFinderP::setParticles(
   this->tag = &(*id)[0];
   this->mask = &(*maskData)[0];
   this->status = &(*state)[0];
+}
+
+void CosmoHaloFinderP::setParticles(
+        POSVEL_T *xLoc,
+        POSVEL_T *yLoc,
+        POSVEL_T *zLoc,
+        POSVEL_T *xVel,
+        POSVEL_T *yVel,
+        POSVEL_T *zVel,
+        POTENTIAL_T *potential,
+        ID_T *id,
+        MASK_T *mask,
+        STATUS_T *state,
+        long NumParticles)
+{
+  assert("pre: xLoc is NULL!" && (xLoc != NULL));
+  assert("pre: yLoc is NULL!" && (yLoc != NULL));
+  assert("pre: zLoc is NULL!" && (zLoc != NULL));
+  assert("pre: xVel is NULL!" && (xVel != NULL));
+  assert("pre: yVel is NULL!" && (yVel != NULL));
+  assert("pre: zVel is NULL!" && (zVel != NULL));
+  assert("pre: potential is NULL!" && (potential != NULL));
+  assert("pre: id is NULL!" && (id != NULL));
+  assert("pre: mask is NULL!" && (mask != NULL));
+  assert("pre: state is NULL!" && (state != NULL));
+  assert("pre: NumParticles >= 0" && (NumParticles >= 0) );
+
+  this->xx     = xLoc;
+  this->yy     = yLoc;
+  this->zz     = zLoc;
+  this->vx     = xVel;
+  this->vy     = yVel;
+  this->vz     = zVel;
+  this->pot    = potential;
+  this->tag    = id;
+  this->mask   = mask;
+  this->status = state;
+
+  this->particleCount = NumParticles;
 }
 
 /////////////////////////////////////////////////////////////////////////
