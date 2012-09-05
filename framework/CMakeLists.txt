@@ -12,7 +12,7 @@ set(PACKAGE_framework_LIBRARIES
     CACHE INTERNAL "package libraries")
 
 ## Move header files to the include directory in the build tree
-file(GLOB HEADERS lib/*.h lib/*.hpp)
+file(GLOB HEADERS *.h *.hpp)
 foreach(header ${HEADERS})
   get_filename_component(headerFile ${header} NAME)
   file(COPY ${header} DESTINATION ${HEADER_INCLUDES_DIRECTORY})
