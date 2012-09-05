@@ -14,11 +14,11 @@
 // MPI include
 #include <mpi.h>
 
+#include "SimulationParticles.h"
+
 namespace cosmotk
 {
 
-// Forward declarations within cosmotk namespace
-class SimulationParticles;
 
 enum AnalysisToolFrequency
 {
