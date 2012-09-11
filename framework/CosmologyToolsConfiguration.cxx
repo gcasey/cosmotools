@@ -337,6 +337,16 @@ std::string CosmologyToolsConfiguration::GetToolName(const int idx)
 }
 
 //------------------------------------------------------------------------------
+void CosmologyToolsConfiguration::GetToolParameters(
+        std::string toolName, Dictionary &parameters)
+{
+  if(this->ToolToDictionary.find(toolName) != this->ToolToDictionary.end())
+    {
+    parameters = this->ToolToDictionary[toolName];
+    }
+}
+
+//------------------------------------------------------------------------------
 bool CosmologyToolsConfiguration::ToolExists(std::string toolName)
 {
   bool status = false;
