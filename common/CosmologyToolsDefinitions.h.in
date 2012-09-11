@@ -6,10 +6,29 @@
 #include <map>
 #include <string>
 
+#ifndef TYPE_POSVEL_DOUBLE
+#cmakedefine TYPE_POSVEL_DOUBLE
+#endif
+#ifndef TYPE_POTENTIAL_DOUBLE
+#cmakedefine TYPE_POTENTIAL_DOUBLE
+#endif
+#ifndef TYPE_GRID_DOUBLE
+#cmakedefine TYPE_GRID_DOUBLE
+#endif
+#ifndef TYPE_IDS_64BITS
+#cmakedefine TYPE_IDS_64BITS
+#endif
+#ifndef TYPE_REAL_DOUBLE
+#cmakedefine TYPE_REAL_DOUBLE
+#endif
+#ifndef TYPE_INT_64BITS
+#cmakedefine TYPE_INT_64BITS
+#endif
+
 /* Explicitly set precision for position/velocity
  * Behavior is controller by the user via a CMAKE build option.
  */
-#ifdef DOUBLE_PRECISION_POSVEL
+#ifdef TYPE_POSVEL_DOUBLE
   typedef double POSVEL_T;
 #else
   typedef float POSVEL_T;
@@ -18,13 +37,13 @@
 /* Explicitly set precision for potential
  * Behavior is controller by the user via a CMAKE build option.
  */
-#ifdef DOUBLE_PRECISION_POTENTIAL
+#ifdef TYPE_POTENTIAL_DOUBLE
   typedef double POTENTIAL_T;
 #else
   typedef float POTENTIAL_T;
 #endif
 
-#ifdef DOUBLE_PRECISION_GRID
+#ifdef TYPE_GRID_DOUBLE
   typedef double GRID_T;
 #else
   typedef float GRID_T;
@@ -33,7 +52,7 @@
 /* Explicitly set whether to use 64-bit or 32-bit integers for ID types.
  * Behavior is controller by the user via a CMAKE build option.
  */
-#ifdef USE_64_BIT_IDS
+#ifdef TYPE_IDS_64BITS
   typedef int64_t ID_T;
 #else
   typedef int32_t ID_T;
@@ -48,14 +67,14 @@ typedef uint16_t MASK_T;
 // Generic integer/floating point types
 
 /* Set whether default floating type precision is double or single */
-#ifdef DEFAULT_DOUBLE_PRECISION
+#ifdef TYPE_REAL_DOUBLE
   typedef double REAL;
 #else
   typedef float REAL;
 #endif
 
 /* Set whether to use 64 or 32 bit by default for integer types */
-#ifdef DEFAULT_64BIT_INTS
+#ifdef TYPE_INT_64BITS
   typedef int64_t INTEGER;
 #else
   typedef int32_t INTEGER;

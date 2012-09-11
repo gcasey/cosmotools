@@ -45,6 +45,7 @@ endif()
 ## MPI is a required dependency
 include(FindMPI REQUIRED)
 include_directories(
+    ${HEADER_INCLUDES_DIRECTORY}
     common
     ${MPI_INCLUDE_PATH})
 add_definitions(-DOMPI_SKIP_MPICXX -DMPICH_SKIP_MPICXX)
