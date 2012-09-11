@@ -1,8 +1,9 @@
 #include "CosmologyTools.h"
-
+#include "CosmologyToolsManager.h"
 #include <iostream>
 #include <cassert>
 
+static cosmotk::CosmologyToolsManager *CosmoToolsManager = NULL;
 
 void cosmotools_initialize(MPI_Comm *comm)
 {

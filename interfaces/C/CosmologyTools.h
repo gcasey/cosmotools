@@ -5,16 +5,15 @@
 #define COSMOLOGY_TOOLS_H_
 
 #include "CosmologyToolsAPIMangling.h" // auto-generated for Fortran interface
-
 #include "CosmologyToolsDefinitions.h"
-#include "CosmologyToolsManager.h"
+
 #include <mpi.h>
 
-cosmotk::CosmologyToolsManager *CosmoToolsManager;
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
 
 /**
  * @brief Initialize the cosmotools in-situ library.
