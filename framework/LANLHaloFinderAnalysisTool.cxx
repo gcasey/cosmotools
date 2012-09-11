@@ -1,5 +1,5 @@
 #include "LANLHaloFinderAnalysisTool.h"
-
+#include "Partition.h"
 #include <cassert>
 
 #include <mpi.h>
@@ -74,17 +74,20 @@ void LANLHaloFinderAnalysisTool::Execute(SimulationParticles *particles)
   assert("pre: MPI communicator is NULL!" &&
          (this->Communicator != MPI_COMM_NULL) );
 
-  // STEP 0: short-circuit here in the unlike event that we don't have any
+  // STEP 0: Initialize partition
+  cosmologytools::Partition::initialize(this->Communicator);
+
+  // STEP 1: short-circuit here in the unlike event that we don't have any
   // particles at this time-step
   if( particles->NumParticles == 0 )
     {
     return;
     }
 
-  // STEP 1: parse the analysis tool parameters
+  // STEP 2: parse the analysis tool parameters
   this->ParseParameters();
 
-  // STEP 2: Setup halo-finder
+  // STEP 3: Setup halo-finder
   if( this->GenerateOutput )
     {
     this->HaloFinder->setParameters(
@@ -98,7 +101,7 @@ void LANLHaloFinderAnalysisTool::Execute(SimulationParticles *particles)
         this->PMIN, this->LinkingLength);
     }
 
-  // STEP 3: Register the particles with the halo-finder
+  // STEP 4: Register the particles with the halo-finder
   // NOTE: cast this to long here since the halo-finder stores the total
   // number of particles in an ivar that is a long.
   long numParticles = static_cast<long>(particles->NumParticles);
@@ -109,10 +112,10 @@ void LANLHaloFinderAnalysisTool::Execute(SimulationParticles *particles)
       particles->Mask,particles->State,
       numParticles);
 
-  // STEP 4: Run the halo-finder at each rank
+  // STEP 5: Run the halo-finder at each rank
   this->HaloFinder->executeHaloFinder();
 
-  // STEP 5: Merge results across ranks
+  // STEP 6: Merge results across ranks
   this->HaloFinder->collectHalos(true /*clearSerial*/);
   this->HaloFinder->mergeHalos();
 }
