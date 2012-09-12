@@ -1,5 +1,4 @@
-## set the name of the system
-set(CMAKE_SYSTEM_NAME hopper-pgi)
+## Configuration on Hopper using PGI compilers (default)
 
 ## setup compilers
 set(BASE_COMPILER_DIR /opt/cray/xt-asyncpe/5.12/bin)
