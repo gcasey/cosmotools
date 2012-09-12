@@ -12,33 +12,12 @@ set(PACKAGE_tess_LIBRARIES
     tess
     CACHE INTERNAL "package libraries")
 
-## Check if we are compiling on OS X, if so pass the MAC_OSX definition
-## the code is using to figure out how to include OpenGL and GLUT.
-string(COMPARE EQUAL ${CMAKE_SYSTEM_NAME} "Darwin" OSX)
-if(${OSX})
- add_definitions(-DMAC_OSX)
-endif()
-
 ## Move header files to the include directory in the build tree
 file(GLOB HEADERS lib/*.h lib/*.hpp)
 foreach(header ${HEADERS})
   get_filename_component(headerFile ${header} NAME)
   file(COPY ${header} DESTINATION ${HEADER_INCLUDES_DIRECTORY})
 endforeach()
-
-## Find OpenGL library
-find_package(OpenGL REQUIRED)
-if( NOT OPENGL_FOUND )
- message(FATAL_ERROR "Could not find OpenGL!")
-endif()
-message(STATUS "-- Found OpenGL!")
-
-## Find GLUT library
-find_package(GLUT REQUIRED)
-if( NOT GLUT_FOUND )
- message(FATAL_ERROR "Could not find Glut!")
-endif()
-message(STATUS "-- Glut is found!")
 
 ## Find DIY library
 find_package(DIY REQUIRED)
@@ -58,8 +37,6 @@ include_directories(
     ${DIY_INCLUDE_DIRS}
     ${QHULL_INCLUDE_DIRS}
     ${MPI_INCLUDE_DIRS}
-    ${GLUT_INCLUDE_DIR}
-    ${OPENGL_INCLUDE_DIR}
     ${PROJECT_SOURCE_DIR}/lib)
 
 ## Required libraries for tess
@@ -67,8 +44,6 @@ set(RequiredLibs
     ${DIY_LIBRARIES}
     ${QHULL_LIBRARIES}
     ${MPI_LIBRARIES}
-    ${GLUT_LIBRARIES}
-    ${OPENGL_LIBRARIES}
     )
 
 ## TESS library sources
@@ -80,10 +55,46 @@ set(TESSLIB_SRC
 
 ## Set executables
 set(TESSLIB_EXE
-    lib/draw.cpp
     lib/dump.cpp
     driver/main.cpp
     )
+
+## Determine whether or not to build GL componenents of tess
+option(TESS_BUILD_GL_COMPONENTS "Build tess GL components" OFF)
+if(${TESS_BUILD_GL_COMPONENTS})
+    ## Check if we are compiling on OS X, if so pass the MAC_OSX definition
+    ## the code is using to figure out how to include OpenGL and GLUT.
+    string(COMPARE EQUAL ${CMAKE_SYSTEM_NAME} "Darwin" OSX)
+    if(${OSX})
+     add_definitions(-DMAC_OSX)
+    endif()
+
+    ## Find OpenGL library
+    find_package(OpenGL REQUIRED)
+    if( NOT OPENGL_FOUND )
+     message(FATAL_ERROR "Could not find OpenGL!")
+    endif()
+    message(STATUS "-- Found OpenGL!")
+
+    ## Find GLUT library
+    find_package(GLUT REQUIRED)
+    if( NOT GLUT_FOUND )
+     message(FATAL_ERROR "Could not find Glut!")
+    endif()
+    message(STATUS "-- Glut is found!")
+
+    ## update include directories for GLUT and OPENGL
+    include_directories(
+        ${GLUT_INCLUDE_DIR}
+        ${OPENGL_INCLUDE_DIR})
+
+    ## update required libs
+    list(APPEND RequiredLibs ${GLUT_LIBRARIES})
+    list(APPEND RequiredLibs ${OPENGL_LIBRARIES})
+
+    ## update list of executables
+    list(APPEND TESSLIB_EXE lib/draw.cpp)
+endif()
 
 ## Build tess library
 if(BUILD_SHARED_LIBS)
