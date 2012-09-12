@@ -29,6 +29,12 @@ foreach(header ${HEADERS})
   file(COPY ${header} DESTINATION ${HEADER_INCLUDES_DIRECTORY})
 endforeach()
 
+## Specify global sources for this project
+#set(PACKAGE_sfprobe_SOURCES
+#    ${SOURCES}
+#   CACHE INTERNAL "package sources")
+GetPackageSources(sfprobe ${PROJECT_SOURCE_DIR} ${SOURCES})
+
 if(BUILD_SHARED_LIBS)
  add_library(sfprobe SHARED ${SOURCES})
 else()

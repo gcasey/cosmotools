@@ -9,6 +9,10 @@ set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
 include(CosmologyToolsEnvironment)
 include(CosmologyToolsTypes)
+include(GetPackageSources)
+
+## Set the list of all the cosmotools sources
+set(cosmosrclist)
 
 ## Set the list of cosmology packages to be build. Note the order here matters!
 set(cosmopackages
@@ -60,8 +64,20 @@ foreach(pkg ${cosmopackages})
       CACHE INTERNAL "package include directories" FORCE)
   set(PACKAGE_${pkg}_LIBRARIES ${emptyList}
       CACHE INTERNAL "package libraries" FORCE)
+  set(PACKAGE_${pgk}_SOURCES ${emptyList}
+      CACHE INTERNAL "package sources" FORCE)
 
   ## add package to build
   add_subdirectory(${pkg})
 
+  ## append package sources to the cosmosrclist
+  list(APPEND cosmosrclist ${PACKAGE_${pkg}_SOURCES})
 endforeach()
+
+## Build single library
+if(BUILD_SHARED_LIBS)
+ add_library(cosmotools SHARED ${cosmosrclist})
+else()
+ add_library(cosmotools STATIC ${cosmosrclist})
+endif()
+target_link_libraries(cosmotools ${MPI_LIBRARIES})

@@ -31,6 +31,13 @@ set(HALOTRACKER_SRC
     HaloDataInformation.cxx
     TemporalHaloInformation.cxx)
 
+## Specify global source list for this project
+#set(PACKAGE_halofinder_SOURCES
+#    ${PACKAGE_halofinder_SOURCES}
+#    ${HALOTRACKER_SRC}
+#    CACHE INTERNAL "package sources")
+GetPackageSources(halofinder ${PROJECT_SOURCE_DIR} ${HALOTRACKER_SRC})
+
 if(BUILD_SHARED_LIBS)
  add_library(fwdhalotracker SHARED ${HALOTRACKER_SRC})
 else()

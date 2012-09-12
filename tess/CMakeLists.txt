@@ -1,5 +1,4 @@
 project(tess)
-message(STATUS "-- Building tess")
 
 ## Specify global include dirs and global libraries for this project
 ## such that, they can be used within other projects.
@@ -59,6 +58,11 @@ set(TESSLIB_EXE
     driver/main.cpp
     )
 
+## Specify global sources for tess
+#set(PACKAGE_tess_SOURCES
+#    ${TESSLIB_SRC}
+#    CACHE INTERNAL "package sources")
+
 ## Determine whether or not to build GL componenents of tess
 option(TESS_BUILD_GL_COMPONENTS "Build tess GL components" OFF)
 if(${TESS_BUILD_GL_COMPONENTS})
@@ -95,6 +99,8 @@ if(${TESS_BUILD_GL_COMPONENTS})
     ## update list of executables
     list(APPEND TESSLIB_EXE lib/draw.cpp)
 endif()
+
+GetPackageSources(tess ${PROJECT_SOURCE_DIR} ${TESSLIB_SRC})
 
 ## Build tess library
 if(BUILD_SHARED_LIBS)

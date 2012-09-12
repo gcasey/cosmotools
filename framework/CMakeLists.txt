@@ -39,6 +39,12 @@ set(FRAMEWORK_SRC
     SimulationParticles.cxx
     )
 
+## Specify global source list for this project
+#set(PACKAGE_framework_SOURCES
+#    ${FRAMEWORK_SRC}
+#    CACHE INTERNAL "package sources")
+GetPackageSources(framework ${PROJECT_SOURCE_DIR} ${FRAMEWORK_SRC})
+
 if(BUILD_SHARED_LIBS)
   add_library(framework SHARED ${FRAMEWORK_SRC})
 else()

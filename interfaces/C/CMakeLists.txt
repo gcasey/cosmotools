@@ -33,6 +33,21 @@ FortranCInterface_HEADER(
 file(COPY ${PROJECT_BINARY_DIR}/C/CosmologyToolsAPIMangling.h
       DESTINATION ${HEADER_INCLUDES_DIRECTORY} )
 
+## Specify project global definitions
+set(PACKAGE_interfaces_INCLUDE_DIRS
+    ${PACKAGE_interfaces_INCLUDE_DIRS}
+    ${PROJECT_SOURCE_DIR}
+    CACHE INTERNAL "package include dirs")
+set(PACKAGE_interfaces_LIBRARIES
+    ${PACKAGE_interfaces_LIBRARIES}
+    cCosmologyToolsAPI
+    CACHE INTERNAL "package libraries")
+#set(PACKAGE_interfaces_SOURCES
+#    ${PACKAGE_interfaces_SOURCES}
+#    ${SOURCES}
+#    CACHE INTERNAL "package sources")
+GetPackageSources(interfaces ${PROJECT_SOURCE_DIR}/C ${SOURCES})
+
 if(BUILD_SHARED_LIBS)
   add_library(cCosmologyToolsAPI SHARED ${SOURCES})
 else()
