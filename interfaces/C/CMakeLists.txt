@@ -46,7 +46,7 @@ set(PACKAGE_interfaces_LIBRARIES
 #    ${PACKAGE_interfaces_SOURCES}
 #    ${SOURCES}
 #    CACHE INTERNAL "package sources")
-GetPackageSources(interfaces ${PROJECT_SOURCE_DIR}/C ${SOURCES})
+GetPackageSources(interfaces ${PROJECT_SOURCE_DIR}/C "${SOURCES}")
 
 if(BUILD_SHARED_LIBS)
   add_library(cCosmologyToolsAPI SHARED ${SOURCES})

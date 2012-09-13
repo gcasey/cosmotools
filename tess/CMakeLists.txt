@@ -100,7 +100,7 @@ if(${TESS_BUILD_GL_COMPONENTS})
     list(APPEND TESSLIB_EXE lib/draw.cpp)
 endif()
 
-GetPackageSources(tess ${PROJECT_SOURCE_DIR} ${TESSLIB_SRC})
+GetPackageSources(tess ${PROJECT_SOURCE_DIR} "${TESSLIB_SRC}")
 
 ## Build tess library
 if(BUILD_SHARED_LIBS)

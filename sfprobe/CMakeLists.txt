@@ -33,7 +33,7 @@ endforeach()
 #set(PACKAGE_sfprobe_SOURCES
 #    ${SOURCES}
 #   CACHE INTERNAL "package sources")
-GetPackageSources(sfprobe ${PROJECT_SOURCE_DIR} ${SOURCES})
+GetPackageSources(sfprobe ${PROJECT_SOURCE_DIR} "${SOURCES}")
 
 if(BUILD_SHARED_LIBS)
  add_library(sfprobe SHARED ${SOURCES})

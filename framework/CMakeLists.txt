@@ -43,7 +43,7 @@ set(FRAMEWORK_SRC
 #set(PACKAGE_framework_SOURCES
 #    ${FRAMEWORK_SRC}
 #    CACHE INTERNAL "package sources")
-GetPackageSources(framework ${PROJECT_SOURCE_DIR} ${FRAMEWORK_SRC})
+GetPackageSources(framework ${PROJECT_SOURCE_DIR} "${FRAMEWORK_SRC}")
 
 if(BUILD_SHARED_LIBS)
   add_library(framework SHARED ${FRAMEWORK_SRC})

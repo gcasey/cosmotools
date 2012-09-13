@@ -36,7 +36,7 @@ set(HALOTRACKER_SRC
 #    ${PACKAGE_halofinder_SOURCES}
 #    ${HALOTRACKER_SRC}
 #    CACHE INTERNAL "package sources")
-GetPackageSources(halofinder ${PROJECT_SOURCE_DIR} ${HALOTRACKER_SRC})
+GetPackageSources(halofinder ${PROJECT_SOURCE_DIR} "${HALOTRACKER_SRC}")
 
 if(BUILD_SHARED_LIBS)
  add_library(fwdhalotracker SHARED ${HALOTRACKER_SRC})

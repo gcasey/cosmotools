@@ -11,9 +11,10 @@
 macro(GetPackageSources pkg basepath srclist)
     message(STATUS "Setting package sources for ${pkg}")
     foreach(src ${srclist})
+      message(STATUS "setting source: ${basepath}/${src}")
       set(PACKAGE_${pkg}_SOURCES
         ${PACKAGE_${pkg}_SOURCES}
         ${basepath}/${src}
-        CACHE INTENRNAL "${pkg} sources")
+        CACHE INTERNAL "${pkg} sources")
     endforeach()
 endmacro(GetPackageSources)

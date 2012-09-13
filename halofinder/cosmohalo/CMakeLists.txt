@@ -56,7 +56,7 @@ set(Cosmo_SOURCES
 #    ${PACKAGE_halofinder_SOURCES}
 #    ${Cosmo_SOURCES}
 #    CACHE INTERNAL "package sources")
-GetPackageSources(halofinder ${PROJECT_SOURCE_DIR} ${Cosmo_SOURCES})
+GetPackageSources(halofinder ${PROJECT_SOURCE_DIR} "${Cosmo_SOURCES}")
 
 ## Create the libraries
 if(BUILD_SHARED_LIBS)

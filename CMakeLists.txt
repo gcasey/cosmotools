@@ -64,7 +64,7 @@ foreach(pkg ${cosmopackages})
       CACHE INTERNAL "package include directories" FORCE)
   set(PACKAGE_${pkg}_LIBRARIES ${emptyList}
       CACHE INTERNAL "package libraries" FORCE)
-  set(PACKAGE_${pgk}_SOURCES ${emptyList}
+  set(PACKAGE_${pkg}_SOURCES ${emptyList}
       CACHE INTERNAL "package sources" FORCE)
 
   ## add package to build
@@ -74,6 +74,7 @@ foreach(pkg ${cosmopackages})
   list(APPEND cosmosrclist ${PACKAGE_${pkg}_SOURCES})
 endforeach()
 
+message(STATUS "cosmo sources: ${cosmosrclist}")
 ## Build single library
 if(BUILD_SHARED_LIBS)
  add_library(cosmotools SHARED ${cosmosrclist})
