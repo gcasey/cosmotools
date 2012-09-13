@@ -58,10 +58,17 @@ set(TESSLIB_EXE
     driver/main.cpp
     )
 
-## Specify global sources for tess
-#set(PACKAGE_tess_SOURCES
-#    ${TESSLIB_SRC}
-#    CACHE INTERNAL "package sources")
+## Set the tess external includes
+set(PACKAGE_tess_EXTERNAL_INCLUDES
+    ${DIY_INCLUDE_DIRS}
+    ${QHULL_INCLUDE_DIRS}
+    CACHE INTERNAL "package external includes")
+
+## Set the tess external libraries
+set(PACKAGE_tess_EXTERNAL_LIBRARIES
+    ${DIY_LIBRARIES}
+    ${QHULL_LIBRARIES}
+    CACHE INTERNAL "package external libraries")
 
 ## Determine whether or not to build GL componenents of tess
 option(TESS_BUILD_GL_COMPONENTS "Build tess GL components" OFF)

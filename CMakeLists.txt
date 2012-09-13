@@ -11,6 +11,10 @@ include(CosmologyToolsEnvironment)
 include(CosmologyToolsTypes)
 include(GetPackageSources)
 
+## list of required libraries for the entire package
+set(CosmoRequiredLibs
+    ${MPI_LIBRARIES})
+
 ## Set the list of all the cosmotools sources
 set(cosmosrclist)
 
@@ -62,23 +66,33 @@ foreach(pkg ${cosmopackages})
   ## NOTE: These variables must be set before the call to add_subdirectory
   set(PACKAGE_${pkg}_INCLUDE_DIRS ${emptyList}
       CACHE INTERNAL "package include directories" FORCE)
+  set(PACKAGE_${pkg}_EXTERNAL_INCLUDES ${emptyList}
+      CACHE INTERNAL "package external include directories" FORCE)
   set(PACKAGE_${pkg}_LIBRARIES ${emptyList}
       CACHE INTERNAL "package libraries" FORCE)
+  set(PACKAGE_${pkg}_EXTERNAL_LIBRARIES ${emptyList}
+      CACHE INTERNAL "package external libraries" FORCE)
   set(PACKAGE_${pkg}_SOURCES ${emptyList}
       CACHE INTERNAL "package sources" FORCE)
 
   ## add package to build
   add_subdirectory(${pkg})
 
+  include_directories(${PACKAGE_${pkg}_EXTERNAL_INCLUDES})
+
+
+  ## append package required libaries
+  list(APPEND CosmoRequiredLibs ${PACKAGE_${pkg}_EXTERNAL_LIBRARIES})
+
   ## append package sources to the cosmosrclist
   list(APPEND cosmosrclist ${PACKAGE_${pkg}_SOURCES})
 endforeach()
 
-message(STATUS "cosmo sources: ${cosmosrclist}")
+
 ## Build single library
 if(BUILD_SHARED_LIBS)
  add_library(cosmotools SHARED ${cosmosrclist})
 else()
  add_library(cosmotools STATIC ${cosmosrclist})
 endif()
-target_link_libraries(cosmotools ${MPI_LIBRARIES})
+target_link_libraries(cosmotools ${CosmoRequiredLibs})
