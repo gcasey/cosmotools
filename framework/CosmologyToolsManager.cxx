@@ -96,6 +96,7 @@ void CosmologyToolsManager::ParseConfigurationFile()
     delete this->Configuration;
     }
 
+  this->Configuration = new CosmologyToolsConfiguration();
   this->Configuration->SetCommunicator( this->Communicator );
   this->Configuration->SetConfigFile(this->ConfigurationFile);
   this->Configuration->ParseFile();
