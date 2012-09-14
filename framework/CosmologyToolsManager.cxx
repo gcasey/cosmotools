@@ -131,7 +131,7 @@ void CosmologyToolsManager::CreateAnalysisTools()
       Dictionary toolParameters;
       this->Configuration->GetToolParameters(toolName,toolParameters);
 
-      if( toolName == "LANLHaloFinder" )
+      if( toolName == "LANLHALOFINDER" )
         {
         myAnalysisTool = new LANLHaloFinderAnalysisTool();
         myAnalysisTool->SetDomainParameters(
