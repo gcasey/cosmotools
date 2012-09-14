@@ -21,6 +21,7 @@ AnalysisTool::AnalysisTool()
   this->FrequencyType     = EXPLICIT;
   this->ImplicitFrequency = 1;
   this->VisibilityStatus  = true;
+  this->Enabled           = false;
   this->Communicator      = MPI_COMM_NULL;
 }
 
@@ -44,6 +45,12 @@ void AnalysisTool::SetExplicitTimeSteps(INTEGER *tsteps, int N )
 //-----------------------------------------------------------------------------
 bool AnalysisTool::ShouldExecute(INTEGER ts)
 {
+  /* Short circuit here! */
+  if( !this->IsEnabled() )
+    {
+    return false;
+    }
+
   bool status = false;
   switch( this->FrequencyType )
     {

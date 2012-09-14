@@ -77,6 +77,12 @@ public:
   GetNSetMacro(Communicator,MPI_Comm);
 
   /**
+   * @brief Enable/disable this tool instance
+   */
+  GetNSetMacro(Enabled,bool);
+  inline bool IsEnabled() {return this->Enabled;};
+
+  /**
    * @brief Set visibility status, i.e., whether, the algorithm will be visible.
    */
   GetNSetMacro(VisibilityStatus,bool);
@@ -141,6 +147,8 @@ protected:
   int FrequencyType;
   int ImplicitFrequency;
   std::set<int> ExplicitTimeSteps;
+
+  bool Enabled;
 
   bool VisibilityStatus;
 
