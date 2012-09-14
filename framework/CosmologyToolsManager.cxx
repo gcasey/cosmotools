@@ -8,6 +8,21 @@
 #include <iostream>
 #include <cassert>
 
+#define PRINTLN( str ) {               \
+  if(this->Rank==0) {                  \
+    std::cout str << std::endl;         \
+    std::cout.flush();                  \
+  }                                     \
+  this->Barrier();                     \
+}
+
+#define PRINT( str ) {    \
+  if(this->Rank==0) {     \
+    std::cout str;         \
+    std::cout.flush();     \
+  }                        \
+  this->Barrier();        \
+}
 
 namespace cosmotk {
 
@@ -105,15 +120,50 @@ void CosmologyToolsManager::ParseConfigurationFile()
 //------------------------------------------------------------------------------
 void CosmologyToolsManager::ClearAnalysisTools()
 {
-  for( int i=0; i < this->AnalysisTools.size(); ++i)
+  std::map<std::string,AnalysisTool*>::iterator iter;
+  iter = this->AnalysisTools.begin();
+  for(; iter != this->AnalysisTools.end(); ++iter)
     {
-    if(this->AnalysisTools[i] != NULL)
-      {
-      delete this->AnalysisTools[i];
-      }
-    this->AnalysisTools[i] = NULL;
-    }
+    assert("pre: AnalysisTool is NULL!" && (iter->second!=NULL) );
+    delete iter->second;
+    } // End for all analysis tools
   this->AnalysisTools.clear();
+}
+
+//------------------------------------------------------------------------------
+bool CosmologyToolsManager::ToolExists(const std::string &toolName)
+{
+  if(this->AnalysisTools.find(toolName) != this->AnalysisTools.end() )
+    {
+    return true;
+    }
+  return false;
+}
+
+//------------------------------------------------------------------------------
+AnalysisTool* CosmologyToolsManager::GetToolByName(
+    const std::string &name)
+{
+  AnalysisTool *tool = NULL;
+  if( this->ToolExists(name) )
+    {
+    tool = this->AnalysisTools[name];
+    }
+  else
+    {
+    if( name == "LANLHALOFINDER")
+      {
+      tool = new LANLHaloFinderAnalysisTool();
+      }
+    else
+      {
+      std::cerr << "ERROR: undefined analysis tool: " << name;
+      std::cerr << std::endl;
+      std::cerr << "FILE: " << __FILE__ << std::endl;
+      std::cerr << "LINE: " << __LINE__ << std::endl;
+      }
+    }
+  return( tool );
 }
 
 //------------------------------------------------------------------------------
@@ -121,36 +171,29 @@ void CosmologyToolsManager::CreateAnalysisTools()
 {
   assert("pre: NULL configuration!" && (this->Configuration != NULL) );
 
+  AnalysisTool *tool = NULL;
   for(int i=0; i < this->Configuration->GetNumberOfAnalysisTools(); ++i)
     {
     std::string toolName = this->Configuration->GetToolName( i );
-    if( this->Configuration->IsToolEnabled(toolName) )
+
+    Dictionary toolParameters;
+    this->Configuration->GetToolParameters(toolName,toolParameters);
+
+    tool = this->GetToolByName( toolName );
+    assert("tool is NULL!" && (tool != NULL) );
+    if( this->Configuration->IsToolEnabled(toolName))
       {
-      AnalysisTool *myAnalysisTool = NULL;
-
-      Dictionary toolParameters;
-      this->Configuration->GetToolParameters(toolName,toolParameters);
-
-      if( toolName == "LANLHALOFINDER" )
-        {
-        myAnalysisTool = new LANLHaloFinderAnalysisTool();
-        myAnalysisTool->SetDomainParameters(
-            this->BoxLength,this->GhostOverlap,this->NDIM);
-        myAnalysisTool->SetParameters(toolParameters);
-        }
-      else
-        {
-        std::cerr << "ERROR: undefined analysis tool: " << toolName;
-        std::cerr << std::endl;
-        std::cerr << "FILE: " << __FILE__ << std::endl;
-        std::cerr << "LINE: " << __LINE__ << std::endl;
-        continue;
-        }
-
-      assert("pre: analysis tool is NULL!" && (myAnalysisTool != NULL));
-      this->AnalysisTools.push_back(myAnalysisTool);
-      } // END if tool is enabled
-    } // END for all analysis configuration tools
+      tool->SetEnabled(true);
+      }
+    else
+      {
+      tool->SetEnabled(false);
+      }
+    tool->SetDomainParameters(
+        this->BoxLength,this->GhostOverlap,this->NDIM);
+    tool->SetParameters(toolParameters);
+    this->AnalysisTools[ toolName ] = tool;
+    } // END for all tools in the configuration file
 }
 
 //------------------------------------------------------------------------------
@@ -165,20 +208,17 @@ void CosmologyToolsManager::CoProcess()
   this->ParseConfigurationFile();
 
   // STEP 1: Create a vector of analysis tools
-  this->ClearAnalysisTools();
   this->CreateAnalysisTools();
   this->Barrier();
 
-  if(this->Rank == 0 )
-    {
-    std::cout << "====================\n";
-    std::cout << "COSMO TOOLS\n";
-    std::cout << "Number of Analysis tools: " << this->AnalysisTools.size();
-    std::cout << std::endl << std::endl;
-    std::cout << "TIME STEP: " << this->Particles->TimeStep << std::endl;
-    std::cout << "RED SHIFT: " << this->Particles->RedShift << std::endl;
-    std::cout.flush();
-    }
+  PRINTLN(
+      << "====================\n"
+      << "COSMO TOOLS\n"
+      << "Number of Analysis tools: "
+      << this->AnalysisTools.size()
+      << std::endl << std::endl
+      << "TIME STEP: " << this->Particles->TimeStep << std::endl
+      << "RED SHIFT: " << this->Particles->RedShift );
 
 
   // STEP 2: Loop through all analysis tools. For each tool, check if it
@@ -186,63 +226,45 @@ void CosmologyToolsManager::CoProcess()
   // given at the configuration file and execute it. After the analysis is
   // executed, check if the output should be generated and if output is
   // requested, write it to disk.
-  for( int i=0; i < this->AnalysisTools.size(); ++i)
+  std::map<std::string,AnalysisTool*>::iterator toolIter;
+  toolIter=this->AnalysisTools.begin();
+  for( ;toolIter!=this->AnalysisTools.end(); ++toolIter)
     {
-    assert("pre: analysis tool is NULL" && (this->AnalysisTools[i] != NULL));
+    std::string toolName = toolIter->first;
+    AnalysisTool *tool   = toolIter->second;
+    assert("pre: NULL tool!" && (tool != NULL) );
 
-    // Check if the analsys tools should be executed at this time-step
-    if( this->AnalysisTools[i]->ShouldExecute(this->Particles->TimeStep) )
+    PRINTLN(<< "TOOL: " << toolName);
+    if( tool->IsEnabled() )
       {
-      if( this->Rank == 0 )
+      PRINTLN(<< "STATUS: ENABLED")
+      }
+    else
+      {
+      PRINTLN(<< "STATUS: DISABLED");
+      }
+
+    if( tool->ShouldExecute(this->Particles->TimeStep) )
+      {
+      PRINT(<< "Executing: " << tool->GetName() << "...");
+      tool->Execute(this->Particles);
+      PRINTLN(<< "[DONE]");
+
+      if(tool->GetGenerateOutput() == true)
         {
-        std::cout << "Executing: " << this->AnalysisTools[i]->GetName();
-        std::cout << "...";
-        std::cout.flush();
-        }
-      this->Barrier();
+        PRINT(<<"Writing output...");
+        tool->WriteOutput();
+        PRINTLN(<< "[DONE]");
+        } // END if should write output
 
-      // Run the analysis
-      this->AnalysisTools[i]->Execute(this->Particles);
-
-      if( this->Rank == 0 )
+      if(this->Configuration->GetVisualization() &&
+          tool->IsVisible())
         {
-        std::cout << "[DONE]\n";
-        std::cout.flush();
-        }
-      this->Barrier();
+        // TODO: implement this
+        } // END if the tool is visible
+      } // END if the tool should execute
 
-      // Check if we should write output for this analysis algorithm
-      if( this->AnalysisTools[i]->GetGenerateOutput() == true )
-        {
-        if( this->Rank == 0 )
-          {
-          std::cout << "Generating output for "
-                    << this->AnalysisTools[i]->GetName();
-          std::cout << "...";
-          std::cout.flush();
-          }
-        this->Barrier();
-
-        this->AnalysisTools[i]->WriteOutput();
-
-        if( this->Rank == 0 )
-          {
-          std::cout << "[DONE]\n";
-          std::cout.flush();
-          }
-        this->Barrier();
-        }
-
-      // Check if the output should be visualized at this time-step
-      if( (this->Configuration->GetVisualization()==true) &&
-          (this->AnalysisTools[i]->IsVisible()) )
-        {
-        // TODO: update the visualization!
-        }
-      } // END if ShouldExecute
-
-
-    } // END for all analysis tools
+    } // END for all tools
 }
 
 //------------------------------------------------------------------------------

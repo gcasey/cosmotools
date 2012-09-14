@@ -120,8 +120,8 @@ private:
   // Data-structure to store the simulation particles
   SimulationParticles *Particles;
 
-  // List of Analysis tools
-  std::vector<AnalysisTool*> AnalysisTools;
+  // List of Analysis tools by name
+  std::map<std::string,AnalysisTool*> AnalysisTools;
 
   /**
    * @brief Clears the analysis tools
@@ -138,6 +138,22 @@ private:
    * @brief Creates analysis tools
    */
   void CreateAnalysisTools();
+
+  /**
+   * @brief Checks if the tool exists in the list of analysis for this
+   * CosmologyToolsManager instance.
+   * @param toolName the name of the tool in query
+   * @return status true if the
+   */
+  bool ToolExists(const std::string &toolName);
+
+  /**
+   * @brief Get the analysis tool instance for the tool in query.
+   * @param toolName the name of the tool in query.
+   * @return tool pointer to analysis tool instance
+   * @post tool != NULL
+   */
+  AnalysisTool* GetToolByName(const std::string &toolName);
 
   DISABLE_COPY_AND_ASSIGNMENT(CosmologyToolsManager);
 };
