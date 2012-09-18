@@ -67,9 +67,9 @@ public:
   GetNSetMacro(ImplicitFrequency,int);
 
   /**
-   * @brief Set the analysis parameters.
+   * @brief Get the parameters of this AnalysisTool instance.
    */
-  GetNSetMacro(Parameters,Dictionary);
+  GetMacro(Parameters,Dictionary);
 
   /**
    * @brief Set MPI Communicator
@@ -89,6 +89,16 @@ public:
    */
   GetNSetMacro(VisibilityStatus,bool);
   inline bool IsVisible() {return this->VisibilityStatus;};
+
+  /**
+   * @brief Sets the parameters to this AnalysisTool instance.
+   * @param parameters dictionary with user-supplied parameters
+   */
+  void SetParameters(Dictionary parameters)
+    {
+    this->Parameters = parameters;
+    this->ParseParameters();
+    }
 
   /**
    * @brief Set the domain parameters
