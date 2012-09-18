@@ -120,7 +120,7 @@ std::set<int> AnalysisTool::GetIntListParameter(std::string key)
 
   for( int i=0; i < static_cast<int>(tokens.size()); ++i )
     {
-    intlist.insert( this->GetIntParameter(tokens[i]));
+    intlist.insert( std::atoi(tokens[i].c_str()));
     } // END for
 
   return(intlist);
