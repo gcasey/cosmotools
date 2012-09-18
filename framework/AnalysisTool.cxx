@@ -55,6 +55,7 @@ bool AnalysisTool::ShouldExecute(INTEGER ts)
   switch( this->FrequencyType )
     {
     case EXPLICIT:
+      std::cerr << "Checking explicit timestep: " << ts << std::endl;
       if(this->ExplicitTimeSteps.find(ts) != this->ExplicitTimeSteps.end() )
         {
         status = true;
@@ -183,5 +184,50 @@ void AnalysisTool::ParseBasicParameters()
   // STEP 2: Get visibility parameters
   this->VisibilityStatus = this->GetBooleanParameter("VISIBLE");
 }
+
+//-----------------------------------------------------------------------------
+std::string AnalysisTool::GetBasicInformation()
+{
+  std::ostringstream oss;
+  oss.str("");
+  oss << "=======================================================\n";
+  oss << "TOOL: "      << this->Name               << std::endl;
+  oss << "STATUS: "    << this->GetStringStatus() << std::endl;
+  oss << "BoxLength: " << this->BoxLength          << std::endl;
+  oss << "NG: "        << this->NG                 << std::endl;
+  oss << "NDIM: "      << this->NDIM               << std::endl;
+  oss << "OUTPUT: ";
+  if( this->GenerateOutput )
+    {
+    oss << "YES\n";
+    oss << "OUTPUT FILE NAME: " << this->OutputFile << std::endl;
+    }
+  else
+    {
+    oss << "NO\n";
+    }
+
+  std::set<INTEGER>::iterator iter = this->ExplicitTimeSteps.begin();
+  oss << "FREQUENCY TYPE: ";
+  switch( this->FrequencyType )
+    {
+    case EXPLICIT:
+      oss << "EXPLICIT: ";
+      for(;iter != this->ExplicitTimeSteps.end(); ++iter)
+        {
+        oss << *iter << " ";
+        }
+      oss << std::endl;
+      break;
+    case IMPLICIT:
+      oss << "IMPLICIT, every " << this->ImplicitFrequency << " timesteps\n";
+      break;
+    default:
+      oss << "UNKNOWN\n";
+      break;
+    }
+  return( oss.str() );
+}
+
 
 } /* namespace cosmotk */

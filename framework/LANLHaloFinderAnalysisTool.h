@@ -54,6 +54,12 @@ public:
    */
   virtual void WriteOutput();
 
+  /**
+   * @brief Returns the information of this
+   * @return
+   */
+  virtual std::string GetInformation();
+
 protected:
 
   // LANLHaloFinder parameters from the configuration file

@@ -81,6 +81,8 @@ public:
    */
   GetNSetMacro(Enabled,bool);
   inline bool IsEnabled() {return this->Enabled;};
+  std::string GetStringStatus()
+   {return( (this->IsEnabled())? "ENABLED" : "DISABLED");}
 
   /**
    * @brief Set visibility status, i.e., whether, the algorithm will be visible.
@@ -130,6 +132,13 @@ public:
    */
   virtual void WriteOutput() = 0;
 
+  /**
+   * @brief Gets the analysis tool information in a string
+   * @note Used mainly for debugging.
+   * @return the information string
+   */
+  virtual std::string GetInformation() = 0;
+
 protected:
 
   // Domain parameters
@@ -146,7 +155,7 @@ protected:
 
   int FrequencyType;
   int ImplicitFrequency;
-  std::set<int> ExplicitTimeSteps;
+  std::set<INTEGER> ExplicitTimeSteps;
 
   bool Enabled;
 
@@ -199,6 +208,13 @@ protected:
    * @pre Parameters.empty() == false
    */
   void ParseBasicParameters();
+
+  /**
+   * @brief Returns a string representation of the common parameters among all
+   * analysis tools.
+   * @return str a string representation of the analysis tool basic info
+   */
+  std::string GetBasicInformation();
 
 private:
   DISABLE_COPY_AND_ASSIGNMENT(AnalysisTool);

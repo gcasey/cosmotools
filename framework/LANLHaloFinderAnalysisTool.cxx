@@ -135,4 +135,10 @@ void LANLHaloFinderAnalysisTool::WriteOutput()
   this->HaloFinder->writeTaggedParticles(true /*clearSerial*/);
 }
 
+//-----------------------------------------------------------------------------
+std::string LANLHaloFinderAnalysisTool::GetInformation()
+{
+  return(this->GetBasicInformation());
+}
+
 } /* namespace cosmotk */
