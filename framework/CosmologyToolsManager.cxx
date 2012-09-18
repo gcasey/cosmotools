@@ -212,7 +212,7 @@ void CosmologyToolsManager::CoProcess()
   this->Barrier();
 
   PRINTLN(
-      << "====================\n"
+      << "\n\n====================\n"
       << "COSMO TOOLS\n"
       << "Number of Analysis tools: "
       << this->AnalysisTools.size()
@@ -234,15 +234,7 @@ void CosmologyToolsManager::CoProcess()
     AnalysisTool *tool   = toolIter->second;
     assert("pre: NULL tool!" && (tool != NULL) );
 
-    PRINTLN(<< "TOOL: " << toolName);
-    if( tool->IsEnabled() )
-      {
-      PRINTLN(<< "STATUS: ENABLED")
-      }
-    else
-      {
-      PRINTLN(<< "STATUS: DISABLED");
-      }
+    PRINTLN(<< tool->GetInformation() );
 
     if( tool->ShouldExecute(this->Particles->TimeStep) )
       {
@@ -265,6 +257,11 @@ void CosmologyToolsManager::CoProcess()
       } // END if the tool should execute
 
     } // END for all tools
+
+  // STEP 3: Synchronize all ranks
+  PRINTLN(<< "Finished co-processing @t=" << this->Particles->TimeStep);
+  PRINTLN(<< "====================");
+  this->Barrier();
 }
 
 //------------------------------------------------------------------------------
