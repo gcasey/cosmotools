@@ -163,6 +163,7 @@ AnalysisTool* CosmologyToolsManager::GetToolByName(
       std::cerr << "LINE: " << __LINE__ << std::endl;
       }
     }
+  tool->SetCommunicator( this->Communicator );
   return( tool );
 }
 
