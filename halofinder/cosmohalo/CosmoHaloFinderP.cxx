@@ -1149,6 +1149,15 @@ void CosmoHaloFinderP::sendMixedHaloResults
 
 void CosmoHaloFinderP::writeTaggedParticles(bool clearSerial)
 {
+  // short-circuit here
+  if(this->getNumberOfHalos() == 0)
+    {
+    return;
+    }
+
+  // Write the tagged particle file
+  ofstream* outStream = new ofstream(this->outFile.c_str(), ios::out);
+
   // Map the index of the particle on this process to the index of the
   // particle with the lowest tag value so that the written output refers
   // to the lowest tag as being the owner of the halo
@@ -1163,8 +1172,7 @@ void CosmoHaloFinderP::writeTaggedParticles(bool clearSerial)
       mapIndex[this->haloTag[p]] = p;
   }
 
-  // Write the tagged particle file
-  ofstream* outStream = new ofstream(this->outFile.c_str(), ios::out);
+
 
   string textMode = "ascii";
   char str[1024];
