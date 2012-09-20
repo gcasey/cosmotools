@@ -85,17 +85,17 @@ namespace cosmologytools {
 CosmoHaloFinderP::CosmoHaloFinderP()
 {
   // Get the number of processors and rank of this processor
-  this->numProc = Partition::getNumProc();
-  this->myProc = Partition::getMyProc();
+  this->numProc = cosmologytools::Partition::getNumProc();
+  this->myProc = cosmologytools::Partition::getMyProc();
 
   // Get the number of processors in each dimension
-  Partition::getDecompSize(this->layoutSize);
+  cosmologytools::Partition::getDecompSize(this->layoutSize);
 
   // Get my position within the Cartesian topology
-  Partition::getMyPosition(this->layoutPos);
+  cosmologytools::Partition::getMyPosition(this->layoutPos);
 
   // Get the neighbors of this processor
-  Partition::getNeighbors(this->neighbor);
+ cosmologytools::Partition::getNeighbors(this->neighbor);
 
   // For each neighbor zone, how many dead particles does it contain to start
   // and how many dead halos does it contain after the serial halo finder
@@ -139,6 +139,23 @@ CosmoHaloFinderP::~CosmoHaloFinderP()
 //    delete [] haloData;
 //  }
 
+}
+
+/////////////////////////////////////////////////////////////////////////
+void CosmoHaloFinderP::initializeHaloFinder()
+{
+  // Get the number of processors and rank of this processor
+  this->numProc = cosmologytools::Partition::getNumProc();
+  this->myProc = cosmologytools::Partition::getMyProc();
+
+  // Get the number of processors in each dimension
+  cosmologytools::Partition::getDecompSize(this->layoutSize);
+
+  // Get my position within the Cartesian topology
+  cosmologytools::Partition::getMyPosition(this->layoutPos);
+
+  // Get the neighbors of this processor
+  cosmologytools::Partition::getNeighbors(this->neighbor);
 }
 
 /////////////////////////////////////////////////////////////////////////
@@ -328,7 +345,7 @@ void CosmoHaloFinderP::executeHaloFinder()
 
 
 #ifndef USE_SERIAL_COSMO
-  MPI_Barrier(Partition::getComm());
+  MPI_Barrier(cosmologytools::Partition::getComm());
 #endif
 
   if (this->particleCount > 0)
@@ -339,7 +356,7 @@ void CosmoHaloFinderP::executeHaloFinder()
   delete [] this->haloData;
 
 #ifndef USE_SERIAL_COSMO
-  MPI_Barrier(Partition::getComm());
+  MPI_Barrier(cosmologytools::Partition::getComm());
 #endif
 }
 
@@ -665,7 +682,7 @@ void CosmoHaloFinderP::mergeHalos()
   maxNumberOfMixed = numberOfMixed;
 #else
   MPI_Allreduce((void*) &numberOfMixed, (void*) &maxNumberOfMixed,
-                1, MPI_INT, MPI_MAX, Partition::getComm());
+                1, MPI_INT, MPI_MAX, cosmologytools::Partition::getComm());
 #endif
 
   // If there are no halos to merge, return
@@ -681,19 +698,19 @@ void CosmoHaloFinderP::mergeHalos()
   // then gets messages from others and creates those mixed halos
   collectMixedHalos(haloBuffer, haloBufSize);
 #ifndef USE_SERIAL_COSMO
-  MPI_Barrier(Partition::getComm());
+  MPI_Barrier(cosmologytools::Partition::getComm());
 #endif
 
   // MASTER has all data and runs algorithm to make decisions
   assignMixedHalos();
 #ifndef USE_SERIAL_COSMO
-  MPI_Barrier(Partition::getComm());
+  MPI_Barrier(cosmologytools::Partition::getComm());
 #endif
 
   // MASTER sends merge results to all processors
   sendMixedHaloResults(haloBuffer, haloBufSize);
 #ifndef USE_SERIAL_COSMO
-  MPI_Barrier(Partition::getComm());
+  MPI_Barrier(cosmologytools::Partition::getComm());
 #endif
 
   // Collect totals for result checking
@@ -702,7 +719,7 @@ void CosmoHaloFinderP::mergeHalos()
   totalAliveHalos = this->numberOfAliveHalos;
 #else
   MPI_Allreduce((void*) &this->numberOfAliveHalos, (void*) &totalAliveHalos,
-                1, MPI_INT, MPI_SUM, Partition::getComm());
+                1, MPI_INT, MPI_SUM, cosmologytools::Partition::getComm());
 #endif
 
   int totalAliveHaloParticles;
@@ -711,7 +728,7 @@ void CosmoHaloFinderP::mergeHalos()
 #else
   MPI_Allreduce((void*) &this->numberOfHaloParticles,
                 (void*) &totalAliveHaloParticles,
-                1, MPI_INT, MPI_SUM, Partition::getComm());
+                1, MPI_INT, MPI_SUM, cosmologytools::Partition::getComm());
 #endif
 
   if (this->myProc == MASTER) {
@@ -752,7 +769,7 @@ void CosmoHaloFinderP::collectMixedHalos
   processorsWithMixedHalos = haveMixedHalo;
 #else
   MPI_Allreduce((void*) &haveMixedHalo, (void*) &processorsWithMixedHalos,
-                1, MPI_INT, MPI_SUM, Partition::getComm());
+                1, MPI_INT, MPI_SUM, cosmologytools::Partition::getComm());
 #endif
 
   // MASTER moves its own mixed halos to mixed halo vector (change index to tag)
@@ -792,10 +809,10 @@ void CosmoHaloFinderP::collectMixedHalos
       // Get message containing mixed halo information
 #ifdef ID_64
       MPI_Recv(haloBuffer, haloBufSize, MPI_LONG, MPI_ANY_SOURCE,
-               0, Partition::getComm(), &mpistatus);
+               0, cosmologytools::Partition::getComm(), &mpistatus);
 #else
       MPI_Recv(haloBuffer, haloBufSize, MPI_INT, MPI_ANY_SOURCE,
-               0, Partition::getComm(), &mpistatus);
+               0, cosmologytools::Partition::getComm(), &mpistatus);
 #endif
 
       // Gather halo information from the message
@@ -847,10 +864,10 @@ void CosmoHaloFinderP::collectMixedHalos
       MPI_Request request;
 #ifdef ID_64
       MPI_Isend(haloBuffer, haloBufSize, MPI_LONG, MASTER,
-                0, Partition::getComm(), &request);
+                0, cosmologytools::Partition::getComm(), &request);
 #else
       MPI_Isend(haloBuffer, haloBufSize, MPI_INT, MASTER,
-                0, Partition::getComm(), &request);
+                0, cosmologytools::Partition::getComm(), &request);
 #endif
     }
   }
@@ -1009,10 +1026,10 @@ void CosmoHaloFinderP::sendMixedHaloResults
     for (int proc = 1; proc < this->numProc; proc++) {
 #ifdef ID_64
       MPI_Isend(haloBuffer, haloBufSize, MPI_LONG, proc,
-                0, Partition::getComm(), &request);
+                0, cosmologytools::Partition::getComm(), &request);
 #else
       MPI_Isend(haloBuffer, haloBufSize, MPI_INT, proc,
-                0, Partition::getComm(), &request);
+                0, cosmologytools::Partition::getComm(), &request);
 #endif
     }
 #endif
@@ -1057,10 +1074,10 @@ void CosmoHaloFinderP::sendMixedHaloResults
     MPI_Status mpistatus;
 #ifdef ID_64
     MPI_Recv(haloBuffer, haloBufSize, MPI_LONG, MASTER,
-             0, Partition::getComm(), &mpistatus);
+             0, cosmologytools::Partition::getComm(), &mpistatus);
 #else
     MPI_Recv(haloBuffer, haloBufSize, MPI_INT, MASTER,
-             0, Partition::getComm(), &mpistatus);
+             0, cosmologytools::Partition::getComm(), &mpistatus);
 #endif
 
     // Unpack information to see which of mixed halos are still valid

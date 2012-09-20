@@ -89,6 +89,9 @@ public:
   CosmoHaloFinderP();
   ~CosmoHaloFinderP();
 
+  // Initializes the halo-finder, namely, set's up the myProc, numProc etc.
+  void initializeHaloFinder();
+
   // Set parameters for serial halo finder which does the work
   void setParameters(
         const string& outName,  // Base name of output halo files

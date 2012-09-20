@@ -74,8 +74,9 @@ void LANLHaloFinderAnalysisTool::Execute(SimulationParticles *particles)
   assert("pre: MPI communicator is NULL!" &&
          (this->Communicator != MPI_COMM_NULL) );
 
-  // STEP 0: Initialize partition
+  // STEP 0: Initialize partition and halofinder
   cosmologytools::Partition::initialize(this->Communicator);
+  this->HaloFinder->initializeHaloFinder();
 
   // STEP 1: short-circuit here in the unlike event that we don't have any
   // particles at this time-step
