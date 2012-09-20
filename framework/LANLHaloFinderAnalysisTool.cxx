@@ -1,6 +1,7 @@
 #include "LANLHaloFinderAnalysisTool.h"
 #include "Partition.h"
 #include <cassert>
+#include <sstream>
 
 #include <mpi.h>
 
@@ -97,8 +98,12 @@ void LANLHaloFinderAnalysisTool::Execute(SimulationParticles *particles)
     }
   else
     {
+    std::ostringstream oss;
+    oss.str("");
+    oss << this->OutputFile << "-" << cosmologytools::Partition::getMyProc();
+    oss << ".cosmo";
     this->HaloFinder->setParameters(
-        this->OutputFile,this->BoxLength,this->NG,this->NDIM,
+        oss.str(),this->BoxLength,this->NG,this->NDIM,
         this->PMIN, this->LinkingLength);
     }
 
@@ -117,7 +122,7 @@ void LANLHaloFinderAnalysisTool::Execute(SimulationParticles *particles)
   this->HaloFinder->executeHaloFinder();
 
   // STEP 6: Merge results across ranks
-  this->HaloFinder->collectHalos(true /*clearSerial*/);
+  this->HaloFinder->collectHalos(this->GenerateOutput /*clearSerial*/);
   this->HaloFinder->mergeHalos();
 }
 
