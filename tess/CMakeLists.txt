@@ -35,7 +35,7 @@ message(STATUS "-- Qhull is found!")
 include_directories(
     ${DIY_INCLUDE_DIRS}
     ${QHULL_INCLUDE_DIRS}
-    ${MPI_INCLUDE_DIRS}
+    ${MPI_INCLUDE_PATH}
     ${PROJECT_SOURCE_DIR}/lib)
 
 ## Required libraries for tess
