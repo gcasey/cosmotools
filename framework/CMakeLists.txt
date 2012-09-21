@@ -22,11 +22,16 @@ endforeach()
 include_directories(
     ${PROJECT_SOURCE_DIR}
     ${PACKAGE_halofinder_INCLUDE_DIRS}
+    ${PACKAGE_tess_INCLUDE_DIRS}
+    ${PACKAGE_tess_INCLUDE_DIRS}
+    ${MPI_INCLUDE_PATH}
     )
 
 ## Set the required libraries for the framework
 set(RequiredLibs
     ${PACKAGE_halofinder_LIBRARIES}
+    ${PACKAGE_tess_LIBRARIES}
+    ${PACKAGE_tess_EXTERNAL_LIBRARIES}
     ${MPI_LIBRARIES}
     )
 
@@ -37,6 +42,7 @@ set(FRAMEWORK_SRC
     CosmologyToolsManager.cxx
     LANLHaloFinderAnalysisTool.cxx
     SimulationParticles.cxx
+    TessVoidFinderAnalysisTool.cxx
     )
 
 ## Specify global source list for this project
