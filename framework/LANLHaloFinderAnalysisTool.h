@@ -1,5 +1,6 @@
 /**
- * @brief
+ * @brief A concrete instance of AnalysisTool that implements functionality for
+ * running the LANL halofinder within the in situ framework.
  */
 #ifndef LANLHALOFINDERANALYSISTOOL_H_
 #define LANLHALOFINDERANALYSISTOOL_H_
