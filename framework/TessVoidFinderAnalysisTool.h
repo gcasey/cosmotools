@@ -48,6 +48,25 @@ protected:
   REAL MinVol;
   REAL MaxVol;
 
+  /**
+   * @brief Packages the particles positions in a flat array for tess
+   * @param particles the simulation particles at the given timestep (in)
+   * @param positions the flat array (out)
+   * @post positions != NULL
+   * @note The particle positions is allocated via malloc, b/c tess is a C
+   * library and reallocs internally for its particle exchange. To clear the
+   * allocated positions, ClearParticlePositions must be called.
+   */
+  void PackageParticlePositions(
+      SimulationParticles *particles, float **positions);
+
+  /**
+   * @brief Clears the particle positions
+   * @param positions the positions vector
+   * @pre the positions vector must be constructed via PackageParticlePositions
+   */
+  void ClearParticlePositions( float **positions );
+
 private:
   DISABLE_COPY_AND_ASSIGNMENT(TessVoidFinderAnalysisTool);
 };
