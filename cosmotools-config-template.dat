@@ -93,8 +93,9 @@ VISIBLE YES
 
 ## TESS Parameters
 GHOST_ZONE_SIZE 5
-MIN_VOL_THRESHOLD
-MAX_VOL_THRESHOLD
+MIN_VOL_THRESHOLD 0.0001
+MAX_VOL_THRESHOLD -1.0
+CELL_SIZE 1.0
 
 #-------------------------------------------------------------------------------
 # SFPROBE SECTION
