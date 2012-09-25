@@ -33,7 +33,7 @@ CosmologyToolsManager::CosmologyToolsManager()
   this->Communicator      = MPI_COMM_NULL;
   this->Rank  = this->NumRanks = -1;
   this->NDIM  = 0;
-
+  this->XYZPeriodic   = false;
   this->Particles     = new SimulationParticles();
   this->Configuration = new CosmologyToolsConfiguration();
 }
@@ -67,11 +67,13 @@ void CosmologyToolsManager::Initialize(MPI_Comm comm)
 
 //------------------------------------------------------------------------------
 void CosmologyToolsManager::SetDomainParameters(
-        REAL boxlength, INTEGER ghostoverlap, INTEGER NDIM)
+        REAL boxlength, INTEGER ghostoverlap, INTEGER NDIM,
+        bool XYZPeriodic)
 {
   this->BoxLength    = boxlength;
   this->GhostOverlap = ghostoverlap;
   this->NDIM         = NDIM;
+  this->XYZPeriodic  = XYZPeriodic;
 }
 
 //------------------------------------------------------------------------------

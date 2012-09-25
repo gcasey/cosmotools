@@ -42,10 +42,13 @@ void cosmotools_set_analysis_config(char *configfile);
  * @param boxlength the length of the box domain
  * @param ghostoverlap the ghost zone overlap
  * @param NDIM the number of points along each dimension
+ * @param XYZPeriodic flag that indicates if the domain is periodic in XYZ
+ * @note Set XYZPeriodic to "1" to enable periodicity.
  * @note This method is typically called once, in the beginning of the program.
  */
 void cosmotools_set_domain_parameters(
-      REAL boxlength, INTEGER ghostoverlap, INTEGER NDIM);
+      REAL *boxlength, INTEGER *ghostoverlap, INTEGER *NDIM,
+      INTEGER *XYZPeriodic);
 
 /**
  * @brief Sets the particle information at the given time-step.

@@ -28,10 +28,21 @@ void cosmotools_set_analysis_config(char *configfile)
 
 //------------------------------------------------------------------------------
 void cosmotools_set_domain_parameters(
-        REAL boxlength, INTEGER ghostoverlap, INTEGER NDIM)
+        REAL *boxlength, INTEGER *ghostoverlap, INTEGER *NDIM,
+        INTEGER *XYZPeriodic)
 {
   assert(CosmoToolsManager != NULL);
-  CosmoToolsManager->SetDomainParameters(boxlength,ghostoverlap,NDIM);
+  if( *XYZPeriodic == 1 )
+    {
+    CosmoToolsManager->SetDomainParameters(
+        *boxlength,*ghostoverlap,*NDIM,true);
+    }
+  else
+    {
+    CosmoToolsManager->SetDomainParameters(
+        *boxlength,*ghostoverlap,*NDIM,false);
+    }
+
 }
 
 //------------------------------------------------------------------------------

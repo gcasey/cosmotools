@@ -54,9 +54,11 @@ public:
    * @param ghostoverlap the overlap of ghost particles between partitions and
    * across periodic boundaries
    * @param NDIM the number of points along each dimension in lagrangian space
+   * @param XYZPeriodic flag that indicates if the domain is XYZ periodic
    */
   void SetDomainParameters(
-      REAL boxlength, INTEGER ghostoverlap, INTEGER NDIM);
+      REAL boxlength, INTEGER ghostoverlap, INTEGER NDIM,
+      bool XYZPeriodic);
 
   /**
    * @brief Sets the particle information at the given time-step.
@@ -113,6 +115,7 @@ private:
   REAL BoxLength;
   INTEGER GhostOverlap;
   INTEGER NDIM;
+  bool XYZPeriodic;
 
   // Storage for configuration parameters
   CosmologyToolsConfiguration *Configuration;
