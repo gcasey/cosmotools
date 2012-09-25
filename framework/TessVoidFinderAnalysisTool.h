@@ -47,6 +47,16 @@ protected:
   REAL GhostFactor;
   REAL MinVol;
   REAL MaxVol;
+  REAL CellSize;
+
+  bool Initialized; // Indicates whether tess is initialized
+  double *TimeStatistics; // Used by tess profiling
+
+  /**
+   * @brief Initializes Tess
+   * @post this->Initialized == true
+   */
+  void InitializeTess(SimulationParticles *particles);
 
   /**
    * @brief Packages the particles positions in a flat array for tess
