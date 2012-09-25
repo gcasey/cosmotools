@@ -126,7 +126,17 @@ void TessVoidFinderAnalysisTool::InitializeTess(
   assert("pre: MPI communicator is NULL!" &&
          (this->Communicator != MPI_COMM_NULL) );
 
-  // STEP 0: Compute number of blocks per process and total number of blocks
+  // STEP 0: Ensure we are dealing with a cartesian communicator
+  int topology = 0;
+  MPI_Topo_test(this->Communicator,&topology);
+  assert("pre: communicator is not cartesian!" && topology==MPI_CART);
+  if( topology != MPI_CART )
+    {
+    std::cerr << "ERROR: tess is expecting a cartesian communicator!\n";
+    MPI_Abort(this->Communicator,-1);
+    }
+
+  // STEP 1: Compute number of blocks per process and total number of blocks
   // Currently, numBlocksPerProcess = 1 and totalNumberOfBlocks is given by
   // numBlocksPerProcess * numRanks.
   int numBlocksPerProcess = 1;
@@ -137,12 +147,12 @@ void TessVoidFinderAnalysisTool::InitializeTess(
   MPI_Comm_size(this->Communicator,&numRanks);
   totalBlocks = numBlocksPerProcess * numRanks;
 
-  // STEP 1: We are dealing with a 3-D domain and with structured topology, so,
+  // STEP 2: We are dealing with a 3-D domain and with structured topology, so,
   // each block has 26 neighbors.
   const int DIMENSION        = 3;
   const int NUM_OF_NEIGHBORS = 26;
 
-  // STEP 2: Get the Block bounds
+  // STEP 3: Get the Block bounds
   bb_t bb;
   float min[DIMENSION], size[DIMENSION];
 
@@ -156,7 +166,7 @@ void TessVoidFinderAnalysisTool::InitializeTess(
     bb.max[i] = min[i] + size[i];
     }
 
-  // STEP 3: Get decomposition size (number of blocks in each dimension)
+  // STEP 4: Get decomposition size (number of blocks in each dimension)
   int decomp_size[DIMENSION];
 // TODO: Need a way to get the decomposition size, from the communicator perhaps?
 // Partition::getDecompSize(decomp_size);
@@ -170,7 +180,7 @@ void TessVoidFinderAnalysisTool::InitializeTess(
     data_maxs[i] = data_mins[i] + size[i] * decomp_size[i];
   }
 
-  // STEP 4: Get neighbors
+  // STEP 5: Get neighbors
   int neigh_gids[NUM_OF_NEIGHBORS];
 // TODO: Need a way to get this information
 //  Partition::getNeighbors(neigh_gids);
@@ -184,24 +194,24 @@ void TessVoidFinderAnalysisTool::InitializeTess(
     neighbors[0][i].neigh_dir = neigh_dirs[i];
     } // END for all neighbors
 
-  // STEP 5: gids are trivial, only one block, my MPI rank
+  // STEP 6: gids are trivial, only one block, my MPI rank
   int gids[1];
   gids[0] = rank;
 
-  // STEP 6: wrap
+  // STEP 7: Get wrap
   int wrap = (this->Periodic)? 1:0;
 
-  // STEP 7: call tess_init
+  // STEP 8: call tess_init
   tess_init(numBlocksPerProcess,totalBlocks,gids,&bb,neighbors,num_neighbors,
             this->CellSize,this->GhostFactor,data_mins,data_maxs,wrap,
             this->MinVol,this->MaxVol,this->Communicator,
             this->TimeStatistics);
 
-  // STEP 8: Return all dynamically allocated memory
+  // STEP 9: Return all dynamically allocated memory
   delete[] neighbors[0];
   delete[] neighbors;
 
-  // STEP 9: Set initialized to true
+  // STEP 10: Set initialized to true
   this->Initialized = true;
 }
 
