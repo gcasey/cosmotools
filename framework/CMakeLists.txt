@@ -24,7 +24,7 @@ include_directories(
     ${PACKAGE_halofinder_INCLUDE_DIRS}
     ${PACKAGE_tess_INCLUDE_DIRS}
     ${PACKAGE_tess_INCLUDE_DIRS}
-    ${MPI_INCLUDE_PATH}
+    ${MPI_C_INCLUDE_PATH}
     )
 
 ## Set the required libraries for the framework
@@ -32,7 +32,7 @@ set(RequiredLibs
     ${PACKAGE_halofinder_LIBRARIES}
     ${PACKAGE_tess_LIBRARIES}
     ${PACKAGE_tess_EXTERNAL_LIBRARIES}
-    ${MPI_LIBRARIES}
+    ${MPI_C_LIBRARIES}
     )
 
 ## Set Framework code sources

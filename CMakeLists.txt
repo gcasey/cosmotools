@@ -13,7 +13,7 @@ include(GetPackageSources)
 
 ## list of required libraries for the entire package
 set(CosmoRequiredLibs
-    ${MPI_LIBRARIES})
+    ${MPI_C_LIBRARIES})
 
 ## Set the list of all the cosmotools sources
 set(cosmosrclist)

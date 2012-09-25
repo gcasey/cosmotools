@@ -15,7 +15,7 @@ include_directories(
 
 set(RequiredLibs
     ${PACKAGE_framework_LIBRARIES}
-    ${MPI_LIBRARIES})
+    ${MPI_C_LIBRARIES})
 
 ## Setup the fortran mangling
 include(FortranCInterface)

@@ -44,4 +44,4 @@ else()
  add_library(fwdhalotracker STATIC ${HALOTRACKER_SRC})
 endif()
 target_link_libraries(fwdhalotracker
-    ${PACKAGE_halofinder_LIBRARIES} ${MPI_LIBRARIES})
+    ${PACKAGE_halofinder_LIBRARIES} ${MPI_C_LIBRARIES})

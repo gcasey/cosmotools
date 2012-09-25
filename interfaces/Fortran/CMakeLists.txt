@@ -8,7 +8,7 @@ include_directories(${MPI_Fortran_INCLUDE_PATH})
 ## Set the list of required libraries
 set(RequiredLibs
     cCosmologyToolsAPI
-    ${MPI_LIBRARIES}
+    ${MPI_C_LIBRARIES}
     ${MPI_Fortran_LIBRARIES}
     )
 

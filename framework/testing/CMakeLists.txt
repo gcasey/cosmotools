@@ -12,7 +12,7 @@ include_directories(
 ## Set list of required libraries
 set(RequiredLibs
     ${PACKAGE_framework_LIBRARIES}
-    ${MPI_LIBRARIES}
+    ${MPI_C_LIBRARIES}
     )
 
 ## Compile all test sources

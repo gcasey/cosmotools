@@ -57,7 +57,7 @@ set(RequiredLibs
     ${PACKAGE_halofinder_LIBRARIES}
     ${PACKAGE_tess_LIBRARIES}
     ${PACKAGE_sfprobe_LIBRARIES}
-    ${MPI_LIBRARIES}
+    ${MPI_C_LIBRARIES}
     )
 
 ## Add the paraview plugin

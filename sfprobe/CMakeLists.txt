@@ -40,6 +40,6 @@ if(BUILD_SHARED_LIBS)
 else()
  add_library(sfprobe STATIC ${SOURCES})
 endif()
-target_link_libraries(sfprobe ${MPI_LIBRARIES})
+target_link_libraries(sfprobe ${MPI_C_LIBRARIES})
 
 add_subdirectory(executables)

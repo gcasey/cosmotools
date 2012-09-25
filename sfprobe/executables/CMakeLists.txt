@@ -6,7 +6,7 @@ set(executables)
 ## list of libraries required to compile the executables
 set(RequiredLibs
     sfprobe
-    ${MPI_LIBRARIES}
+    ${MPI_C_LIBRARIES}
     )
 
 ## Add VTK executables
