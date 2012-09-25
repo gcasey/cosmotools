@@ -5,6 +5,7 @@
 #include "voronoi.h"
 
 #include <cassert>
+#include <iostream>
 #include <sstream>
 
 #include <mpi.h>
