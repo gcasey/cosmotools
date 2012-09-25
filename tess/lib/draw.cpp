@@ -83,6 +83,7 @@ bool block_mode = false;
 
 // rendering mode
 bool draw_fancy = false;
+bool draw_particle = true;
 
 // volume filtering
 float min_vol = 0.0;
@@ -161,6 +162,9 @@ int main(int argc, char** argv) {
 
   // package rendering data
   for (int i = 0; i < nblocks; i++) { // blocks
+
+    // debug
+//   for (int i = 0; i < 1; i++) { // blocks
 
     n = 0;
     for (int j = 0; j < vblocks[i]->num_orig_particles; j++) {
@@ -291,17 +295,20 @@ void display() {
     glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, spec_mat);
     glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, shine);
     glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, amb_mat);
-    draw_spheres(sites, 0.04);
+    if (draw_particle)
+      draw_spheres(sites, 0.04);
     //     draw_sprites(sites, 10.0);
   }
   else {
     glColor3f(1.0, 1.0, 1.0);
     glEnable(GL_POINT_SMOOTH);
     glPointSize(1.0);
-    glBegin(GL_POINTS);
-    for (int i = 0; i < (int)sites.size(); i++)
-      glVertex3f(sites[i].x, sites[i].y, sites[i].z);
-    glEnd();
+    if (draw_particle) {
+      glBegin(GL_POINTS);
+      for (int i = 0; i < (int)sites.size(); i++)
+	glVertex3f(sites[i].x, sites[i].y, sites[i].z);
+      glEnd();
+    }
     glDisable(GL_COLOR_MATERIAL);
   }
 
@@ -635,6 +642,9 @@ void key(unsigned char key, int x, int y) {
   case 'q':  // quit
     exit(1);
     break; 
+  case 'p':  //show particle, added by Jingyuan
+    draw_particle = !draw_particle;
+    break;
   case 'z':  // zoom mouse motion
     xform_mode = XFORM_SCALE; 
     break; 

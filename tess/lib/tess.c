@@ -28,25 +28,33 @@ static int nblocks; /* number of blocks per process */
 static float cell_size; /* maximum expected cell diameter */
 static float ghost_factor; /* ghost size multiplier */
 static double *times; /* timing info */
+
+/* datatype profiling for John Jenkins' research */
+/* #define DATATYPE_PROFILE */
+
+#ifdef DATATYPE_PROFILE
+static int **hdrs; /* headers */
+#endif
+
 /*------------------------------------------------------------------------*/
 /*
-initialize parallel voronoi (and later possibly delaunay) tesselation
+  initialize parallel voronoi (and later possibly delaunay) tesselation
 
-nblocks: local number of blocks in my process
-tot_blocks: total number of blocks in the domain
-gids: global ids of my local blocks
-bounds: block bounds (extents) of my local blocks
-neighbors: neighbor lists for each of my local blocks, in lid order
- neighbor bounds need not be known, will be discovered automatically
-num_neighbors: number of neighbors for each of my local blocks, in lid order
-cell_dia: maximum expeted cell diameter
-ghost_mult: ghost size multiplier
-global_mins, global_maxs: overall data extents
-wrap: whether wraparound neighbors are used
-minvol, maxvol: filter range for which cells to keep
+  nblocks: local number of blocks in my process
+  tot_blocks: total number of blocks in the domain
+  gids: global ids of my local blocks
+  bounds: block bounds (extents) of my local blocks
+  neighbors: neighbor lists for each of my local blocks, in lid order
+  neighbor bounds need not be known, will be discovered automatically
+  num_neighbors: number of neighbors for each of my local blocks, in lid order
+  cell_dia: maximum expeted cell diameter
+  ghost_mult: ghost size multiplier
+  global_mins, global_maxs: overall data extents
+  wrap: whether wraparound neighbors are used
+  minvol, maxvol: filter range for which cells to keep
   pass -1.0 to skip either or both bounds
-mpi_comm: MPI communicator
-all_times: times for particle exchange, voronoi cells, convex hulls, and output
+  mpi_comm: MPI communicator
+  all_times: times for particle exchange, voronoi cells, convex hulls, and output
 */
 void tess_init(int num_blocks, int tot_blocks, int *gids, 
 	       struct bb_t *bounds, struct gb_t **neighbors, 
@@ -77,7 +85,7 @@ void tess_init(int num_blocks, int tot_blocks, int *gids,
     times[i] = 0.0;
 
   /* init DIY */
-  DIY_Init(dim, ROUND_ROBIN_ORDER, tot_blocks, &nblocks, NULL, comm);
+  DIY_Init(dim, ROUND_ROBIN_ORDER, tot_blocks, &nblocks, NULL, 1, comm);
   DIY_Decomposed(gids, bounds, NULL, NULL, NULL, NULL, neighbors, 
 		 num_neighbors, wrap);
 
@@ -93,12 +101,12 @@ void tess_finalize() {
 }
 /*------------------------------------------------------------------------*/
 /*
-tessellate parallel voronoi (and later possibly delaunay) tesselation
+  tessellate parallel voronoi (and later possibly delaunay) tesselation
 
-particles: particles[block_num][particle] 
+  particles: particles[block_num][particle] 
   where each particle is 3 values, px, py, pz
-num_particles; number of particles in each block
-out_file: output file name
+  num_particles; number of particles in each block
+  out_file: output file name
 */
 void tess(float **particles, int *num_particles, char *out_file) {
 
@@ -108,16 +116,16 @@ void tess(float **particles, int *num_particles, char *out_file) {
 }
 /*------------------------------------------------------------------------*/
 /*
-test of parallel voronoi (and later possibly delaunay) tesselation
+  test of parallel voronoi (and later possibly delaunay) tesselation
 
-tot_blocks: total number of blocks in the domain
-data_size: domain grid size (x, y, z)
-jitter: maximum amount to randomly move each particle
-cell_size: maximum expeted cell diameter
-ghost_factor: ghost size multiplier
-minvol, maxvol: filter range for which cells to keep
+  tot_blocks: total number of blocks in the domain
+  data_size: domain grid size (x, y, z)
+  jitter: maximum amount to randomly move each particle
+  cell_size: maximum expeted cell diameter
+  ghost_factor: ghost size multiplier
+  minvol, maxvol: filter range for which cells to keep
   pass -1.0 to skip either or both bounds
-times: times for particle exchange, voronoi cells, convex hulls, and output
+  times: times for particle exchange, voronoi cells, convex hulls, and output
 */
 void tess_test(int tot_blocks, int *data_size, float jitter, float cell_size,
 	       float ghost_factor, float minvol, float maxvol, double *times) {
@@ -140,141 +148,10 @@ void tess_test(int tot_blocks, int *data_size, float jitter, float cell_size,
     data_maxs[i] = data_size[i] - 1.0;
   }
 
-  /* --- have DIY do the decomposition --- */
-
+  /* have DIY do the decomposition */
   DIY_Init(dim, ROUND_ROBIN_ORDER, tot_blocks, &nblocks, data_size,
-	   comm);
+	   1, comm);
   DIY_Decompose(1, 0, 0, given);
-
-  /* --- end of DIY do the decomposition --- */
-
-  /* --- or test in situ decomposition --- */
-
-  /* hard-code problem to match MPI_TEST input parameters, 2 procs
-     1 block per process */
-/*   int rank, groupsize; */
-/*   MPI_Comm_rank(comm, &rank); */
-/*   MPI_Comm_size(comm, &groupsize); */
-/*   assert(tot_blocks == 2); */
-/*   assert(groupsize == 2); */
-/*   nblocks = 1; */
-
-/*   int gids[nblocks]; */
-/*   for (i = 0; i < nblocks; i++) */
-/*     gids[i] = rank; */
-
-/*   struct bb_t bounds[nblocks]; */
-
-/*   if (rank == 0) { */
-/*     bounds[0].min[0] = 0.0; bounds[0].max[0] = 2.0; */
-/*     bounds[0].min[1] = 0.0; bounds[0].max[1] = 4.0; */
-/*     bounds[0].min[2] = 0.0; bounds[0].max[2] = 4.0; */
-/*   } */
-/*   else { */
-/*     bounds[0].min[0] = 2.0; bounds[0].max[0] = 4.0; */
-/*     bounds[0].min[1] = 0.0; bounds[0].max[1] = 4.0; */
-/*     bounds[0].min[2] = 0.0; bounds[0].max[2] = 4.0; */
-/*   } */
-
-/*   int nneigh = 10; /\* number of neighbors per block *\/ */
-/*   int num_neighbors[nblocks]; */
-/*   for (i = 0; i < nblocks; i++) */
-/*     num_neighbors[i] = nneigh; */
-/*   struct gb_t **neighbors = */
-/*     (struct gb_t **)malloc(nblocks * sizeof(struct gb_t*)); */
-/*   for (i = 0; i < nblocks; i++) */
-/*     neighbors[i] = (struct gb_t*)malloc(nneigh * sizeof(struct gb_t)); */
-
-/*   if (rank == 0) { */
-/*     neighbors[0][0].proc = 1; */
-/*     neighbors[0][0].gid = 1; */
-/*     neighbors[0][0].neigh_dir = DIY_X1; */
-
-/*     neighbors[0][1].proc = 1; */
-/*     neighbors[0][1].gid = 1; */
-/*     neighbors[0][1].neigh_dir = DIY_X0; */
-
-/*     neighbors[0][2].proc = 0; */
-/*     neighbors[0][2].gid = 0; */
-/*     neighbors[0][2].neigh_dir = DIY_Y0; */
-
-/*     neighbors[0][3].proc = 0; */
-/*     neighbors[0][3].gid = 0; */
-/*     neighbors[0][3].neigh_dir = DIY_Y1; */
-
-/*     neighbors[0][4].proc = 0; */
-/*     neighbors[0][4].gid = 0; */
-/*     neighbors[0][4].neigh_dir = DIY_Z0; */
-
-/*     neighbors[0][5].proc = 0; */
-/*     neighbors[0][5].gid = 0; */
-/*     neighbors[0][5].neigh_dir = DIY_Z1; */
-
-/*     neighbors[0][6].proc = 1; */
-/*     neighbors[0][6].gid = 1; */
-/*     neighbors[0][6].neigh_dir = DIY_X0 | DIY_Y0; */
-
-/*     neighbors[0][7].proc = 1; */
-/*     neighbors[0][7].gid = 1; */
-/*     neighbors[0][7].neigh_dir = DIY_X1 | DIY_Y1; */
-
-/*     neighbors[0][8].proc = 1; */
-/*     neighbors[0][8].gid = 1; */
-/*     neighbors[0][8].neigh_dir = DIY_X0 | DIY_Y1; */
-
-/*     neighbors[0][9].proc = 1; */
-/*     neighbors[0][9].gid = 1; */
-/*     neighbors[0][9].neigh_dir = DIY_X1 | DIY_Y0; */
-/*   } */
-/*   else { */
-/*     neighbors[0][0].proc = 0; */
-/*     neighbors[0][0].gid = 0; */
-/*     neighbors[0][0].neigh_dir = DIY_X0; */
-
-/*     neighbors[0][1].proc = 0; */
-/*     neighbors[0][1].gid = 0; */
-/*     neighbors[0][1].neigh_dir = DIY_X1; */
-
-/*     neighbors[0][2].proc = 1; */
-/*     neighbors[0][2].gid = 1; */
-/*     neighbors[0][2].neigh_dir = DIY_Y0; */
-
-/*     neighbors[0][3].proc = 1; */
-/*     neighbors[0][3].gid = 1; */
-/*     neighbors[0][3].neigh_dir = DIY_Y1; */
-
-/*     neighbors[0][4].proc = 1; */
-/*     neighbors[0][4].gid = 1; */
-/*     neighbors[0][4].neigh_dir = DIY_Z0; */
-
-/*     neighbors[0][5].proc = 1; */
-/*     neighbors[0][5].gid = 1; */
-/*     neighbors[0][5].neigh_dir = DIY_Z1; */
-
-/*     neighbors[0][6].proc = 0; */
-/*     neighbors[0][6].gid = 0; */
-/*     neighbors[0][6].neigh_dir = DIY_X0 | DIY_Y0; */
-
-/*     neighbors[0][7].proc = 0; */
-/*     neighbors[0][7].gid = 0; */
-/*     neighbors[0][7].neigh_dir = DIY_X1 | DIY_Y1; */
-
-/*     neighbors[0][8].proc = 0; */
-/*     neighbors[0][8].gid = 0; */
-/*     neighbors[0][8].neigh_dir = DIY_X0 | DIY_Y1; */
-
-/*     neighbors[0][9].proc = 0; */
-/*     neighbors[0][9].gid = 0; */
-/*     neighbors[0][9].neigh_dir = DIY_X1 | DIY_Y0; */
-/*   } */
-
-/*   int wrap = 1; */
-
-/*   DIY_Init(dim, ROUND_ROBIN_ORDER, tot_blocks, &nblocks, NULL, comm); */
-/*   DIY_Decomposed(gids, bounds, NULL, NULL, NULL, NULL, */
-/* 		 neighbors, num_neighbors, wrap); */
-
-  /* --- end of test in situ decomposition --- */
 
   /* generate test points in each block */
   particles = (float **)malloc(nblocks * sizeof(float *));
@@ -296,16 +173,16 @@ void tess_test(int tot_blocks, int *data_size, float jitter, float cell_size,
 }
 /*--------------------------------------------------------------------------*/
 /*
-test of parallel voronoi (and later possibly delaunay) tesselation
+  test of parallel voronoi (and later possibly delaunay) tesselation
 
-nblocks: local number of blocks
-particles: particles[block_num][particle] 
+  nblocks: local number of blocks
+  particles: particles[block_num][particle] 
   where each particle is 3 values, px, py, pz
-num_particles; number of particles in each block
-cell_size: maximum expeted cell diameter
-ghost_factor: ghost size multiplier
-times: times for particle exchange, voronoi cells, convex hulls, and output
-out_file: output file name
+  num_particles; number of particles in each block
+  cell_size: maximum expeted cell diameter
+  ghost_factor: ghost size multiplier
+  times: times for particle exchange, voronoi cells, convex hulls, and output
+  out_file: output file name
 */
 void voronoi(int nblocks, float **particles, int *num_particles, 
 	     float cell_size, float ghost_factor, double *times, 
@@ -313,15 +190,17 @@ void voronoi(int nblocks, float **particles, int *num_particles,
 
   int *num_orig_particles; /* number of original particles, before any
 			      neighbor exchange */
-/*   float **new_particles; /\* original particles plus those received from */
-/* 			     neighbors *\/ */
+
   int dim = 3; /* 3D */
+
+#ifndef DATATYPE_PROFILE
   int **hdrs; /* headers */
+#endif
+
   struct vblock_t *vblocks; /* voronoi blocks */
   int i;
 
   num_orig_particles = (int *)malloc(nblocks * sizeof(int));
-/*   new_particles = (float **)malloc(nblocks * sizeof(float *)); */
   for (i = 0; i < nblocks; i++)
     num_orig_particles[i] = num_particles[i];
 
@@ -331,8 +210,6 @@ void voronoi(int nblocks, float **particles, int *num_particles,
 #endif
 
   /* exchange particless with neighbors */
-/*   neighbor_particles(nblocks, particles, new_particles, */
-/* 		     num_particles, cell_size * ghost_factor); */
   neighbor_particles(nblocks, particles,
 		     num_particles, cell_size * ghost_factor);
 
@@ -350,8 +227,6 @@ void voronoi(int nblocks, float **particles, int *num_particles,
 #endif
 
   /* create original voronoi cells */
-/*   orig_cells(nblocks, vblocks, dim, num_particles, num_orig_particles, */
-/* 	     new_particles, cell_size * ghost_factor); */
   orig_cells(nblocks, vblocks, dim, num_particles, num_orig_particles,
 	     particles, cell_size * ghost_factor);
 
@@ -391,25 +266,22 @@ void voronoi(int nblocks, float **particles, int *num_particles,
 
   /* cleanup */
   destroy_blocks(nblocks, vblocks, hdrs);
-/*   for (i = 0; i < nblocks; i++) */
-/*     free(new_particles[i]); */
-/*   free(new_particles); */
   free(num_orig_particles);
 
 }
 /*--------------------------------------------------------------------------*/
 /*
-creates original voronoi cells
+  creates original voronoi cells
 
-nblocks: number of blocks
-vblocks: pointer to array of vblocks
-dim: number of dimensions (eg. 3)
-num_particles: number of particles in each block
-num_orig_particles: number of original particles in each block, before any
-   neighbor exchange
-particles: particles in each block, particles[block_num][particle]
-   where each particle is 3 values, px, py, pz
-ghost: extra size per side beyond block bounds to consider vertices as valid
+  nblocks: number of blocks
+  vblocks: pointer to array of vblocks
+  dim: number of dimensions (eg. 3)
+  num_particles: number of particles in each block
+  num_orig_particles: number of original particles in each block, before any
+  neighbor exchange
+  particles: particles in each block, particles[block_num][particle]
+  where each particle is 3 values, px, py, pz
+  ghost: extra size per side beyond block bounds to consider vertices as valid
 */
 void orig_cells(int nblocks, struct vblock_t *vblocks, int dim,
 		int *num_particles, int *num_orig_particles, 
@@ -447,8 +319,18 @@ void orig_cells(int nblocks, struct vblock_t *vblocks, int dim,
 
     /* process voronoi output */
     if (!exitcode)
-      gen_voronoi_output(qh facet_list, num_orig_particles[i], particles[i], 
-			 &vblocks[i]);
+      gen_voronoi_output(qh facet_list, &vblocks[i]);
+
+    /* allocate cell sites for original particles */
+    vblocks[i].num_orig_particles = num_orig_particles[i];
+    vblocks[i].sites =
+      (float *)malloc(3 * sizeof(float) * vblocks[i].num_orig_particles);
+    for (j = 0; j < vblocks[i].num_orig_particles; j++) {
+      vblocks[i].sites[3 * j] = particles[i][3 * j];
+      vblocks[i].sites[3 * j + 1] = particles[i][3 * j + 1];
+      vblocks[i].sites[3 * j + 2] = particles[i][3 * j + 2];
+    }
+    vblocks[i].num_cells = vblocks[i].num_orig_particles;
 
     /* determine complete cells */
     complete_cells(&vblocks[i], i, ghost);
@@ -467,11 +349,11 @@ void orig_cells(int nblocks, struct vblock_t *vblocks, int dim,
 }
 /*--------------------------------------------------------------------------*/
 /*
-creates convex hulls for completed cells
+  creates convex hulls for completed cells
 
-nblocks: number of blocks
-vblocks: pointer to array of vblocks
-dim: number of dimensions (eg. 3)
+  nblocks: number of blocks
+  vblocks: pointer to array of vblocks
+  dim: number of dimensions (eg. 3)
 */
 void cell_hulls(int nblocks, struct vblock_t *vblocks, int dim) {
 
@@ -585,102 +467,13 @@ void cell_hulls(int nblocks, struct vblock_t *vblocks, int dim) {
 
 }
 /*--------------------------------------------------------------------------*/
-/* DEPRECATED */
-/* /\* */
-/* exchanges particles with neighbors */
-
-/* nblocks: number of blocks */
-/* old_particles: old particles before neighbor exchange */
-/* new_particles: new particles after neighbor exhcange (old + recvd) (output) */
-/* num_particles: number of new particles in each block (input / output) */
-/* ghost: proximity threshold to neighbors, to determine wheter near enough  */
-/*   to send the site to the neighbor */
-/* *\/ */
-/* void neighbor_particles(int nblocks, float **old_particles,  */
-/* 			float **new_particles, int *num_particles, */
-/* 			float ghost) { */
-
-/*   void ***recv_particles; /\* pointers to particles in ecah block  */
-/* 			     that are received from neighbors *\/ */
-/*   int *num_recv_particles; /\* number of received particles for each block *\/ */
-/*   int i, j, k; */
-
-/*   recv_particles = (void ***)malloc(nblocks * sizeof(void **)); */
-/*   num_recv_particles = (int *)malloc(nblocks * sizeof(int)); */
-
-/*   /\* for all blocks *\/ */
-/*   for (i = 0; i < nblocks; i++) { */
-
-/*     /\* for all particles in the current block *\/ */
-/*     for (j = 0; j < num_particles[i]; j++) { */
-
-/*       float p[3]; */
-/*       p[0] = old_particles[i][3 * j]; */
-/*       p[1] = old_particles[i][3 * j + 1]; */
-/*       p[2] = old_particles[i][3 * j + 2]; */
-
-/*       DIY_Enqueue_item_half_near(i, (void *)(&(old_particles[i][3 * j])), */
-/* 				 NULL, 3 * sizeof(float), p, ghost, */
-/* 				 &transform_particle); */
-
-/*     } */
-
-/*   } /\* for all blocks *\/ */
-
-/*   /\* exchange neighbors *\/ */
-/*   DIY_Exchange_neighbors(recv_particles, num_recv_particles, 1.0, &recv_type, */
-/* 			 &send_type); */
-
-/*   /\* copy old particles and received particles to new particles *\/ */
-/*   for (i = 0; i < nblocks; i++) { */
-/*     new_particles[i] = */
-/*       (float *)malloc((num_particles[i] + num_recv_particles[i]) * */
-/* 					    3 * sizeof(float)); */
-/*     for (j = 0; j < num_particles[i]; j++) { /\* copy original particles *\/ */
-/*       new_particles[i][3 *j]      = old_particles[i][3 * j]; */
-/*       new_particles[i][3 * j + 1] = old_particles[i][3 * j + 1]; */
-/*       new_particles[i][3 * j + 2] = old_particles[i][3 * j + 2]; */
-/*     } */
-
-/*     for (j = 0; j < num_recv_particles[i]; j++) { /\* copy received particles *\/ */
-
-/*       /\* filter out duplicates *\/ */
-/*       for (k = 0; k < num_particles[i]; k++) { */
-/* 	if (new_particles[i][3 * k]     == ((float*)recv_particles[i][j])[0] && */
-/* 	    new_particles[i][3 * k + 1] == ((float*)recv_particles[i][j])[1] && */
-/* 	    new_particles[i][3 * k + 2] == ((float*)recv_particles[i][j])[2]) { */
-/* 	  fprintf(stderr, "duplicate\n"); */
-/* 	  break; */
-/* 	} */
-/*       } */
-/*       if (k < num_particles[i]) */
-/* 	continue; */
-
-/*       /\* copy received site *\/ */
-/*       new_particles[i][3 * k] =     ((float*)recv_particles[i][j])[0]; */
-/*       new_particles[i][3 * k + 1] = ((float*)recv_particles[i][j])[1]; */
-/*       new_particles[i][3 * k + 2] = ((float*)recv_particles[i][j])[2]; */
-
-/*       num_particles[i]++; */
-
-/*     } */
-
-/*   } */
-
-/*   /\* clean up *\/ */
-/*   DIY_Flush_neighbors(recv_particles, num_recv_particles, &recv_type); */
-/*   free(num_recv_particles); */
-/*   free(recv_particles); */
-
-/* } */
-/*--------------------------------------------------------------------------*/
 /*
-exchanges particles with neighbors
+  exchanges particles with neighbors
 
-nblocks: number of blocks
-particles: old particles before neighbor exchange
-num_particles: number of new particles in each block (input / output)
-ghost: proximity threshold to neighbors, to determine wheter near enough 
+  nblocks: number of blocks
+  particles: old particles before neighbor exchange
+  num_particles: number of new particles in each block (input / output)
+  ghost: proximity threshold to neighbors, to determine wheter near enough 
   to send the site to the neighbor
 */
 void neighbor_particles(int nblocks, float **particles, int *num_particles,
@@ -691,11 +484,6 @@ void neighbor_particles(int nblocks, float **particles, int *num_particles,
   int *num_recv_particles; /* number of received particles for each block */
   int i, j;
   struct bb_t bb; // current block bounds
-
-  /* debug */
-/*   double t0, t1, t2; */
-/*   MPI_Barrier(MPI_COMM_WORLD); */
-/*   t0 = MPI_Wtime(); */
 
   recv_particles = (void ***)malloc(nblocks * sizeof(void **));
   num_recv_particles = (int *)malloc(nblocks * sizeof(int));
@@ -715,32 +503,19 @@ void neighbor_particles(int nblocks, float **particles, int *num_particles,
 	  bb.max[1] - particles[i][3 * j + 1] < ghost ||
 	  particles[i][3 * j + 2] - bb.min[2] < ghost ||
 	  bb.max[2] - particles[i][3 * j + 2] < ghost)
-	DIY_Enqueue_item_half_near(i, (void *)(&(particles[i][3 * j])),
-				   NULL, 3 * sizeof(float), 
-				   &particles[i][3 * j],
-				   ghost, &transform_particle);
-      // debug
-/*       else */
-/* 	fprintf(stderr, "skipping %.2lf %.2lf %.2lf\n", particles[i][3 * j], */
-/* 		particles[i][3 * j + 1], particles[i][3 * j + 2]); */
+
+	DIY_Enqueue_item_all_near(i, (void *)(&(particles[i][3 * j])),
+				  NULL, 3 * sizeof(float),
+				  &particles[i][3 * j],
+				  ghost, &transform_particle);
 
     }
 
   } /* for all blocks */
 
-  /* debug */
-/*   MPI_Barrier(MPI_COMM_WORLD); */
-/*   t0 = MPI_Wtime() - t0; */
-/*   t1 = MPI_Wtime(); */
-
   /* exchange neighbors */
   DIY_Exchange_neighbors(recv_particles, num_recv_particles, 1.0, &recv_type,
 			 &send_type);
-
-  /* debug */
-/*   MPI_Barrier(MPI_COMM_WORLD); */
-/*   t1 = MPI_Wtime() - t1; */
-/*   t2 = MPI_Wtime(); */
 
   /* copy received particles to particles */
   for (i = 0; i < nblocks; i++) {
@@ -761,14 +536,6 @@ void neighbor_particles(int nblocks, float **particles, int *num_particles,
     }
 
   }
-
-  /* debug */
-/*   int rank; */
-/*   MPI_Comm_rank(MPI_COMM_WORLD, &rank); */
-/*   MPI_Barrier(MPI_COMM_WORLD); */
-/*   t2 = MPI_Wtime() - t2; */
-/*   if (rank == 0) */
-/*     fprintf(stderr, "t0 = %.3lf t1 = %.3lf t2 = %.3lf\n", t0, t1, t2); */
 
   /* clean up */
   DIY_Flush_neighbors(recv_particles, num_recv_particles, &recv_type);
@@ -822,12 +589,12 @@ MPI_Datatype* send_type(int *cts, char** pts) {
 }
 /*--------------------------------------------------------------------------*/
 /*
-writes output
+  writes output
 
-nblocks: number of blocks
-vblocks: pointer to array of vblocks
-hdrs: block headers
-out_file: output file name
+  nblocks: number of blocks
+  vblocks: pointer to array of vblocks
+  hdrs: block headers
+  out_file: output file name
 */
 void write_out(int nblocks, struct vblock_t *vblocks, int ** hdrs, 
 	       char *out_file) {
@@ -850,11 +617,11 @@ void write_out(int nblocks, struct vblock_t *vblocks, int ** hdrs,
 }
 /*--------------------------------------------------------------------------*/
 /*
-collects statistics
+  collects statistics
 
-nblocks: number of blocks
-vblocks: pointer to array of vblocks
-times: timing info
+  nblocks: number of blocks
+  vblocks: pointer to array of vblocks
+  times: timing info
 */
 void collect_stats(int nblocks, struct vblock_t *vblocks, double *times) {
 
@@ -886,6 +653,11 @@ void collect_stats(int nblocks, struct vblock_t *vblocks, double *times) {
   stats.tot_cells = 0;
   stats.tot_faces = 0;
   stats.tot_verts = 0;
+  stats.avg_cell_verts = 0.0;
+  stats.avg_cell_faces = 0.0;
+  stats.avg_face_verts = 0.0;
+  stats.avg_cell_vol   = 0.0;
+  stats.avg_cell_dense = 0.0;
 
   for (i = 0; i < nblocks; i++) { /* for all blocks */
 
@@ -968,26 +740,21 @@ void collect_stats(int nblocks, struct vblock_t *vblocks, double *times) {
 
   } /* for all blocks */
 
-  /* compute local averages */
-  stats.avg_cell_verts = tot_num_cell_verts / stats.tot_cells;
-  stats.avg_cell_faces = stats.tot_faces / stats.tot_cells;
-  stats.avg_face_verts = tot_num_face_verts / stats.tot_faces;
-  stats.avg_cell_vol = tot_cell_vol / stats.tot_cells;
-  stats.avg_cell_dense = tot_cell_dense / stats.tot_cells;
 
-  /* debug: local stats */
-/*   fprintf(stderr, "------------ rank %d local stats -----------------\n",  */
-/* 	  rank); */
-/*   fprintf(stderr, "total cells found = %d\n", stats.tot_cells); */
-/*   fprintf(stderr, "average number of vertices per cell = %.0lf\n", */
-/* 	  stats.avg_cell_verts); */
-/*   fprintf(stderr, "average number of faces per cell = %.0lf\n", */
-/* 	  stats.avg_cell_faces); */
-/*   fprintf(stderr, "average number of vertices per face = %.0lf\n", */
-/* 	  stats.avg_face_verts); */
-/*   fprintf(stderr, "min cell volume = %.3lf max cell volume = %.3lf units^3\n", */
-/* 	  stats.min_cell_vol, stats.max_cell_vol); */
-/*   fprintf(stderr, "-------------------------------------------------\n"); */
+  /* compute local averages */
+
+  /* debug */
+/*   fprintf(stderr, "tot_num_cell_verts = %d tot_num_face_verts = %d tot_cell_vol = %.3lf tot_cell_dense = %.3lf tot_cells = %d tot_faces = %d\n",  */
+/* 	  tot_num_cell_verts, tot_num_face_verts, tot_cell_vol, tot_cell_dense, */
+/* 	  stats.tot_cells, stats.tot_faces); */
+
+  if (stats.tot_cells) { /* don't divide by 0 */
+    stats.avg_cell_verts = tot_num_cell_verts / stats.tot_cells;
+    stats.avg_cell_faces = stats.tot_faces / stats.tot_cells;
+    stats.avg_face_verts = tot_num_face_verts / stats.tot_faces;
+    stats.avg_cell_vol = tot_cell_vol / stats.tot_cells;
+    stats.avg_cell_dense = tot_cell_dense / stats.tot_cells;
+  }
 
   /* aggregate totals across all procs and compute average on that */
   aggregate_stats(nblocks, vblocks, &stats);
@@ -1046,11 +813,11 @@ void collect_stats(int nblocks, struct vblock_t *vblocks, double *times) {
 }
 /*--------------------------------------------------------------------------*/
 /*
-aggregates local statistics into global statistics
+  aggregates local statistics into global statistics
 
-nblocks: number of blocks
-vblocks: pointer to array of vblocks
-loc_stats: local statistics
+  nblocks: number of blocks
+  vblocks: pointer to array of vblocks
+  loc_stats: local statistics
 */
 void aggregate_stats(int nblocks, struct vblock_t *vblocks, 
 		     struct stats_t *loc_stats) {
@@ -1145,7 +912,7 @@ void aggregate_stats(int nblocks, struct vblock_t *vblocks,
     glo_stats.min_hull_time  = loc_stats->min_hull_time;
     glo_stats.max_hull_time  = loc_stats->max_hull_time;
     glo_stats.num_vol_bins   = 50;
-    glo_stats.num_dense_bins = 50;
+    glo_stats.num_dense_bins = 100;
 
   }
 
@@ -1242,12 +1009,12 @@ void aggregate_stats(int nblocks, struct vblock_t *vblocks,
 }
 /*--------------------------------------------------------------------------*/
 /*
-reduces averages and ranges
+  reduces averages and ranges
 
-in: input 1
-inout: input 2 and output
-len: 1
-datatype: unused
+  in: input 1
+  inout: input 2 and output
+  len: 1
+  datatype: unused
 */
 void average(void *in, void *inout, int *len, MPI_Datatype *type) {
 
@@ -1307,17 +1074,17 @@ void average(void *in, void *inout, int *len, MPI_Datatype *type) {
   /* ought to do a cross-validation to find correct number of bins
      for now just pick a number */
   stats2->num_vol_bins = 50;
-  stats2->num_dense_bins = 50;
+  stats2->num_dense_bins = 100;
 
 }
 /*--------------------------------------------------------------------------*/
 /*
-reduces histograms
+  reduces histograms
 
-in: input 1
-inout: input 2 and output
-len: 1
-datatype: unused
+  in: input 1
+  inout: input 2 and output
+  len: 1
+  datatype: unused
 */
 void histogram(void *in, void *inout, int *len, MPI_Datatype *type) {
 
@@ -1355,11 +1122,11 @@ void histogram(void *in, void *inout, int *len, MPI_Datatype *type) {
 }
 /*--------------------------------------------------------------------------*/
 /*
-prepare for output
+  prepare for output
 
-nblocks: number of blocks
-vblocks: pointer to array of vblocks
-hdrs: block headers
+  nblocks: number of blocks
+  vblocks: pointer to array of vblocks
+  hdrs: block headers
 */
 void prep_out(int nblocks, struct vblock_t *vblocks, int **hdrs) {
 
@@ -1382,9 +1149,27 @@ void prep_out(int nblocks, struct vblock_t *vblocks, int **hdrs) {
     vblocks[i].save_verts = (float *)malloc(vblocks[i].num_verts * 3 * 
 					       sizeof(float));
     for (j = 0; j < vblocks[i].num_verts; j++) {
-      vblocks[i].save_verts[3 * j]     = vblocks[i].verts[3 * j];
-      vblocks[i].save_verts[3 * j + 1] = vblocks[i].verts[3 * j + 1];
-      vblocks[i].save_verts[3 * j + 2] = vblocks[i].verts[3 * j + 2];
+      /* added by jingyuan
+       * check and remove vertices that are out of data extent
+       */
+      if (vblocks[i].verts[3 * j    ] < data_mins[0] ||
+          vblocks[i].verts[3 * j    ] > data_maxs[0] ||
+          vblocks[i].verts[3 * j + 1] < data_mins[1] ||
+          vblocks[i].verts[3 * j + 1] > data_maxs[1] ||
+          vblocks[i].verts[3 * j + 2] < data_mins[2] ||
+          vblocks[i].verts[3 * j + 2] > data_maxs[2])
+      {
+        vblocks[i].save_verts[3 * j    ] = 0;
+        vblocks[i].save_verts[3 * j + 1] = 0;
+        vblocks[i].save_verts[3 * j + 2] = 0;
+      }
+      else
+      {
+        vblocks[i].save_verts[3 * j]     = vblocks[i].verts[3 * j];
+        vblocks[i].save_verts[3 * j + 1] = vblocks[i].verts[3 * j + 1];
+        vblocks[i].save_verts[3 * j + 2] = vblocks[i].verts[3 * j + 2];
+      }
+      /* end of changes */
     }
     free (vblocks[i].verts);
     vblocks[i].verts = NULL;
@@ -1405,13 +1190,13 @@ void prep_out(int nblocks, struct vblock_t *vblocks, int **hdrs) {
 }
 /*--------------------------------------------------------------------------*/
 /*
-creates and initializes blocks and headers
+  creates and initializes blocks and headers
 
-num_blocks: number of blocks
-vblocks: pointer to array of vblocks
-hdrs: pointer to array of headers
+  num_blocks: number of blocks
+  vblocks: pointer to array of vblocks
+  hdrs: pointer to array of headers
 
-side effects: allocates memory for blocks and headers
+  side effects: allocates memory for blocks and headers
 */
 void create_blocks(int num_blocks, struct vblock_t **vblocks, int ***hdrs) {
 
@@ -1453,11 +1238,11 @@ void create_blocks(int num_blocks, struct vblock_t **vblocks, int ***hdrs) {
 }
 /*---------------------------------------------------------------------------*/
 /*
-frees blocks and headers
+  frees blocks and headers
 
-num_blocks: number of blocks
-vblocks: pointer to array of vblocks
-hdrs: pointer to array of headers
+  num_blocks: number of blocks
+  vblocks: pointer to array of vblocks
+  hdrs: pointer to array of headers
 */
 void destroy_blocks(int num_blocks, struct vblock_t *vblocks, int **hdrs) {
 
@@ -1496,394 +1281,15 @@ void destroy_blocks(int num_blocks, struct vblock_t *vblocks, int **hdrs) {
 
 }
 /*---------------------------------------------------------------------------*/
-/* complete_cells v.0 DEPRECATED */
-/* /\* */
-/* determnines complete cells: cells that don't contain qhull'sinfinite vertex or */
-/* any other vertices outside of the block bounds */
-
-/* vblock: one voronoi block */
-/* lid: local id of block */
-/* ghost: extra size per side beyond block bounds to consider vertices as valid */
-
-/* side effects: allocates memory for complete cells in voronoi block */
-/* *\/ */
-/* void complete_cells(struct vblock_t *vblock, int lid, float ghost) { */
-
-/*   struct bb_t bounds; /\* block bounds *\/ */
-/*   int vid; /\* vertex id *\/ */
-/*   int j, k, n, m; */
-
-/*   /\* first pass: count complete cells *\/ */
-/*   vblock->temp_num_complete_cells = 0; */
-/*   n = 0; /\* index into vblock->cells *\/ */
-/*   for (j = 0; j < vblock->num_cells; j++) { */
-
-/*     /\* skip incomplete cells *\/ */
-/*     int complete = 1; */
-/*     for (k = 0; k < vblock->num_cell_verts[j]; k++) { */
-
-/*       /\* check for qhull's "infinite vertex" *\/ */
-/*       if (vblock->cells[n] == 0) { */
-/* 	complete = 0; */
-/* 	n += (vblock->num_cell_verts[j] - k); /\* skip rest of this cell *\/ */
-/* 	break; */
-/*       } */
-
-/*       /\* check for out of bounds vertices *\/ */
-/*       DIY_Block_bounds(lid, &bounds); */
-/*       vid = vblock->cells[n]; */
-/*       /\* block bounds *\/ */
-/*       if (vblock->verts[3 * vid]     < bounds.min[0] - ghost || */
-/* 	  vblock->verts[3 * vid]     > bounds.max[0] + ghost || */
-/* 	  vblock->verts[3 * vid + 1] < bounds.min[1] - ghost || */
-/* 	  vblock->verts[3 * vid + 1] > bounds.max[1] + ghost || */
-/* 	  vblock->verts[3 * vid + 2] < bounds.min[2] - ghost || */
-/* 	  vblock->verts[3 * vid + 2] > bounds.max[2] + ghost) { */
-/* 	complete = 0; */
-/* 	n += (vblock->num_cell_verts[j] - k); /\* skip rest of this cell *\/ */
-/* 	break; */
-/*       } */
-/*       /\* overall data bounds *\/ */
-/*       if (vblock->verts[3 * vid]     < data_mins[0] || */
-/* 	  vblock->verts[3 * vid]     > data_maxs[0] || */
-/* 	  vblock->verts[3 * vid + 1] < data_mins[1] || */
-/* 	  vblock->verts[3 * vid + 1] > data_maxs[1] || */
-/* 	  vblock->verts[3 * vid + 2] < data_mins[2] || */
-/* 	  vblock->verts[3 * vid + 2] > data_maxs[2]) { */
-/* 	complete = 0; */
-/* 	n += (vblock->num_cell_verts[j] - k); /\* skip rest of this cell *\/ */
-/* 	break; */
-/*       } */
-
-/*       n++; */
-
-/*     } */
-
-/*     if (!complete) */
-/*       continue; */
-
-/*     vblock->temp_num_complete_cells++; */
-
-/*   } */
-
-/*   /\* allocate memory that depends on the number of complete cells */
-/*      this is wasteful if filtering on volume because we will probably */
-/*      only need a fraction of this memory */
-/*      todo: fix this *\/ */
-/*   vblock->temp_complete_cells = */
-/* 	  (int *)malloc(vblock->temp_num_complete_cells * */
-/* 			sizeof(int)); */
-/*   vblock->complete_cells = */
-/* 	  (int *)malloc(vblock->temp_num_complete_cells * */
-/* 			sizeof(int)); */
-/*   vblock->areas = */
-/*     (float *)malloc(vblock->temp_num_complete_cells * sizeof(float )); */
-/*   vblock->vols = */
-/*     (float *)malloc(vblock->temp_num_complete_cells * sizeof(float)); */
-/*   vblock->num_cell_faces = */
-/*     (int *)malloc(vblock->temp_num_complete_cells * sizeof(int)); */
-
-/*   /\* allocate initial memory for faces and face vertices, to grow later *\/ */
-/*   /\* todo: dynamic realloc *\/ */
-/*   vblock->num_face_verts = */
-/* 	  (int *)malloc(vblock->temp_num_complete_cells * AVG_CELL_FACES * */
-/* 			sizeof(int)); */
-/*   vblock->face_verts = */
-/* 	  (int *)malloc(vblock->temp_num_complete_cells * AVG_CELL_FACES * */
-/* 			AVG_FACE_VERTS * sizeof(int)); */
-/*   memset(vblock->num_face_verts, 0, */
-/* 	 vblock->temp_num_complete_cells * AVG_CELL_FACES * sizeof(int)); */
-/*   memset(vblock->face_verts, 0, */
-/* 	 vblock->temp_num_complete_cells * AVG_CELL_FACES * */
-/* 	 AVG_FACE_VERTS * sizeof(int)); */
-/*   vblock->tot_num_cell_faces = 0; */
-/*   vblock->tot_num_face_verts = 0; */
-
-/*   /\* seond pass identify complete cells *\/ */
-/*   n = 0; /\* index into vblock->cells *\/ */
-/*   m = 0; /\* current complete cell *\/ */
-/*   for (j = 0; j < vblock->num_cells; j++) {     /\* for all cells in the */
-/* 						      current block *\/ */
-/*     /\* skip incomplete cells *\/ */
-/*     int complete = 1; */
-/*     for (k = 0; k < vblock->num_cell_verts[j]; k++) { */
-
-/*       /\* check for qhull's "infinite vertex" *\/ */
-/*       if (vblock->cells[n] == 0) { */
-/* 	complete = 0; */
-/* 	n += (vblock->num_cell_verts[j] - k); /\* skip rest of this cell *\/ */
-/* 	break; */
-/*       } */
-
-/*       /\* check for out of bounds vertices *\/ */
-/*       DIY_Block_bounds(lid, &bounds); */
-/*       vid = vblock->cells[n]; */
-/*       /\* block bounds *\/ */
-/*       if (vblock->verts[3 * vid]     < bounds.min[0] - ghost || */
-/* 	  vblock->verts[3 * vid]     > bounds.max[0] + ghost || */
-/* 	  vblock->verts[3 * vid + 1] < bounds.min[1] - ghost || */
-/* 	  vblock->verts[3 * vid + 1] > bounds.max[1] + ghost || */
-/* 	  vblock->verts[3 * vid + 2] < bounds.min[2] - ghost || */
-/* 	  vblock->verts[3 * vid + 2] > bounds.max[2] + ghost ) { */
-/* 	complete = 0; */
-/* 	n += (vblock->num_cell_verts[j] - k); /\* skip rest of this cell *\/ */
-/* 	break; */
-/*       } */
-/*       /\* overall data bounds *\/ */
-/*       if (vblock->verts[3 * vid]     < data_mins[0] || */
-/* 	  vblock->verts[3 * vid]     > data_maxs[0] || */
-/* 	  vblock->verts[3 * vid + 1] < data_mins[1] || */
-/* 	  vblock->verts[3 * vid + 1] > data_maxs[1] || */
-/* 	  vblock->verts[3 * vid + 2] < data_mins[2] || */
-/* 	  vblock->verts[3 * vid + 2] > data_maxs[2]) { */
-/* 	complete = 0; */
-/* 	n += (vblock->num_cell_verts[j] - k); /\* skip rest of this cell *\/ */
-/* 	break; */
-/*       } */
-
-/*       n++; */
-
-/*     } */
-
-/*     if (!complete) */
-/*       continue; */
-
-/*     (vblock->temp_complete_cells)[m++] = j; */
-
-/*   } */
-
-/* } */
-/*--------------------------------------------------------------------------*/
-/* complete_cells v.1 DEPRECATED */
-/* /\* */
-/* determnines complete cells: cells that don't contain qhull'sinfinite vertex or */
-/* any other vertices outside of the block bounds */
-
-/* vblock: one voronoi block */
-/* lid: local id of block */
-/* ghost: extra size per side beyond block bounds to consider vertices as valid */
-
-/* side effects: allocates memory for complete cells in voronoi block */
-/* *\/ */
-/* void complete_cells(struct vblock_t *vblock, int lid, float ghost) { */
-
-/*   struct bb_t bounds; /\* block bounds *\/ */
-/*   int vid, vid1; /\* vertex id *\/ */
-/*   int i, j, k, n, m; */
-/*   double d2_min; /\* dia^2 of circumscribing sphere of volume min_vol *\/ */
-/*   int start_n; /\* index into cells at start of new cell *\/ */
-/*   int too_small; /\* whether cell volume is definitely below threshold *\/ */
-
-/*   DIY_Block_bounds(lid, &bounds); */
-
-/*   /\* minimum cell diameter squared *\/ */
-/*   if (min_vol > 0.0) */
-/*     /\* d^2 = 4 * (3/4 * min_vol / pi)^ (2/3) *\/ */
-/*     d2_min = 1.539339 * pow(min_vol, 0.66667); */
-
-/*   /\* first pass: count complete cells *\/ */
-
-/*   vblock->temp_num_complete_cells = 0; */
-/*   n = 0; /\* index into vblock->cells *\/ */
-/*   start_n = n; */
-/*   too_small = (min_vol > 0.0 ? 1 : 0); /\* init small volume flag *\/ */
-
-/*   /\* for all cells *\/ */
-/*   for (j = 0; j < vblock->num_cells; j++) { */
-
-/*     int complete = 1; */
-
-/*     /\* for all vertex indices in the current cell *\/ */
-/*     for (k = 0; k < vblock->num_cell_verts[j]; k++) { */
-
-/*       vid = vblock->cells[n]; */
-
-/*       if ( /\* vertex can fail for the following reasons *\/ */
-/* 	  /\* qhull's "infinite vertex" *\/ */
-/* 	  vblock->cells[n] == 0 || */
-/* 	  /\* out of block bounds *\/ */
-/* 	  vblock->verts[3 * vid]     < bounds.min[0] - ghost || */
-/* 	  vblock->verts[3 * vid]     > bounds.max[0] + ghost || */
-/* 	  vblock->verts[3 * vid + 1] < bounds.min[1] - ghost || */
-/* 	  vblock->verts[3 * vid + 1] > bounds.max[1] + ghost || */
-/* 	  vblock->verts[3 * vid + 2] < bounds.min[2] - ghost || */
-/* 	  vblock->verts[3 * vid + 2] > bounds.max[2] + ghost || */
-/* 	  /\* out of overall data bounds *\/ */
-/* 	  vblock->verts[3 * vid]     < data_mins[0] || */
-/* 	  vblock->verts[3 * vid]     > data_maxs[0] || */
-/* 	  vblock->verts[3 * vid + 1] < data_mins[1] || */
-/* 	  vblock->verts[3 * vid + 1] > data_maxs[1] || */
-/* 	  vblock->verts[3 * vid + 2] < data_mins[2] || */
-/* 	  vblock->verts[3 * vid + 2] > data_maxs[2] */
-/* 	   ) { */
-/* 	complete = 0; */
-/* 	n += (vblock->num_cell_verts[j] - k); /\* skip rest of this cell *\/ */
-/* 	start_n = n; */
-/* 	too_small = (min_vol > 0.0 ? 1 : 0); /\* init small volume flag *\/ */
-/* 	break; */
-/*       } /\* if *\/ */
-
-/*       /\* check minimum volume if enabled and it has not been excceded yet *\/ */
-/*       if (too_small) { */
-
-/* 	/\* for all vertices in this cell *\/ */
-/* 	for (m = start_n; m < start_n + vblock->num_cell_verts[j]; m++) { */
-
-/* 	  vid1 = vblock->cells[m]; */
-/* 	  double d2 = */
-/* 	    (vblock->verts[3 * vid] - vblock->verts[3 * vid1]) * */
-/* 	    (vblock->verts[3 * vid] - vblock->verts[3 * vid1]) + */
-/* 	    (vblock->verts[3 * vid + 1] - vblock->verts[3 * vid1 + 1]) * */
-/* 	    (vblock->verts[3 * vid + 1] - vblock->verts[3 * vid1 + 1]) + */
-/* 	    (vblock->verts[3 * vid + 2] - vblock->verts[3 * vid1 + 2]) * */
-/* 	    (vblock->verts[3 * vid + 2] - vblock->verts[3 * vid1 + 2]); */
-/* 	  if (d2 > d2_min) { */
-/* 	    too_small = 0; */
-/* 	    break; */
-/* 	  } */
-
-/* 	} /\* all vertices in this cell *\/ */
-
-/*       } /\* samll volume threshold *\/ */
-
-/*       /\* check if volume is too small at the end of the cell *\/ */
-/*       if ( k == vblock->num_cell_verts[j] - 1 && too_small) */
-/* 	complete = 0; */
-
-/*       n++; */
-
-/*     } /\* for all vertex indices in this cell *\/ */
-
-/*     if (!complete) */
-/*       continue; */
-
-/*     vblock->temp_num_complete_cells++; */
-
-/*   } /\* for all cells *\/ */
-
-/*   /\* allocate memory that depends on the number of complete cells */
-/*      this is wasteful if filtering on volume because we will probably */
-/*      only need a fraction of this memory */
-/*      todo: fix this *\/ */
-/*   vblock->temp_complete_cells = */
-/* 	  (int *)malloc(vblock->temp_num_complete_cells * */
-/* 			sizeof(int)); */
-/*   vblock->complete_cells = */
-/* 	  (int *)malloc(vblock->temp_num_complete_cells * */
-/* 			sizeof(int)); */
-/*   vblock->areas = */
-/*     (float *)malloc(vblock->temp_num_complete_cells * sizeof(float)); */
-/*   vblock->vols = */
-/*     (float *)malloc(vblock->temp_num_complete_cells * sizeof(float)); */
-/*   vblock->num_cell_faces = */
-/*     (int *)malloc(vblock->temp_num_complete_cells * sizeof(int)); */
-
-/*   /\* allocate initial memory for faces and face vertices, to grow later *\/ */
-/*   /\* todo: dynamic realloc *\/ */
-/*   vblock->num_face_verts = */
-/* 	  (int *)malloc(vblock->temp_num_complete_cells * AVG_CELL_FACES * */
-/* 			sizeof(int)); */
-/*   vblock->face_verts = */
-/* 	  (int *)malloc(vblock->temp_num_complete_cells * AVG_CELL_FACES * */
-/* 			AVG_FACE_VERTS * sizeof(int)); */
-/*   memset(vblock->num_face_verts, 0, */
-/* 	 vblock->temp_num_complete_cells * AVG_CELL_FACES * sizeof(int)); */
-/*   memset(vblock->face_verts, 0, */
-/* 	 vblock->temp_num_complete_cells * AVG_CELL_FACES * */
-/* 	 AVG_FACE_VERTS * sizeof(int)); */
-/*   vblock->tot_num_cell_faces = 0; */
-/*   vblock->tot_num_face_verts = 0; */
-
-/*   /\* seond pass identify complete cells *\/ */
-/*   n = 0; /\* index into vblock->cells *\/ */
-/*   i = 0; /\* current complete cell *\/ */
-/*   start_n = n; */
-/*   too_small = (min_vol > 0.0 ? 1 : 0); /\* init small volume flag *\/ */
-
-/*   /\* for all cells *\/ */
-/*   for (j = 0; j < vblock->num_cells; j++) { */
-
-
-/*     int complete = 1; */
-
-/*     /\* for all vertex indices in the current cell *\/ */
-/*     for (k = 0; k < vblock->num_cell_verts[j]; k++) { */
-
-/*       vid = vblock->cells[n]; */
-
-/*       if ( /\* vertex can fail for the following reasons *\/ */
-/* 	  /\* qhull's "infinite vertex" *\/ */
-/* 	  vblock->cells[n] == 0 || */
-/* 	  /\* out of block bounds *\/ */
-/* 	  vblock->verts[3 * vid]     < bounds.min[0] - ghost || */
-/* 	  vblock->verts[3 * vid]     > bounds.max[0] + ghost || */
-/* 	  vblock->verts[3 * vid + 1] < bounds.min[1] - ghost || */
-/* 	  vblock->verts[3 * vid + 1] > bounds.max[1] + ghost || */
-/* 	  vblock->verts[3 * vid + 2] < bounds.min[2] - ghost || */
-/* 	  vblock->verts[3 * vid + 2] > bounds.max[2] + ghost || */
-/* 	  /\* out of overall data bounds *\/ */
-/* 	  vblock->verts[3 * vid]     < data_mins[0] || */
-/* 	  vblock->verts[3 * vid]     > data_maxs[0] || */
-/* 	  vblock->verts[3 * vid + 1] < data_mins[1] || */
-/* 	  vblock->verts[3 * vid + 1] > data_maxs[1] || */
-/* 	  vblock->verts[3 * vid + 2] < data_mins[2] || */
-/* 	  vblock->verts[3 * vid + 2] > data_maxs[2] */
-/* 	   ) { */
-/* 	complete = 0; */
-/* 	n += (vblock->num_cell_verts[j] - k); /\* skip rest of this cell *\/ */
-/* 	start_n = n; */
-/* 	too_small = (min_vol > 0.0 ? 1 : 0); /\* init small volume flag *\/ */
-/* 	break; */
-/*       } /\* if *\/ */
-
-/*       /\* check minimum volume if enabled and it has not been excceded yet *\/ */
-/*       if (too_small) { */
-
-/* 	/\* for all vertices in this cell *\/ */
-/* 	for (m = start_n; m < start_n + vblock->num_cell_verts[j]; m++) { */
-
-/* 	  vid1 = vblock->cells[m]; */
-/* 	  double d2 = */
-/* 	    (vblock->verts[3 * vid] - vblock->verts[3 * vid1]) * */
-/* 	    (vblock->verts[3 * vid] - vblock->verts[3 * vid1]) + */
-/* 	    (vblock->verts[3 * vid + 1] - vblock->verts[3 * vid1 + 1]) * */
-/* 	    (vblock->verts[3 * vid + 1] - vblock->verts[3 * vid1 + 1]) + */
-/* 	    (vblock->verts[3 * vid + 2] - vblock->verts[3 * vid1 + 2]) * */
-/* 	    (vblock->verts[3 * vid + 2] - vblock->verts[3 * vid1 + 2]); */
-/* 	  if (d2 > d2_min) { */
-/* 	    too_small = 0; */
-/* 	    break; */
-/* 	  } */
-
-/* 	} /\* all vertices in this cell *\/ */
-
-/*       } /\* samll volume threshold *\/ */
-
-/*       /\* check if volume is too small at the end of the cell *\/ */
-/*       if ( k == vblock->num_cell_verts[j] - 1 && too_small) */
-/* 	complete = 0; */
-/*       n++; */
-
-/*     } /\* for all vertex indices in this cell *\/ */
-
-/*     if (!complete) */
-/*       continue; */
-
-/*     (vblock->temp_complete_cells)[i++] = j; */
-
-/*   } /\* for all cells *\/ */
-
-/* } */
-/*--------------------------------------------------------------------------*/
 /*
-determnines complete cells: cells that don't contain qhull'sinfinite vertex or
-any other vertices outside of the block bounds
+  determnines complete cells: cells that don't contain qhull'sinfinite vertex or
+  any other vertices outside of the block bounds
 
-vblock: one voronoi block
-lid: local id of block
-ghost: extra size per side beyond block bounds to consider vertices as valid
+  vblock: one voronoi block
+  lid: local id of block
+  ghost: extra size per side beyond block bounds to consider vertices as valid
 
-side effects: allocates memory for complete cells in voronoi block
+  side effects: allocates memory for complete cells in voronoi block
 */
 void complete_cells(struct vblock_t *vblock, int lid, float ghost) {
 
@@ -1969,7 +1375,6 @@ void complete_cells(struct vblock_t *vblock, int lid, float ghost) {
 	  vblock->verts[3 * vid + 2] > data_maxs[2]
 	   ) {
 	complete = 0;
-/* 	fprintf(stderr, "-- j = %d n = %d is out of bounds\n", j, n); */
 	n += (vblock->num_cell_verts[j] - k); /* skip rest of this cell */
 	break;
       } /* if */
@@ -1989,7 +1394,6 @@ void complete_cells(struct vblock_t *vblock, int lid, float ghost) {
 	    (vblock->verts[3 * vid + 2] - vblock->verts[3 * vid1 + 2]);
 	  if (d2 > d2_min) {
 	    too_small = 0;
-/* 	    fprintf(stderr, "** j = %d n = %d d2 = %.3lf d2_min = %.3lf is not too small:\n", j, n, d2, d2_min); */
 	    break;
 	  }
 
@@ -1998,32 +1402,27 @@ void complete_cells(struct vblock_t *vblock, int lid, float ghost) {
       } /* samll volume threshold */
 
       /* check if volume is too small at the end of the cell */
-      if (k == vblock->num_cell_verts[j] - 1 && too_small) {
-	/* fprintf(stderr, "-- j = %d is too small\n", j); */
+      if (k == vblock->num_cell_verts[j] - 1 && too_small)
 	complete = 0;
-      }
 
       n++;
 
     } /* for all vertex indices in this cell */
 
-    if (complete) {
+    if (complete)
       (vblock->temp_complete_cells)[vblock->temp_num_complete_cells++] = j;
-/*       fprintf(stderr, "++ saving j = %d temp_num_complete_cells = %d\n", */
-/* 	      j, vblock->temp_num_complete_cells); */
-    }
 
   } /* for all cells */
 
 }
 /*--------------------------------------------------------------------------*/
 /*
-prepares vertices for convex hull computation
+  prepares vertices for convex hull computation
 
-vblock: one voronoi block
-cell: the current complete cell
-vertices: vertex array, allocated by caller
-vmap: vertex map from these vertices back to original vertex ids, allocated
+  vblock: one voronoi block
+  cell: the current complete cell
+  vertices: vertex array, allocated by caller
+  vmap: vertex map from these vertices back to original vertex ids, allocated
   by caller
 */
 void prep_vertices(struct vblock_t *vblock, int cell, double *vertices,
@@ -2045,25 +1444,21 @@ void prep_vertices(struct vblock_t *vblock, int cell, double *vertices,
     vertices[3 * k + 2] = (vblock->verts)[3 * vid + 2];
     vmap[k] = vid;
 
-    /* debug */
-/*     fprintf(stderr, "vertex = [%.3lf %.3lf %.3lf]\n", vertices[3 * k], */
-/* 	    vertices[3 * k + 1], vertices[3 *k + 2]); */
-
   }
 
 }
 /*--------------------------------------------------------------------------*/
 /*
-generates test particles for a  block
+  generates test particles for a  block
 
-lid: local id of block
-particles: pointer to particle vector in this order: 
+  lid: local id of block
+  particles: pointer to particle vector in this order: 
   particle0x, particle0y, particle0z, particle1x, particle1y, particle1z, ...
-jitter: maximum amount to randomly move particles
+  jitter: maximum amount to randomly move particles
 
-returns: number of particles in this block
+  returns: number of particles in this block
 
-side effects: allocates memory for particles, caller's responsibility to free
+  side effects: allocates memory for particles, caller's responsibility to free
 */
 int gen_particles(int lid, float **particles, float jitter) {
 
@@ -2138,19 +1533,14 @@ int gen_particles(int lid, float **particles, float jitter) {
 }
 /*--------------------------------------------------------------------------*/
 /*
-generates voronoi output from qhull
+  generates voronoi output from qhull
 
-facetlist: qhull list of convex hull facets
-num_particles: number of input particles
-particles: input particle vector in this order:
-  particle0x, particle0y, particle0z, particle1x, particle1y, particle1z, ...
-vblock: pointer to one voronoi block, allocated by caller
-
-side effects: allocates data structures inside of vblock, caller's
+  facetlist: qhull list of convex hull facets
+  vblock: pointer to one voronoi block, allocated by caller
+  side effects: allocates data structures inside of vblock, caller's
   responsibility to free
 */
-void gen_voronoi_output(facetT *facetlist, int num_particles, 
-			float *particles, struct vblock_t *vblock) {
+void gen_voronoi_output(facetT *facetlist, struct vblock_t *vblock) {
 
   int i, numcenters, numvertices= 0, numneighbors, numinf, vertex_i, vertex_n;
   facetT *facet, *neighbor, **neighborp;
@@ -2177,10 +1567,15 @@ void gen_voronoi_output(facetT *facetlist, int num_particles,
       }
     }
   }
-  /* number of verts and cells may appear to be reversed, but this is */
-  /* qhull's nomenclature and is actually correct */
+  /* number of verts and cells may appear to be reversed, but this is
+     qhull's nomenclature and is actually correct
+     also, num_cells is temporary because it includes cells formed by 
+     ghost perticles
+     eventually vblock->num_cells will be (permanentlly) set to only the 
+     cells derived from original particles
+  */
   vblock->num_verts = numcenters;
-  vblock->num_cells = numvertices;
+  int temp_num_cells = numvertices;
 
   /* vertices */
   vblock->verts = (double *)malloc(sizeof(double) * 3 * vblock->num_verts);
@@ -2198,7 +1593,7 @@ void gen_voronoi_output(facetT *facetlist, int num_particles,
   }
 
   /* number of vertices in each cell */
-  vblock->num_cell_verts = (int *)malloc(sizeof(int) * vblock->num_cells);
+  vblock->num_cell_verts = (int *)malloc(sizeof(int) * temp_num_cells);
   i = 0;
   FOREACHvertex_i_(vertices) {
     numneighbors = 0;
@@ -2214,17 +1609,11 @@ void gen_voronoi_output(facetT *facetlist, int num_particles,
 	numneighbors++;
       vblock->num_cell_verts[i++] = numneighbors;
     }
-    /* next 4 lines of code were moved inside th if(vertex) test just above
-       deprecate them below once verified that this is right */
-/*     if (numinf) */
-/*       numneighbors++; */
-/*     fprintf(stderr, "1: num_cells = %d i = %d\n", vblock->num_cells, i); */
-/*     vblock->num_cell_verts[i++] = numneighbors; */
   }
 
   /* allocate the cell vertices */
   vblock->tot_num_cell_verts = 0;
-  for (i = 0; i < vblock->num_cells; i++)
+  for (i = 0; i < temp_num_cells; i++)
     vblock->tot_num_cell_verts += vblock->num_cell_verts[i];
   vblock->cells = (int *)malloc(sizeof(int) * vblock->tot_num_cell_verts);
 
@@ -2247,15 +1636,6 @@ void gen_voronoi_output(facetT *facetlist, int num_particles,
     }
   }
 
-  //* cell sites (original particles) */
-  vblock->num_orig_particles = num_particles;
-  vblock->sites = 
-    (float *)malloc(3 * sizeof(float) * vblock->num_orig_particles);
-  for (i = 0; i < vblock->num_orig_particles; i++) {
-    vblock->sites[3 * i] = particles[3 * i];
-    vblock->sites[3 * i + 1] = particles[3 * i + 1];
-    vblock->sites[3 * i + 2] = particles[3 * i + 2];
-  }
 
   /* debug: print output */
 /*   fprintf(stderr, "%d cells:\n", vblock->num_cells);  */
@@ -2275,15 +1655,15 @@ void gen_voronoi_output(facetT *facetlist, int num_particles,
 }
 /*--------------------------------------------------------------------------*/
 /*
-generates convex hull output
+  generates convex hull output
 
-facetlist: qhull list of convex hull facets
-cblock: pointer to one convex hull block
+  facetlist: qhull list of convex hull facets
+  cblock: pointer to one convex hull block
 
-returns: 0 = hull did not pass volume filter test, discard
-         1 = hull passed volume filter test, save
+  returns: 0 = hull did not pass volume filter test, discard
+  1 = hull passed volume filter test, save
 
-side effects: if return value is 1, allocates num_cell_faces, 
+  side effects: if return value is 1, allocates num_cell_faces, 
   num_face_verts, face_verts, areas,
   vols data structures inside of vblock, caller's responsibility to free
 */
@@ -2335,14 +1715,14 @@ int gen_convex_output(facetT *facetlist, struct cblock_t *cblock) {
 }
 /*--------------------------------------------------------------------------*/
 /*
-copies convex hull output to voronoi block
+  copies convex hull output to voronoi block
 
-cblock: pointer to one convex hull block
-vblock: pointer to one voronoi block, allocated by caller
-vmap: map of convex hull vertex ids back to original voronoi ids
-cell: index of current cell
+  cblock: pointer to one convex hull block
+  vblock: pointer to one voronoi block, allocated by caller
+  vmap: map of convex hull vertex ids back to original voronoi ids
+  cell: index of current cell
 
-side effects: allocates complete_cells, areas, vols, num_cell_faces
+  side effects: allocates complete_cells, areas, vols, num_cell_faces
   data structures inside of vblock, caller's responsibility to free
 */
 void convex_to_voronoi(struct cblock_t *cblock, struct vblock_t *vblock,
@@ -2383,15 +1763,6 @@ void convex_to_voronoi(struct cblock_t *cblock, struct vblock_t *vblock,
 
   }
 
-  /* assign header */
-/*   hdr[NUM_VERTS] = vblock->num_verts; */
-/*   hdr[NUM_CELLS] = vblock->num_cells; */
-/*   hdr[TOT_NUM_CELL_VERTS] = vblock->tot_num_cell_verts; */
-/*   hdr[NUM_COMPLETE_CELLS] = vblock->num_complete_cells; */
-/*   hdr[TOT_NUM_CELL_FACES] = vblock->tot_num_cell_faces; */
-/*   hdr[TOT_NUM_FACE_VERTS] = vblock->tot_num_face_verts; */
-/*   hdr[NUM_ORIG_PARTICLES] = vblock->num_orig_particles; */
-
   /* free convex hull memory */
   for (j = 0; j < cblock->num_cell_faces; j++)
     free((cblock->face_verts)[j]);
@@ -2401,16 +1772,19 @@ void convex_to_voronoi(struct cblock_t *cblock, struct vblock_t *vblock,
 }
 /*--------------------------------------------------------------------------*/
 /*
-creates MPI datatype for the subset of the voronoi block to write to disk
+  creates MPI datatype for the subset of the voronoi block to write to disk
 
-vblock: voronoi block
-dtype: pointer to datatype
+  vblock: voronoi block
+  lid: local block number (unused in this case)
+  dtype: pointer to datatype
 
-side effects: commits datatype
+  side effects: commits datatype
 
-returns: pointer to base address associated with the dataytpe
+  returns: pointer to base address associated with the dataytpe
 */
-void *create_datatype(void* vblock, MPI_Datatype *dtype) {
+void *create_datatype(void* vblock, int lid, MPI_Datatype *dtype) {
+
+  lid = lid; // quite compiler warning
 
   struct vblock_t *v = (struct vblock_t *)vblock;
   struct map_block_t map[] = {
@@ -2440,15 +1814,45 @@ void *create_datatype(void* vblock, MPI_Datatype *dtype) {
 
   DIY_Create_struct_datatype(DIY_Addr(vblock), 10, map, dtype);
 
+#ifdef DATATYPE_PROFILE
+  /* print datatype data for John Jenkins */
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  fprintf(stderr, "Rank %d creating MPI struct datatype:\n"
+	  "base type = MPI_INT,   quantity = 7, address = %p\n"
+	  "base type = MPI_FLOAT, quantity = 3, address = %p\n"
+	  "base type = MPI_FLOAT, quantity = %d, address = %p\n"
+	  "base type = MPI_FLOAT, quantity = %d, address = %p\n"
+	  "base type = MPI_INT,   quantity = %d, address = %p\n"
+	  "base type = MPI_FLOAT, quantity = %d, address = %p\n"
+	  "base type = MPI_FLOAT, quantity = %d, address = %p\n"
+	  "base type = MPI_INT,   quantity = %d, address = %p\n"
+	  "base type = MPI_INT,   quantity = %d, address = %p\n"
+	  "base type = MPI_INT,   quantity = %d, address = %p\n"
+	  "base type = MPI_FLOAT, quantity = 3, address =  %p\n\n\n", 
+	  rank,
+	  hdrs[lid],
+	  vblock + offsetof(struct vblock_t, mins), 
+	  v->num_verts * 3, v->save_verts,
+	  v->num_orig_particles * 3, v->sites,
+	  v->num_complete_cells, v->complete_cells,
+	  v->num_complete_cells, v->areas,
+	  v->num_complete_cells, v->vols,
+	  v->num_complete_cells, v->num_cell_faces,
+	  v->tot_num_cell_faces, v->num_face_verts,
+	  v->tot_num_face_verts, v->face_verts,
+	  vblock + offsetof(struct vblock_t, maxs));
+#endif
+
   return DIY_BOTTOM;
 
 }
 /*--------------------------------------------------------------------------*/
 /*
-prints a block
+  prints a block
 
-vblock: current voronoi block
-gid: global block id
+  vblock: current voronoi block
+  gid: global block id
 */
 void print_block(struct vblock_t *vblock, int gid) {
 
@@ -2463,11 +1867,11 @@ void print_block(struct vblock_t *vblock, int gid) {
 }
 /*--------------------------------------------------------------------------*/
 /*
-prints particles
+  prints particles
 
-prticles: particle array
-num_particles: number of particles
-gid: block global id
+  prticles: particle array
+  num_particles: number of particles
+  gid: block global id
 */
 void print_particles(float *particles, int num_particles, int gid) {
 
@@ -2481,9 +1885,9 @@ void print_particles(float *particles, int num_particles, int gid) {
 }
 /*--------------------------------------------------------------------------*/
 /*
-transforms particles for enqueueing to wraparound neighbors
-p: pointer to particle
-wrap_dir: wrapping direcion
+  transforms particles for enqueueing to wraparound neighbors
+  p: pointer to particle
+  wrap_dir: wrapping direcion
 */
 void transform_particle(char *p, unsigned char wrap_dir) {
 

@@ -14,14 +14,14 @@
 include ../user_defs.mk
 
 INCLUDE = -I$(HOME)/diy/include -I$(HOME)/software/qhull-2011.2/src/libqhull
-LIBS = -L$(HOME)/diy/lib -ldiy -L$(HOME)/software/qhull-2011.2/lib -lqhullstatic
+LIBS = -L$(HOME)/diy/lib -ldiy -L$(HOME)/software/qhull-2011.2/lib -lqhullstatic -fopenmp
 
 ###########
 
 ifeq ($(ARCH), MAC_OSX) # mac version
 
 CCFLAGS = -g -Wall -Wextra
-CCFLAGS += -DMAC_OSX $(TIMING)
+CCFLAGS += -DMAC_OSX $(TIMING) -fopenmp
 GL_LIBS = -framework GLUT -framework OpenGL
 CC=mpicc
 CXX=g++

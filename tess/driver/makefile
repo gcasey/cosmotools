@@ -17,14 +17,14 @@ INCLUDE = -I$(HOME)/diy/include -I../lib \
 	-I$(HOME)/software/qhull-2011.2/src/libqhull
 
 LIBS = 	-L../lib -ltess -L$(HOME)/diy/lib -ldiy \
-	-L$(HOME)/software/qhull-2011.2/lib -lqhullstatic
+	-L$(HOME)/software/qhull-2011.2/lib -lqhullstatic -fopenmp
 
 ###########
 
 ifeq ($(ARCH), MAC_OSX) # mac version
 
 CCFLAGS = -g
-CCFLAGS += -DMAC_OSX
+CCFLAGS += -DMAC_OSX -fopenmp
 CXX=mpicxx
 
 endif

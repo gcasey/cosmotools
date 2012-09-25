@@ -54,9 +54,8 @@ void voronoi(int nblocks, float **particles, int *num_particles,
 	     float cell_size, float ghost_factor,
 	     double *times, char *out_file);
 int gen_particles(int lid, float **particles, float jitter);
-void gen_voronoi_output(facetT *facetlist, int num_particles, 
-			float *particles, struct vblock_t *vblock);
-void *create_datatype(void *vblock, MPI_Datatype *dtype);
+void gen_voronoi_output(facetT *facetlist, struct vblock_t *vblock);
+void *create_datatype(void *vblock, int lid, MPI_Datatype *dtype);
 void test_datatype(struct vblock_t *vblock, int *hdr, 
 		   void* (*type_func)(void*, MPI_Datatype*));
 int gen_convex_output(facetT *facetlist, struct cblock_t *cblock);
@@ -70,9 +69,6 @@ void orig_cells(int nblocks, struct vblock_t *vblocks, int dim,
 		int *num_particles, int *num_orig_particles, 
 		float **particles, float ghost);
 void cell_hulls(int nblocks, struct vblock_t *vblocks, int dim);
-/* void neighbor_particles(int nblocks, float **old_particles,  */
-/* 			float **new_particles, int *num_particles,  */
-/* 			float ghost); */
 void neighbor_particles(int nblocks, float **particles, int *num_particles, 
 			float ghost);
 void write_out(int nblocks, struct vblock_t *vblocks, int **hdrs,
