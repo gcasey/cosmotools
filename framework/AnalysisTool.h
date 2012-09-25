@@ -105,10 +105,17 @@ public:
    * @param boxLength the length of the box
    * @param NG the size of the ghost-overlap zone
    * @param NDIM number of points in each dimension
+   * @param Periodic indicates whether the domain is XYZ periodic or not
    * @note domain is assumed to be square
    */
-  void SetDomainParameters(REAL boxLength, INTEGER NG, INTEGER NDIM)
-    {this->BoxLength=boxLength; this->NG = NG; this->NDIM=NDIM;};
+  void SetDomainParameters(
+      REAL boxLength, INTEGER NG, INTEGER NDIM, bool periodic=true)
+      {
+      this->BoxLength=boxLength;
+      this->NG=NG;
+      this->NDIM=NDIM;
+      this->Periodic=periodic;
+      };
 
   /**
    * @brief Sets the explicit timesteps at which this algorithm will be
@@ -155,6 +162,7 @@ protected:
   REAL BoxLength;
   INTEGER NG;
   INTEGER NDIM;
+  bool Periodic;
 
   // Name of the analysis tool, set in the constructor of concrete classes
   std::string Name;

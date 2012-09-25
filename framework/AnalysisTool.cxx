@@ -22,6 +22,7 @@ AnalysisTool::AnalysisTool()
   this->ImplicitFrequency = 1;
   this->VisibilityStatus  = true;
   this->Enabled           = false;
+  this->Periodic          = true;
   this->Communicator      = MPI_COMM_NULL;
 }
 
