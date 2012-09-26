@@ -48,7 +48,7 @@ PMIN 250
 ## CENTER_OF_MASS (1),
 ## MBP (2),
 ## MCP (3),
-CENTER_FINDER_MEHOD  0
+CENTER_FINDER_METHOD  0
 
 ## SOD Parameters
 ## Indicate whether SOD halos will be used
