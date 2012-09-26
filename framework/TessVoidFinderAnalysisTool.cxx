@@ -140,7 +140,7 @@ void TessVoidFinderAnalysisTool::Execute(SimulationParticles *particles)
   int num_points[1];
   num_points[0] = particles->NumParticles;
   float **positions = NULL;
-  this->PackageParticlePositions(particles, positions);
+  this->PackageParticlePositions(particles, &positions);
 
   // STEP 3: initialize tess, i.e., call tess_init()
   if( !this->Initialized )
@@ -156,6 +156,7 @@ void TessVoidFinderAnalysisTool::Execute(SimulationParticles *particles)
 
   // STEP 5: Clear packaged particles
   this->ClearParticlePositions(positions);
+  assert("post: 2-D positions array must be NULL!" && (positions==NULL));
 }
 
 //------------------------------------------------------------------------------
@@ -336,21 +337,21 @@ void TessVoidFinderAnalysisTool::ClearParticlePositions(float **pos)
 
 //------------------------------------------------------------------------------
 void TessVoidFinderAnalysisTool::PackageParticlePositions(
-          SimulationParticles *particles, float **positions)
+          SimulationParticles *particles, float ***positions)
 {
   if( particles->NumParticles == 0 )
     {
     return;
     }
 
-  positions = (float **)malloc(sizeof(float*));
-  positions[0] = (float *)malloc(3*particles->NumParticles*sizeof(float));
+  *positions = (float **)malloc(sizeof(float*));
+  (*positions)[0] = (float *)malloc(3*particles->NumParticles*sizeof(float));
 
   for( int i=0; i < particles->NumParticles; ++i )
     {
-    positions[0][i*3]   = particles->X[i];
-    positions[0][i*3+1] = particles->Y[i];
-    positions[0][i*3+2] = particles->Z[i];
+    (*positions)[0][i*3]   = particles->X[i];
+    (*positions)[0][i*3+1] = particles->Y[i];
+    (*positions)[0][i*3+2] = particles->Z[i];
     } // END for all particles
 }
 

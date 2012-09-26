@@ -109,7 +109,7 @@ protected:
    * allocated positions, ClearParticlePositions must be called.
    */
   void PackageParticlePositions(
-      SimulationParticles *particles, float **positions);
+      SimulationParticles *particles, float ***positions);
 
   /**
    * @brief Clears the particle positions
