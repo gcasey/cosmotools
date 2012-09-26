@@ -10,6 +10,9 @@
 
 #include <mpi.h>
 
+namespace cosmotk
+{
+
 unsigned char neigh_dirs[] = {
   DIY_X0,                   DIY_X1,
   DIY_Y0,                   DIY_Y1,
@@ -26,8 +29,57 @@ unsigned char neigh_dirs[] = {
   DIY_X0 | DIY_Y1 | DIY_Z1, DIY_X1 | DIY_Y0 | DIY_Z0,
 };
 
-namespace cosmotk
+
+//
+// Neighbors are enumerated so that particles can be attached to the correct
+// neighbor, but these pairs must be preserved for the ParticleExchange.
+// Every processor should be able to send and receive on every iteration of
+// the exchange, so if everyone sends RIGHT and receives LEFT it works
+//
+// Do not change this pairing order.
+//
+enum NEIGHBOR
 {
+  X0,                   // Left face
+  X1,                   // Right face
+
+  Y0,                   // Bottom face
+  Y1,                   // Top face
+
+  Z0,                   // Front face
+  Z1,                   // Back face
+
+  X0_Y0,                // Left   bottom edge
+  X1_Y1,                // Right  top    edge
+
+  X0_Y1,                // Left   top    edge
+  X1_Y0,                // Right  bottom edge
+
+  Y0_Z0,                // Bottom front  edge
+  Y1_Z1,                // Top    back   edge
+
+  Y0_Z1,                // Bottom back   edge
+  Y1_Z0,                // Top    front  edge
+
+  Z0_X0,                // Front  left   edge
+  Z1_X1,                // Back   right  edge
+
+  Z0_X1,                // Front  right  edge
+  Z1_X0,                // Back   left   edge
+
+  X0_Y0_Z0,             // Left  bottom front corner
+  X1_Y1_Z1,             // Right top    back  corner
+
+  X0_Y0_Z1,             // Left  bottom back  corner
+  X1_Y1_Z0,             // Right top    front corner
+
+  X0_Y1_Z0,             // Left  top    front corner
+  X1_Y0_Z1,             // Right bottom back  corner
+
+  X0_Y1_Z1,             // Left  top    back  corner
+  X1_Y0_Z0              // Right bottom front corner
+};
+
 
 TessVoidFinderAnalysisTool::TessVoidFinderAnalysisTool()
 {
@@ -127,7 +179,12 @@ void TessVoidFinderAnalysisTool::InitializeTess(
   assert("pre: MPI communicator is NULL!" &&
          (this->Communicator != MPI_COMM_NULL) );
 
-  // STEP 0: Ensure we are dealing with a cartesian communicator
+  // STEP 0: We are dealing with a 3-D domain and with structured topology, so,
+  // each block has 26 neighbors.
+  const int DIMENSION        = 3;
+  const int NUM_OF_NEIGHBORS = 26;
+
+  // STEP 1: Ensure we are dealing with a cartesian communicator
   int topology = 0;
   MPI_Topo_test(this->Communicator,&topology);
   assert("pre: communicator is not cartesian!" && topology==MPI_CART);
@@ -137,7 +194,14 @@ void TessVoidFinderAnalysisTool::InitializeTess(
     MPI_Abort(this->Communicator,-1);
     }
 
-  // STEP 1: Compute number of blocks per process and total number of blocks
+  // STEP 2: Get cartesian topology
+  int myPosition[DIMENSION];  // the position of this rank
+  int decomp_size[DIMENSION]; // the dimensions of the cartesian topology
+  int periodicity[DIMENSION]; // periodicity for each direction
+  MPI_Cart_get(
+      this->Communicator,DIMENSION,decomp_size,periodicity,myPosition);
+
+  // STEP 3: Compute number of blocks per process and total number of blocks
   // Currently, numBlocksPerProcess = 1 and totalNumberOfBlocks is given by
   // numBlocksPerProcess * numRanks.
   int numBlocksPerProcess = 1;
@@ -148,31 +212,17 @@ void TessVoidFinderAnalysisTool::InitializeTess(
   MPI_Comm_size(this->Communicator,&numRanks);
   totalBlocks = numBlocksPerProcess * numRanks;
 
-  // STEP 2: We are dealing with a 3-D domain and with structured topology, so,
-  // each block has 26 neighbors.
-  const int DIMENSION        = 3;
-  const int NUM_OF_NEIGHBORS = 26;
-
-  // STEP 3: Get the Block bounds
+  // STEP 4: Get the Block bounds
   bb_t bb;
   float min[DIMENSION], size[DIMENSION];
-
-// TODO: I need to get this information somehow
-// Domain::rL_local_alive(size);
-// Domain::corner_phys_alive(min);
-
+  this->GetBlockBounds(decomp_size,myPosition,min,size);
   for( int i=0; i < DIMENSION; ++i )
     {
     bb.min[i] = min[i];
     bb.max[i] = min[i] + size[i];
     }
 
-  // STEP 4: Get decomposition size (number of blocks in each dimension)
-  int decomp_size[DIMENSION];
-// TODO: Need a way to get the decomposition size, from the communicator perhaps?
-// Partition::getDecompSize(decomp_size);
-
-  // data overall extents
+  // STEP 5: data overall extents
   // assume all blocks are same size (as mine)
   // assume 0,0,0 is the overall data minimum corner
   float data_mins[DIMENSION], data_maxs[DIMENSION];
@@ -181,10 +231,9 @@ void TessVoidFinderAnalysisTool::InitializeTess(
     data_maxs[i] = data_mins[i] + size[i] * decomp_size[i];
   }
 
-  // STEP 5: Get neighbors
+  // STEP 6: Get neighbors
   int neigh_gids[NUM_OF_NEIGHBORS];
-// TODO: Need a way to get this information
-//  Partition::getNeighbors(neigh_gids);
+  this->ComputeRankNeighbors(myPosition,neigh_gids);
   gb_t **neighbors = new gb_t*[1];
   neighbors[0] = new gb_t[NUM_OF_NEIGHBORS];
   int num_neighbors[1] = { NUM_OF_NEIGHBORS };
@@ -195,25 +244,87 @@ void TessVoidFinderAnalysisTool::InitializeTess(
     neighbors[0][i].neigh_dir = neigh_dirs[i];
     } // END for all neighbors
 
-  // STEP 6: gids are trivial, only one block, my MPI rank
+  // STEP 7: gids are trivial, only one block, my MPI rank
   int gids[1];
   gids[0] = rank;
 
-  // STEP 7: Get wrap
+  // STEP 8: Get wrap
   int wrap = (this->Periodic)? 1:0;
 
-  // STEP 8: call tess_init
-  tess_init(numBlocksPerProcess,totalBlocks,gids,&bb,neighbors,num_neighbors,
-            this->CellSize,this->GhostFactor,data_mins,data_maxs,wrap,
-            this->MinVol,this->MaxVol,this->Communicator,
-            this->TimeStatistics);
+  // STEP 9: call tess_init
+  tess_init(
+      numBlocksPerProcess,totalBlocks,gids,&bb,neighbors,num_neighbors,
+      this->CellSize,this->GhostFactor,data_mins,data_maxs,wrap,
+      this->MinVol,this->MaxVol,this->Communicator,
+      this->TimeStatistics);
 
-  // STEP 9: Return all dynamically allocated memory
+  // STEP 10: Return all dynamically allocated memory
   delete[] neighbors[0];
   delete[] neighbors;
 
-  // STEP 10: Set initialized to true
+  // STEP 11: Set initialized to true
   this->Initialized = true;
+}
+
+//------------------------------------------------------------------------------
+void TessVoidFinderAnalysisTool::ComputeRankNeighbors(
+    int pos[3], int neighbor[26])
+{
+  int xpos = pos[0];
+  int ypos = pos[1];
+  int zpos = pos[2];
+
+  // Face neighbors
+  neighbor[X0] = this->GetRankByPosition(xpos-1, ypos, zpos);
+  neighbor[X1] = this->GetRankByPosition(xpos+1, ypos, zpos);
+  neighbor[Y0] = this->GetRankByPosition(xpos, ypos-1, zpos);
+  neighbor[Y1] = this->GetRankByPosition(xpos, ypos+1, zpos);
+  neighbor[Z0] = this->GetRankByPosition(xpos, ypos, zpos-1);
+  neighbor[Z1] = this->GetRankByPosition(xpos, ypos, zpos+1);
+
+  // Edge neighbors
+  neighbor[X0_Y0] = this->GetRankByPosition(xpos-1, ypos-1, zpos);
+  neighbor[X0_Y1] = this->GetRankByPosition(xpos-1, ypos+1, zpos);
+  neighbor[X1_Y0] = this->GetRankByPosition(xpos+1, ypos-1, zpos);
+  neighbor[X1_Y1] = this->GetRankByPosition(xpos+1, ypos+1, zpos);
+
+  neighbor[Y0_Z0] = this->GetRankByPosition(xpos, ypos-1, zpos-1);
+  neighbor[Y0_Z1] = this->GetRankByPosition(xpos, ypos-1, zpos+1);
+  neighbor[Y1_Z0] = this->GetRankByPosition(xpos, ypos+1, zpos-1);
+  neighbor[Y1_Z1] = this->GetRankByPosition(xpos, ypos+1, zpos+1);
+
+  neighbor[Z0_X0] = this->GetRankByPosition(xpos-1, ypos, zpos-1);
+  neighbor[Z0_X1] = this->GetRankByPosition(xpos+1, ypos, zpos-1);
+  neighbor[Z1_X0] = this->GetRankByPosition(xpos-1, ypos, zpos+1);
+  neighbor[Z1_X1] = this->GetRankByPosition(xpos+1, ypos, zpos+1);
+
+  // Corner neighbors
+  neighbor[X0_Y0_Z0] = this->GetRankByPosition(xpos-1, ypos-1, zpos-1);
+  neighbor[X1_Y0_Z0] = this->GetRankByPosition(xpos+1, ypos-1, zpos-1);
+  neighbor[X0_Y1_Z0] = this->GetRankByPosition(xpos-1, ypos+1, zpos-1);
+  neighbor[X1_Y1_Z0] = this->GetRankByPosition(xpos+1, ypos+1, zpos-1);
+  neighbor[X0_Y0_Z1] = this->GetRankByPosition(xpos-1, ypos-1, zpos+1);
+  neighbor[X1_Y0_Z1] = this->GetRankByPosition(xpos+1, ypos-1, zpos+1);
+  neighbor[X0_Y1_Z1] = this->GetRankByPosition(xpos-1, ypos+1, zpos+1);
+  neighbor[X1_Y1_Z1] = this->GetRankByPosition(xpos+1, ypos+1, zpos+1);
+}
+
+//------------------------------------------------------------------------------
+void TessVoidFinderAnalysisTool::GetBlockBounds(
+      int decompSize[3], int pos[3], float min[3], float size[3])
+{
+  // NOTE: This method essentially computes the following from HACC
+  // Domain::rL_local_alive(size);
+  // Domain::corner_phys_alive(min);
+
+  float m_grid2phys_pos = this->BoxLength/static_cast<float>(this->NDIM);
+
+  for(int i=0; i < 3; ++i)
+    {
+    size[i] = this->BoxLength/static_cast<float>(decompSize[i]);
+    float m_corner_grid_alive = pos[i]*(this->NDIM/decompSize[i]);
+    min[i] = m_corner_grid_alive*m_grid2phys_pos;
+    } // END for
 }
 
 //------------------------------------------------------------------------------
