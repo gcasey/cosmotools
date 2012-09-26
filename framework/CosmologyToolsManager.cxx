@@ -1,9 +1,10 @@
 #include "CosmologyToolsManager.h"
 
 #include "AnalysisTool.h"
-#include "LANLHaloFinderAnalysisTool.h"
 #include "CosmologyToolsConfiguration.h"
+#include "LANLHaloFinderAnalysisTool.h"
 #include "SimulationParticles.h"
+#include "TessVoidFinderAnalysisTool.h"
 
 #include <iostream>
 #include <cassert>
@@ -156,6 +157,10 @@ AnalysisTool* CosmologyToolsManager::GetToolByName(
     if( name == "LANLHALOFINDER")
       {
       tool = new LANLHaloFinderAnalysisTool();
+      }
+    else if( name == "TESS" )
+      {
+      tool = new TessVoidFinderAnalysisTool();
       }
     else
       {
