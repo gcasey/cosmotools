@@ -77,6 +77,10 @@ public:
   ParticleDistribute();
   ~ParticleDistribute();
 
+  // Set whether to byte swap data on read
+  // NOTE: Only applies to cosmo format
+  void setByteSwap(bool byteSwap){this->ByteSwap=byteSwap;};
+
   // Set parameters particle distribution
   void setParameters(
         const string& inName,   // Base file name to read from
@@ -198,9 +202,15 @@ public:
   vector<POSVEL_T>* getMass()           { return this->ms; }
   vector<ID_T>* getTag()                { return this->tag; }
 
+protected:
+
+  // Swap endian of the given buffer pointing to a memory location of Nb bytes.
+  void SwapEndian(void* Addr, const int Nb);
+
 private:
   int    myProc;                // My processor number
   int    numProc;               // Total number of processors
+  bool ByteSwap;                // Flag that indicates whether to swap endian
 
   string baseFile;              // Base name of input particle files
   int    inputType;             // BLOCK or RECORD structure
@@ -213,7 +223,7 @@ private:
   bool   gadgetSwap;            // Endian swap needed
   long int gadgetParticleCount; // Total particles in the file
   long int gadgetStart[NUM_GADGET_TYPES];
-				// Offset into all particles for that type
+        // Offset into all particles for that type
 
   long   maxParticles;          // Largest number of particles in any file
   long   maxRead;               // Largest number of particles read at one time

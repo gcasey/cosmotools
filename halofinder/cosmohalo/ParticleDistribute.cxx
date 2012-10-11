@@ -60,6 +60,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "Partition.h"
 #include "ParticleDistribute.h"
 
+#include <cassert>
 #include <cstring>
 using namespace std;
 
@@ -1238,7 +1239,7 @@ void ParticleDistribute::readFromBlockFile(
       (POSVEL_T) this->gadgetHeader.mass[type] * this->massConvertFactor;
 
     // Place particles of this type and mass in the buffer
-    int numLeftInType = this->gadgetHeader.npart[type] - 
+    int numLeftInType = this->gadgetHeader.npart[type] -
                         (curParticle - this->gadgetStart[type]);
     int count = min(particlesRemaining, numLeftInType);
 
@@ -1480,7 +1481,7 @@ void ParticleDistribute::readFromBlockFile(
       (POSVEL_T) this->gadgetHeader.mass[type] * this->massConvertFactor;
 
     // Place particles of this type and mass in the buffer
-    int numLeftInType = this->gadgetHeader.npart[type] - 
+    int numLeftInType = this->gadgetHeader.npart[type] -
                         (curParticle - this->gadgetStart[type]);
     int count = min(particlesRemaining, numLeftInType);
 
@@ -1665,6 +1666,15 @@ void ParticleDistribute::readFromRecordFile()
     // Set file pointer to the requested particle
     inStream.read(reinterpret_cast<char*>(fBlock),
                    COSMO_FLOAT * sizeof(POSVEL_T));
+    if(this->ByteSwap)
+      {
+      for(int idx=0; idx < COSMO_FLOAT; ++idx)
+        {
+        this->SwapEndian(
+            static_cast<void*>(&fBlock[idx]),
+            sizeof(POSVEL_T) );
+        } // END for each item
+      } // END if ByteSwap
 
     if (inStream.gcount() != COSMO_FLOAT * sizeof(POSVEL_T)) {
       cout << "Premature end-of-file" << endl;
@@ -1679,6 +1689,15 @@ void ParticleDistribute::readFromRecordFile()
 
     inStream.read(reinterpret_cast<char*>(iBlock),
                    COSMO_INT * sizeof(ID_T));
+    if(this->ByteSwap)
+      {
+      for(int idx=0; idx < COSMO_INT; ++idx)
+        {
+        this->SwapEndian(
+            static_cast<void*>(&iBlock[idx]),
+            sizeof(ID_T)  );
+        } // END for each item
+      } // ENd if ByteSwap
 
     if (inStream.gcount() != COSMO_INT * sizeof(ID_T)) {
       cout << "Premature end-of-file" << endl;
@@ -1964,5 +1983,37 @@ void ParticleDistribute::readData(
       }
    }
 }
+
+/////////////////////////////////////////////////////////////////////////
+//
+// ByteSwap data
+//
+/////////////////////////////////////////////////////////////////////////
+void ParticleDistribute::SwapEndian(void* Addr, const int Nb)
+{
+  // STEP 0: Short-circuit on invalid input and throw a warning
+  if( (Addr==NULL) || (Nb <= 0) )
+    {
+    std::cerr << "WARNING: SwapEndian, invalid parameters!\n";
+    return;
+    }
+
+  // STEP 1: Allocate buffer wherein the swapped data will be temporarily stored
+  char *Swapped = new char[Nb];
+  assert("pre: Cannot allocate swapped buffer!" && (Swapped != NULL) );
+
+  // STEP 2: Swap data on Swapped buffer from Addr
+  for(int srcOffSet=Nb-1, idx=0; srcOffSet >= 0; --srcOffSet,++idx)
+    {
+    Swapped[idx] = *( (char*)Addr+srcOffSet);
+    } // END for all bytes
+
+  // STEP 3: Copy Swapped data to input buffer
+  memcpy(Addr,(void *)Swapped,Nb);
+
+  // STEP 4: Clean dynamically allocated memory
+  delete [] Swapped;
+}
+
 
 }
