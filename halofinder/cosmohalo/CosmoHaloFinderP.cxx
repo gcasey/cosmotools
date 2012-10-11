@@ -52,11 +52,13 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "Partition.h"
 #include "CosmoHaloFinderP.h"
+#include "GenericIO.h"
 
 using namespace std;
+using cosmologytools::Partition;
+using cosmologytools::GenericIO;
 
 namespace cosmologytools {
-
 
 /////////////////////////////////////////////////////////////////////////
 //
@@ -105,43 +107,22 @@ CosmoHaloFinderP::CosmoHaloFinderP()
     this->deadParticle[n] = 0;
     this->deadHalo[n] = 0;
   }
-
-  this->haloList     = NULL;
-  this->haloStart    = NULL;
-  this->haloSize     = NULL;
-  this->haloData     = NULL;
+  this->haloList  = NULL;
+  this->haloStart = NULL;
+  this->haloSize  = NULL;
+  //this->haloData  = NULL;
   this->myMixedHalos.resize(0);
   this->allMixedHalos.resize(0);
 }
 
 CosmoHaloFinderP::~CosmoHaloFinderP()
 {
-  for(unsigned int i=0; i < this->myMixedHalos.size(); i++)
-    {
-    if( this->myMixedHalos[i] != NULL )
-      {
-      delete this->myMixedHalos[i];
-      }
-    }
-
-  if (this->haloList  != NULL) delete [] this->haloList;
-  if (this->haloStart != NULL) delete [] this->haloStart;
-  if (this->haloSize  != NULL) delete [] this->haloSize;
-
-//  if (this->haloData != NULL) {
-//    for (int dim = 0; dim < DIMENSION; dim++)
-//      {
-//      if( this->haloData[dim] != NULL )
-//        {
-//        delete [] haloData[dim];
-//        }
-//      }
-//    delete [] haloData;
-//  }
-
+  clearHaloTag();
+  clearHaloStart();
+  clearHaloList();
+  clearHaloSize();
 }
 
-/////////////////////////////////////////////////////////////////////////
 void CosmoHaloFinderP::initializeHaloFinder()
 {
   // Get the number of processors and rank of this processor
@@ -158,6 +139,56 @@ void CosmoHaloFinderP::initializeHaloFinder()
   cosmologytools::Partition::getNeighbors(this->neighbor);
 }
 
+//
+// Halo structure information is allocated here and passed to serial halo
+// finder for filling and then some is passed to the calling simulator
+// for other analysis.  So memory is not allocated and freed nicely.
+//
+void CosmoHaloFinderP::clearHaloTag()
+{
+  // haloTag holds the index of the particle which is the first in the halo
+  // so if haloTag[p] != p then this particle is in a halo
+  // may be released after tagged particles are written or after
+  // all halos are collected for merging
+  if (this->haloTag != 0) {
+    delete [] this->haloTag;
+    this->haloTag = 0;
+  }
+}
+
+void CosmoHaloFinderP::clearHaloStart()
+{
+  // haloStart holds the index of the first particle in a halo
+  // used with haloList to locate all particles in a halo
+  // may be released after merged halos because info is put in halos vector
+  if (this->haloStart != 0) {
+    delete [] this->haloStart;
+    this->haloStart = 0;
+  }
+}
+
+void CosmoHaloFinderP::clearHaloList()
+{
+  // haloList is used with haloStart or with halos vector for locating all
+  // particles in a halo.  It must stay around through all analysis.
+  // may be released only on next call to executeHaloFinder
+  if (this->haloList != 0) {
+    delete [] this->haloList;
+    this->haloList = 0;
+  }
+}
+
+void CosmoHaloFinderP::clearHaloSize()
+{
+  // haloSize holds the size of the halo associated with any particle
+  // may be released after tagged particles are written or after
+  // all halos are collected for merging
+  if (this->haloSize != 0) {
+    delete [] this->haloSize;
+    this->haloSize = 0;
+  }
+}
+
 /////////////////////////////////////////////////////////////////////////
 //
 // Set parameters for the serial halo finder
@@ -170,70 +201,37 @@ void CosmoHaloFinderP::setParameters(
                         POSVEL_T _deadSz,
                         long _np,
                         int _pmin,
-                        POSVEL_T _bb)
+                        POSVEL_T _bb,
+                        int _nmin)
 {
   // Particles for this processor output to file
-  ostringstream oname, hname;
-  if (this->numProc == 1) {
-    oname << outName;
-    hname << outName;
-  } else {
-    oname << outName << "." << myProc;
-    hname << outName << ".halo." << myProc;
-  }
-  this->outFile = oname.str();
-  this->outHaloFile = hname.str();
+  this->outFile = outName;
 
   // Halo finder parameters
   this->np = _np;
   this->pmin = _pmin;
   this->bb = _bb;
+  this->nmin = _nmin;
   this->boxSize = _rL;
   this->deadSize = _deadSz;
 
-  // First version of this code distributed the dead particles on a processor
-  // by taking the x,y,z position and adding or subtracting boxSize in all
-  // combinations.  This revised x,y,z was then normalized and added to the
-  // haloData array which was passed to each serial halo finder.
-  // This did not get the same answer as the standalone serial version which
-  // read the x,y,z and normalized without adding or subtracting boxSize first.
-  // Then when comparing distance the normalized "np" was used for subtraction.
-  // By doing things in this order some particles were placed slightly off,
-  // which was enough for particles to be included in halos where they should
-  // not have been.  In this first version, since I had placed particles by
-  // subtracting first, I made "periodic" false figuring all particles were
-  // placed where they should go.
-  //
-  // In the second version I normalize the dead particles, even from wraparound,
-  // using the actual x,y,z.  So when looking at a processor the alive particles
-  // will appear all together and the wraparound will properly be on the other
-  // side of the box.  Combined with doing this is setting "periodic" to true
-  // so that the serial halo finder works as it does in the standalone case
-  // and the normalization and subtraction from np happens in the same order.
-  //
-  // Third version went back to the first version because we need
-  // contiguous locations coming out of the halo finder for the center finder
+  // Unnormalize bb so that it will work with box size distances
+  this->haloFinder.bb = _bb * (POSVEL_T) ((1.0 * _rL) / _np);;
 
   this->haloFinder.np = _np;
   this->haloFinder.pmin = _pmin;
-  this->haloFinder.bb = _bb;
+  this->haloFinder.nmin = _nmin;
   this->haloFinder.rL = _rL;
   this->haloFinder.periodic = false;
   this->haloFinder.textmode = "ascii";
-
-  // Serial halo finder wants normalized locations on a grid superimposed
-  // on the physical rL grid.  Grid size is np and number of particles in
-  // the problem is np^3
-  this->normalizeFactor = (POSVEL_T)((1.0 * _np) / _rL);
-
 
   if (this->myProc == MASTER) {
     cout << endl << "------------------------------------" << endl;
     cout << "np:       " << this->np << endl;
     cout << "bb:       " << this->bb << endl;
+    cout << "nmin:     " << this->nmin << endl;
     cout << "pmin:     " << this->pmin << endl << endl;
   }
-
 }
 
 /////////////////////////////////////////////////////////////////////////
@@ -311,133 +309,69 @@ void CosmoHaloFinderP::setParticles(
 
 /////////////////////////////////////////////////////////////////////////
 //
-// Execute the serial halo finder on the particles for this processor
-// Both ALIVE and DEAD particles we collected and normalized into
-// haloData which is in the form that the serial halo finder wants
+// Execute the serial halo finder on all particles for this processor
 //
 /////////////////////////////////////////////////////////////////////////
 
 void CosmoHaloFinderP::executeHaloFinder()
 {
-  this->haloFinder.clearHaloTag();
+  // Clear old halo structure and allocate new
+  clearHaloTag();
+  clearHaloStart();
+  clearHaloList();
+  clearHaloSize();
 
-  // Allocate data pointer which is sent to the serial halo finder
-  this->haloData = new POSVEL_T*[DIMENSION];
-  for (int dim = 0; dim < DIMENSION; dim++)
-    this->haloData[dim] = new POSVEL_T[this->particleCount];
+  this->haloTag = new int[this->particleCount];
+  this->haloStart = new int[this->particleCount];
+  this->haloList = new int[this->particleCount];
+  this->haloSize = new int[this->particleCount];
 
-  // Fill it with normalized x,y,z of all particles on this processor
-  for (int p = 0; p < this->particleCount; p++) {
-    this->haloData[0][p] = this->xx[p] * this->normalizeFactor;
-    this->haloData[1][p] = this->yy[p] * this->normalizeFactor;
-    this->haloData[2][p] = this->zz[p] * this->normalizeFactor;
-  }
+  // Set the input locations for the serial halo finder
+  this->haloFinder.setParticleLocations(this->xx, this->yy, this->zz);
 
-  this->haloFinder.setParticleLocations(haloData);
+  // Set the output locations for the serial halo finder
+  this->haloFinder.setHaloLocations(
+                            this->haloTag,
+                            this->haloStart,
+                            this->haloList);
+
   this->haloFinder.setNumberOfParticles(this->particleCount);
   this->haloFinder.setMyProc(this->myProc);
   this->haloFinder.setOutFile(this->outFile);
 
-
+#ifdef HALO_FINDER_VERBOSE
   cout << "Rank " << setw(3) << this->myProc
        << " RUNNING SERIAL HALO FINDER on "
        << particleCount << " particles" << endl;
-
+#endif // HALO_FINDER_VERBOSE
 
 #ifndef USE_SERIAL_COSMO
-  MPI_Barrier(cosmologytools::Partition::getComm());
+  MPI_Barrier(Partition::getComm());
 #endif
 
   if (this->particleCount > 0)
     this->haloFinder.Finding();
 
-  for (int dim = 0; dim < DIMENSION; dim++)
-    delete [] this->haloData[dim];
-  delete [] this->haloData;
-
 #ifndef USE_SERIAL_COSMO
-  MPI_Barrier(cosmologytools::Partition::getComm());
+  MPI_Barrier(Partition::getComm());
 #endif
 }
 
 /////////////////////////////////////////////////////////////////////////
 //
-// At this point each serial halo finder ran and
-// the particles handed to it included alive and dead.  Get back the
-// halo tag array and figure out the indices of the particles in each halo
-// and translate that into absolute particle tags and note alive or dead
-//
-// After the serial halo finder has run the halo tag is the INDEX of the
-// lowest particle in the halo on this processor.  It is not the absolute
-// particle tag id over the entire problem.
-//
-//    Serial partindex i = 0 haloTag = 0 haloSize = 1
-//    Serial partindex i = 1 haloTag = 1 haloSize = 1
-//    Serial partindex i = 2 haloTag = 2 haloSize = 1
-//    Serial partindex i = 3 haloTag = 3 haloSize = 1
-//    Serial partindex i = 4 haloTag = 4 haloSize = 2
-//    Serial partindex i = 5 haloTag = 5 haloSize = 1
-//    Serial partindex i = 6 haloTag = 6 haloSize = 1616
-//    Serial partindex i = 7 haloTag = 7 haloSize = 1
-//    Serial partindex i = 8 haloTag = 8 haloSize = 2
-//    Serial partindex i = 9 haloTag = 9 haloSize = 1738
-//    Serial partindex i = 10 haloTag = 10 haloSize = 4
-//    Serial partindex i = 11 haloTag = 11 haloSize = 1
-//    Serial partindex i = 12 haloTag = 12 haloSize = 78
-//    Serial partindex i = 13 haloTag = 12 haloSize = 0
-//    Serial partindex i = 14 haloTag = 12 haloSize = 0
-//    Serial partindex i = 15 haloTag = 12 haloSize = 0
-//    Serial partindex i = 16 haloTag = 16 haloSize = 2
-//    Serial partindex i = 17 haloTag = 17 haloSize = 1
-//    Serial partindex i = 18 haloTag = 6 haloSize = 0
-//    Serial partindex i = 19 haloTag = 6 haloSize = 0
-//    Serial partindex i = 20 haloTag = 6 haloSize = 0
-//    Serial partindex i = 21 haloTag = 6 haloSize = 0
-//
-// Halo of size 1616 has the low particle tag of 6 and other members are
-// 18,19,20,21 indicated by a tag of 6 and haloSize of 0
+// At this point each serial halo finder ran and the particles handed to it 
+// included alive and dead.  Structure to locate all particles in a halo
+// were returned in haloTag, haloStart and haloList
 //
 /////////////////////////////////////////////////////////////////////////
 
-void CosmoHaloFinderP::collectHalos(bool clearSerial)
+void CosmoHaloFinderP::collectHalos(bool clearTag)
 {
-  // Free old storage if any
-  if (this->haloSize != 0) {
-    delete [] this->haloSize;
-    this->haloSize = 0;
-  }
-  if (this->haloList != 0) {
-    delete [] this->haloList;
-    this->haloList = 0;
-  }
-  if (this->haloStart != 0) {
-    delete [] this->haloStart;
-    this->haloStart = 0;
-  }
-
-  // Halo tag returned from the serial halo finder is actually the index
-  // of the particle on this processor.  Must map to get to actual tag
-  // which is common information between all processors.
-  this->haloTag = haloFinder.getHaloTag();
-
   // Record the halo size of each particle on this processor
-  this->haloSize = new int[this->particleCount];
   this->haloAliveSize = new int[this->particleCount];
-  this->haloDeadSize = new int[this->particleCount];
-
-  // Create a list of particles in any halo by recording the index of the
-  // first particle and having that index give the index of the next particle
-  // Last particle index reports a -1
-  // List is built by iterating on the tags and storing in opposite order so
-  this->haloList = new int[this->particleCount];
-  this->haloStart = new int[this->particleCount];
-
   for (int p = 0; p < this->particleCount; p++) {
-    this->haloList[p] = -1;
-    this->haloStart[p] = p;
     this->haloSize[p] = 0;
     this->haloAliveSize[p] = 0;
-    this->haloDeadSize[p] = 0;
   }
 
   // Build the chaining mesh of particles in all the halos and count particles
@@ -446,13 +380,12 @@ void CosmoHaloFinderP::collectHalos(bool clearSerial)
   // Mixed halos are saved separately so that they can be merged
   processMixedHalos();
 
-  if (clearSerial) {
-    // Clear the data stored in serial halo finder
-    this->haloFinder.clearHaloTag();
+  // Clear the data associated with tag and size which won't be needed
+  if (clearTag) {
+    clearHaloTag();
+    clearHaloSize();
   }
-
   delete [] this->haloAliveSize;
-  delete [] this->haloDeadSize;
 }
 
 /////////////////////////////////////////////////////////////////////////
@@ -466,23 +399,10 @@ void CosmoHaloFinderP::collectHalos(bool clearSerial)
 
 void CosmoHaloFinderP::buildHaloStructure()
 {
-  // Build the chaining mesh so that all particles in a halo can be found
-  // This will include even small halos which will be excluded later
-  for (int p = 0; p < this->particleCount; p++) {
-
-    // Chain backwards the halo particles
-    // haloStart is the index of the last particle in a single halo in haloList
-    // The value found in haloList is the index of the next particle
-    if (this->haloTag[p] != p) {
-      this->haloList[p] = haloStart[this->haloTag[p]];
-      this->haloStart[this->haloTag[p]] = p;
-    }
-
     // Count particles in the halos
+  for (int p = 0; p < this->particleCount; p++) {
     if (this->status[p] == ALIVE)
       this->haloAliveSize[this->haloTag[p]]++;
-    else
-      this->haloDeadSize[this->haloTag[p]]++;
     this->haloSize[this->haloTag[p]]++;
   }
 
@@ -501,7 +421,7 @@ void CosmoHaloFinderP::buildHaloStructure()
 
     if (this->haloSize[p] >= this->pmin) {
 
-      if (this->haloAliveSize[p] > 0 && this->haloDeadSize[p] == 0) {
+      if (this->haloAliveSize[p] == this->haloSize[p]) {
         this->numberOfAliveHalos++;
         this->numberOfHaloParticles += this->haloAliveSize[p];
 
@@ -509,13 +429,14 @@ void CosmoHaloFinderP::buildHaloStructure()
         this->halos.push_back(this->haloStart[p]);
         this->haloCount.push_back(this->haloAliveSize[p]);
       }
-      else if (this->haloDeadSize[p] > 0 && this->haloAliveSize[p] == 0) {
+      else if (this->haloAliveSize[p] == 0) {
         this->numberOfDeadHalos++;
       }
       else {
         this->numberOfMixedHalos++;
         CosmoHalo* halo = new CosmoHalo(p,
-                                this->haloAliveSize[p], this->haloDeadSize[p]);
+                                this->haloAliveSize[p], 
+                                this->haloSize[p] - this->haloAliveSize[p]);
         this->myMixedHalos.push_back(halo);
       }
     }
@@ -548,7 +469,8 @@ void CosmoHaloFinderP::processMixedHalos()
     // All particles in the same halo have the same haloTag
     if (this->haloSize[this->haloTag[p]] >= pmin &&
         this->haloAliveSize[this->haloTag[p]] > 0 &&
-        this->haloDeadSize[this->haloTag[p]] > 0) {
+        this->haloAliveSize[this->haloTag[p]] < 
+              this->haloSize[this->haloTag[p]]) {
 
           // Check all each mixed halo to see which this particle belongs to
           for (unsigned int h = 0; h < this->myMixedHalos.size(); h++) {
@@ -698,19 +620,19 @@ void CosmoHaloFinderP::mergeHalos()
   // then gets messages from others and creates those mixed halos
   collectMixedHalos(haloBuffer, haloBufSize);
 #ifndef USE_SERIAL_COSMO
-  MPI_Barrier(cosmologytools::Partition::getComm());
+  MPI_Barrier(Partition::getComm());
 #endif
 
   // MASTER has all data and runs algorithm to make decisions
   assignMixedHalos();
 #ifndef USE_SERIAL_COSMO
-  MPI_Barrier(cosmologytools::Partition::getComm());
+  MPI_Barrier(Partition::getComm());
 #endif
 
   // MASTER sends merge results to all processors
   sendMixedHaloResults(haloBuffer, haloBufSize);
 #ifndef USE_SERIAL_COSMO
-  MPI_Barrier(cosmologytools::Partition::getComm());
+  MPI_Barrier(Partition::getComm());
 #endif
 
   // Collect totals for result checking
@@ -728,7 +650,7 @@ void CosmoHaloFinderP::mergeHalos()
 #else
   MPI_Allreduce((void*) &this->numberOfHaloParticles,
                 (void*) &totalAliveHaloParticles,
-                1, MPI_INT, MPI_SUM, cosmologytools::Partition::getComm());
+                1, MPI_INT, MPI_SUM, Partition::getComm());
 #endif
 
   if (this->myProc == MASTER) {
@@ -744,6 +666,9 @@ void CosmoHaloFinderP::mergeHalos()
   for (unsigned int i = 0; i < this->allMixedHalos.size(); i++)
     delete this->allMixedHalos[i];
   this->allMixedHalos.clear();
+
+  // haloStart information has been moved to vector<int> halos
+  clearHaloStart();
 
   delete [] haloBuffer;
 }
@@ -836,7 +761,6 @@ void CosmoHaloFinderP::collectMixedHalos
       }
       notReceived--;
     }
-
 
     cout << "Number of halos to merge: " << this->allMixedHalos.size() << endl;
   }
@@ -1147,17 +1071,9 @@ void CosmoHaloFinderP::sendMixedHaloResults
 //
 /////////////////////////////////////////////////////////////////////////
 
-void CosmoHaloFinderP::writeTaggedParticles(bool clearSerial)
+void CosmoHaloFinderP::writeTaggedParticles(int hmin, float ss, bool writePV,
+                                            bool clearTag)
 {
-  // short-circuit here
-  if(this->getNumberOfHalos() == 0)
-    {
-    return;
-    }
-
-  // Write the tagged particle file
-  ofstream* outStream = new ofstream(this->outFile.c_str(), ios::out);
-
   // Map the index of the particle on this process to the index of the
   // particle with the lowest tag value so that the written output refers
   // to the lowest tag as being the owner of the halo
@@ -1172,67 +1088,89 @@ void CosmoHaloFinderP::writeTaggedParticles(bool clearSerial)
       mapIndex[this->haloTag[p]] = p;
   }
 
+  if (hmin == 0 && ss == 1.0) {
+    ID_T *particleHaloTag = new ID_T[this->particleCount];
+    for (int p = 0; p < this->particleCount; p++) {
+      particleHaloTag[p] = (this->haloSize[this->haloTag[p]] < this->pmin)
+        ? -1: this->tag[this->haloTag[p]];
+    }
 
+    // Write the tagged particle file
+    GenericIO GIO(Partition::getComm(), outFile + ".haloparticles");
+    GIO.setNumElems(this->particleCount);
+    if (writePV) {
+      GIO.addVariable("x", this->xx);
+      GIO.addVariable("y", this->yy);
+      GIO.addVariable("z", this->zz);
+      GIO.addVariable("vx", this->vx);
+      GIO.addVariable("vy", this->vy);
+      GIO.addVariable("vz", this->vz);
+    }
+    GIO.addVariable("id", this->tag);
+    GIO.addVariable("fof_halo_tag", particleHaloTag);
+    GIO.write();
 
-  string textMode = "ascii";
-  char str[1024];
-  string ascii = "ascii";
-  if (textMode == "ascii") {
+    delete [] particleHaloTag;
+  } else {
+    vector<ID_T> ssTag, ssParticleHaloTag;
+    vector<POSVEL_T> ssX, ssY, ssZ, ssVX, ssVY, ssVZ;
 
-    // Output all ALIVE particles that were not part of a mixed halo
-    // unless that halo is VALID.  Output only the DEAD particles that are
-    // part of a VALID halo. This was encoded when mixed halos were found
-    // so any ALIVE particle is VALID
+    size_t reserveSize = (size_t) (ss*this->particleCount);
+    ssTag.reserve(reserveSize);
+    ssParticleHaloTag.reserve(reserveSize);
+    if (writePV) {
+      ssX.reserve(reserveSize);
+      ssY.reserve(reserveSize);
+      ssZ.reserve(reserveSize);
+      ssVX.reserve(reserveSize);
+      ssVY.reserve(reserveSize);
+      ssVZ.reserve(reserveSize);
+    }
 
     for (int p = 0; p < this->particleCount; p++) {
+      if (this->haloSize[this->haloTag[p]] < hmin)
+        continue;
 
-      if (this->status[p] == ALIVE) {
-        // Every alive particle appears in the particle output
-        sprintf(str, "%12.4E %12.4E ", this->xx[p], this->vx[p]);
-        *outStream << str;
-        sprintf(str, "%12.4E %12.4E ", this->yy[p], this->vy[p]);
-        *outStream << str;
-        sprintf(str, "%12.4E %12.4E ", this->zz[p], this->vz[p]);
-        *outStream << str;
-        ID_T result = (this->haloSize[this->haloTag[p]] < this->pmin)
-                      ? -1: this->tag[mapIndex[this->haloTag[p]]];
-        sprintf(str, "%12ld %12ld\n", (long int) result,
-                                      (long int) this->tag[p]);
-        *outStream << str;
+      if (drand48() > ss)
+        continue;
+
+      ssTag.push_back(this->tag[p]);
+      ssParticleHaloTag.push_back(
+        (this->haloSize[this->haloTag[p]] < this->pmin)
+        ? -1: this->tag[this->haloTag[p]]);
+      if (writePV) {
+        ssX.push_back(this->xx[p]);
+        ssY.push_back(this->yy[p]);
+        ssZ.push_back(this->zz[p]);
+        ssVX.push_back(this->vx[p]);
+        ssVY.push_back(this->vy[p]);
+        ssVZ.push_back(this->vz[p]);
       }
     }
-  }
 
-  else {
-
-    // output in COSMO form
-    for (int p = 0; p < this->particleCount; p++) {
-      POSVEL_T fBlock[COSMO_FLOAT];
-      fBlock[0] = this->xx[p];
-      fBlock[1] = this->vx[p];
-      fBlock[2] = this->yy[p];
-      fBlock[3] = this->vy[p];
-      fBlock[4] = this->zz[p];
-      fBlock[5] = this->vz[p];
-      fBlock[6] = (this->haloSize[this->haloTag[p]] < this->pmin)
-                   ? -1.0: 1.0 * this->tag[this->haloTag[p]];
-      outStream->write((char *)fBlock, COSMO_FLOAT * sizeof(POSVEL_T));
-
-      ID_T iBlock[COSMO_INT];
-      iBlock[0] = this->tag[p];
-      outStream->write((char *)iBlock, COSMO_INT * sizeof(ID_T));
+    // Write the tagged particle file
+    GenericIO GIO(Partition::getComm(), outFile + ".haloparticles");
+    GIO.setNumElems(ssTag.size());
+    if (writePV) {
+      GIO.addVariable("x", ssX);
+      GIO.addVariable("y", ssY);
+      GIO.addVariable("z", ssZ);
+      GIO.addVariable("vx", ssVX);
+      GIO.addVariable("vy", ssVY);
+      GIO.addVariable("vz", ssVZ);
     }
+    GIO.addVariable("id", ssTag);
+    GIO.addVariable("fof_halo_tag", ssParticleHaloTag);
+    GIO.write();
   }
-  outStream->close();
 
-  delete outStream;
   delete [] mapIndex;
-
-  if (clearSerial) {
-    // Clear the data stored in serial halo finder
-    this->haloFinder.clearHaloTag();
+  
+  // Clear the data stored in serial halo finder
+  if (clearTag) {
+    clearHaloTag();
+    clearHaloSize();
   }
 }
-
 
 } /* end cosmologytools namespace */

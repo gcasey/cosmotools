@@ -266,9 +266,9 @@ void SODHalo::createSODHalo(
   }
 
 #ifdef DEBUG
-  cout << "Rank: " << this->myProc
+  cout << "Rank: " << this->myProc 
        << " Initial radius = " << this->initRadius << endl;
-  cout << "Rank: " << this->myProc
+  cout << "Rank: " << this->myProc 
        << " Characteristic radius " << this->charRadius << endl;
 #endif
 }
@@ -304,10 +304,10 @@ void SODHalo::calculateMassProfile()
   }
 
   if (this->maxRadius < requiredMaxRadius) {
-    cout << "Rank: " << this->myProc
+    cout << "Rank: " << this->myProc 
          << " Reset max radius from " << requiredMaxRadius
          << " to " << maxRadius << endl;
-    cout << "Rank: " << this->myProc
+    cout << "Rank: " << this->myProc 
          << "Might need to make the dead size (overload) larger" << endl;
   }
 

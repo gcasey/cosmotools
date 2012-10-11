@@ -1,45 +1,45 @@
 /*=========================================================================
-
+                                                                                
 Copyright (c) 2007, Los Alamos National Security, LLC
 
 All rights reserved.
 
-Copyright 2007. Los Alamos National Security, LLC.
-This software was produced under U.S. Government contract DE-AC52-06NA25396
-for Los Alamos National Laboratory (LANL), which is operated by
-Los Alamos National Security, LLC for the U.S. Department of Energy.
-The U.S. Government has rights to use, reproduce, and distribute this software.
+Copyright 2007. Los Alamos National Security, LLC. 
+This software was produced under U.S. Government contract DE-AC52-06NA25396 
+for Los Alamos National Laboratory (LANL), which is operated by 
+Los Alamos National Security, LLC for the U.S. Department of Energy. 
+The U.S. Government has rights to use, reproduce, and distribute this software. 
 NEITHER THE GOVERNMENT NOR LOS ALAMOS NATIONAL SECURITY, LLC MAKES ANY WARRANTY,
-EXPRESS OR IMPLIED, OR ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.
-If software is modified to produce derivative works, such modified software
-should be clearly marked, so as not to confuse it with the version available
+EXPRESS OR IMPLIED, OR ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.  
+If software is modified to produce derivative works, such modified software 
+should be clearly marked, so as not to confuse it with the version available 
 from LANL.
-
-Additionally, redistribution and use in source and binary forms, with or
-without modification, are permitted provided that the following conditions
+ 
+Additionally, redistribution and use in source and binary forms, with or 
+without modification, are permitted provided that the following conditions 
 are met:
--   Redistributions of source code must retain the above copyright notice,
-    this list of conditions and the following disclaimer.
+-   Redistributions of source code must retain the above copyright notice, 
+    this list of conditions and the following disclaimer. 
 -   Redistributions in binary form must reproduce the above copyright notice,
     this list of conditions and the following disclaimer in the documentation
-    and/or other materials provided with the distribution.
+    and/or other materials provided with the distribution. 
 -   Neither the name of Los Alamos National Security, LLC, Los Alamos National
     Laboratory, LANL, the U.S. Government, nor the names of its contributors
-    may be used to endorse or promote products derived from this software
-    without specific prior written permission.
+    may be used to endorse or promote products derived from this software 
+    without specific prior written permission. 
 
 THIS SOFTWARE IS PROVIDED BY LOS ALAMOS NATIONAL SECURITY, LLC AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
-THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL SECURITY, LLC OR
-CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
-OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
-WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
-OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
+THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
+ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL SECURITY, LLC OR 
+CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, 
+EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, 
+PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; 
+OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, 
+WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR 
+OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF 
 ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
+                                                                                
 =========================================================================*/
 
 #include <iostream>
@@ -230,7 +230,7 @@ void InitialExchange::calculateExchangeRegions()
   this->minRange[Y0_Z1][2] = this->maxAlive[2];
   this->maxRange[Y0_Z1][2] = this->maxDead[2];
 
-  // Top front and back bars
+  // Top front and back bars 
   this->minRange[Y1_Z0][1] = this->maxAlive[1];
   this->maxRange[Y1_Z0][1] = this->maxDead[1];
   this->minRange[Y1_Z0][2] = this->minDead[2];
@@ -377,7 +377,7 @@ void InitialExchange::calculateExchangeRegions()
    // Processor is on front edge in Y dimension
    if (this->layoutPos[1] == 0) {
       this->minRange[Y0][1] = this->boxSize - this->deadSize;
-      this->minRange[X0_Y0][1] = this->boxSize - this->deadSize;
+      this->minRange[X0_Y0][1] = this->boxSize - this->deadSize; 
       this->minRange[X1_Y0][1] = this->boxSize - this->deadSize;
       this->minRange[Y0_Z0][1] = this->boxSize - this->deadSize;
       this->minRange[Y0_Z1][1] = this->boxSize - this->deadSize;
@@ -419,7 +419,7 @@ void InitialExchange::calculateExchangeRegions()
       this->maxRange[X0_Y1_Z0][1] = this->deadSize;
       this->maxRange[X0_Y1_Z1][1] = this->deadSize;
    }
-
+  
    // Processor is on front edge in Z dimension
    if (this->layoutPos[2] == 0) {
       this->minRange[Z0][2] = this->boxSize - this->deadSize;
@@ -442,7 +442,7 @@ void InitialExchange::calculateExchangeRegions()
       this->maxRange[X0_Y1_Z0][2] = this->boxSize;
       this->maxRange[X1_Y0_Z0][2] = this->boxSize;
    }
-
+    
    // Processor is on back edge in Z dimension
    if (this->layoutPos[2] == (this->layoutSize[2] - 1)) {
       this->minRange[Z1][2] = 0;
@@ -475,16 +475,16 @@ void InitialExchange::calculateExchangeRegions()
 /////////////////////////////////////////////////////////////////////////
 
 void InitialExchange::setParticleArrays(
-      long count,
-      POSVEL_T* xLoc,
-      POSVEL_T* yLoc,
-      POSVEL_T* zLoc,
-      POSVEL_T* xVel,
-      POSVEL_T* yVel,
-      POSVEL_T* zVel,
-      POTENTIAL_T* potential,
-      ID_T* id,
-      MASK_T* maskData)
+			long count,
+			POSVEL_T* xLoc,
+			POSVEL_T* yLoc,
+			POSVEL_T* zLoc,
+			POSVEL_T* xVel,
+			POSVEL_T* yVel,
+			POSVEL_T* zVel,
+			POTENTIAL_T* potential,
+			ID_T* id,
+			MASK_T* maskData)
 {
   this->particleCount = count;
   this->xxInit = xLoc;
@@ -499,16 +499,16 @@ void InitialExchange::setParticleArrays(
 }
 
 void InitialExchange::setParticleVectors(
-      vector<POSVEL_T>* xLoc,
-      vector<POSVEL_T>* yLoc,
-      vector<POSVEL_T>* zLoc,
-      vector<POSVEL_T>* xVel,
-      vector<POSVEL_T>* yVel,
-      vector<POSVEL_T>* zVel,
-      vector<POTENTIAL_T>* potential,
-      vector<ID_T>* id,
-      vector<MASK_T>* maskData,
-      vector<STATUS_T>* type)
+			vector<POSVEL_T>* xLoc,
+			vector<POSVEL_T>* yLoc,
+			vector<POSVEL_T>* zLoc,
+			vector<POSVEL_T>* xVel,
+			vector<POSVEL_T>* yVel,
+			vector<POSVEL_T>* zVel,
+			vector<POTENTIAL_T>* potential,
+			vector<ID_T>* id,
+			vector<MASK_T>* maskData,
+			vector<STATUS_T>* type)
 {
   this->xx = xLoc;
   this->yy = yLoc;
@@ -521,7 +521,7 @@ void InitialExchange::setParticleVectors(
   this->mask = maskData;
   this->status = type;
 }
-
+	
 /////////////////////////////////////////////////////////////////////////////
 //
 // Identify the border particles which will be alive on other processors
@@ -544,17 +544,17 @@ void InitialExchange::exchangeParticles()
 
   // Count the particles across processors
   long totalAliveParticles = 0;
-  MPI_Allreduce((void*) &this->numberOfAliveParticles,
-                (void*) &totalAliveParticles,
+  MPI_Allreduce((void*) &this->numberOfAliveParticles, 
+                (void*) &totalAliveParticles, 
                 1, MPI_LONG, MPI_SUM, MPI_COMM_WORLD);
 
 #ifdef INITIAL_EXCHANGE_VERBOSE
-  cout << "InitialExchange Particles Rank " << setw(3) << this->myProc
+  cout << "InitialExchange Particles Rank " << setw(3) << this->myProc 
        << " #alive = " << this->numberOfAliveParticles << endl;
 #endif
-
+ 
   if (this->myProc == MASTER) {
-    cout << "InitialExchange TotalAliveParticles "
+    cout << "InitialExchange TotalAliveParticles " 
          << totalAliveParticles << endl;
   }
 }
@@ -568,15 +568,16 @@ void InitialExchange::exchangeParticles()
 
 void InitialExchange::identifyExchangeParticles()
 {
+  bool hadProblems = false;
   for (int i = 0; i < this->particleCount; i++) {
     bool found = false;
 
     // Particle is alive on this processor so add to vectors
-    if ((this->xxInit[i] >= this->minAlive[0] &&
+    if ((this->xxInit[i] >= this->minAlive[0] && 
          this->xxInit[i] < this->maxAlive[0]) &&
-        (this->yyInit[i] >= this->minAlive[1] &&
+        (this->yyInit[i] >= this->minAlive[1] && 
          this->yyInit[i] < this->maxAlive[1]) &&
-        (this->zzInit[i] >= this->minAlive[2] &&
+        (this->zzInit[i] >= this->minAlive[2] && 
          this->zzInit[i] < this->maxAlive[2])) {
             this->xx->push_back(this->xxInit[i]);
             this->yy->push_back(this->yyInit[i]);
@@ -585,19 +586,19 @@ void InitialExchange::identifyExchangeParticles()
             this->vy->push_back(this->vyInit[i]);
             this->vz->push_back(this->vzInit[i]);
             this->tag->push_back(this->tagInit[i]);
-      this->pot->push_back(this->potInit[i]);
-      this->mask->push_back(this->maskInit[i]);
+	    this->pot->push_back(this->potInit[i]);
+	    this->mask->push_back(this->maskInit[i]);
             this->numberOfAliveParticles++;
             found = true;
 
     } else {
       // Particle is dead here but which processor needs it as alive
       for (int n = 0; n < NUM_OF_NEIGHBORS; n++) {
-        if ((this->xxInit[i] >= minRange[n][0]) &&
+        if ((this->xxInit[i] >= minRange[n][0]) && 
             (this->xxInit[i] < maxRange[n][0]) &&
-            (this->yyInit[i] >= minRange[n][1]) &&
+            (this->yyInit[i] >= minRange[n][1]) && 
             (this->yyInit[i] < maxRange[n][1]) &&
-            (this->zzInit[i] >= minRange[n][2]) &&
+            (this->zzInit[i] >= minRange[n][2]) && 
             (this->zzInit[i] < maxRange[n][2])) {
                 this->neighborParticles[n].push_back(i);
                 found = true;
@@ -605,8 +606,27 @@ void InitialExchange::identifyExchangeParticles()
       }
     }
     if (found == false) {
-      cout << "Rank " << myProc << " Problem particle " << xxInit[i]
-           << " , " << yyInit[i] << " , " << zzInit[i] << endl;
+      hadProblems = true;
+      cout << "Rank " << myProc 
+	   << " Problem particle " << this->tagInit[i] << " ("
+	   << xxInit[i] << "," << yyInit[i] << "," << zzInit[i] 
+	   << ") not in ["
+	   << this->minAlive[0] << ":" << this->maxAlive[0] << ","
+	   << this->minAlive[1] << ":" << this->maxAlive[1] << ","
+	   << this->minAlive[2] << ":" << this->maxAlive[2]
+	   << "] or neighbors" << endl;
+    }
+  }
+
+  if (hadProblems) {
+    cout << "Rank " << myProc << " had problem particles!" << endl;
+    for (int n = 0; n < NUM_OF_NEIGHBORS; n++) {
+      cout << "Rank " << myProc << " neighbor " << n
+           << " has ["
+           << minRange[n][0] << ":" << maxRange[n][0] << ","
+           << minRange[n][1] << ":" << maxRange[n][1] << ","
+           << minRange[n][2] << ":" << maxRange[n][2]
+           << "]" << endl;
     }
   }
 }
@@ -636,13 +656,13 @@ void InitialExchange::exchangeNeighborParticles()
 
   // Allocate messages to send and receive MPI buffers
   int bufferSize = (1 * sizeof(int)) +          // number of particles
-                   (maxDeadSize *
+                   (maxDeadSize * 
                      ((7 * sizeof(POSVEL_T)) +  // location, velocity, potential
                       (1 * sizeof(ID_T)) +      // id tag
                       (1 * sizeof(MASK_T))));   // mask
   Message* sendMessage = new Message(bufferSize);
   Message* recvMessage = new Message(bufferSize);
-
+  
   //debug statement added by Adrian to see how much buffer space we're using
   if(this->myProc == MASTER) {
     printf("PXCH buffer = 2*%d = %f MB\n",bufferSize,
@@ -677,10 +697,10 @@ void InitialExchange::exchangeNeighborParticles()
 /////////////////////////////////////////////////////////////////////////////
 
 void InitialExchange::exchange(
-      int sendTo,
-      int recvFrom,
-      Message* sendMessage,
-      Message* recvMessage)
+			int sendTo, 
+			int recvFrom, 
+			Message* sendMessage, 
+			Message* recvMessage)
 {
   POSVEL_T posValue;
   POTENTIAL_T potValue;

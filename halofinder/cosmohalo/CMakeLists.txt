@@ -22,33 +22,34 @@ endforeach()
 set(Cosmo_LIBS  ${MPI_C_LIBRARIES})
 
 ## List of executables
-set(Cosmo_PROGRAMS
-  BinHalos.cxx
-  NToN.cxx
-  OneToN.cxx
-  )
+#set(Cosmo_PROGRAMS
+#  BinHalos.cxx
+#  NToN.cxx
+#  OneToN.cxx
+#  )
 
 ## Set cosmo sources
 set(Cosmo_SOURCES
   BHTree.cxx
-  bigchunk.cxx
   ChainingMesh.cxx
   CosmoHaloFinder.cxx
   CosmoHaloFinderP.cxx
-  dims.cxx
   FOFHaloProperties.cxx
+  GenericIO.cxx
   GridExchange.cxx
   HaloCenterFinder.cxx
   HaloFinderInput.cxx
   InitialExchange.cxx
   Message.cxx
-  Partition.cxx
   ParticleDistribute.cxx
   ParticleExchange.cxx
+  Partition.cxx
   SODHalo.cxx
   SubHaloFinder.cxx
   Timer.cxx
   Timings.cxx
+  bigchunk.cxx
+  dims.cxx
   )
 
 ## Specify global source list for this project

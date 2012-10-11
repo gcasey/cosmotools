@@ -1,45 +1,45 @@
 /*=========================================================================
-
+                                                                                
 Copyright (c) 2007, Los Alamos National Security, LLC
 
 All rights reserved.
 
-Copyright 2007. Los Alamos National Security, LLC.
-This software was produced under U.S. Government contract DE-AC52-06NA25396
-for Los Alamos National Laboratory (LANL), which is operated by
-Los Alamos National Security, LLC for the U.S. Department of Energy.
-The U.S. Government has rights to use, reproduce, and distribute this software.
+Copyright 2007. Los Alamos National Security, LLC. 
+This software was produced under U.S. Government contract DE-AC52-06NA25396 
+for Los Alamos National Laboratory (LANL), which is operated by 
+Los Alamos National Security, LLC for the U.S. Department of Energy. 
+The U.S. Government has rights to use, reproduce, and distribute this software. 
 NEITHER THE GOVERNMENT NOR LOS ALAMOS NATIONAL SECURITY, LLC MAKES ANY WARRANTY,
-EXPRESS OR IMPLIED, OR ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.
-If software is modified to produce derivative works, such modified software
-should be clearly marked, so as not to confuse it with the version available
+EXPRESS OR IMPLIED, OR ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.  
+If software is modified to produce derivative works, such modified software 
+should be clearly marked, so as not to confuse it with the version available 
 from LANL.
-
-Additionally, redistribution and use in source and binary forms, with or
-without modification, are permitted provided that the following conditions
+ 
+Additionally, redistribution and use in source and binary forms, with or 
+without modification, are permitted provided that the following conditions 
 are met:
--   Redistributions of source code must retain the above copyright notice,
-    this list of conditions and the following disclaimer.
+-   Redistributions of source code must retain the above copyright notice, 
+    this list of conditions and the following disclaimer. 
 -   Redistributions in binary form must reproduce the above copyright notice,
     this list of conditions and the following disclaimer in the documentation
-    and/or other materials provided with the distribution.
+    and/or other materials provided with the distribution. 
 -   Neither the name of Los Alamos National Security, LLC, Los Alamos National
     Laboratory, LANL, the U.S. Government, nor the names of its contributors
-    may be used to endorse or promote products derived from this software
-    without specific prior written permission.
+    may be used to endorse or promote products derived from this software 
+    without specific prior written permission. 
 
 THIS SOFTWARE IS PROVIDED BY LOS ALAMOS NATIONAL SECURITY, LLC AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
-THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL SECURITY, LLC OR
-CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
-OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
-WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
-OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
+THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
+ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL SECURITY, LLC OR 
+CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, 
+EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, 
+PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; 
+OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, 
+WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR 
+OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF 
 ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
+                                                                                
 =========================================================================*/
 
 // .NAME CosmoHaloFinderP - find halos within a cosmology data file in parallel
@@ -79,18 +79,21 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string>
 #include <vector>
 
-using namespace std;
-
 namespace cosmologytools {
-
 
 class CosmoHaloFinderP {
 public:
   CosmoHaloFinderP();
   ~CosmoHaloFinderP();
 
-  // Initializes the halo-finder, namely, set's up the myProc, numProc etc.
+  // Initializes the halo finder, namely set's up, numProc, myProc, etc.
   void initializeHaloFinder();
+
+  // Special methods to release memory because results are used in analysis
+  void clearHaloTag();
+  void clearHaloStart();
+  void clearHaloList();
+  void clearHaloSize();
 
   // Set parameters for serial halo finder which does the work
   void setParameters(
@@ -99,15 +102,16 @@ public:
         POSVEL_T deadSize,      // Dead size used to normalize for non periodic
         long np,                // Number of particles in the problem
         int pmin,               // Minimum number of particles in a halo
-        POSVEL_T bb);           // Normalized distance between particles
+        POSVEL_T bb,            // Normalized distance between particles
                                 // which define a single halo
+        int nmin = 1);          // The minimum number of neighbors for linking
 
   // Execute the serial halo finder for this processor
   void executeHaloFinder();
 
   // Collect the halo information from the serial halo finder
   // Save the mixed halos so as to determine which processor owns them
-  void collectHalos(bool clearSerial=true);
+  void collectHalos(bool clearTag = true);
   void buildHaloStructure();
   void processMixedHalos();
 
@@ -119,8 +123,7 @@ public:
   int compareHalos(CosmoHalo* halo1, CosmoHalo* halo2);
 
   // Write the particles with mass field containing halo tags
-  void writeTaggedParticles(bool clearSerial=true);
-
+  void writeTaggedParticles(int hmin, float ss, bool writePV, bool clearTag = true);
 
   // Set alive particle vectors which were created elsewhere
   void setParticles(
@@ -153,8 +156,6 @@ public:
   int* getHalos()               { return &this->halos[0]; }
   int* getHaloCount()           { return &this->haloCount[0]; }
   int* getHaloList()            { return this->haloList; }
-  int* getHaloTag()             { return this->haloTag; }
-  int* getHaloSize()            { return this->haloSize; }
 
 private:
   int    myProc;                // My processor number
@@ -164,8 +165,6 @@ private:
   int    layoutPos[DIMENSION];  // Position of this processor in decomposition
 
   string outFile;               // File of particles written by this processor
-  string outHaloFile;           // File of halo tag and size of halo
-                                // used for looping on round robin share of data
 
   CosmoHaloFinder haloFinder;   // Serial halo finder for this processor
 
@@ -175,7 +174,7 @@ private:
   int    pmin;                  // Minimum number of particles in a halo
   POSVEL_T bb;                  // Minimum normalized distance between
                                 // particles in a halo
-  POSVEL_T normalizeFactor;     // Convert physical location to grid location
+  int    nmin;                  // The minimum number of neighbors for linking
 
   long   particleCount;         // Running index used to store data
                                 // Ends up as the number of alive plus dead
@@ -194,8 +193,6 @@ private:
   ID_T* tag;                    // Id tag for particles on this processor
   MASK_T* mask;                 // Particle information
 
-  POSVEL_T** haloData;          // Normalized data for serial halo finder
-
   STATUS_T* status;             // Particle is ALIVE or labeled with neighbor
                                 // processor index where it is ALIVE
 
@@ -206,18 +203,17 @@ private:
                                 // where the first particle has the actual size
                                 // and other member particles have size=0
   int* haloAliveSize;
-  int* haloDeadSize;
 
   int numberOfAliveHalos;       // Number of alive or valid halos
   int numberOfDeadHalos;        // Number of dead halos
   int numberOfMixedHalos;       // Number of halos with both alive and dead
   int numberOfHaloParticles;    // Number of particles in all VALID halos
 
-  vector<CosmoHalo*> myMixedHalos;  // Mixed halos on this processor
-  vector<CosmoHalo*> allMixedHalos; // Combined mixed halos on MASTER
+  vector<CosmoHalo*> myMixedHalos;      // Mixed halos on this processor
+  vector<CosmoHalo*> allMixedHalos;     // Combined mixed halos on MASTER
 
   vector<int> halos;            // First particle index into haloList
-  vector<int> haloCount;        // Size of each halo
+  vector<int> haloCount;        // Size of each halo 
 
   int* haloList;                // Indices of next particle in halo
   int* haloStart;               // Index of first particle in halo

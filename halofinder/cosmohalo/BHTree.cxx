@@ -1,45 +1,45 @@
 /*=========================================================================
-
+                                                                                
 Copyright (c) 2007, Los Alamos National Security, LLC
 
 All rights reserved.
 
-Copyright 2007. Los Alamos National Security, LLC.
-This software was produced under U.S. Government contract DE-AC52-06NA25396
-for Los Alamos National Laboratory (LANL), which is operated by
-Los Alamos National Security, LLC for the U.S. Department of Energy.
-The U.S. Government has rights to use, reproduce, and distribute this software.
+Copyright 2007. Los Alamos National Security, LLC. 
+This software was produced under U.S. Government contract DE-AC52-06NA25396 
+for Los Alamos National Laboratory (LANL), which is operated by 
+Los Alamos National Security, LLC for the U.S. Department of Energy. 
+The U.S. Government has rights to use, reproduce, and distribute this software. 
 NEITHER THE GOVERNMENT NOR LOS ALAMOS NATIONAL SECURITY, LLC MAKES ANY WARRANTY,
-EXPRESS OR IMPLIED, OR ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.
-If software is modified to produce derivative works, such modified software
-should be clearly marked, so as not to confuse it with the version available
+EXPRESS OR IMPLIED, OR ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.  
+If software is modified to produce derivative works, such modified software 
+should be clearly marked, so as not to confuse it with the version available 
 from LANL.
-
-Additionally, redistribution and use in source and binary forms, with or
-without modification, are permitted provided that the following conditions
+ 
+Additionally, redistribution and use in source and binary forms, with or 
+without modification, are permitted provided that the following conditions 
 are met:
--   Redistributions of source code must retain the above copyright notice,
-    this list of conditions and the following disclaimer.
+-   Redistributions of source code must retain the above copyright notice, 
+    this list of conditions and the following disclaimer. 
 -   Redistributions in binary form must reproduce the above copyright notice,
     this list of conditions and the following disclaimer in the documentation
-    and/or other materials provided with the distribution.
+    and/or other materials provided with the distribution. 
 -   Neither the name of Los Alamos National Security, LLC, Los Alamos National
     Laboratory, LANL, the U.S. Government, nor the names of its contributors
-    may be used to endorse or promote products derived from this software
-    without specific prior written permission.
+    may be used to endorse or promote products derived from this software 
+    without specific prior written permission. 
 
 THIS SOFTWARE IS PROVIDED BY LOS ALAMOS NATIONAL SECURITY, LLC AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
-THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL SECURITY, LLC OR
-CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
-OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
-WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
-OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
+THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
+ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL SECURITY, LLC OR 
+CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, 
+EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, 
+PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; 
+OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, 
+WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR 
+OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF 
 ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
+                                                                                
 =========================================================================*/
 
 #include <iostream>
@@ -126,14 +126,14 @@ SPHNode::SPHNode(SPHNode* parent, int oindx)
 /////////////////////////////////////////////////////////////////////////
 
 BHTree::BHTree(
-    POSVEL_T* minLoc,
-    POSVEL_T* maxLoc,
-    ID_T count,
-    POSVEL_T* xLoc,
-    POSVEL_T* yLoc,
-    POSVEL_T* zLoc,
-    POSVEL_T* ms,
-    POSVEL_T avgMass)
+		POSVEL_T* minLoc,
+		POSVEL_T* maxLoc,
+		ID_T count,
+		POSVEL_T* xLoc,
+		POSVEL_T* yLoc,
+		POSVEL_T* zLoc,
+		POSVEL_T* ms,
+		POSVEL_T avgMass)
 {
   this->minRange = new POSVEL_T[DIMENSION];
   this->maxRange = new POSVEL_T[DIMENSION];
@@ -226,12 +226,12 @@ void BHTree::createBHTree()
           cout << "Same particle encountered - SHOULD NOT HAPPEN " << pindx << " and " << pindx2 << endl;
           break;
         }
-
+        
         SPHNode* node = new SPHNode(this->sphNode[tindx], oindx);
         this->sphNode.push_back(node);
         nodeIndex++;
         ID_T tindx2 = nodeIndex;
-
+        
         // Place the node that was sitting there already
         int oindx2 = getChildIndex(this->sphNode[tindx2], pindx2);
         this->sphNode[tindx2]->node.child[oindx2] = pindx2;
@@ -260,10 +260,10 @@ void BHTree::createBHTree()
 /////////////////////////////////////////////////////////////////////////
 
 void BHTree::threadBHTree(
-      ID_T curIndx,
-      ID_T sibling,
-      ID_T parent,
-      ID_T* lastIndx)
+			ID_T curIndx,
+			ID_T sibling,
+			ID_T parent,
+			ID_T* lastIndx)
 {
   ID_T offset = this->particleCount;
 
@@ -277,7 +277,7 @@ void BHTree::threadBHTree(
     }
   }
   *lastIndx = curIndx;
-
+ 
   // SPHParticle saves only the parent SPHNode
   if (curIndx < offset) {
       this->sphParticle[curIndx]->parent = parent;
@@ -324,7 +324,7 @@ void BHTree::threadBHTree(
           // SPHNode
           totalMass += this->sphNode[childIndx-offset]->node.info.mass;
           for (int dim = 0; dim < DIMENSION; dim++) {
-            s[dim] += this->sphNode[childIndx-offset]->node.info.mass *
+            s[dim] += this->sphNode[childIndx-offset]->node.info.mass * 
                       this->sphNode[childIndx-offset]->node.info.s[dim];
           }
 
@@ -392,15 +392,15 @@ void BHTree::printBHTree()
     // Print SPHNode
     if (curIndex >= offset) {
       cout << parentIndex << ":" << setw(parentIndex) << " ";
-      cout << "N " << curIndex
-           << " next " << this->sphNode[curIndex-offset]->node.info.nextNode
-           << " parent " << this->sphNode[curIndex-offset]->node.info.parent
-           << " (" << this->sphNode[curIndex-offset]->node.info.s[0]
-           << " ," << this->sphNode[curIndex-offset]->node.info.s[1]
+      cout << "N " << curIndex 
+           << " next " << this->sphNode[curIndex-offset]->node.info.nextNode 
+           << " parent " << this->sphNode[curIndex-offset]->node.info.parent 
+           << " (" << this->sphNode[curIndex-offset]->node.info.s[0] 
+           << " ," << this->sphNode[curIndex-offset]->node.info.s[1] 
            << " ," << this->sphNode[curIndex-offset]->node.info.s[2]
            << ") MASS " << this->sphNode[curIndex-offset]->node.info.mass
            << endl;
-
+        
       // Push back the new SPHNode which will have children
       parents.push_back(curIndex);
       parentIndex++;
@@ -412,8 +412,8 @@ void BHTree::printBHTree()
     // Print SPHParticle
     else {
       cout << parentIndex << ":" << setw(parentIndex) << " ";
-      cout << "P " << curIndex
-           << " next " << this->sphParticle[curIndex]->nextNode
+      cout << "P " << curIndex 
+           << " next " << this->sphParticle[curIndex]->nextNode 
            << " parent " << this->sphParticle[curIndex]->parent
            << " (" << xx[curIndex]
            << " ," << yy[curIndex]
@@ -441,7 +441,7 @@ void BHTree::printBHTree()
 // the initial guess to be larger than the actual smoothing length which
 // will be calculated in calculateDensity().
 //
-// h = cube_root(3/(4*PI) * DesNumNgb * particleMass / sphNode.mass) *
+// h = cube_root(3/(4*PI) * DesNumNgb * particleMass / sphNode.mass) * 
 //               sphNode.len
 //
 /////////////////////////////////////////////////////////////////////////
@@ -457,10 +457,10 @@ void BHTree::calculateInitialSmoothingLength(int numberOfNeighbors)
   minMass = min(minMass, maxMass);
 
   // SPHNodes start numbering after the last particle index number
-  POSVEL_T factor1 = 3.0 / (4.0 * M_PI) *
+  POSVEL_T factor1 = 3.0 / (4.0 * M_PI) * 
                      numberOfNeighbors * this->particleMass;
   POSVEL_T onethird = 1.0 / 3.0;
-
+  
   // Calculate smoothing length guess h_i for each particle p_i
   for (ID_T p = 0; p < this->particleCount; p++) {
     ID_T parent = this->sphParticle[p]->parent;
@@ -469,7 +469,7 @@ void BHTree::calculateInitialSmoothingLength(int numberOfNeighbors)
     // Find more neighbors than we actually need
     ID_T node = parent;
     while (node >= this->particleCount && node != -1 &&
-         minMass > this->sphNode[parent-this->particleCount]->node.info.mass) {
+         minMass > this->sphNode[parent-this->particleCount]->node.info.mass) { 
       parent = node;
       node = this->sphNode[parent-this->particleCount]->node.info.parent;
     }
@@ -540,11 +540,11 @@ void BHTree::calculateDensity(int numberOfClosest)
     // Find the neighbors of particle within radius of smoothing length h
     // which are ordered by increasing distance
     vector<ValueInfo> neighborList;
-    getClosestNeighbors(numberOfClosest, p, pos, h0, startNode,
+    getClosestNeighbors(numberOfClosest, p, pos, h0, startNode, 
                         neighborList);
 
     // Reset the smoothing length of this particle
-    this->sphParticle[p]->smoothingLength =
+    this->sphParticle[p]->smoothingLength = 
       neighborList[numberOfClosest-1].value;
 
     h = this->sphParticle[p]->smoothingLength;
@@ -560,28 +560,28 @@ void BHTree::calculateDensity(int numberOfClosest)
 
     // Iterate over the closest neighbors, distance was already calculated
     for (int n = 0; n < numberOfClosest; n++) {
-
+  
       POSVEL_T r = neighborList[n].value;
 
       // Only do particles within smoothing length
       if (r <= h) {
         POSVEL_T u = r * hinv;
         POSVEL_T wk, dwk;
-
+  
         // Smoothing kernel for cubic spline based on r and h
-        // Derivative of smoothing kernel
+        // Derivative of smoothing kernel 
         if (u < 0.5) {
           // Neighbor distance is less than half of smoothing length
           wk = hinv3 * (KERNEL_1 + (KERNEL_2 * u * u * (u - 1.0)));
           dwk = hinv4 * u * (KERNEL_3 * u - KERNEL_4);
         }
-
+  
         else {
           // Neighbor distance is greater than half of smoothing length
           wk = hinv3 * KERNEL_5 * (1.0 - u) * (1.0 - u) * (1.0 - u);
           dwk = hinv4 * KERNEL_6 * (1.0 - u) * (1.0 - u);
         }
-
+  
         // Density is accumulated sum of mass * smoothing kernel function
         rho += particleMass * wk;
 
@@ -599,7 +599,7 @@ void BHTree::calculateDensity(int numberOfClosest)
 // call getNeighborList to return all particles within a box of
 // hsml in each direction from the particle.
 //
-// Since hsml marks a sphere and not a box, not all particles returned
+// Since hsml marks a sphere and not a box, not all particles returned 
 // will meet the criteria and will be discarded.  We must return the
 // requested N neighbors.  If the initial hsml does not get enough neighbors
 // multiply it by a factor and try again until at least N particles are
@@ -607,7 +607,7 @@ void BHTree::calculateDensity(int numberOfClosest)
 //
 // We want no more than N neighbors so calculate the distances to each
 // neighbor, sort by distance and take the N closest to return.  The
-// hsml for the given particle will be set to the distance to the Nth
+// hsml for the given particle will be set to the distance to the Nth 
 // neighbor in the calling calculateDensity() method.
 //
 // This code can also be used by the subhalo grouping method with a
@@ -617,12 +617,12 @@ void BHTree::calculateDensity(int numberOfClosest)
 /////////////////////////////////////////////////////////////////////////////
 
 void BHTree::getClosestNeighbors(
-      int numberOfClosest,
-      ID_T me,
-      POSVEL_T pos[DIMENSION],
-      POSVEL_T hsml,
-      ID_T startNode,
-      vector<ValueInfo>& hsmlList)
+			int numberOfClosest,
+			ID_T me,
+			POSVEL_T pos[DIMENSION],
+			POSVEL_T hsml,
+			ID_T startNode,
+			vector<ValueInfo>& hsmlList)
 {
   // Loop until number of neighbors is greater than required amount
   while ((int) hsmlList.size() < numberOfClosest) {
@@ -634,20 +634,20 @@ void BHTree::getClosestNeighbors(
 
     // Collect neigbors from hsml box which are also inside hsml sphere
     for (int n = 0; n < (int) neighborList.size(); n++) {
-
+  
       int neighbor = neighborList[n];
       POSVEL_T dx = pos[0] - this->xx[neighbor];
       POSVEL_T dy = pos[1] - this->yy[neighbor];
       POSVEL_T dz = pos[2] - this->zz[neighbor];
       POSVEL_T r = sqrt(dx * dx + dy * dy + dz * dz);
-
+  
       // Neighbor has to be within the smoothing distance of the particle
       // in order to contribute to density of particle
       if (r < hsml) {
         ValueInfo info;
         info.value = r;
         info.particleId = neighbor;
-        hsmlList.push_back(info);
+        hsmlList.push_back(info); 
       }
     }
     // If there aren't enough neighbors widen the smoothing length
@@ -664,7 +664,7 @@ void BHTree::getClosestNeighbors(
 
 /////////////////////////////////////////////////////////////////////////////
 //
-// Returns neighbors with distance <= hsml and returns them in Ngblist.
+// Returns neighbors with distance <= hsml and returns them in Ngblist. 
 // Actually, particles in a box of half side length hsml are
 // returned, i.e. the reduction to a sphere still needs to be done in the
 // calling routine.
@@ -672,11 +672,11 @@ void BHTree::getClosestNeighbors(
 /////////////////////////////////////////////////////////////////////////////
 
 void BHTree::getNeighborList(
-      int me,
-      POSVEL_T searchcenter[DIMENSION],
-      POSVEL_T hsml,
-      ID_T startNode,
-      vector<int>& neighborList)
+			int me,
+			POSVEL_T searchcenter[DIMENSION],
+			POSVEL_T hsml,
+			ID_T startNode,
+			vector<int>& neighborList)
 {
   ID_T no = startNode;
   ID_T offset = this->particleCount;
@@ -692,7 +692,7 @@ void BHTree::getNeighborList(
       // SPHParticles
       ID_T p = no;
       no = this->sphParticle[no]->nextNode;
-
+  
       if (p != me &&
           this->xx[p] >= searchmin[0] && this->xx[p] <= searchmax[0] &&
           this->yy[p] >= searchmin[1] && this->yy[p] <= searchmax[1] &&
@@ -707,19 +707,19 @@ void BHTree::getNeighborList(
       // Follow the sibling if the entire tree under this node is out of range
       no = this->sphNode[nodeIndx]->node.info.sibling;
 
-      if ((this->sphNode[nodeIndx]->center[0] +
+      if ((this->sphNode[nodeIndx]->center[0] + 
              0.5 * this->sphNode[nodeIndx]->length[0]) >= searchmin[0] &&
-          (this->sphNode[nodeIndx]->center[0] -
+          (this->sphNode[nodeIndx]->center[0] - 
              0.5 * this->sphNode[nodeIndx]->length[0]) <= searchmax[0] &&
 
-          (this->sphNode[nodeIndx]->center[1] +
+          (this->sphNode[nodeIndx]->center[1] + 
              0.5 * this->sphNode[nodeIndx]->length[1]) >= searchmin[1] &&
-          (this->sphNode[nodeIndx]->center[1] -
+          (this->sphNode[nodeIndx]->center[1] - 
              0.5 * this->sphNode[nodeIndx]->length[1]) <= searchmax[1] &&
 
-          (this->sphNode[nodeIndx]->center[2] +
+          (this->sphNode[nodeIndx]->center[2] + 
              0.5 * this->sphNode[nodeIndx]->length[2]) >= searchmin[2] &&
-          (this->sphNode[nodeIndx]->center[2] -
+          (this->sphNode[nodeIndx]->center[2] - 
              0.5 * this->sphNode[nodeIndx]->length[2]) <= searchmax[2]) {
 
         // Node has area which intersects the search area
@@ -738,11 +738,11 @@ void BHTree::getNeighborList(
 int BHTree::getChildIndex(SPHNode* node, ID_T pindx)
 {
   int index = 0;
-  if (this->xx[pindx] > node->center[0])
+  if (this->xx[pindx] > node->center[0]) 
     index += 1;
-  if (this->yy[pindx] > node->center[1])
+  if (this->yy[pindx] > node->center[1]) 
     index += 2;
-  if (this->zz[pindx] > node->center[2])
+  if (this->zz[pindx] > node->center[2]) 
     index += 4;
   return index;
 }

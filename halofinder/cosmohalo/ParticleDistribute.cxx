@@ -208,7 +208,7 @@ void ParticleDistribute::setParticles(vector<POSVEL_T>* xLoc,
 //
 /////////////////////////////////////////////////////////////////////////
 
-void ParticleDistribute::readParticlesAllToAll(int reserveQ)
+void ParticleDistribute::readParticlesAllToAll(int reserveQ, bool useAlltoallv)
 {
   // Find how many input files there are and deal them between the processors
   // Calculates the max number of files per processor and max number of
@@ -219,17 +219,6 @@ void ParticleDistribute::readParticlesAllToAll(int reserveQ)
   // Compute the total number of particles in the problem
   // Compute the maximum number of particles in any one file to set buffer size
   findFileParticleCount();
-
-  // If there is only one input file we don't have to do MPI messaging
-  // because each processor will read that same file and extract only
-  // the particles in range
-  if (this->numberOfFiles == 1) {
-    if (this->inputType == RECORD) {
-      readFromRecordFile();
-    } else {
-      readFromBlockFile();
-    }
-  } else {
 
   // MPI buffer size might limit the number of particles read from a file
   // and passed round robin
@@ -405,9 +394,36 @@ void ParticleDistribute::readParticlesAllToAll(int reserveQ)
 
       // Send all particles to their new homes
       pRecvBuffer.resize(totalToRecv);
-      MPI_Alltoallv(&pBuffer[0], &pCounts[0], &pDisp[0], CosmoParticleType,
-                    &pRecvBuffer[0], &pRecvCounts[0], &pRecvDisp[0], CosmoParticleType,
-                    Partition::getComm());
+      if (useAlltoallv) {
+        MPI_Alltoallv(&pBuffer[0], &pCounts[0], &pDisp[0], CosmoParticleType,
+                      &pRecvBuffer[0], &pRecvCounts[0], &pRecvDisp[0], CosmoParticleType,
+                      Partition::getComm());
+      } else {
+        vector<MPI_Request> requests;
+
+        for (int i = 0; i < numProc; ++i) {
+          if (pRecvCounts[i] == 0)
+            continue;
+
+          requests.resize(requests.size()+1);
+          MPI_Irecv(&pRecvBuffer[pRecvDisp[i]], pRecvCounts[i], CosmoParticleType, i, 0,
+                    Partition::getComm(), &requests[requests.size()-1]);
+        }
+
+        MPI_Barrier(Partition::getComm());
+
+        for (int i = 0; i < numProc; ++i) {
+          if (pCounts[i] == 0)
+            continue;
+
+          requests.resize(requests.size()+1);
+          MPI_Isend(&pBuffer[pDisp[i]], pCounts[i], CosmoParticleType, i, 0,
+                    Partition::getComm(), &requests[requests.size()-1]);
+        }
+
+        vector<MPI_Status> status(requests.size());
+        MPI_Waitall((int) requests.size(), &requests[0], &status[0]);
+      }
 
       // We now have all of our particles, put them in our local arrays
       for (long i = 0; i < totalToRecv; ++i) {
@@ -477,8 +493,6 @@ void ParticleDistribute::readParticlesAllToAll(int reserveQ)
   }
 
   MPI_Type_free(&CosmoParticleType);
-
-  }
 }
 #endif // USE_SERIAL_COSMO
 
@@ -1224,7 +1238,7 @@ void ParticleDistribute::readFromBlockFile(
       (POSVEL_T) this->gadgetHeader.mass[type] * this->massConvertFactor;
 
     // Place particles of this type and mass in the buffer
-    int numLeftInType = this->gadgetHeader.npart[type] -
+    int numLeftInType = this->gadgetHeader.npart[type] - 
                         (curParticle - this->gadgetStart[type]);
     int count = min(particlesRemaining, numLeftInType);
 
@@ -1466,7 +1480,7 @@ void ParticleDistribute::readFromBlockFile(
       (POSVEL_T) this->gadgetHeader.mass[type] * this->massConvertFactor;
 
     // Place particles of this type and mass in the buffer
-    int numLeftInType = this->gadgetHeader.npart[type] -
+    int numLeftInType = this->gadgetHeader.npart[type] - 
                         (curParticle - this->gadgetStart[type]);
     int count = min(particlesRemaining, numLeftInType);
 

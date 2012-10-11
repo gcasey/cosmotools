@@ -56,12 +56,10 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string>
 #include <vector>
 
-using namespace std;
-
-
 #include "ChainingMesh.h"
 
 namespace cosmologytools {
+
 ///////////////////////////////////////////////////////////////////////////
 //
 // To calculate the exact r_200 store the distance and mass of each particle

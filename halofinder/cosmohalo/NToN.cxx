@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Read a series of .cosmo binary file files and redistribute into
+// Read a series of .cosmo binary file files and redistribute into 
 // N rectilinear parts such that there is a locality of particles in the files
 // decomposed over a space with either X or Z varying fastest
 //
@@ -114,15 +114,15 @@ void findInputFiles(string baseFile, vector<string>* files)
 ////////////////////////////////////////////////////////////////////////////
 
 void NToN(
-  const string& inFile,
-  int varyFastest,
-  int numberOfDimensions,
-  int* layoutSize,
-  int* slot,
-  float* step,
-  ofstream* outStream,
-  ID_T* numberOfInParticles,
-  ID_T* numberOfOutParticles)
+	const string& inFile, 
+	int varyFastest,
+	int numberOfDimensions, 
+	int* layoutSize,
+	int* slot,
+	float* step,
+	ofstream* outStream,
+	ID_T* numberOfInParticles,
+	ID_T* numberOfOutParticles)
 {
   // Size of .cosmo format
   int nfloat = 7, nint = 1;
@@ -228,7 +228,7 @@ void NToN(
               (slot[1] * layoutSize[2]) +
                slot[2];
 
-    outStream[index].write(reinterpret_cast<const char*>(fBlock),
+    outStream[index].write(reinterpret_cast<const char*>(fBlock), 
                          nfloat * sizeof(POSVEL_T));
     outStream[index].write(reinterpret_cast<const char*>(iBlock),
                          nint * sizeof(ID_T));
@@ -314,7 +314,7 @@ int main(int argc, char* argv[])
   cout << "Box size: " << boxSize << endl;
   cout << "Vary fastest in: " << varyFastest << endl;
   cout << "Dimensions: " << numberOfDimensions << endl;
-  cout << "Layout: ["
+  cout << "Layout: [" 
        << layout[0] << "," << layout[1] << "," << layout[2] << "]" << endl;
 
   // Find all the input files
@@ -353,7 +353,7 @@ int main(int argc, char* argv[])
 
   for (int file = 0; file < numberOfInFiles; file++) {
     NToN((*inFileName)[file], varyFastest, numberOfDimensions, layout,
-         slot, step, outStream,
+         slot, step, outStream, 
          &numberOfInParticles, numberOfOutParticles);
     totalInParticles += numberOfInParticles;
   }
@@ -369,7 +369,7 @@ int main(int argc, char* argv[])
 
   cout << "Total input particles: " << totalInParticles << endl;
   cout << "Total output particles: " << totalOutParticles << endl;
-
+  
   delete inFileName;
   delete outFileName;
   delete [] outStream;

@@ -77,6 +77,10 @@ void *bigchunk_malloc(size_t sz)
 		}
         }
 
+	if (_bigchunk_sz > 0)
+		fprintf(stderr, "WARNING: bigchunk: allocation of %zu bytes has been requested, only %zu of %zu remain!\n",
+				sz, _bigchunk_sz - _bigchunk_used, _bigchunk_sz);
+
 	void *ptr = malloc(sz);
 	if (ptr) _bigchunk_total += sz;
 	return ptr;
@@ -134,5 +138,10 @@ size_t bigchunk_get_size()
 size_t bigchunk_get_total()
 {
 	return _bigchunk_total;
+}
+
+size_t bigchunk_get_used()
+{
+	return _bigchunk_used;
 }
 

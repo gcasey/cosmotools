@@ -1,77 +1,51 @@
 /*=========================================================================
-
+                                                                                
 Copyright (c) 2007, Los Alamos National Security, LLC
 
 All rights reserved.
 
-Copyright 2007. Los Alamos National Security, LLC.
-This software was produced under U.S. Government contract DE-AC52-06NA25396
-for Los Alamos National Laboratory (LANL), which is operated by
-Los Alamos National Security, LLC for the U.S. Department of Energy.
-The U.S. Government has rights to use, reproduce, and distribute this software.
+Copyright 2007. Los Alamos National Security, LLC. 
+This software was produced under U.S. Government contract DE-AC52-06NA25396 
+for Los Alamos National Laboratory (LANL), which is operated by 
+Los Alamos National Security, LLC for the U.S. Department of Energy. 
+The U.S. Government has rights to use, reproduce, and distribute this software. 
 NEITHER THE GOVERNMENT NOR LOS ALAMOS NATIONAL SECURITY, LLC MAKES ANY WARRANTY,
-EXPRESS OR IMPLIED, OR ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.
-If software is modified to produce derivative works, such modified software
-should be clearly marked, so as not to confuse it with the version available
+EXPRESS OR IMPLIED, OR ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.  
+If software is modified to produce derivative works, such modified software 
+should be clearly marked, so as not to confuse it with the version available 
 from LANL.
-
-Additionally, redistribution and use in source and binary forms, with or
-without modification, are permitted provided that the following conditions
+ 
+Additionally, redistribution and use in source and binary forms, with or 
+without modification, are permitted provided that the following conditions 
 are met:
--   Redistributions of source code must retain the above copyright notice,
-    this list of conditions and the following disclaimer.
+-   Redistributions of source code must retain the above copyright notice, 
+    this list of conditions and the following disclaimer. 
 -   Redistributions in binary form must reproduce the above copyright notice,
     this list of conditions and the following disclaimer in the documentation
-    and/or other materials provided with the distribution.
+    and/or other materials provided with the distribution. 
 -   Neither the name of Los Alamos National Security, LLC, Los Alamos National
     Laboratory, LANL, the U.S. Government, nor the names of its contributors
-    may be used to endorse or promote products derived from this software
-    without specific prior written permission.
+    may be used to endorse or promote products derived from this software 
+    without specific prior written permission. 
 
 THIS SOFTWARE IS PROVIDED BY LOS ALAMOS NATIONAL SECURITY, LLC AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
-THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL SECURITY, LLC OR
-CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
-OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
-WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
-OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
+THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
+ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL SECURITY, LLC OR 
+CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, 
+EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, 
+PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; 
+OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, 
+WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR 
+OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF 
 ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
+                                                                                
 =========================================================================*/
 
 #ifndef BasicDefinition_h
 #define BasicDefinition_h
 
 #include "CosmologyToolsDefinitions.h"
-//#include <stdint.h>
-//
-//#ifdef ID_64
-//   typedef      int64_t ID_T;           // Particle and halo ids
-//#else
-//   typedef      int32_t ID_T;           // Particle and halo ids
-//#endif
-//
-//
-//#ifdef POSVEL_64
-//   typedef      double  POSVEL_T;       // Position,velocity
-//   typedef      double  POTENTIAL_T;    // Potential
-//#else
-//   typedef      float   POSVEL_T;       // Position,velocity
-//   typedef      float   POTENTIAL_T;    // Potential
-//#endif
-//
-//#ifdef GRID_64
-//   typedef      double  GRID_T;         // Grid types
-//#else
-//   typedef      float   GRID_T;         // Grid types
-//#endif
-//
-//typedef int32_t         STATUS_T; // Dead (which neighbor) or alive particles
-//typedef uint16_t        MASK_T;   // Other particle information
-
 
 ///////////////////////////////////////////////////////////////////////////
 namespace cosmologytools {
@@ -104,8 +78,8 @@ const double GRAVITY_C          = 43.015e-10;
                                 // Gravitional constant for potential energy
 const double ALPHA_SUBHALO	= 1.0;
                                 // Controls cut/grow of subhalo
-                                // 1.0 / alphaFactor is the number of times
-                                // larger a candidate must be in order for the
+                                // 1.0 / alphaFactor is the number of times 
+                                // larger a candidate must be in order for the 
                                 // smaller to be cut rather than allowed to grow
                                 // Set to 1.0 means always cut as in SUBFIND
                                 // Set to 0.2 main halo always wins cut/grow
@@ -117,10 +91,10 @@ const double BETA_SUBHALO	= 0.0;
                                 // saddlepoint particle, group is considered
                                 // significant and stands on its own
                                 // Set to 0.0 means always significant
-                                // Set to 0.25 helps small scale connectivity
+                                // Set to 0.25 helps small scale connectivity 
 
 const int    NUM_SPH_DENSITY	= 64;
-        // Number of neigbor particles used in
+				// Number of neigbor particles used in
                                 // calculating SPH smoothing length and density
 const int    NUM_SUBHALO_NEIGHBOR = 20;
                                 // Number of closest neighbors looked at
@@ -152,23 +126,23 @@ const int    MAX_UNBIND_3	= 40000;
                                 // the main subhalo and all particles unbound
                                 // would go to fuzz
 const int    FACTOR_UNBIND_1	= 4;
-        // Between MAX_UNBIND_1 and MAX_UNBIND_2
+				// Between MAX_UNBIND_1 and MAX_UNBIND_2
                                 // remove 25% of the positive total energy
                                 // particles
 const int    FACTOR_UNBIND_2	= 2;
-        // Betweend MAX_UNBIND_2 and MAX_UNBIND_3
+				// Betweend MAX_UNBIND_2 and MAX_UNBIND_3
                                 // remove 50% of the positive total energy
                                 // particles
 const int    MAX_UNBIND_DELETE	= 20;
                                 // To speed up unbinding when large candidate
                                 // reaches this number of particles with
                                 // positive total energy just quit
-
+                                                 
 
 // Cosmology record data in .cosmo format
 const int   COSMO_FLOAT = 7;    // x,y,z location and velocity plus mass
 const int   COSMO_INT   = 1;    // Particle id
-const int   RECORD_SIZE = sizeof(POSVEL_T) * COSMO_FLOAT +
+const int   RECORD_SIZE = sizeof(POSVEL_T) * COSMO_FLOAT + 
                           sizeof(ID_T) * COSMO_INT;
 
 const bool  ENFORCE_MAX_READ = false;

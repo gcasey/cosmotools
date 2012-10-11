@@ -138,7 +138,8 @@ void LANLHaloFinderAnalysisTool::WriteOutput()
     return;
     }
 
-  this->HaloFinder->writeTaggedParticles(true /*clearSerial*/);
+// TODO:
+//  this->HaloFinder->writeTaggedParticles(true /*clearSerial*/);
 }
 
 //-----------------------------------------------------------------------------

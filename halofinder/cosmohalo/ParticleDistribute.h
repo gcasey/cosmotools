@@ -62,21 +62,17 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <cstdlib>
 
-
-
 #include "Definition.h"
 #include <string>
 #include <vector>
 
-using namespace std;
-
+using std::string;
+using std::ifstream;
+using std::vector;
 
 namespace cosmologytools {
 
-
-
 class ParticleDistribute {
-
 public:
   ParticleDistribute();
   ~ParticleDistribute();
@@ -109,7 +105,7 @@ public:
 
   // Read particle files per processor and share all-to-all with others
   // extracting only the alive particles
-  void readParticlesAllToAll(int reserveQ = 0);
+  void readParticlesAllToAll(int reserveQ = 0, bool useAlltoallv = true);
 #endif
 
   // Read one particle file per processor with alive particles
@@ -217,7 +213,7 @@ private:
   bool   gadgetSwap;            // Endian swap needed
   long int gadgetParticleCount; // Total particles in the file
   long int gadgetStart[NUM_GADGET_TYPES];
-        // Offset into all particles for that type
+				// Offset into all particles for that type
 
   long   maxParticles;          // Largest number of particles in any file
   long   maxRead;               // Largest number of particles read at one time

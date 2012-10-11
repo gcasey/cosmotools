@@ -54,6 +54,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "HaloCenterFinder.h"
 #include "Timings.h"
 
+#include "GenericIO.h"
 
 using namespace std;
 
@@ -151,7 +152,7 @@ void FOFHaloProperties::setParticles(
 }
 
 void FOFHaloProperties::setParticles(
-      long count,
+			long count,
                         POSVEL_T* xLoc,
                         POSVEL_T* yLoc,
                         POSVEL_T* zLoc,
@@ -565,55 +566,35 @@ void FOFHaloProperties::FOFHaloCatalog(
                         vector<POSVEL_T>* yMeanVel,
                         vector<POSVEL_T>* zMeanVel)
 {
-  // Compose ascii and .cosmo binary file names
-  ostringstream aname, cname;
-  if (this->numProc == 1) {
-    aname << this->outFile << ".halocatalog.ascii";
-    cname << this->outFile << ".halocatalog.cosmo";
-  } else {
-    aname << this->outFile << ".halocatalog.ascii." << myProc;
-    cname << this->outFile << ".halocatalog.cosmo." << myProc;
-  }
-  ofstream aStream(aname.str().c_str(), ios::out);
-  ofstream cStream(cname.str().c_str(), ios::out|ios::binary);
+  ostringstream cname;
+  cname << this->outFile << ".halocatalog";
 
-  char str[1024];
-  float fBlock[COSMO_FLOAT];
-  int iBlock[COSMO_INT];
+  vector<ID_T> haloTags(this->numberOfHalos);
+  vector<POSVEL_T> centerX(this->numberOfHalos),
+                   centerY(this->numberOfHalos),
+                   centerZ(this->numberOfHalos);
 
   for (int halo = 0; halo < this->numberOfHalos; halo++) {
-
     int centerIndex = (*haloCenter)[halo];
     int haloTag = this->tag[this->halos[halo]];
 
-    // Write ascii
-    sprintf(str, "%12.4E %12.4E %12.4E %12.4E %12.4E %12.4E %12.4E %12d\n",
-      this->xx[centerIndex],
-      (*xMeanVel)[halo],
-      this->yy[centerIndex],
-      (*yMeanVel)[halo],
-      this->zz[centerIndex],
-      (*zMeanVel)[halo],
-      (*haloMass)[halo],
-      haloTag);
-      aStream << str;
-
-    fBlock[0] = this->xx[centerIndex];
-    fBlock[1] = (*xMeanVel)[halo];
-    fBlock[2] = this->yy[centerIndex];
-    fBlock[3] = (*yMeanVel)[halo];
-    fBlock[4] = this->zz[centerIndex];
-    fBlock[5] = (*zMeanVel)[halo];
-    fBlock[6] = (*haloMass)[halo];
-    cStream.write(reinterpret_cast<char*>(fBlock),
-                  COSMO_FLOAT * sizeof(POSVEL_T));
-
-    iBlock[0] = haloTag;
-    cStream.write(reinterpret_cast<char*>(iBlock),
-                  COSMO_INT * sizeof(ID_T));
+    haloTags[halo] = haloTag;
+    centerX[halo] = this->xx[centerIndex];
+    centerY[halo] = this->yy[centerIndex];
+    centerZ[halo] = this->zz[centerIndex];
   }
-  aStream.close();
-  cStream.close();
+
+  GenericIO GIO(Partition::getComm(), cname.str());
+  GIO.setNumElems(this->numberOfHalos);
+  GIO.addVariable("fof_halo_tag", haloTags);
+  GIO.addVariable("fof_halo_mass", *haloMass);
+  GIO.addVariable("fof_halo_center_x", centerX);
+  GIO.addVariable("fof_halo_center_y", centerY);
+  GIO.addVariable("fof_halo_center_z", centerZ);
+  GIO.addVariable("fof_halo_mean_vx", *xMeanVel);
+  GIO.addVariable("fof_halo_mean_vy", *yMeanVel);
+  GIO.addVariable("fof_halo_mean_vz", *zMeanVel);
+  GIO.write();
 }
 
 /////////////////////////////////////////////////////////////////////////
@@ -638,12 +619,12 @@ void FOFHaloProperties::printHaloSizes(int minSize)
 /////////////////////////////////////////////////////////////////////////
 
 void FOFHaloProperties::extractLocation(
-        int halo,
-        int* actualIndx,
-        POSVEL_T* xLocHalo,
-        POSVEL_T* yLocHalo,
-        POSVEL_T* zLocHalo,
-        ID_T* id)
+				int halo,
+				int* actualIndx,
+				POSVEL_T* xLocHalo,
+				POSVEL_T* yLocHalo,
+				POSVEL_T* zLocHalo,
+				ID_T* id)
 {
   int p = this->halos[halo];
   for (int i = 0; i < this->haloCount[halo]; i++) {
@@ -663,16 +644,16 @@ void FOFHaloProperties::extractLocation(
 /////////////////////////////////////////////////////////////////////////
 
 void FOFHaloProperties::extractInformation(
-        int halo,
-        int* actualIndx,
-        POSVEL_T* xLocHalo,
-        POSVEL_T* yLocHalo,
-        POSVEL_T* zLocHalo,
-        POSVEL_T* xVelHalo,
-        POSVEL_T* yVelHalo,
-        POSVEL_T* zVelHalo,
-        POSVEL_T* massHalo,
-        ID_T* id)
+				int halo,
+				int* actualIndx,
+				POSVEL_T* xLocHalo,
+				POSVEL_T* yLocHalo,
+				POSVEL_T* zLocHalo,
+				POSVEL_T* xVelHalo,
+				POSVEL_T* yVelHalo,
+				POSVEL_T* zVelHalo,
+				POSVEL_T* massHalo,
+				ID_T* id)
 {
   int p = this->halos[halo];
   for (int i = 0; i < this->haloCount[halo]; i++) {

@@ -9,12 +9,12 @@
  * This permission is perpetual, world-wide, and provided on a royalty-free
  * basis. UChicago Argonne, LLC and all other contributors make no
  * representations as to the suitability and operability of this software for
- * any purpose. It is provided "as is" without express or implied warranty.
+ * any purpose. It is provided "as is" without express or implied warranty. 
  *
  * Portions of this software are copyright by UChicago Argonne, LLC. Argonne
  * National Laboratory with facilities in the state of Illinois, is owned by
  * The United States Government, and operated by UChicago Argonne, LLC under
- * provision of a contract with the Department of Energy.
+ * provision of a contract with the Department of Energy. 
  *
  * PORTIONS OF THIS SOFTWARE  WERE PREPARED AS AN ACCOUNT OF WORK SPONSORED BY
  * AN AGENCY OF THE UNITED STATES GOVERNMENT. NEITHER THE UNITED STATES
@@ -28,7 +28,7 @@
  * NECESSARILY CONSTITUTE OR IMPLY ITS ENDORSEMENT, RECOMMENDATION, OR FAVORING
  * BY THE UNITED STATES GOVERNMENT OR ANY AGENCY THEREOF. THE VIEW AND OPINIONS
  * OF AUTHORS EXPRESSED HEREIN DO NOT NECESSARILY STATE OR REFLECT THOSE OF THE
- * UNITED STATES GOVERNMENT OR ANY AGENCY THEREOF.
+ * UNITED STATES GOVERNMENT OR ANY AGENCY THEREOF. 
  *
  * Author: Hal Finkel <hfinkel@anl.gov>
  */
@@ -36,11 +36,11 @@
 #ifndef BIGCHUNK_H
 #define BIGCHUNK_H
 
-#include <cstdlib>
-#include <cstdio>
-#include <cstddef>
+#include <stddef.h>
+#include <stdlib.h>
 
 #ifdef __cplusplus
+#include <new>
 extern "C" {
 #endif
 
@@ -88,6 +88,12 @@ size_t bigchunk_get_size();
 
 size_t bigchunk_get_total();
 
+/*
+ * Get the amount of the big chunk used.
+ */
+
+size_t bigchunk_get_used();
+
 #ifdef __cplusplus
 }
 
@@ -108,7 +114,7 @@ public:
 
   template <typename U>
   struct rebind {
-    typedef bigchunk_allocator<U> other;
+  	typedef bigchunk_allocator<U> other;
   };
 
 public:
@@ -134,7 +140,9 @@ public:
   pointer allocate(size_type n,
                    const void * /*hint*/ = 0)
   {
-    return (pointer) ::bigchunk_malloc(n*sizeof(T));
+    pointer p = (pointer) ::bigchunk_malloc(n*sizeof(T));
+    if (p) return p;
+    throw std::bad_alloc();
   }
 
   void deallocate(pointer p, size_type n)

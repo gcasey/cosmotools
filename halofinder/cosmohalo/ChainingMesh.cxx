@@ -1,45 +1,45 @@
 /*=========================================================================
-
+                                                                                
 Copyright (c) 2007, Los Alamos National Security, LLC
 
 All rights reserved.
 
-Copyright 2007. Los Alamos National Security, LLC.
-This software was produced under U.S. Government contract DE-AC52-06NA25396
-for Los Alamos National Laboratory (LANL), which is operated by
-Los Alamos National Security, LLC for the U.S. Department of Energy.
-The U.S. Government has rights to use, reproduce, and distribute this software.
+Copyright 2007. Los Alamos National Security, LLC. 
+This software was produced under U.S. Government contract DE-AC52-06NA25396 
+for Los Alamos National Laboratory (LANL), which is operated by 
+Los Alamos National Security, LLC for the U.S. Department of Energy. 
+The U.S. Government has rights to use, reproduce, and distribute this software. 
 NEITHER THE GOVERNMENT NOR LOS ALAMOS NATIONAL SECURITY, LLC MAKES ANY WARRANTY,
-EXPRESS OR IMPLIED, OR ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.
-If software is modified to produce derivative works, such modified software
-should be clearly marked, so as not to confuse it with the version available
+EXPRESS OR IMPLIED, OR ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.  
+If software is modified to produce derivative works, such modified software 
+should be clearly marked, so as not to confuse it with the version available 
 from LANL.
-
-Additionally, redistribution and use in source and binary forms, with or
-without modification, are permitted provided that the following conditions
+ 
+Additionally, redistribution and use in source and binary forms, with or 
+without modification, are permitted provided that the following conditions 
 are met:
--   Redistributions of source code must retain the above copyright notice,
-    this list of conditions and the following disclaimer.
+-   Redistributions of source code must retain the above copyright notice, 
+    this list of conditions and the following disclaimer. 
 -   Redistributions in binary form must reproduce the above copyright notice,
     this list of conditions and the following disclaimer in the documentation
-    and/or other materials provided with the distribution.
+    and/or other materials provided with the distribution. 
 -   Neither the name of Los Alamos National Security, LLC, Los Alamos National
     Laboratory, LANL, the U.S. Government, nor the names of its contributors
-    may be used to endorse or promote products derived from this software
-    without specific prior written permission.
+    may be used to endorse or promote products derived from this software 
+    without specific prior written permission. 
 
 THIS SOFTWARE IS PROVIDED BY LOS ALAMOS NATIONAL SECURITY, LLC AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
-THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL SECURITY, LLC OR
-CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
-OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
-WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
-OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
+THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
+ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL SECURITY, LLC OR 
+CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, 
+EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, 
+PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; 
+OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, 
+WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR 
+OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF 
 ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
+                                                                                
 =========================================================================*/
 
 #include <iostream>
@@ -61,7 +61,7 @@ namespace cosmologytools {
 
 /////////////////////////////////////////////////////////////////////////
 //
-// ChainingMesh assigns all particles on this processor to a 3D mesh
+// ChainingMesh assigns all particles on this processor to a 3D mesh 
 // of buckets for more efficient iteration on particles in an area
 //
 /////////////////////////////////////////////////////////////////////////
@@ -107,21 +107,21 @@ ChainingMesh::ChainingMesh(
 
   for (int dim = 0; dim < DIMENSION; dim++) {
     boxStep[dim] = this->boxSize / this->layoutSize[dim];
-
+   
     // Region of particles that are alive on this processor
     minAlive[dim] = this->layoutPos[dim] * boxStep[dim];
     maxAlive[dim] = minAlive[dim] + boxStep[dim];
     if (maxAlive[dim] > this->boxSize)
       maxAlive[dim] = this->boxSize;
-
+      
     // Allow for the boundary of dead particles, normalized to 0
     // Overall boundary will be [0:(rL+2*deadSize)]
     this->minRange[dim] = minAlive[dim] - this->deadSize;
     this->maxRange[dim] = maxAlive[dim] + this->deadSize;
 
     // How many chain mesh grids will fit
-    this->meshSize[dim] = (int)((this->maxRange[dim] - this->minRange[dim]) /
-        this->chainSize) + 1;
+    this->meshSize[dim] = (int)((this->maxRange[dim] - this->minRange[dim]) / 
+				this->chainSize) + 1;
   }
 
   // Create the chaining mesh
@@ -161,8 +161,8 @@ ChainingMesh::ChainingMesh(
   for (int dim = 0; dim < DIMENSION; dim++) {
     this->minRange[dim] = minLoc[dim];
     this->maxRange[dim] = maxLoc[dim];
-    this->meshSize[dim] = (int)((this->maxRange[dim] - this->minRange[dim]) /
-        this->chainSize) + 1;
+    this->meshSize[dim] = (int)((this->maxRange[dim] - this->minRange[dim]) / 
+				this->chainSize) + 1;
   }
 
   // Create the chaining mesh
@@ -281,7 +281,7 @@ void ChainingMesh::printChainingMeshCentroids()
         centroid[0] = 0.0;
         centroid[1] = 0.0;
         centroid[2] = 0.0;
-
+    
         // First particle in the bucket
         int p = this->buckets[i][j][k];
 
@@ -298,9 +298,9 @@ void ChainingMesh::printChainingMeshCentroids()
             centroid[dim] /= this->bucketCount[i][j][k];
         }
 
-        cout << "Bucket " << i << "," << j << "," << k
+        cout << "Bucket " << i << "," << j << "," << k 
              << " count = " << bucketCount[i][j][k]
-             << " centroid = " << centroid[0] << "," << centroid[1] << ","
+             << " centroid = " << centroid[0] << "," << centroid[1] << "," 
              << centroid[2] << endl;
       }
     }

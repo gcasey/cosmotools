@@ -1,45 +1,45 @@
 /*=========================================================================
-
+                                                                                
 Copyright (c) 2007, Los Alamos National Security, LLC
 
 All rights reserved.
 
-Copyright 2007. Los Alamos National Security, LLC.
-This software was produced under U.S. Government contract DE-AC52-06NA25396
-for Los Alamos National Laboratory (LANL), which is operated by
-Los Alamos National Security, LLC for the U.S. Department of Energy.
-The U.S. Government has rights to use, reproduce, and distribute this software.
+Copyright 2007. Los Alamos National Security, LLC. 
+This software was produced under U.S. Government contract DE-AC52-06NA25396 
+for Los Alamos National Laboratory (LANL), which is operated by 
+Los Alamos National Security, LLC for the U.S. Department of Energy. 
+The U.S. Government has rights to use, reproduce, and distribute this software. 
 NEITHER THE GOVERNMENT NOR LOS ALAMOS NATIONAL SECURITY, LLC MAKES ANY WARRANTY,
-EXPRESS OR IMPLIED, OR ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.
-If software is modified to produce derivative works, such modified software
-should be clearly marked, so as not to confuse it with the version available
+EXPRESS OR IMPLIED, OR ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.  
+If software is modified to produce derivative works, such modified software 
+should be clearly marked, so as not to confuse it with the version available 
 from LANL.
-
-Additionally, redistribution and use in source and binary forms, with or
-without modification, are permitted provided that the following conditions
+ 
+Additionally, redistribution and use in source and binary forms, with or 
+without modification, are permitted provided that the following conditions 
 are met:
--   Redistributions of source code must retain the above copyright notice,
-    this list of conditions and the following disclaimer.
+-   Redistributions of source code must retain the above copyright notice, 
+    this list of conditions and the following disclaimer. 
 -   Redistributions in binary form must reproduce the above copyright notice,
     this list of conditions and the following disclaimer in the documentation
-    and/or other materials provided with the distribution.
+    and/or other materials provided with the distribution. 
 -   Neither the name of Los Alamos National Security, LLC, Los Alamos National
     Laboratory, LANL, the U.S. Government, nor the names of its contributors
-    may be used to endorse or promote products derived from this software
-    without specific prior written permission.
+    may be used to endorse or promote products derived from this software 
+    without specific prior written permission. 
 
 THIS SOFTWARE IS PROVIDED BY LOS ALAMOS NATIONAL SECURITY, LLC AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
-THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL SECURITY, LLC OR
-CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
-OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
-WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
-OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
+THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
+ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL SECURITY, LLC OR 
+CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, 
+EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, 
+PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; 
+OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, 
+WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR 
+OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF 
 ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
+                                                                                
 =========================================================================*/
 
 #include <iostream>
@@ -63,37 +63,13 @@ namespace cosmologytools {
 /****************************************************************************/
 CosmoHaloFinder::CosmoHaloFinder()
 {
-  ht = 0;
-  xx = 0;
-  yy = 0;
-  zz = 0;
-  vx = 0;
-  vy = 0;
-  vz = 0;
-  ms = 0;
-  pt = 0;
+
+  nmin = 1;
 }
 
 /****************************************************************************/
 CosmoHaloFinder::~CosmoHaloFinder()
 {
-  if (xx != 0) delete [] xx;
-  if (yy != 0) delete [] yy;
-  if (zz != 0) delete [] zz;
-  if (vx != 0) delete [] vx;
-  if (vy != 0) delete [] vy;
-  if (vz != 0) delete [] vz;
-  if (ms != 0) delete [] ms;
-  if (pt != 0) delete [] pt;
-
-  if (ht != 0) delete [] ht;
-}
-
-/****************************************************************************/
-void CosmoHaloFinder::clearHaloTag()
-{
-  if (ht != 0) delete [] ht;
-  ht = 0;
 }
 
 
@@ -103,6 +79,7 @@ void CosmoHaloFinder::Execute()
   cout << "np:       " << np << endl;
   cout << "rL:       " << rL << endl;
   cout << "bb:       " << bb << endl;
+  cout << "nmin:     " << nmin << endl;
   cout << "pmin:     " << pmin << endl;
   cout << "periodic: " << (periodic ? "true" : "false") << endl;
 
@@ -133,8 +110,26 @@ void CosmoHaloFinder::Execute()
   Finding();
   Writing();
 #endif
-}
 
+  // Memory for the standalone halo finder is allocated in Reading()
+  // once the number of particles is known and it must be deleted here and
+  // not in the destructor because when the serial is called from the
+  // parallel, the halo structure is allocated there
+
+  if (xx != 0) delete [] xx;
+  if (yy != 0) delete [] yy;
+  if (zz != 0) delete [] zz;
+  if (vx != 0) delete [] vx;
+  if (vy != 0) delete [] vy;
+  if (vz != 0) delete [] vz;
+  if (ms != 0) delete [] ms;
+  if (pt != 0) delete [] pt;
+
+  if (ht != 0) delete [] ht;
+  if (halo != 0) delete [] halo;
+  if (nextp != 0) delete [] nextp;
+}
+ 
 /****************************************************************************/
 void CosmoHaloFinder::Reading()
 {
@@ -168,11 +163,15 @@ void CosmoHaloFinder::Reading()
   ms = new POSVEL_T[npart];
   pt = new int[npart];
 
+  // arrays used in finding halos
+  ht = new int[npart];
+  halo = new int[npart];
+  nextp = new int[npart];
+
   // rewind file to beginning for particle reads
   FileStream->seekg(0L, ios::beg);
 
   // create dataspace
-  data = new POSVEL_T*[numDataDims];
   for (int i=0; i<numDataDims; i++)
     data[i] = new POSVEL_T[npart];
 
@@ -206,7 +205,7 @@ void CosmoHaloFinder::Reading()
 
     // sanity check
     if (fBlock[0] > rL || fBlock[2] > rL || fBlock[4] > rL) {
-      cout << "rL is too small" << endl;
+      cout << "rL is too small" << endl; 
       exit (-1);
     }
 
@@ -222,10 +221,10 @@ void CosmoHaloFinder::Reading()
     zz[i] = fBlock[4];
     vz[i] = fBlock[5];
     ms[i] = fBlock[6];
-    pt[i] = iBlock[0];
-
+    pt[i] = iBlock[0]; 
+        
   } // i-loop
-
+  
   delete FileStream;
 
   return;
@@ -303,17 +302,11 @@ void CosmoHaloFinder::Finding()
   double t1=tim.tv_sec+(tim.tv_usec/1000000.0);
 #endif
 
-  v = new ValueIdPair[npart];
+  seq.resize(npart);
   for (int i = 0; i < npart; i++)
-    v[i].id = i;
+    seq[i] = i;
 
-  Reorder(0, npart, dataX);
-
-  seq = new int[npart];
-  for (int i=0; i<npart; i++)
-    seq[i] = v[i].id;
-
-  delete [] v;
+  Reorder(seq.begin(), seq.end(), dataX);
 
 
 #ifdef DEBUG
@@ -330,15 +323,10 @@ void CosmoHaloFinder::Finding()
   t1=tim.tv_sec+(tim.tv_usec/1000000.0);
 #endif
 
-  lb = new floatptr[numDataDims];
-  for (int i=0; i<numDataDims; i++)
-    lb[i] = new POSVEL_T[npart];
-
-  ub = new floatptr[numDataDims];
-  for (int i=0; i<numDataDims; i++)
-    ub[i] = new POSVEL_T[npart];
-
-  ComputeLU(0, npart);
+  lbound = new POSVEL_T[npart];
+  ubound = new POSVEL_T[npart];
+  POSVEL_T lb1[numDataDims], ub1[numDataDims];
+  ComputeLU(0, npart, dataX, lb1, ub1);
 
 #ifdef DEBUG
   gettimeofday(&tim, NULL);
@@ -354,16 +342,8 @@ void CosmoHaloFinder::Finding()
   t1=tim.tv_sec+(tim.tv_usec/1000000.0);
 #endif
 
-  // create ht[] to store halo assignment.
-  ht = new int[npart];
-  for (int i=0; i<npart; i++)
-    ht[i] = i;
-
-  // create workspace for halo finder.
-  halo  = new int[npart];
-  nextp = new int[npart];
-
   for (int i=0; i<npart; i++) {
+    ht[i] = i;
     halo[i] = i;
     nextp[i] = -1;
   }
@@ -379,111 +359,113 @@ void CosmoHaloFinder::Finding()
   //
   // CLEANUP
   //
-  for (int i=0; i<numDataDims; i++)
-    delete [] ub[i];
-  delete [] ub;
-
-  for (int i=0; i<numDataDims; i++)
-    delete [] lb[i];
-  delete [] lb;
-
-  delete [] seq;
-  delete [] halo;
-  delete [] nextp;
+  delete [] lbound;
+  delete [] ubound;
+  seq.clear();
 
   // done!
   return;
 }
 
 /****************************************************************************/
-void CosmoHaloFinder::Reorder(int first,
-                              int last,
-                              int dataFlag)
+void CosmoHaloFinder::Reorder(
+                        vector<int>::iterator first,
+                        vector<int>::iterator last,
+                        int axis)
 {
-  int len = last - first;
+    int length = std::distance(first, last);
+    vector<int>::iterator middle = first + length/2;
 
-  // base case
-  if (len == 1)
+    if (length == 1)
     return;
 
-  // non-base cases
-  for(int i = first; i < last; i++)
-    v[i].value = data[dataFlag][v[i].id];
+    nth_element(first, middle, last, kdCompare(data[axis]));
 
-  // divide
-  int half = len >> 1;
-  nth_element(&v[first], &v[first+half], &v[last], ValueIdPairLT());
-
-  Reorder(first, first+half, (dataFlag+1)%3);
-  Reorder(first+half,  last, (dataFlag+1)%3);
-
-  // done
-  return;
+    Reorder(first, middle, (axis+1) % numDataDims);
+    Reorder(middle, last, (axis+1) % numDataDims);
 }
 
 /****************************************************************************/
-void CosmoHaloFinder::ComputeLU(int first, int last)
+void CosmoHaloFinder::ComputeLU(
+                        int first,
+                        int last,
+                        int axis,
+                        POSVEL_T* ret_lb,
+                        POSVEL_T* ret_ub)
 {
   int len = last - first;
-
+    
   int middle  = first + len/2;
-  int middle1 = first + len/4;
-  int middle2 = first + 3*len/4;
 
+  int useDim = (axis + 2) % numDataDims;
+  POSVEL_T lb1[numDataDims], ub1[numDataDims];
+  POSVEL_T lb2[numDataDims], ub2[numDataDims];
+  
   // base cases
   if (len == 2) {
     int ii = seq[first];
     int jj = seq[first+1];
 
-    lb[dataX][middle] = min(data[dataX][ii], data[dataX][jj]);
-    lb[dataY][middle] = min(data[dataY][ii], data[dataY][jj]);
-    lb[dataZ][middle] = min(data[dataZ][ii], data[dataZ][jj]);
+    lbound[middle] = min(data[useDim][ii], data[useDim][jj]);
+    ubound[middle] = max(data[useDim][ii], data[useDim][jj]);
 
-    ub[dataX][middle] = max(data[dataX][ii], data[dataX][jj]);
-    ub[dataY][middle] = max(data[dataY][ii], data[dataY][jj]);
-    ub[dataZ][middle] = max(data[dataZ][ii], data[dataZ][jj]);
+    ret_lb[dataX] = min(data[dataX][ii], data[dataX][jj]);
+    ret_lb[dataY] = min(data[dataY][ii], data[dataY][jj]);
+    ret_lb[dataZ] = min(data[dataZ][ii], data[dataZ][jj]);
+
+    ret_ub[dataX] = max(data[dataX][ii], data[dataX][jj]);
+    ret_ub[dataY] = max(data[dataY][ii], data[dataY][jj]);
+    ret_ub[dataZ] = max(data[dataZ][ii], data[dataZ][jj]);
 
     return;
   }
 
   // this case is needed when npart is a non-power-of-two
   if (len == 3) {
-    // fill lb[][middle2] and ub[][middle2]
-    ComputeLU(first+1, last);
+    ComputeLU(first+1, last, (axis + 1) %3, lb2, ub2);
 
     int ii = seq[first];
 
-    lb[dataX][middle] = min(data[dataX][ii], lb[dataX][middle2]);
-    lb[dataY][middle] = min(data[dataY][ii], lb[dataY][middle2]);
-    lb[dataZ][middle] = min(data[dataZ][ii], lb[dataZ][middle2]);
+    lbound[middle] = min(data[useDim][ii], lb2[useDim]);
+    ubound[middle] = max(data[useDim][ii], ub2[useDim]);
 
-    ub[dataX][middle] = max(data[dataX][ii], ub[dataX][middle2]);
-    ub[dataY][middle] = max(data[dataY][ii], ub[dataY][middle2]);
-    ub[dataZ][middle] = max(data[dataZ][ii], ub[dataZ][middle2]);
+    ret_lb[dataX] = min(data[dataX][ii], lb2[dataX]);
+    ret_lb[dataY] = min(data[dataY][ii], lb2[dataY]);
+    ret_lb[dataZ] = min(data[dataZ][ii], lb2[dataZ]);
+
+    ret_ub[dataX] = max(data[dataX][ii], ub2[dataX]);
+    ret_ub[dataY] = max(data[dataY][ii], ub2[dataY]);
+    ret_ub[dataZ] = max(data[dataZ][ii], ub2[dataZ]);
 
     return;
   }
 
   // non-base cases
 
-  ComputeLU(first, middle);
-  ComputeLU(middle,  last);
+  ComputeLU(first, middle, (axis + 1) % numDataDims, lb1, ub1);
+  ComputeLU(middle,  last, (axis + 1) % numDataDims, lb2, ub2);
 
   // compute LU at the bottom-up pass
-  lb[dataX][middle] = min(lb[dataX][middle1], lb[dataX][middle2]);
-  lb[dataY][middle] = min(lb[dataY][middle1], lb[dataY][middle2]);
-  lb[dataZ][middle] = min(lb[dataZ][middle1], lb[dataZ][middle2]);
+  lbound[middle] = min(lb1[useDim], lb2[useDim]);
+  ubound[middle] = max(ub1[useDim], ub2[useDim]);
 
-  ub[dataX][middle] = max(ub[dataX][middle1], ub[dataX][middle2]);
-  ub[dataY][middle] = max(ub[dataY][middle1], ub[dataY][middle2]);
-  ub[dataZ][middle] = max(ub[dataZ][middle1], ub[dataZ][middle2]);
+  ret_lb[dataX] = min(lb1[dataX], lb2[dataX]);
+  ret_lb[dataY] = min(lb1[dataY], lb2[dataY]);
+  ret_lb[dataZ] = min(lb1[dataZ], lb2[dataZ]);
+
+  ret_ub[dataX] = max(ub1[dataX], ub2[dataX]);
+  ret_ub[dataY] = max(ub1[dataY], ub2[dataY]);
+  ret_ub[dataZ] = max(ub1[dataZ], ub2[dataZ]);
 
   // done
   return;
 }
 
 /****************************************************************************/
-void CosmoHaloFinder::myFOF(int first, int last, int dataFlag)
+void CosmoHaloFinder::myFOF(
+                        int first,
+                        int last,
+                        int dataFlag)
 {
   int len = last - first;
 
@@ -496,8 +478,8 @@ void CosmoHaloFinder::myFOF(int first, int last, int dataFlag)
   // divide
   int middle = first + len/2;
 
-  myFOF(first, middle, (dataFlag+1)%3);
-  myFOF(middle,  last, (dataFlag+1)%3);
+  myFOF(first, middle, (dataFlag+1) % numDataDims);
+  myFOF(middle,  last, (dataFlag+1) % numDataDims);
 
   // recursive merge
   Merge(first, middle, middle, last, dataFlag);
@@ -507,7 +489,10 @@ void CosmoHaloFinder::myFOF(int first, int last, int dataFlag)
 }
 
 /****************************************************************************/
-void CosmoHaloFinder::Merge(int first1, int last1, int first2, int last2, int dataFlag)
+void CosmoHaloFinder::Merge(
+                        int first1, int last1, 
+                        int first2, int last2, 
+                        int dataFlag)
 {
   int len1 = last1 - first1;
   int len2 = last2 - first2;
@@ -516,35 +501,75 @@ void CosmoHaloFinder::Merge(int first1, int last1, int first2, int last2, int da
   // len1 == 1 || len2 == 1
   // len1 == 1,2 && len2 == 1,2 (2 for non-power-of-two case)
   if (len1 == 1 || len2 == 1) {
-    for (int i=0; i<len1; i++)
-    for (int j=0; j<len2; j++) {
+    // If the minimum number of neighbors is at least two, then we need to check
+    // before actually doing the neighbor merge.
+    bool hasNMin = nmin < 2 ? true : false;
+    int nCnt = 0;
+
+    for (int i=0; i<len1 && !hasNMin; i++)
+    for (int j=0; j<len2 && !hasNMin; j++) {
       int ii = seq[first1+i];
       int jj = seq[first2+j];
-
+  
       // fast exit
       if (ht[ii] == ht[jj])
         continue;
-
+  
       // ht[ii] != ht[jj]
       POSVEL_T xdist = fabs(data[dataX][jj] - data[dataX][ii]);
       POSVEL_T ydist = fabs(data[dataY][jj] - data[dataY][ii]);
       POSVEL_T zdist = fabs(data[dataZ][jj] - data[dataZ][ii]);
-
+  
       if (periodic) {
         xdist = min(xdist, np-xdist);
         ydist = min(ydist, np-ydist);
         zdist = min(zdist, np-zdist);
       }
-
+  
       if ((xdist<bb) && (ydist<bb) && (zdist<bb)) {
-
+ 
         POSVEL_T dist = xdist*xdist + ydist*ydist + zdist*zdist;
         if (dist < bb*bb) {
+          ++nCnt;
+          if (nCnt >= nmin)
+            hasNMin = true;
+        }
+      }
+    } // (i,j)-loop
 
+    // If we don't have the required number of neighbors, then we're done.
+    if (!hasNMin)
+      return;
+
+    for (int i=0; i<len1; i++)
+    for (int j=0; j<len2; j++) {
+      int ii = seq[first1+i];
+      int jj = seq[first2+j];
+  
+      // fast exit
+      if (ht[ii] == ht[jj])
+        continue;
+  
+      // ht[ii] != ht[jj]
+      POSVEL_T xdist = fabs(data[dataX][jj] - data[dataX][ii]);
+      POSVEL_T ydist = fabs(data[dataY][jj] - data[dataY][ii]);
+      POSVEL_T zdist = fabs(data[dataZ][jj] - data[dataZ][ii]);
+  
+      if (periodic) {
+        xdist = min(xdist, np-xdist);
+        ydist = min(ydist, np-ydist);
+        zdist = min(zdist, np-zdist);
+      }
+  
+      if ((xdist<bb) && (ydist<bb) && (zdist<bb)) {
+  
+        POSVEL_T dist = xdist*xdist + ydist*ydist + zdist*zdist;
+        if (dist < bb*bb) {
+  
           // union two halos to one
           int newHaloId = min(ht[ii], ht[jj]);
           int oldHaloId = max(ht[ii], ht[jj]);
-
+  
           // update particles with oldHaloId
           int last = -1;
           int ith = halo[oldHaloId];
@@ -553,7 +578,7 @@ void CosmoHaloFinder::Merge(int first1, int last1, int first2, int last2, int da
             last = ith;
             ith = nextp[ith];
           }
-
+  
           // update halo's linked list
           nextp[last] = halo[newHaloId];
           halo[newHaloId] = halo[oldHaloId];
@@ -571,10 +596,10 @@ void CosmoHaloFinder::Merge(int first1, int last1, int first2, int last2, int da
   int middle1 = first1 + len1/2;
   int middle2 = first2 + len2/2;
 
-  POSVEL_T lL = lb[dataFlag][middle1];
-  POSVEL_T uL = ub[dataFlag][middle1];
-  POSVEL_T lR = lb[dataFlag][middle2];
-  POSVEL_T uR = ub[dataFlag][middle2];
+  POSVEL_T lL = lbound[middle1];
+  POSVEL_T uL = ubound[middle1];
+  POSVEL_T lR = lbound[middle2];
+  POSVEL_T uR = ubound[middle2];
 
   POSVEL_T dL = uL - lL;
   POSVEL_T dR = uR - lR;
@@ -590,7 +615,7 @@ void CosmoHaloFinder::Merge(int first1, int last1, int first2, int last2, int da
   // continue merging
 
   // move to the next axis
-  dataFlag = (dataFlag + 1) % 3;
+  dataFlag = (dataFlag + 1) % numDataDims;
 
   Merge(first1, middle1,  first2, middle2, dataFlag);
   Merge(first1, middle1, middle2,   last2, dataFlag);

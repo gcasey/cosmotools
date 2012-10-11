@@ -1,45 +1,45 @@
 /*=========================================================================
-
+                                                                                
 Copyright (c) 2007, Los Alamos National Security, LLC
 
 All rights reserved.
 
-Copyright 2007. Los Alamos National Security, LLC.
-This software was produced under U.S. Government contract DE-AC52-06NA25396
-for Los Alamos National Laboratory (LANL), which is operated by
-Los Alamos National Security, LLC for the U.S. Department of Energy.
-The U.S. Government has rights to use, reproduce, and distribute this software.
+Copyright 2007. Los Alamos National Security, LLC. 
+This software was produced under U.S. Government contract DE-AC52-06NA25396 
+for Los Alamos National Laboratory (LANL), which is operated by 
+Los Alamos National Security, LLC for the U.S. Department of Energy. 
+The U.S. Government has rights to use, reproduce, and distribute this software. 
 NEITHER THE GOVERNMENT NOR LOS ALAMOS NATIONAL SECURITY, LLC MAKES ANY WARRANTY,
-EXPRESS OR IMPLIED, OR ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.
-If software is modified to produce derivative works, such modified software
-should be clearly marked, so as not to confuse it with the version available
+EXPRESS OR IMPLIED, OR ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.  
+If software is modified to produce derivative works, such modified software 
+should be clearly marked, so as not to confuse it with the version available 
 from LANL.
-
-Additionally, redistribution and use in source and binary forms, with or
-without modification, are permitted provided that the following conditions
+ 
+Additionally, redistribution and use in source and binary forms, with or 
+without modification, are permitted provided that the following conditions 
 are met:
--   Redistributions of source code must retain the above copyright notice,
-    this list of conditions and the following disclaimer.
+-   Redistributions of source code must retain the above copyright notice, 
+    this list of conditions and the following disclaimer. 
 -   Redistributions in binary form must reproduce the above copyright notice,
     this list of conditions and the following disclaimer in the documentation
-    and/or other materials provided with the distribution.
+    and/or other materials provided with the distribution. 
 -   Neither the name of Los Alamos National Security, LLC, Los Alamos National
     Laboratory, LANL, the U.S. Government, nor the names of its contributors
-    may be used to endorse or promote products derived from this software
-    without specific prior written permission.
+    may be used to endorse or promote products derived from this software 
+    without specific prior written permission. 
 
 THIS SOFTWARE IS PROVIDED BY LOS ALAMOS NATIONAL SECURITY, LLC AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
-THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL SECURITY, LLC OR
-CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
-OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
-WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
-OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
+THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
+ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL SECURITY, LLC OR 
+CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, 
+EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, 
+PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; 
+OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, 
+WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR 
+OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF 
 ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
+                                                                                
 =========================================================================*/
 
 #include <iostream>
@@ -99,13 +99,13 @@ SubHaloFinder::~SubHaloFinder()
 /////////////////////////////////////////////////////////////////////////
 
 void SubHaloFinder::setParameters(
-      POSVEL_T avgMass,
-      POSVEL_T G,
-      POSVEL_T alpha,
-      POSVEL_T beta,
-      int minCandSize,
-      int numSPH,
-      int numClose)
+			POSVEL_T avgMass,
+			POSVEL_T G,
+			POSVEL_T alpha,
+			POSVEL_T beta,
+			int minCandSize,
+			int numSPH,
+			int numClose)
 {
   this->particleMass = avgMass;
   this->gravityConstant = G;
@@ -127,7 +127,7 @@ void SubHaloFinder::setParameters(
 /////////////////////////////////////////////////////////////////////////
 
 void SubHaloFinder::setParticles(
-      ID_T count,
+			ID_T count,
                         POSVEL_T* xLocHalo,
                         POSVEL_T* yLocHalo,
                         POSVEL_T* zLocHalo,
@@ -213,7 +213,7 @@ void SubHaloFinder::findSubHalos()
   }
 
   // BHTree is constructed from halo particles
-  this->bhTree = new BHTree(minLoc, maxLoc,
+  this->bhTree = new BHTree(minLoc, maxLoc, 
                             this->particleCount,
                             this->xx, this->yy, this->zz, this->mass,
                             this->particleMass);
@@ -333,14 +333,14 @@ void SubHaloFinder::findSubHalos()
 /////////////////////////////////////////////////////////////////////////
 //
 //   b) Join an existing candidate:
-//      If there is only one neighbor, or if there are two neighbors
+//      If there is only one neighbor, or if there are two neighbors 
 //        but they are members of the same candidate
 //          add this particle to that candidate if it has not been cut
-//          otherwise search the massive partners looking for one that
+//          otherwise search the massive partners looking for one that 
 //            is not cut and add the particle there
 //          Method: joinCandidate()
 //
-//      If there are two neighbors in two different candidates which are
+//      If there are two neighbors in two different candidates which are 
 //        already placed in the same branch in the tree (top is equal)
 //        If neither candidate is cut, but one is much smaller than the other
 //          cut the smaller candidate and set massive parter to the larger
@@ -365,7 +365,7 @@ void SubHaloFinder::findSubHalos()
 //            Add saddlepoint particle to the larger
 //            Method: combineCandidate()
 //
-//      Otherwise the two candidates must be merged into the tree
+//      Otherwise the two candidates must be merged into the tree 
 //        with a new branch candidate being created
 //        Candidates can be two leaf candidates
 //        Candidates can be one leaf candidate and one branch candidate
@@ -408,7 +408,7 @@ void SubHaloFinder::findSubHalos()
 //   within the candidate indicates what branch that particle belongs in.
 //
 //   The "particleList" is of particleCount size.  The SubHaloCandidate points
-//   to the index of its first particle member and that position in the
+//   to the index of its first particle member and that position in the 
 //   particleList points to the next particle in the candidate.  This allows
 //   locating all particles in a single candidate.
 //
@@ -448,8 +448,8 @@ void SubHaloFinder::calculateSubGroups()
     set<int> possibleGroup;
     set<int>::iterator siter;
 
-    this->bhTree->getClosestNeighbors(this->numberOfCloseNeighbors,
-                                      particleIndx, pos, h,
+    this->bhTree->getClosestNeighbors(this->numberOfCloseNeighbors, 
+                                      particleIndx, pos, h, 
                                       this->particleCount, neighborList);
 
     // Find the neighbors which have already been placed in candidates
@@ -566,7 +566,7 @@ void SubHaloFinder::calculateSubGroups()
   }
 
   // Last candidate holds the fuzz which are unbound particles
-  SubHaloCandidate* candidate = new SubHaloCandidate();
+  SubHaloCandidate* candidate = new SubHaloCandidate(); 
   this->fuzz = this->candidateCount;
   candidate->top = -1;
   candidate->first = -1;
@@ -587,10 +587,10 @@ void SubHaloFinder::calculateSubGroups()
 /////////////////////////////////////////////////////////////////////////
 
 void SubHaloFinder::makeNewCandidate(int p)
-{
+{    
   ID_T particleIndx = this->data[p].particleId;
 
-  SubHaloCandidate* candidate = new SubHaloCandidate();
+  SubHaloCandidate* candidate = new SubHaloCandidate(); 
   candidate->top = this->candidateCount;
   candidate->first = particleIndx;
   candidate->partner = -1;
@@ -685,7 +685,7 @@ void SubHaloFinder::removeParticleFromCandidate(int particleIndx, int cIndx)
 //
 /////////////////////////////////////////////////////////////////////////
 
-void SubHaloFinder::mergeCandidate(int p,
+void SubHaloFinder::mergeCandidate(int p, 
                                    int cand1, int cand2,
                                    int top1, int top2)
 {
@@ -729,7 +729,7 @@ void SubHaloFinder::mergeCandidate(int p,
   if (hasChildren2 == 0) {
     if (significant == 0)
       removeCandidate2 = 1;
-    else if (cutCandidate2 == 1 &&
+    else if (cutCandidate2 == 1 && 
              this->candidates[cand2]->count < this->minCandidateSize)
       removeCandidate2 = 1;
   }
@@ -741,7 +741,7 @@ void SubHaloFinder::mergeCandidate(int p,
   //       If same size, keep both open for GROW
   if (removeCandidate2 == 0) {
 
-    SubHaloCandidate* candidate = new SubHaloCandidate();
+    SubHaloCandidate* candidate = new SubHaloCandidate(); 
     candidate->top = this->candidateCount;
     candidate->first = -1;
     candidate->partner = -1;
@@ -827,7 +827,7 @@ void SubHaloFinder::mergeCandidate(int p,
 //
 // Combine one candidate into another candidate
 // All particles in second candidate are moved to the first candidate
-//
+// 
 /////////////////////////////////////////////////////////////////////////
 
 void SubHaloFinder::combineCandidate(int cand1, int cand2)
@@ -980,7 +980,7 @@ void SubHaloFinder::unbindCandidate(int cIndx)
 void SubHaloFinder::printCandidate(int cIndx, int indent)
 {
        cout << setw(7) << indent << ": "
-       << "Candidate " << setw(7) << cIndx
+       << "Candidate " << setw(7) << cIndx 
        << " total " << setw(8) << this->candidates[cIndx]->totalCount
        << " count " << setw(8) << this->candidates[cIndx]->count
        << " parent " << setw(7) << this->candidates[cIndx]->parent
@@ -1007,7 +1007,7 @@ void SubHaloFinder::printSubHalo(int cIndx, int indent)
 {
   if (this->candidates[cIndx]->count > 0) {
          cout << setw(7) << indent << ": "
-         << "Subhalo " << setw(7) << cIndx
+         << "Subhalo " << setw(7) << cIndx 
          << " total " << setw(8) << this->candidates[cIndx]->totalCount
          << " count " << setw(8) << this->candidates[cIndx]->count
          << " parent " << setw(7) << this->candidates[cIndx]->parent
@@ -1111,7 +1111,7 @@ void SubHaloFinder::unbindParticles(int cIndx)
   while (numberLeft >= this->minCandidateSize && bindDone == 0) {
 
     vector<ValueInfo>* totalEnergy = new vector<ValueInfo>[numberLeft];
-
+    
     // Calculate the average velocity of the body of particles
     POSVEL_T xAvg = 0.0;
     POSVEL_T yAvg = 0.0;
@@ -1141,9 +1141,9 @@ void SubHaloFinder::unbindParticles(int cIndx)
           POSVEL_T xdist = (POSVEL_T) fabs(xLoc[i] - xLoc[j]);
           POSVEL_T ydist = (POSVEL_T) fabs(yLoc[i] - yLoc[j]);
           POSVEL_T zdist = (POSVEL_T) fabs(zLoc[i] - zLoc[j]);
-
+  
           POSVEL_T r = sqrt((xdist*xdist) + (ydist*ydist) + (zdist*zdist));
-
+  
           if (r != 0.0) {
             lpot[i] = (POTENTIAL_T)(lpot[i] - (1.0 / r));
             lpot[j] = (POTENTIAL_T)(lpot[j] - (1.0 / r));
@@ -1186,8 +1186,8 @@ void SubHaloFinder::unbindParticles(int cIndx)
       else if (numberLeft >= MAX_UNBIND_2 && numberLeft < MAX_UNBIND_3)
         maxToDelete = (positiveTECount / FACTOR_UNBIND_2) + 1;
 #ifdef DEBUG
-      cout << "Unbind at most " << maxToDelete
-           << " particles numberLeft " << numberLeft
+      cout << "Unbind at most " << maxToDelete 
+           << " particles numberLeft " << numberLeft 
            << " numberOfParticles " << numberOfParticles
            << " total energy " << (*totalEnergy)[maxToDelete - 1].value << endl;
 #endif
@@ -1215,7 +1215,7 @@ void SubHaloFinder::unbindParticles(int cIndx)
   // Not enough bound particles so move all to the massive partner
   if (numberOfBoundParticles < this->minCandidateSize) {
 #ifdef DEBUG
-    cout << "\tDISCARD move to partner " << massivePartner
+    cout << "\tDISCARD move to partner " << massivePartner 
          << " number of particles " << numberOfBoundParticles << endl;
 #endif
     if (massivePartner >= 0)
@@ -1227,7 +1227,7 @@ void SubHaloFinder::unbindParticles(int cIndx)
   // Enough bound particles for subhalo, move only the unbound particles
   else {
 #ifdef DEBUG
-    cout << "UNBIND " << numberOfBoundParticles
+    cout << "UNBIND " << numberOfBoundParticles 
          << " particles to massive partner " << massivePartner << endl;
 #endif
     for (int i = 0; i < numberOfParticles; i++) {
@@ -1254,7 +1254,7 @@ void SubHaloFinder::unbindParticles(int cIndx)
   delete [] lpot;
 
 #ifdef DEBUG
-    cout << "UNBIND CANDIDATE " << setw(7) << cIndx
+    cout << "UNBIND CANDIDATE " << setw(7) << cIndx 
          << " totalcount " << setw(8) << this->candidates[cIndx]->totalCount
          << " count " << setw(8) << this->candidates[cIndx]->count
          << " partner " << setw(8) << massivePartner
@@ -1301,7 +1301,7 @@ void SubHaloFinder::writeSubhaloCosmoFile(const string& outFile)
     mapCandidate[oldCandidate] = i;
 #ifdef DEBUG
     cout << "Map candidate " << setw(7) << groups[i].particleId
-         << " to subhalo " << setw(7) << i
+         << " to subhalo " << setw(7) << i 
          << " with count " << setw(10) << groups[i].value << endl;
 #endif
   }
@@ -1310,7 +1310,7 @@ void SubHaloFinder::writeSubhaloCosmoFile(const string& outFile)
   mapCandidate[fuzz] = numberOfSubhalos;
 #ifdef DEBUG
   cout << "Map fuzz candidate " << fuzz
-       << " to candidate " << numberOfSubhalos
+       << " to candidate " << numberOfSubhalos 
        << " with count " << this->candidates[fuzz]->count << endl;
 #endif
 
