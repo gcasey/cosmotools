@@ -19,7 +19,7 @@ if(${TYPE_GRID_DOUBLE})
 endif()
 
 ## Set whether to use 64-bit integer for IDs
-option(TYPE_IDS_64BITS "Use 64 bit IDs for integers" OFF)
+option(TYPE_IDS_64BITS "Use 64 bit IDs for integers" ON)
 if(${TYPE_IDS_64BITS})
  add_definitions(-DTYPE_IDS_64BITS)
 endif()
