@@ -28,21 +28,23 @@ include_directories(BEFORE ${PACKAGE_sfprobe_INCLUDE_DIRS})
 
 ## Set the server-manager XML
 set(SMXML
+    resources/Cosmo64Reader.xml
     resources/DensityProfile.xml
     resources/LANLHaloFinder.xml
+    resources/StructureFormationProbe.xml
     resources/VoronoiFilter.xml
     resources/vtkPVoronoiReader.xml
-    resources/StructureFormationProbe.xml
     )
 
 ## Set the server-manager sources
 set(SMSRC
-    filters/vtkCosmoDensityProfile.cxx
-    filters/vtkPLANLHaloFinder.cxx
-    filters/vtkPStructureFormationProbe.cxx
     filters/VoronoiFilter.cxx
+    filters/vtkCosmoDensityProfile.cxx
     filters/vtkMinkowskiFilter.cxx
+    filters/vtkPLANLHaloFinder.cxx
     filters/vtkPMergeConnected.cxx
+    filters/vtkPStructureFormationProbe.cxx
+    readers/vtkPCosmo64Reader.cxx
     readers/vtkPVoronoiReader.cxx
     )
 

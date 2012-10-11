@@ -1,7 +1,7 @@
 /*=========================================================================
 
   Program:   Visualization Toolkit
-  Module:    vtkPCosmoReader.cxx
+  Module:    vtkPCosmo64Reader.cxx
 
   Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
   All rights reserved.
@@ -15,7 +15,7 @@
 /*=========================================================================
 
   Program:   VTK/ParaView Los Alamos National Laboratory Modules (PVLANL)
-  Module:    vtkPCosmoReader.cxx
+  Module:    vtkPCosmo64Reader.cxx
 
 Copyright (c) 2009 Los Alamos National Security, LLC
 
@@ -73,7 +73,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "vtkIntArray.h"
 #include "vtkMultiProcessController.h"
 #include "vtkObjectFactory.h"
-#include "vtkPCosmoReader.h"
+#include "vtkPCosmo64Reader.h"
 #include "vtkPointData.h"
 #include "vtkPoints.h"
 #include "vtkSmartPointer.h"
@@ -92,10 +92,14 @@ using namespace std;
 #include "ParticleExchange.h"
 #include "ParticleDistribute.h"
 
-vtkStandardNewMacro(vtkPCosmoReader);
+using cosmologytools::Partition;
+using cosmologytools::ParticleDistribute;
+using cosmologytools::ParticleExchange;
+
+vtkStandardNewMacro(vtkPCosmo64Reader);
 
 //----------------------------------------------------------------------------
-vtkPCosmoReader::vtkPCosmoReader()
+vtkPCosmo64Reader::vtkPCosmo64Reader()
 {
   this->SetNumberOfInputPorts(0);
 
@@ -103,19 +107,19 @@ vtkPCosmoReader::vtkPCosmoReader()
   this->SetController(vtkMultiProcessController::GetGlobalController());
   if(!this->Controller)
     {
-      this->SetController(vtkSmartPointer<vtkDummyController>::New());
+    this->SetController(vtkSmartPointer<vtkDummyController>::New());
     }
 
-  this->FileName = NULL;
-  this->RL = 100;
-  this->Overlap = 5;
-  this->ReadMode = 1;
+  this->FileName    = NULL;
+  this->RL          = 100;
+  this->Overlap     = 5;
+  this->ReadMode    = 1;
   this->CosmoFormat = 1;
-  this->ByteSwap = 0;
+  this->ByteSwap    = 0;
 }
 
 //----------------------------------------------------------------------------
-vtkPCosmoReader::~vtkPCosmoReader()
+vtkPCosmo64Reader::~vtkPCosmo64Reader()
 {
   if (this->FileName)
     {
@@ -126,7 +130,7 @@ vtkPCosmoReader::~vtkPCosmoReader()
 }
 
 //----------------------------------------------------------------------------
-void vtkPCosmoReader::PrintSelf(ostream& os, vtkIndent indent)
+void vtkPCosmo64Reader::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os,indent);
 
@@ -147,7 +151,7 @@ void vtkPCosmoReader::PrintSelf(ostream& os, vtkIndent indent)
 }
 
 //----------------------------------------------------------------------------
-void vtkPCosmoReader::SetController(vtkMultiProcessController *c)
+void vtkPCosmo64Reader::SetController(vtkMultiProcessController *c)
 {
   if(this->Controller == c)
     {
@@ -171,13 +175,13 @@ void vtkPCosmoReader::SetController(vtkMultiProcessController *c)
   c->Register(this);
 }
 
-vtkMultiProcessController* vtkPCosmoReader::GetController()
+vtkMultiProcessController* vtkPCosmo64Reader::GetController()
 {
   return (vtkMultiProcessController*)this->Controller;
 }
 
 //----------------------------------------------------------------------------
-int vtkPCosmoReader::RequestInformation(
+int vtkPCosmo64Reader::RequestInformation(
   vtkInformation *vtkNotUsed(request),
   vtkInformationVector **vtkNotUsed(inputVector),
   vtkInformationVector *outputVector)
@@ -199,7 +203,7 @@ int vtkPCosmoReader::RequestInformation(
 }
 
 //----------------------------------------------------------------------------
-int vtkPCosmoReader::RequestData(
+int vtkPCosmo64Reader::RequestData(
   vtkInformation *vtkNotUsed(request),
   vtkInformationVector **vtkNotUsed(inputVector),
   vtkInformationVector *outputVector)
@@ -318,7 +322,7 @@ int vtkPCosmoReader::RequestData(
 
   vtkFloatArray* vel = vtkFloatArray::New();
   vel->SetName("velocity");
-  vel->SetNumberOfComponents(DIMENSION);
+  vel->SetNumberOfComponents(3);
   vel->Allocate(numberOfParticles);
   vtkFloatArray* m = vtkFloatArray::New();
   m->SetName("mass");
@@ -336,7 +340,7 @@ int vtkPCosmoReader::RequestData(
   // put it into the correct VTK structure
   for(vtkIdType i = 0; i < numberOfParticles; i = i + 1)
     {
-    float pt[DIMENSION];
+    float pt[3];
 
     // insert point and cell
     pt[0] = xx->back();

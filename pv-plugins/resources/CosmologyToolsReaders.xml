@@ -1,6 +1,11 @@
 <ParaViewReaders>
-  <Reader name="vtkPVoronoiReader" extensions="out"
-	  file_description="Voronoi (.out) Files">
+  <Reader name="vtkPVoronoiReader"
+          extensions="out"
+          file_description="Voronoi (.out) Files">
+  </Reader>
+  <Reader name="Cosmo64Reader"
+          extensions=".cosmo64"
+          file_description="64-Bit Legacy Cosmo Files">
   </Reader>
 </ParaViewReaders>
 

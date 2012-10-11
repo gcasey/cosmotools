@@ -1,7 +1,7 @@
 /*=========================================================================
 
   Program:   Visualization Toolkit
-  Module:    vtkPCosmoReader.h
+  Module:    vtkPCosmo64Reader.h
 
   Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
   All rights reserved.
@@ -15,7 +15,7 @@
 /*=========================================================================
 
   Program:   VTK/ParaView Los Alamos National Laboratory Modules (PVLANL)
-  Module:    vtkPCosmoReader.h
+  Module:    vtkPCosmo64Reader.h
 
 Copyright (c) 2009 Los Alamos National Security, LLC
 
@@ -58,10 +58,10 @@ OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 =========================================================================*/
-// .NAME vtkPCosmoReader - Read a binary cosmology data file
+// .NAME vtkPCosmo64Reader - Read a binary cosmology data file
 //
 // .SECTION Description
-// vtkPCosmoReader creates a vtkUnstructuredGrid from a binary cosmology file.
+// vtkPCosmo64Reader creates a vtkUnstructuredGrid from a binary cosmology file.
 //
 // A cosmo file is a record format file with no header.
 // One record per particle.
@@ -80,8 +80,8 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // name ending in the processor number.
 //
 
-#ifndef __vtkPCosmoReader_h
-#define __vtkPCosmoReader_h
+#ifndef __vtkPCosmo64Reader_h
+#define __vtkPCosmo64Reader_h
 
 #include "vtkFiltersCosmoModule.h" // For export macro
 #include "vtkUnstructuredGridAlgorithm.h"
@@ -89,11 +89,11 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 class vtkMultiProcessController;
 class vtkStdString;
 
-class VTK_EXPORT vtkPCosmoReader : public vtkUnstructuredGridAlgorithm
+class VTK_EXPORT vtkPCosmo64Reader : public vtkUnstructuredGridAlgorithm
 {
 public:
-  static vtkPCosmoReader *New();
-  vtkTypeMacro(vtkPCosmoReader, vtkUnstructuredGridAlgorithm);
+  static vtkPCosmo64Reader *New();
+  vtkTypeMacro(vtkPCosmo64Reader, vtkUnstructuredGridAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);
 
   // Description:
@@ -137,8 +137,8 @@ public:
   virtual void SetController(vtkMultiProcessController*);
 
 protected:
-  vtkPCosmoReader();
-  ~vtkPCosmoReader();
+  vtkPCosmo64Reader();
+  ~vtkPCosmo64Reader();
 
   virtual int RequestInformation
     (vtkInformation *, vtkInformationVector **, vtkInformationVector *);
@@ -155,8 +155,8 @@ protected:
   int CosmoFormat; // Enable cosmo format or gadget format
 
 private:
-  vtkPCosmoReader(const vtkPCosmoReader&);  // Not implemented.
-  void operator=(const vtkPCosmoReader&);  // Not implemented.
+  vtkPCosmo64Reader(const vtkPCosmo64Reader&);  // Not implemented.
+  void operator=(const vtkPCosmo64Reader&);  // Not implemented.
 };
 
 #endif
