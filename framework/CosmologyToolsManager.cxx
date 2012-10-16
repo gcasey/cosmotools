@@ -32,11 +32,12 @@ CosmologyToolsManager::CosmologyToolsManager()
 {
   this->ConfigurationFile = "";
   this->Communicator      = MPI_COMM_NULL;
-  this->Rank  = this->NumRanks = -1;
-  this->NDIM  = 0;
-  this->XYZPeriodic   = false;
-  this->Particles     = new SimulationParticles();
-  this->Configuration = new CosmologyToolsConfiguration();
+  this->Rank              = this->NumRanks = -1;
+  this->NDIM              = 0;
+  this->ConfigurationIsRead = false;
+  this->XYZPeriodic       = false;
+  this->Particles         = new SimulationParticles();
+  this->Configuration     = new CosmologyToolsConfiguration();
 }
 
 //------------------------------------------------------------------------------
@@ -82,6 +83,44 @@ void CosmologyToolsManager::SetAnalysisConfiguration(char *configfile)
 {
   assert("pre: configfile is NULL" && (configfile != NULL));
   this->ConfigurationFile = std::string( configfile );
+}
+
+//------------------------------------------------------------------------------
+bool CosmologyToolsManager::IsExecutionTimeStep(
+        INTEGER tstep, REAL redShift)
+{
+  bool status = false;
+
+  // STEP 0: Parse the configuration file
+  this->ParseConfigurationFile();
+
+  // STEP 1: Create a vector of analysis tools
+  this->CreateAnalysisTools();
+  this->Barrier();
+
+  // STEP 2: Loop through all analsysis tools and see if anything needs to
+  // be executed.
+  std::map<std::string,AnalysisTool*>::iterator toolIter;
+  toolIter=this->AnalysisTools.begin();
+  for( ;toolIter!=this->AnalysisTools.end(); ++toolIter)
+    {
+    std::string toolName = toolIter->first;
+    AnalysisTool *tool   = toolIter->second;
+    assert("pre: NULL tool!" && (tool != NULL) );
+
+    PRINTLN(<< tool->GetInformation() );
+
+    if( tool->ShouldExecute(tstep) )
+      {
+      this->ConfigurationIsRead = true;
+      status = true;
+      break;
+      } // END if the tool should execute
+
+    } // END for all tools
+
+   this->Barrier();
+   return( status );
 }
 
 //------------------------------------------------------------------------------
@@ -212,12 +251,15 @@ void CosmologyToolsManager::CoProcess()
          (this->Particles != NULL));
 
 
-  // STEP 0: Parse the configuration file
-  this->ParseConfigurationFile();
+  if( !this->ConfigurationIsRead )
+    {
+    // STEP 0: Parse the configuration file
+    this->ParseConfigurationFile();
 
-  // STEP 1: Create a vector of analysis tools
-  this->CreateAnalysisTools();
-  this->Barrier();
+    // STEP 1: Create a vector of analysis tools
+    this->CreateAnalysisTools();
+    this->Barrier();
+    }
 
   PRINTLN(
       << "\n\n====================\n"
@@ -269,6 +311,8 @@ void CosmologyToolsManager::CoProcess()
   // STEP 3: Synchronize all ranks
   PRINTLN(<< "Finished co-processing @t=" << this->Particles->TimeStep);
   PRINTLN(<< "====================");
+
+  this->ConfigurationIsRead = false;
   this->Barrier();
 }
 

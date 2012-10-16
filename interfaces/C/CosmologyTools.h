@@ -51,6 +51,15 @@ void cosmotools_set_domain_parameters(
       INTEGER *XYZPeriodic);
 
 /**
+ * @brief Check if at the given time-step and red-shift any analysis tool needs
+ * to execute.
+ * @param tstep the current time-step (in)
+ * @param redshift the redshift at the given time-step (in)
+ * @param flag a flag that indicates whether to execute or not (out).
+ */
+void cosmotools_timestep(INTEGER *tstep, REAL *redshift, INTEGER *flag);
+
+/**
  * @brief Sets the particle information at the given time-step.
  * @param tstep the current time-step
  * @param redshift the redshift at the given time-step

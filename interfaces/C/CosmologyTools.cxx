@@ -46,6 +46,20 @@ void cosmotools_set_domain_parameters(
 }
 
 //------------------------------------------------------------------------------
+void cosmotools_timestep(INTEGER *tstep, REAL *redshift, INTEGER *flag)
+{
+  assert(CosmoToolsManager != NULL);
+  if( CosmoToolsManager->IsExecutionTimeStep(*tstep,*redshift) )
+    {
+    *flag = 1;
+    }
+  else
+    {
+    *flag = 0;
+    }
+}
+
+//------------------------------------------------------------------------------
 void cosmotools_set_particles(
             INTEGER *tstep, REAL *redshift,
             POSVEL_T *px, POSVEL_T *py, POSVEL_T *pz,

@@ -61,6 +61,15 @@ public:
       bool XYZPeriodic);
 
   /**
+   * @brief Check if the given time-step is an execution time-step.
+   * @param tstep the current time-step
+   * @param redshift the redshift at the given time-step
+   * @return status true iff one or more analysis tools must execute in this
+   * time-step, otherwise, false.
+   */
+  bool IsExecutionTimeStep(INTEGER tstep, REAL redshift);
+
+  /**
    * @brief Sets the particle information at the given time-step.
    * @param tstep the current time-step
    * @param redshift the redshift at the given time-step
@@ -110,6 +119,10 @@ private:
   MPI_Comm Communicator;
   int Rank;
   int NumRanks;
+
+  // Flag that indicates whether the configuration has been read at the
+  // supplied time-step
+  bool ConfigurationIsRead;
 
   // Domain parameters
   REAL BoxLength;
