@@ -196,7 +196,7 @@ int vtkPStructureFormationProbe::RequestData(
   // STEP 7: Build Langrange tesselation
   // This should execute iff it is the first time-step, or if the langrangian
   // grid parameters have changed
-  if( this->SFProbe->GetLangrangeTesselator() == NULL ||
+  if( this->SFProbe->GetLagrangeTesselator() == NULL ||
        this->ExtentsAreDifferent(
          this->Extent,this->CurrentLangrangianExtent) )
     {
@@ -336,16 +336,16 @@ void vtkPStructureFormationProbe::GetLangrangianMesh(
     vtkUnstructuredGrid *langrangeMesh)
 {
   assert("pre: Langrangian tesselator has not been allocated" &&
-         (this->SFProbe->GetLangrangeTesselator() != NULL) );
+         (this->SFProbe->GetLagrangeTesselator() != NULL) );
   assert("pre: input langrange mesh is NULL" && (langrangeMesh != NULL) );
   assert("pre: Number of langrange tets > 0" &&
-         (this->SFProbe->GetLangrangeTesselator()->GetNumTets() > 0) );
+         (this->SFProbe->GetLagrangeTesselator()->GetNumTets() > 0) );
 
   vtkIntArray *cellIds = vtkIntArray::New();
   cellIds->SetName("CELLID");
   cellIds->SetNumberOfComponents(1);
   cellIds->SetNumberOfTuples(
-      this->SFProbe->GetLangrangeTesselator()->GetNumTets());
+      this->SFProbe->GetLagrangeTesselator()->GetNumTets());
 
   vtkCellArray *meshElements = vtkCellArray::New();
   vtkPoints    *meshNodes    = vtkPoints::New();
@@ -353,26 +353,26 @@ void vtkPStructureFormationProbe::GetLangrangianMesh(
       vtkStructuredData::GetNumberOfNodes(this->Extent));
   meshElements->Allocate(
       meshElements->EstimateSize(
-          this->SFProbe->GetLangrangeTesselator()->GetNumTets(),4));
+          this->SFProbe->GetLagrangeTesselator()->GetNumTets(),4));
 
   vtkDoubleArray *volumes = NULL;
   volumes = vtkDoubleArray::New();
   volumes->SetName( "Volume" );
   volumes->SetNumberOfComponents(1);
   volumes->SetNumberOfTuples(
-      this->SFProbe->GetLangrangeTesselator()->GetNumTets());
+      this->SFProbe->GetLagrangeTesselator()->GetNumTets());
 
 
   vtkIdList *tetElement = vtkIdList::New();
   tetElement->SetNumberOfIds(4);
   for(INTEGER idx=0;
-      idx < this->SFProbe->GetLangrangeTesselator()->GetNumTets(); ++idx )
+      idx < this->SFProbe->GetLagrangeTesselator()->GetNumTets(); ++idx )
     {
     INTEGER tet[4];
     REAL v0[3]; REAL v1[3]; REAL v2[3]; REAL v3[3];
 
-    this->SFProbe->GetLangrangeTesselator()->
-                      GetLangrangianTet(idx,v0,v1,v2,v3,tet);
+    this->SFProbe->GetLagrangeTesselator()->
+                      GetLagrangianTet(idx,v0,v1,v2,v3,tet);
     assert("pre: volumes arrays has not been allocated" &&
            (volumes != NULL));
     REAL vol=
@@ -425,8 +425,8 @@ void vtkPStructureFormationProbe::ProbeUniformGrid(
   double spacing[3];
   int ext[6];
 
-  cosmologytools::LangrangianTesselator *langrangianMesh =
-                            this->SFProbe->GetLangrangeTesselator();
+  cosmologytools::LagrangianTesselator *langrangianMesh =
+                            this->SFProbe->GetLagrangeTesselator();
   assert("pre: langrangian mesh should not be NULL!" &&
           (langrangianMesh != NULL) );
 

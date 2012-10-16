@@ -21,7 +21,7 @@ StructureFormationProbe::StructureFormationProbe()
 {
   this->Particles       = NULL;
   this->GlobalIds       = NULL;
-  this->Langrange       = NULL;
+  this->Lagrange       = NULL;
   this->VGrid           = NULL;
   this->NumParticles    = 0;
   this->Fringe          = 1;
@@ -34,9 +34,9 @@ StructureFormationProbe::StructureFormationProbe()
 //------------------------------------------------------------------------------
 StructureFormationProbe::~StructureFormationProbe()
 {
-  if( this->Langrange != NULL )
+  if( this->Lagrange != NULL )
     {
-    delete this->Langrange;
+    delete this->Lagrange;
     }
 
   if( this->VGrid != NULL )
@@ -73,29 +73,29 @@ void StructureFormationProbe::SetParticles(
 void StructureFormationProbe::BuildLangrangianMesh(
         REAL origin[3], REAL spacing[3], INTEGER extent[6])
 {
-  if( this->Langrange != NULL )
+  if( this->Lagrange != NULL )
     {
-    delete this->Langrange;
+    delete this->Lagrange;
     }
 
-  this->Langrange = new LangrangianTesselator();
-  this->Langrange->SetOrigin(origin);
-  this->Langrange->SetSpacing(spacing);
-  this->Langrange->SetGridExtent(extent);
-  this->Langrange->Tesselate();
+  this->Lagrange = new LagrangianTesselator();
+  this->Lagrange->SetOrigin(origin);
+  this->Lagrange->SetSpacing(spacing);
+  this->Lagrange->SetGridExtent(extent);
+  this->Lagrange->Tesselate();
 }
 
 //------------------------------------------------------------------------------
-LangrangianTesselator* StructureFormationProbe::GetLangrangeTesselator()
+LagrangianTesselator* StructureFormationProbe::GetLagrangeTesselator()
 {
-  return this->Langrange;
+  return this->Lagrange;
 }
 
 //------------------------------------------------------------------------------
 bool StructureFormationProbe::IsNodeWithinFringeBounds(INTEGER nodeIdx)
 {
   assert("pre: Langrange tesselator object is NULL" &&
-         (this->Langrange != NULL) );
+         (this->Lagrange != NULL) );
 
   INTEGER idx = this->Global2PositionMap[ nodeIdx ];
 
@@ -105,7 +105,7 @@ bool StructureFormationProbe::IsNodeWithinFringeBounds(INTEGER nodeIdx)
   pnt[2] = this->Particles[idx*3+2];
 
   REAL iBounds[6];
-  this->Langrange->GetBounds(iBounds,this->Fringe);
+  this->Lagrange->GetBounds(iBounds,this->Fringe);
 
   return(
       (pnt[0] >= iBounds[0]) && (pnt[0] <= iBounds[1]) &&
@@ -119,7 +119,7 @@ bool StructureFormationProbe::IsNodeWithinPeriodicBoundaryFringe(
           INTEGER nodeIdx )
 {
   assert("pre: Langrange tesselator object is NULL" &&
-          (this->Langrange != NULL) );
+          (this->Lagrange != NULL) );
 
   INTEGER idx = this->Global2PositionMap[ nodeIdx ];
 
@@ -129,7 +129,7 @@ bool StructureFormationProbe::IsNodeWithinPeriodicBoundaryFringe(
   pnt[2] = this->Particles[idx*3+2];
 
   REAL bounds[6];
-  this->Langrange->GetBounds(bounds);
+  this->Lagrange->GetBounds(bounds);
   for( int i=0; i < 3; ++i )
     {
     REAL L     = bounds[i*2+1]-bounds[i*2];
@@ -180,10 +180,10 @@ void StructureFormationProbe::BuildEulerMesh()
   // Sanity check
   assert(
     "pre: Must construct a langrangian mesh first before an euler mesh!" &&
-    (this->Langrange != NULL) );
+    (this->Lagrange != NULL) );
 
-  this->LangrangeNode2EulerNode.clear();
-  this->LangrangeTet2EulerTet.clear();
+  this->LagrangeNode2EulerNode.clear();
+  this->LagrangeTet2EulerTet.clear();
   this->EulerMesh.Clear();
   this->Volumes.clear();
 
@@ -193,15 +193,15 @@ void StructureFormationProbe::BuildEulerMesh()
   // Reserve space for Euler mesh
   this->EulerMesh.Nodes.reserve(
       ExtentUtilities::ComputeNumberOfNodes(
-            const_cast<INTEGER*>(this->Langrange->GetExtent())));
+            const_cast<INTEGER*>(this->Lagrange->GetExtent())));
   this->EulerMesh.Connectivity.reserve(
-      this->EulerMesh.Stride*this->Langrange->GetNumTets());
-  this->Volumes.reserve(this->Langrange->GetNumTets());
+      this->EulerMesh.Stride*this->Lagrange->GetNumTets());
+  this->Volumes.reserve(this->Lagrange->GetNumTets());
 
-  for(INTEGER idx=0; idx < this->Langrange->GetNumTets(); ++idx)
+  for(INTEGER idx=0; idx < this->Lagrange->GetNumTets(); ++idx)
     {
     INTEGER tet[4];
-    this->Langrange->GetTetConnectivity(idx,tet);
+    this->Lagrange->GetTetConnectivity(idx,tet);
 
     REAL nodes[12];
     if( this->MapTetToEulerSpace(tet,nodes) )
@@ -211,8 +211,8 @@ void StructureFormationProbe::BuildEulerMesh()
         {
         // Langrange index
         INTEGER lidx = tet[ node ];
-        if(this->LangrangeNode2EulerNode.find(lidx)==
-           this->LangrangeNode2EulerNode.end())
+        if(this->LagrangeNode2EulerNode.find(lidx)==
+           this->LagrangeNode2EulerNode.end())
           {
           this->EulerMesh.Nodes.push_back(nodes[node*3]);
           this->EulerMesh.Nodes.push_back(nodes[node*3+1]);
@@ -220,18 +220,18 @@ void StructureFormationProbe::BuildEulerMesh()
 
           // Euler index
           INTEGER eidx = this->EulerMesh.GetNumberOfNodes()-1;
-          this->LangrangeNode2EulerNode[ lidx ] = eidx;
+          this->LagrangeNode2EulerNode[ lidx ] = eidx;
           tet[ node ] = eidx;
           } // END if this node has not been mapped
         else
           {
-          tet[ node ] = this->LangrangeNode2EulerNode[ lidx ];
+          tet[ node ] = this->LagrangeNode2EulerNode[ lidx ];
           } // END else if node has already been mapped
 
         this->EulerMesh.Connectivity.push_back( tet[ node ] );
         } // END for all tet nodes
 
-      this->LangrangeTet2EulerTet[idx]=this->EulerMesh.GetNumberOfCells()-1;
+      this->LagrangeTet2EulerTet[idx]=this->EulerMesh.GetNumberOfCells()-1;
 
       // Compute the volume of the added tetrahedron
       this->Volumes.push_back(
@@ -255,7 +255,7 @@ void StructureFormationProbe::BuildEulerMesh()
 void StructureFormationProbe::BuildVirtualGrid()
 {
   assert( "pre: Langrangian mesh must be constructed!" &&
-          (this->Langrange != NULL) );
+          (this->Lagrange != NULL) );
 
   if( this->VGrid != NULL )
     {
@@ -264,7 +264,7 @@ void StructureFormationProbe::BuildVirtualGrid()
 
   INTEGER dims[3];
   ExtentUtilities::GetExtentDimensions(
-      const_cast<INTEGER*>(this->Langrange->GetExtent()),dims);
+      const_cast<INTEGER*>(this->Lagrange->GetExtent()),dims);
 
   this->VGrid = new VirtualGrid();
   this->VGrid->SetDimensions(dims);
@@ -358,7 +358,7 @@ void StructureFormationProbe::ExtractCausticSurfaces(
 {
   // Sanity check
   assert("pre: Must construct a langrangian mesh first before an euler mesh!"
-         && (this->Langrange != NULL) );
+         && (this->Lagrange != NULL) );
 
   // STEP 0: Initialize supplied vectors
   nodes.clear();
@@ -366,7 +366,7 @@ void StructureFormationProbe::ExtractCausticSurfaces(
 
   // STEP 1: Get Langrange Mesh faces
   std::vector< INTEGER > faces;
-  this->Langrange->GetFaces( faces );
+  this->Lagrange->GetFaces( faces );
 
   // STEP 2: Loop through Langrange mesh faces and determine if they correspond
   // to a face on the caustics surface mesh.
@@ -379,7 +379,7 @@ void StructureFormationProbe::ExtractCausticSurfaces(
       face[node] = faces[fidx*3+node];
       } // END for all face nodes
 
-    this->Langrange->GetAdjacentTets(face,tets);
+    this->Lagrange->GetAdjacentTets(face,tets);
     assert("pre: face has more than 2 adjacent tets!" &&
             (tets.size() >= 1) && (tets.size() <= 2) );
 
@@ -389,18 +389,18 @@ void StructureFormationProbe::ExtractCausticSurfaces(
       continue;
       }
 
-    if( (this->LangrangeTet2EulerTet.find(tets[0])==
-         this->LangrangeTet2EulerTet.end()) ||
-        (this->LangrangeTet2EulerTet.find(tets[1]) ==
-         this->LangrangeTet2EulerTet.end()) )
+    if( (this->LagrangeTet2EulerTet.find(tets[0])==
+         this->LagrangeTet2EulerTet.end()) ||
+        (this->LagrangeTet2EulerTet.find(tets[1]) ==
+         this->LagrangeTet2EulerTet.end()) )
       {
       // This face abutts a tet that wasn't mapped to the euler mesh, skip!
       continue;
       }
 
     // Get the tet indices in the euler mesh
-    INTEGER tetIdx1 = this->LangrangeTet2EulerTet[tets[0]];
-    INTEGER tetIdx2 = this->LangrangeTet2EulerTet[tets[1]];
+    INTEGER tetIdx1 = this->LagrangeTet2EulerTet[tets[0]];
+    INTEGER tetIdx2 = this->LagrangeTet2EulerTet[tets[1]];
 
     std::map<INTEGER,INTEGER> eulerMesh2CausticSurface;
 
@@ -410,11 +410,11 @@ void StructureFormationProbe::ExtractCausticSurfaces(
       for( int tnode=0; tnode < 3; ++tnode)
         {
         assert("caustics surface mesh node cannot be found in Euler mesh!" &&
-                this->LangrangeNode2EulerNode.find(face[tnode]) !=
-                this->LangrangeNode2EulerNode.end());
+                this->LagrangeNode2EulerNode.find(face[tnode]) !=
+                this->LagrangeNode2EulerNode.end());
 
         // Get the node index w.r.t. the euler mesh
-       INTEGER nodeIdx = this->LangrangeNode2EulerNode[face[tnode]];
+       INTEGER nodeIdx = this->LagrangeNode2EulerNode[face[tnode]];
 
         if( eulerMesh2CausticSurface.find(nodeIdx) ==
              eulerMesh2CausticSurface.end() )

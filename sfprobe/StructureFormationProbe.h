@@ -7,7 +7,7 @@
 #define STRUCTUREFORMATIONPROBE_H_
 
 #include "CosmologyToolsMacros.h"
-#include "LangrangianTesselator.h"
+#include "LagrangianTesselator.h"
 #include "SimpleMesh.h"
 
 // C/C++ includes
@@ -61,7 +61,7 @@ public:
    * this instance of StructureFormationProbe.
    * @return langrange
    */
-  LangrangianTesselator* GetLangrangeTesselator();
+  LagrangianTesselator* GetLagrangeTesselator();
 
   /**
    * @brief Builds the euler mesh by mapping the tet connectivity of the
@@ -165,10 +165,10 @@ protected:
   std::map< INTEGER, INTEGER > Global2PositionMap;
 
   // Mapping of Langrange mesh entities (nodes/cells) to the euler mesh
-  std::map<INTEGER,INTEGER> LangrangeNode2EulerNode;
-  std::map< INTEGER, INTEGER > LangrangeTet2EulerTet;
+  std::map<INTEGER,INTEGER> LagrangeNode2EulerNode;
+  std::map< INTEGER, INTEGER > LagrangeTet2EulerTet;
 
-  LangrangianTesselator *Langrange; // langrangian tesselator (computed)
+  LagrangianTesselator *Lagrange; // langrangian tesselator (computed)
 
   SimpleMesh EulerMesh;
   VirtualGrid *VGrid;

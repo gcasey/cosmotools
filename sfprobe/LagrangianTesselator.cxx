@@ -1,4 +1,4 @@
-#include "LangrangianTesselator.h"
+#include "LagrangianTesselator.h"
 
 #include "ExtentUtilities.h"
 #include "TetrahedronUtilities.h"
@@ -57,7 +57,7 @@ struct FaceKey {
 
 //=============================================================================
 
-LangrangianTesselator::LangrangianTesselator()
+LagrangianTesselator::LagrangianTesselator()
 {
   this->Connectivity = NULL;
   this->NumTets      = 0;
@@ -65,7 +65,7 @@ LangrangianTesselator::LangrangianTesselator()
 }
 
 //-----------------------------------------------------------------------------
-LangrangianTesselator::~LangrangianTesselator()
+LagrangianTesselator::~LagrangianTesselator()
 {
   if( this->Connectivity != NULL )
     {
@@ -75,7 +75,7 @@ LangrangianTesselator::~LangrangianTesselator()
 }
 
 //-----------------------------------------------------------------------------
-void LangrangianTesselator::SetGridExtent(INTEGER extent[6])
+void LagrangianTesselator::SetGridExtent(INTEGER extent[6])
 {
   memcpy(this->Extent,extent,sizeof(INTEGER)*6);
   INTEGER numVoxels = ExtentUtilities::ComputeNumberOfCells( extent );
@@ -88,7 +88,7 @@ void LangrangianTesselator::SetGridExtent(INTEGER extent[6])
 }
 
 //-----------------------------------------------------------------------------
-void LangrangianTesselator::Initialize()
+void LagrangianTesselator::Initialize()
 {
   this->Origin[0]  = this->Origin[1]  = this->Origin[2]  = 0.0;
   this->Spacing[0] = this->Spacing[1] = this->Spacing[2] = 0.5;
@@ -103,14 +103,14 @@ void LangrangianTesselator::Initialize()
 }
 
 //------------------------------------------------------------------------------
-void LangrangianTesselator::Tesselate()
+void LagrangianTesselator::Tesselate()
 {
   this->BuildTesselation();
   this->BuildFaceAdjacency();
 }
 
 //------------------------------------------------------------------------------
-void LangrangianTesselator::BuildFaceAdjacency()
+void LagrangianTesselator::BuildFaceAdjacency()
 {
   assert("pre: number of tets" && (this->NumTets > 0) );
 
@@ -146,7 +146,7 @@ void LangrangianTesselator::BuildFaceAdjacency()
 }
 
 //------------------------------------------------------------------------------
-void LangrangianTesselator::GetBounds(REAL bounds[6], INTEGER fringe)
+void LagrangianTesselator::GetBounds(REAL bounds[6], INTEGER fringe)
 {
   REAL min[3];
   INTEGER minijk[3];
@@ -173,7 +173,7 @@ void LangrangianTesselator::GetBounds(REAL bounds[6], INTEGER fringe)
 }
 
 //------------------------------------------------------------------------------
-void LangrangianTesselator::GetPoint(INTEGER ijk[3], REAL pnt[3])
+void LagrangianTesselator::GetPoint(INTEGER ijk[3], REAL pnt[3])
 {
   for( int i=0; i < 3; ++i )
     {
@@ -190,7 +190,7 @@ void LangrangianTesselator::GetPoint(INTEGER ijk[3], REAL pnt[3])
 }
 
 //------------------------------------------------------------------------------
-void LangrangianTesselator::GetLangrangianTet(
+void LagrangianTesselator::GetLagrangianTet(
     const INTEGER tetIdx,
     REAL v0[3], REAL v1[3], REAL v2[3],REAL v3[3],
     INTEGER tet[4])
@@ -211,7 +211,7 @@ void LangrangianTesselator::GetLangrangianTet(
 }
 
 //------------------------------------------------------------------------------
-void LangrangianTesselator::GetTetConnectivity(
+void LagrangianTesselator::GetTetConnectivity(
         const INTEGER tetIdx, INTEGER tet[4])
 {
   assert("pre: tetIdx is out-of-bounds" && (tetIdx < this->NumTets) );
@@ -223,7 +223,7 @@ void LangrangianTesselator::GetTetConnectivity(
 }
 
 //------------------------------------------------------------------------------
-void LangrangianTesselator::GetFaces(std::vector<INTEGER> &faces)
+void LagrangianTesselator::GetFaces(std::vector<INTEGER> &faces)
 {
   faces.resize(3*this->FaceAdjacency.size());
   std::map< std::string,std::vector<INTEGER> >::iterator iter =
@@ -254,7 +254,7 @@ void LangrangianTesselator::GetFaces(std::vector<INTEGER> &faces)
 }
 
 //------------------------------------------------------------------------------
-void LangrangianTesselator::GetAdjacentTets(
+void LagrangianTesselator::GetAdjacentTets(
         INTEGER face[3], std::vector<INTEGER> &tets)
 {
   FaceKey faceHash(face,0,0);
@@ -277,7 +277,7 @@ void LangrangianTesselator::GetAdjacentTets(
     ++tetIdx;
 
 //-----------------------------------------------------------------------------
-void LangrangianTesselator::BuildTesselation()
+void LagrangianTesselator::BuildTesselation()
 {
   assert("pre: grid extent is not a 3-D extent!" &&
           ExtentUtilities::Is3DExtent(this->Extent));

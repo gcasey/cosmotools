@@ -3,8 +3,8 @@
  * @brief A class that implements template-based tesselation of a user-supplied
  * extent.
  */
-#ifndef LangrangianTesselator_H_
-#define LangrangianTesselator_H_
+#ifndef LagrangianTesselator_H_
+#define LagrangianTesselator_H_
 
 #include "CosmologyToolsMacros.h"
 
@@ -19,11 +19,11 @@ namespace cosmologytools
 // Forward Declarations
 struct FaceKey;
 
-class LangrangianTesselator
+class LagrangianTesselator
 {
 public:
-  LangrangianTesselator();
-  virtual ~LangrangianTesselator();
+  LagrangianTesselator();
+  virtual ~LagrangianTesselator();
 
   /**
    * @brief Set/Get the grid origin
@@ -81,7 +81,7 @@ public:
    * @param v3 the langrangian coordinates of the 4th vertex
    * @param tet the tetrahedral connectivity
    */
-  void GetLangrangianTet(
+  void GetLagrangianTet(
       const INTEGER tetIdx,
       REAL v0[3], REAL v1[3], REAL v2[3],REAL v3[3],
       INTEGER tet[4]
@@ -138,8 +138,8 @@ protected:
   void Initialize();
 
 private:
-  DISABLE_COPY_AND_ASSIGNMENT(LangrangianTesselator);
+  DISABLE_COPY_AND_ASSIGNMENT(LagrangianTesselator);
 };
 
 } /* namespace cosmologytools */
-#endif /* LangrangianTesselator_H_ */
+#endif /* LagrangianTesselator_H_ */

@@ -14,7 +14,7 @@ set(PACKAGE_sfprobe_LIBRARIES
 set(SOURCES
     ExtentPartitioner.cxx
     ExtentUtilities.cxx
-    LangrangianTesselator.cxx
+    LagrangianTesselator.cxx
     ParallelStructureFormationProbe.cxx
     SimpleMesh.cxx
     StructureFormationProbe.cxx
