@@ -46,6 +46,16 @@ public:
   int GetNumberOfAnalysisTools();
 
   /**
+   * @brief Get the analysis tool instance name at the given index
+   * @param idx the index of the tool
+   * @return name the name of the analysis tool
+   * @pre idx >= 0 && idx < this->GetNumberOfAnalysisTools()
+   * @note This is the internal AnalysisTool name used to determine which
+   * class to instantiate.
+   */
+  std::string GetToolInstanceName(const int idx);
+
+  /**
    * @brief Get the analysis tool name at the given index
    * @param idx the index of the tool
    * @return name the name of the analysis tool

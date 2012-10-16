@@ -13,15 +13,20 @@ VIZ_PORT       2222
 ## Frequency at which to update visualization, e.g., every 20 time-steps.
 VIZ_FREQUENCY 20
 
-# Enable/Disable the tools that will be used at each time-step
-ANALYSISTOOL LANLHALOFINDER YES
-ANALYSISTOOL HALOTRACKER    NO
-ANALYSISTOOL TESS           NO
-ANALYSISTOOL SFPROBE        NO
+# Enable/Disable the tools that will be used at each time-step.
+# The name of the analysis tool can be anything as long as it has no spaces.
+ANALYSISTOOL LANLHALOFINDER(BB=0.2) YES
+ANALYSISTOOL LANLHALOFINDER(BB=0.6) YES
+ANALYSISTOOL TESS           YES
+#ANALYSISTOOL HALOTRACKER    NO
+#ANALYSISTOOL SFPROBE        NO
 
 #-------------------------------------------------------------------------------
-# LANLHALOFINDER SECTION
+# LANLHALOFINDER(BB=0.2) SECTION
 #-------------------------------------------------------------------------------
+
+## Name of the internal AnalysisTool instance used
+INSTANCE_NAME LANLHALOFINDER
 
 ## CosmologyTools Framework Parameters for LANLHALOFINDER
 
@@ -63,21 +68,57 @@ NUMBER_OF_BINS 20
 FOF_SIZE_THRESHOLD 500
 
 #-------------------------------------------------------------------------------
-# HALOTRACKER SECTION
+# LANLHALOFINDER(BB=0.6) SECTION
 #-------------------------------------------------------------------------------
 
-## Set the halofinder to use -- NOTE: the time-steps for the tracker are
-## specified in the corresponding halo-finder section
-## LANLHALOFINDER  0
-HALOFINDER 0
-MERGER_TREE_OUTPUT /path/to/output/filePrefix
+## Name of the internal AnalysisTool instance used
+INSTANCE_NAME LANLHALOFINDER
 
-## Indicates if merger-trees are visualized (at visualization checkpoint)
-VISIBLE  YES
+## CosmologyTools Framework Parameters for LANLHALOFINDER
+
+## Frequency type: EXPLICIT(0) or IMPLICIT(1)
+FREQUENCY_TYPE  0
+EXPLICIT_TIMESTEPS  50 20 10 8 6 4 2
+IMPLICIT_TIMESTEPS  5
+WRITE_OUTPUT  YES
+BASE_OUTPUT_FILE_NAME  /path/to/output/filePrefix
+
+## Indicate whether halos will be visualized (at visualization checkpoint)
+VISIBLE YES
+
+## FOF Parameters
+## Linking length
+BB 0.6
+
+## Select the minimum number of particles within a halo.
+## Halos with a number of particles less ## than PMIN are ignored
+PMIN 250
+
+## Select center-finding method
+## AVERAGE (0),
+## CENTER_OF_MASS (1),
+## MBP (2),
+## MCP (3),
+CENTER_FINDER_METHOD  0
+
+## SOD Parameters
+## Indicate whether SOD halos will be used
+COMPUTE_SOD_HALOS  NO
+
+## SOD Parameters (taken from the existing implementation)
+RHO_C 2.77537e+11
+INITIAL_SOD_MASS 1e+14
+MIN_RADIUS_FACTOR 0.5
+MAX_RADIUS_FACTOR 2
+NUMBER_OF_BINS 20
+FOF_SIZE_THRESHOLD 500
 
 #-------------------------------------------------------------------------------
 # TESS SECTION
 #-------------------------------------------------------------------------------
+
+## Name of the internal AnalysisTool instance used
+INSTANCE_NAME TESS
 
 ## CosmologyTools Framework Parameters for TESS
 
@@ -98,24 +139,39 @@ MAX_VOL_THRESHOLD -1.0
 CELL_SIZE 1.0
 
 #-------------------------------------------------------------------------------
-# SFPROBE SECTION
+## HALOTRACKER SECTION
 #-------------------------------------------------------------------------------
+##
+## Set the halofinder to use -- NOTE: the time-steps for the tracker are
+## specified in the corresponding halo-finder section
+## LANLHALOFINDER  0
+##HALOFINDER 0
+##MERGER_TREE_OUTPUT /path/to/output/filePrefix
+##
+## Indicates if merger-trees are visualized (at visualization checkpoint)
+##VISIBLE  YES
 
+
+
+#-------------------------------------------------------------------------------
+## SFPROBE SECTION
+#-------------------------------------------------------------------------------
+##
 ## CosmologyTools Framework Parameters for SFPROBE
-
+##
 ## Frequency type: EXPLICIT(0) or IMPLICIT(1)
-FREQUENCY_TYPE 1
-EXPLICIT_TIMESTEPS 50 20 10 8 6 4 2
-IMPLICIT_TIMESTEPS 5
-WRITE_OUTPUT YES
-BASE_OUTPUT_FILE_NAME /path/to/output/filePrefix
-
+##FREQUENCY_TYPE 1
+##EXPLICIT_TIMESTEPS 50 20 10 8 6 4 2
+##IMPLICIT_TIMESTEPS 5
+##WRITE_OUTPUT YES
+##BASE_OUTPUT_FILE_NAME /path/to/output/filePrefix
+##
 ## Indicates whether the euler tesselation, caustic surface and probed grid
 ## are visualized (at visualization checkpoint)
-VISIBLE YES
-
+##VISIBLE YES
+##
 ## Set the dimension of the probe grid
-PROBE_GRID_DIM 1000
-
+##PROBE_GRID_DIM 1000
+##
 ## Enable or Disable Extraction of caustics surfaces
-EXTRACT_CAUSTICS YES
+##EXTRACT_CAUSTICS YES

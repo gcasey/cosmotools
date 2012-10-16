@@ -329,6 +329,23 @@ int CosmologyToolsConfiguration::GetNumberOfAnalysisTools()
 }
 
 //------------------------------------------------------------------------------
+std::string CosmologyToolsConfiguration::GetToolInstanceName(const int idx)
+{
+  std::string key = this->GetToolName(idx);
+  std::string instance ="";
+  if(this->ToolToDictionary[key].find("INSTANCE_NAME") !=
+      this->ToolToDictionary[key].end() )
+    {
+    instance = "NOT-FOUND";
+    } // END if
+  else
+    {
+    instance = this->ToolToDictionary[key]["INSTANCE_NAME"];
+    }
+  return( instance );
+}
+
+//------------------------------------------------------------------------------
 std::string CosmologyToolsConfiguration::GetToolName(const int idx)
 {
   assert("pre: index is out-of-bounds!" &&
