@@ -1,20 +1,20 @@
 #include "CosmologyToolsManager.h"
 
 #include "AnalysisTool.h"
+#include "AnalysisToolInstantiator.h"
 #include "CosmologyToolsConfiguration.h"
-#include "LANLHaloFinderAnalysisTool.h"
 #include "SimulationParticles.h"
-#include "TessVoidFinderAnalysisTool.h"
+
 
 #include <iostream>
 #include <cassert>
 
-#define PRINTLN( str ) {               \
-  if(this->Rank==0) {                  \
-    std::cout str << std::endl;         \
-    std::cout.flush();                  \
-  }                                     \
-  this->Barrier();                     \
+#define PRINTLN( str ) {        \
+  if(this->Rank==0) {           \
+    std::cout str << std::endl;  \
+    std::cout.flush();           \
+  }                              \
+  this->Barrier();              \
 }
 
 #define PRINT( str ) {    \
@@ -193,23 +193,12 @@ AnalysisTool* CosmologyToolsManager::GetToolByName(
     }
   else
     {
-    if( name == "LANLHALOFINDER")
-      {
-      tool = new LANLHaloFinderAnalysisTool();
-      }
-    else if( name == "TESS" )
-      {
-      tool = new TessVoidFinderAnalysisTool();
-      }
-    else
-      {
-      std::cerr << "ERROR: undefined analysis tool: " << name;
-      std::cerr << std::endl;
-      std::cerr << "FILE: " << __FILE__ << std::endl;
-      std::cerr << "LINE: " << __LINE__ << std::endl;
-      }
+    tool = AnalysisToolInstantiator::CreateInstance(
+        this->Configuration->GetToolClassInstance(name));
+    assert("pre: Cannot create tool instance!" && (tool != NULL) );
+    tool->SetCommunicator( this->Communicator );
     }
-  tool->SetCommunicator( this->Communicator );
+
   return( tool );
 }
 
