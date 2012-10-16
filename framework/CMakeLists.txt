@@ -38,6 +38,7 @@ set(RequiredLibs
 ## Set Framework code sources
 set(FRAMEWORK_SRC
     AnalysisTool.cxx
+    AnalysisToolInstantiator.cxx
     CosmologyToolsConfiguration.cxx
     CosmologyToolsManager.cxx
     LANLHaloFinderAnalysisTool.cxx
