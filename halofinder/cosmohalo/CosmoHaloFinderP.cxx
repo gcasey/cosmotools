@@ -107,6 +107,7 @@ CosmoHaloFinderP::CosmoHaloFinderP()
     this->deadParticle[n] = 0;
     this->deadHalo[n] = 0;
   }
+  this->haloTag   = NULL;
   this->haloList  = NULL;
   this->haloStart = NULL;
   this->haloSize  = NULL;
@@ -359,7 +360,7 @@ void CosmoHaloFinderP::executeHaloFinder()
 
 /////////////////////////////////////////////////////////////////////////
 //
-// At this point each serial halo finder ran and the particles handed to it 
+// At this point each serial halo finder ran and the particles handed to it
 // included alive and dead.  Structure to locate all particles in a halo
 // were returned in haloTag, haloStart and haloList
 //
@@ -435,7 +436,7 @@ void CosmoHaloFinderP::buildHaloStructure()
       else {
         this->numberOfMixedHalos++;
         CosmoHalo* halo = new CosmoHalo(p,
-                                this->haloAliveSize[p], 
+                                this->haloAliveSize[p],
                                 this->haloSize[p] - this->haloAliveSize[p]);
         this->myMixedHalos.push_back(halo);
       }
@@ -469,7 +470,7 @@ void CosmoHaloFinderP::processMixedHalos()
     // All particles in the same halo have the same haloTag
     if (this->haloSize[this->haloTag[p]] >= pmin &&
         this->haloAliveSize[this->haloTag[p]] > 0 &&
-        this->haloAliveSize[this->haloTag[p]] < 
+        this->haloAliveSize[this->haloTag[p]] <
               this->haloSize[this->haloTag[p]]) {
 
           // Check all each mixed halo to see which this particle belongs to
@@ -1165,7 +1166,7 @@ void CosmoHaloFinderP::writeTaggedParticles(int hmin, float ss, bool writePV,
   }
 
   delete [] mapIndex;
-  
+
   // Clear the data stored in serial halo finder
   if (clearTag) {
     clearHaloTag();
