@@ -56,6 +56,16 @@ public:
   std::string GetToolInstanceName(const int idx);
 
   /**
+   * @brief Given the tool name return the class instance identifier
+   * @param toolName the tool name as it appears in the configuration file
+   * @return classInstance the class instance identifier, i.e., a string that
+   * indicates which class to instantiate.
+   * @note The classInstance can be passed to the AnalysisToolInstantiator to
+   * create the corresponding concrete class instance
+   */
+  std::string GetToolClassInstance(std::string toolName);
+
+  /**
    * @brief Get the analysis tool name at the given index
    * @param idx the index of the tool
    * @return name the name of the analysis tool

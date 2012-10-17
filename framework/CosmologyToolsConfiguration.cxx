@@ -329,18 +329,26 @@ int CosmologyToolsConfiguration::GetNumberOfAnalysisTools()
 }
 
 //------------------------------------------------------------------------------
-std::string CosmologyToolsConfiguration::GetToolInstanceName(const int idx)
+std::string CosmologyToolsConfiguration::GetToolInstanceName(
+    const int idx)
 {
   std::string key = this->GetToolName(idx);
+  return( this->GetToolClassInstance(key) );
+}
+
+//------------------------------------------------------------------------------
+std::string CosmologyToolsConfiguration::GetToolClassInstance(
+      std::string name)
+{
   std::string instance ="";
-  if(this->ToolToDictionary[key].find("INSTANCE_NAME") !=
-      this->ToolToDictionary[key].end() )
+  if(this->ToolToDictionary[name].find("INSTANCE_NAME") !=
+      this->ToolToDictionary[name].end() )
     {
     instance = "NOT-FOUND";
     } // END if
   else
     {
-    instance = this->ToolToDictionary[key]["INSTANCE_NAME"];
+    instance = this->ToolToDictionary[name]["INSTANCE_NAME"];
     }
   return( instance );
 }
