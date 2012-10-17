@@ -341,7 +341,7 @@ std::string CosmologyToolsConfiguration::GetToolClassInstance(
       std::string name)
 {
   std::string instance ="";
-  if(this->ToolToDictionary[name].find("INSTANCE_NAME") !=
+  if(this->ToolToDictionary[name].find("INSTANCE_NAME") ==
       this->ToolToDictionary[name].end() )
     {
     instance = "NOT-FOUND";
