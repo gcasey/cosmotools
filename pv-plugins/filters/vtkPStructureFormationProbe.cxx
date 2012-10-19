@@ -21,7 +21,7 @@
 // sfprobe includes
 #include "ExtentUtilities.h"
 #include "TetrahedronUtilities.h"
-#include "LangrangianTesselator.h"
+#include "LagrangianTesselator.h"
 
 // C/C++ includes
 #include <cassert>
