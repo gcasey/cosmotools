@@ -1,5 +1,10 @@
 project(framework)
 
+option(ENABLE_FRAMEWORK_STATISTICS "Enable Framework Statistics" OFF)
+if(ENABLE_FRAMEWORK_STATISTICS)
+  add_definitions(-DENABLESTATS)
+endif()
+
 ## Specify global include dirs and global libraries for this project
 ## such that, they can be used within other projects.
 set(PACKAGE_framework_INCLUDE_DIRS
