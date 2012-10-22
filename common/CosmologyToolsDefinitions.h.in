@@ -6,6 +6,8 @@
 #include <map>
 #include <string>
 
+#include <mpi.h>
+
 #ifndef TYPE_POSVEL_DOUBLE
 #cmakedefine TYPE_POSVEL_DOUBLE
 #endif
@@ -30,8 +32,10 @@
  */
 #ifdef TYPE_POSVEL_DOUBLE
   typedef double POSVEL_T;
+  #define MPI_POSVEL_T MPI_DOUBLE
 #else
   typedef float POSVEL_T;
+  #define MPI_POSVEL_T MPI_FLOAT
 #endif
 
 /* Explicitly set precision for potential
@@ -39,14 +43,18 @@
  */
 #ifdef TYPE_POTENTIAL_DOUBLE
   typedef double POTENTIAL_T;
+  #define MPI_POTENTIAL_T MPI_DOUBLE
 #else
   typedef float POTENTIAL_T;
+  #define MPI_POTENTIAL_T MPI_FLOAT
 #endif
 
 #ifdef TYPE_GRID_DOUBLE
   typedef double GRID_T;
+  #define MPI_GRID_T MPI_DOUBLE
 #else
   typedef float GRID_T;
+  #define MPI_GRID_T MPI_FLOAT
 #endif
 
 /* Explicitly set whether to use 64-bit or 32-bit integers for ID types.
@@ -54,30 +62,39 @@
  */
 #ifdef TYPE_IDS_64BITS
   typedef int64_t ID_T;
+  #define MPI_ID_T MPI_INT64_T
 #else
   typedef int32_t ID_T;
+  #define MPI_ID_T MPI_INT32_T
 #endif
 
 /* Explicitly set the type for status/mask arrays
  * Behavior is hard-coded in this file.
  */
 typedef int32_t STATUS_T;
+#define MPI_STATUS_T MPI_INT32_T
+
 typedef uint16_t MASK_T;
+#define MPI_MASK_T MPI_UINT16_T
 
 // Generic integer/floating point types
 
 /* Set whether default floating type precision is double or single */
 #ifdef TYPE_REAL_DOUBLE
   typedef double REAL;
+  #define MPI_REAL_T MPI_DOUBLE
 #else
   typedef float REAL;
+  #define MPI_REAL_T MPI_FLOAT
 #endif
 
 /* Set whether to use 64 or 32 bit by default for integer types */
 #ifdef TYPE_INT_64BITS
   typedef int64_t INTEGER;
+  #define MPI_INTEGER_T MPI_INT64_T
 #else
   typedef int32_t INTEGER;
+  #define MPI_INTEGER_T MPI_INT32_T
 #endif
 
 
