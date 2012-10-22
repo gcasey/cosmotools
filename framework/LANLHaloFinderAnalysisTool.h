@@ -9,6 +9,9 @@
 #include "AnalysisTool.h"
 #include "CosmoHaloFinderP.h"
 
+#include <map>
+#include <vector>
+
 namespace cosmotk
 {
 
@@ -76,6 +79,12 @@ protected:
   INTEGER FOF_SIZE_THRESHOLD;
 
   cosmologytools::CosmoHaloFinderP *HaloFinder;
+
+#ifdef ENABLESTATS
+  // For each timestep, store the total number of halo particles
+  std::map< INTEGER, std::vector<INTEGER> > NumberOfHaloParticlesPerTimeStep;
+#endif
+
 private:
   DISABLE_COPY_AND_ASSIGNMENT(LANLHaloFinderAnalysisTool);
 };

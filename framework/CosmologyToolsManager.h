@@ -9,6 +9,7 @@
 #include <mpi.h>
 
 #include <cassert>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -138,6 +139,40 @@ private:
 
   // List of Analysis tools by name
   std::map<std::string,AnalysisTool*> AnalysisTools;
+
+  // Timers & other stats
+  std::map<std::string,REAL>      Timers;       // Discrete times at each tstep
+  std::map<std::string, INTEGER > EventCounter; // Number of event occurences
+  std::map<std::string, REAL>     GlobalTimers; // Total times (accumulative)
+
+  /**
+   * @brief Gather send vector on all processes
+   * @param send the send of vector on this process
+   * @param rcv the rcv vector consisting of the data from all processes
+   * @note A helper method to collect statistics from all processes
+   */
+  void GatherVector(
+      std::vector<REAL> &send, std::vector<REAL> &rcv);
+
+  /**
+   * @brief Starts a timer for the given event at the given timestep
+   * @param tstep the current timestep
+   * @param eventName the event name
+   */
+  void StartTimer(INTEGER tstep, std::string eventName);
+
+  /**
+   * @brief Ends the timer for the givent event at the given timestep
+   * @param tstep the current timestep
+   * @param eventName the event name
+   */
+  void EndTimer(INTEGER tstep, std::string eventName);
+
+  /**
+   * @brief Gathers all timers from all processes to rank 0 and write them
+   * in a file.
+   */
+  void FinalizeTimers();
 
   /**
    * @brief Clears the analysis tools
