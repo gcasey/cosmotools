@@ -135,6 +135,7 @@ void tess_test(int tot_blocks, int *data_size, float jitter, float cell_size,
   int *num_particles; /* number of particles in each block */
   int dim = 3; /* 3D */
   int given[3] = {0, 0, 0}; /* no constraints on decomposition in {x, y, z} */
+  int ghost[6] = {0, 0, 0, 0, 0, 0};
   int nblocks; /* my local number of blocks */
   int i;
 
@@ -151,7 +152,7 @@ void tess_test(int tot_blocks, int *data_size, float jitter, float cell_size,
   /* have DIY do the decomposition */
   DIY_Init(dim, ROUND_ROBIN_ORDER, tot_blocks, &nblocks, data_size,
 	   1, comm);
-  DIY_Decompose(1, 0, 0, given);
+  DIY_Decompose(1, ghost, given);
 
   /* generate test points in each block */
   particles = (float **)malloc(nblocks * sizeof(float *));
