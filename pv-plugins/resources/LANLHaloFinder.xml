@@ -1,4 +1,4 @@
-<ServerMangerConfiguration>
+<ServerManagerConfiguration>
   <ProxyGroup name="filters">
      <SourceProxy name="LANLHaloFinder"
                   class="vtkPLANLHaloFinder"
@@ -203,4 +203,4 @@
      </DoubleVectorProperty>
    </SourceProxy>
   </ProxyGroup>
-</ServerMangerConfiguration>
+</ServerManagerConfiguration>

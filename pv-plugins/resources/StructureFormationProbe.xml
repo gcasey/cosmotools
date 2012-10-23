@@ -1,4 +1,4 @@
-<ServerMangerConfiguration>
+<ServerManagerConfiguration>
   <ProxyGroup name="filters">
      <SourceProxy name="StructureFormationProbe"
                   class="vtkPStructureFormationProbe"
@@ -79,4 +79,4 @@
     </IntVectorProperty>
   </SourceProxy>
  </ProxyGroup>
-</ServerMangerConfiguration>
+</ServerManagerConfiguration>
