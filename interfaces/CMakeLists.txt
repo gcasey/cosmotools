@@ -6,12 +6,12 @@ project(interfaces)
 ## defined.
 include_directories(${PROJECT_BINARY_DIR}/C)
 
-## We always build the C-interface
-add_subdirectory(C)
-
 option(BUILD_FORTRAN_INTERFACE "Build Fortran interface" OFF)
 if( ${BUILD_FORTRAN_INTERFACE} )
   enable_language(Fortran)
+  add_subdirectory(C)
   add_subdirectory(Fortran)
+else()
+  add_subdirectory(C)  
 endif()
 

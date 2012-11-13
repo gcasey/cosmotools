@@ -18,20 +18,24 @@ set(RequiredLibs
     ${MPI_C_LIBRARIES})
 
 ## Setup the fortran mangling
-include(FortranCInterface)
-FortranCInterface_HEADER(
-    CosmologyToolsAPIMangling.h SYMBOLS
-        cosmotools_fortran_initialize
-        cosmotools_set_analysis_config
-        cosmotools_set_domain_parameters
-        cosmotools_set_particles
-        cosmotools_coprocess
-        cosmotools_finalize
-        )
-
-## Copy the mangled header to the main includes directory
-file(COPY ${PROJECT_BINARY_DIR}/C/CosmologyToolsAPIMangling.h
-      DESTINATION ${HEADER_INCLUDES_DIRECTORY} )
+if(${BUILD_FORTRAN_INTERFACE})
+    include(FortranCInterface)
+    FortranCInterface_HEADER(
+        CosmologyToolsAPIMangling.h SYMBOLS
+            cosmotools_fortran_initialize
+            cosmotools_set_analysis_config
+            cosmotools_set_domain_parameters
+            cosmotools_set_particles
+            cosmotools_coprocess
+            cosmotools_finalize
+            )
+    
+    ## Copy the mangled header to the main includes directory
+    file(COPY ${PROJECT_BINARY_DIR}/C/CosmologyToolsAPIMangling.h
+          DESTINATION ${HEADER_INCLUDES_DIRECTORY} )
+          
+    add_definitions(-DMANGLE_FORTRAN_API)
+endif()
 
 ## Specify project global definitions
 set(PACKAGE_interfaces_INCLUDE_DIRS

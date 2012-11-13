@@ -4,7 +4,10 @@
 #ifndef COSMOLOGY_TOOLS_H_
 #define COSMOLOGY_TOOLS_H_
 
-#include "CosmologyToolsAPIMangling.h" // auto-generated for Fortran interface
+#ifdef MANGLE_FORTRAN_API
+ #include "CosmologyToolsAPIMangling.h" // auto-generated for Fortran interface
+#endif
+
 #include "CosmologyToolsDefinitions.h"
 
 #include <mpi.h>
