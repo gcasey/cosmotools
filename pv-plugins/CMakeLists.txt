@@ -58,6 +58,7 @@ set(RequiredLibs
     ${PACKAGE_tess_LIBRARIES}
     ${PACKAGE_sfprobe_LIBRARIES}
     ${MPI_C_LIBRARIES}
+    ${VTK_LIBRARIES}
     )
 
 ## Add the paraview plugin
