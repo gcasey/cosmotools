@@ -1,0 +1,2 @@
+#!/bin/bash
+git branch -r --merged master | grep -v 'master$' | cut -d\/ --fields=1-2 --output-delimiter=" :" | xargs -n 2 git push
