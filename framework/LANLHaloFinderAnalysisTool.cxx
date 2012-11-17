@@ -1,6 +1,9 @@
 #include "LANLHaloFinderAnalysisTool.h"
 #include "Partition.h"
+
+
 #include <cassert>
+#include <fstream>
 #include <sstream>
 
 #include <mpi.h>
@@ -34,6 +37,11 @@ LANLHaloFinderAnalysisTool::~LANLHaloFinderAnalysisTool()
     delete this->HaloFinder;
     this->HaloFinder = NULL;
     }
+
+#ifdef ENABLESTATS
+  this->WriteHaloStatistics();
+#endif
+
 }
 
 //-----------------------------------------------------------------------------
@@ -90,7 +98,7 @@ void LANLHaloFinderAnalysisTool::Execute(SimulationParticles *particles)
   this->ParseParameters();
 
   // STEP 3: Setup halo-finder
-  if( this->GenerateOutput )
+  if( !this->GenerateOutput )
     {
     this->HaloFinder->setParameters(
         "",this->BoxLength,this->NG,this->NDIM,
@@ -124,6 +132,73 @@ void LANLHaloFinderAnalysisTool::Execute(SimulationParticles *particles)
   // STEP 6: Merge results across ranks
   this->HaloFinder->collectHalos(this->GenerateOutput /*clearSerial*/);
   this->HaloFinder->mergeHalos();
+
+
+
+  // STEP 7: Update statistics
+#ifdef ENABLESTATS
+ // NOTE: these numbers are only significant at the root (process 0)
+ int totalParticles= this->GetTotalNumberOfParticles(particles->NumParticles);
+ int totalhaloParticles = this->GetTotalNumberOfHaloParticles();
+
+ if( this->Rank()==0 )
+   {
+   this->HaloParticleStatistics.push_back(totalParticles);
+   this->HaloParticleStatistics.push_back(totalhaloParticles);
+   }
+#endif
+
+  // STEP 8: Barrier synchronization
+  this->Barrier();
+}
+
+//-----------------------------------------------------------------------------
+int LANLHaloFinderAnalysisTool::GetTotalNumberOfHaloParticles()
+{
+  assert("pre: halofinder is NULL!" && (this->HaloFinder != NULL));
+  int total = 0;
+
+  // Compute local number of halo particles
+  int localSum = 0;
+  for(int halo=0; halo < this->HaloFinder->getNumberOfHalos(); ++halo)
+    {
+    localSum += this->HaloFinder->getHaloCount()[halo];
+    }
+
+  // Compute global sum
+  MPI_Reduce(&localSum,&total,1,MPI_INT,MPI_SUM,0,this->Communicator);
+
+  return( total );
+}
+
+//-----------------------------------------------------------------------------
+int LANLHaloFinderAnalysisTool::GetTotalNumberOfParticles(int N)
+{
+  int total = 0;
+  MPI_Reduce(&N,&total,1,MPI_INT,MPI_SUM,0,this->Communicator);
+  return( total );
+}
+
+//-----------------------------------------------------------------------------
+void LANLHaloFinderAnalysisTool::WriteHaloStatistics()
+{
+
+  if( this->Rank() == 0 )
+    {
+    std::ofstream ofs;
+    ofs.open("HaloStatistics.dat");
+    ofs << "TotalNumberOfParticles;HaloParticles\n";
+
+    int N = this->HaloParticleStatistics.size()/2;
+    for( int i=0; i < N; ++i )
+      {
+      ofs << this->HaloParticleStatistics[ i*2 ] << ";";
+      ofs << this->HaloParticleStatistics[ i*2+1] << std::endl;
+      } // END for all statistics
+
+    ofs.close();
+    } // END if root rank
+  this->Barrier();
 }
 
 //-----------------------------------------------------------------------------

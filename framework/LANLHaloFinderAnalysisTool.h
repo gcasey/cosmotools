@@ -59,8 +59,8 @@ public:
   virtual void WriteOutput();
 
   /**
-   * @brief Returns the information of this
-   * @return
+   * @brief Returns the information of this AnalysisTool instance
+   * @return s a string consisting of information for this class instance.
    */
   virtual std::string GetInformation();
 
@@ -80,10 +80,33 @@ protected:
 
   cosmologytools::CosmoHaloFinderP *HaloFinder;
 
-#ifdef ENABLESTATS
+  /**
+   * @brief Gets the total number of particles across all procs.
+   * @param N the number of particles in this process.
+   * @return nGlobal the global number of particles.
+   * @note used to get statistics
+   */
+  int GetTotalNumberOfParticles(int N);
+
+
+  /**
+   * @return N the total number of halo particles across all procs.
+   * @note used to get statistics
+   */
+  int GetTotalNumberOfHaloParticles();
+
+  /**
+   * @brief Writes the halo statistics
+   */
+  void WriteHaloStatistics();
+
   // For each timestep, store the total number of halo particles
-  std::map< INTEGER, std::vector<INTEGER> > NumberOfHaloParticlesPerTimeStep;
-#endif
+  // a flat vector, in a 2-stride layout configuration, which holds
+  // halo particle statistics as follows:
+  // i*3 holds the number of halo particles
+  // i*3+1 holds the total number of particles
+  std::vector<int> HaloParticleStatistics;
+
 
 private:
   DISABLE_COPY_AND_ASSIGNMENT(LANLHaloFinderAnalysisTool);
