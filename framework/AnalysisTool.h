@@ -8,8 +8,9 @@
 #include "CosmologyToolsMacros.h"
 
 // C/C++ includes
-#include <string>
+#include <cassert>
 #include <set>
+#include <string>
 
 // MPI include
 #include <mpi.h>
@@ -131,6 +132,26 @@ public:
    * @return status true if the algorithm must execute, else, false.
    */
   bool ShouldExecute(INTEGER ts);
+
+  /**
+   * @return rank of process w.r.t the supplied communicator
+   */
+  int Rank()
+    {
+    assert("pre: communicator is NULL!"&&(this->Communicator!=MPI_COMM_NULL));
+    int rank = 0;
+    MPI_Comm_rank(this->Communicator,&rank);
+    return( rank );
+    }
+
+  /**
+   * @brief Performs barrier synchronization.
+   */
+  void Barrier()
+    {
+    assert("pre: communicator is NULL!"&&(this->Communicator!=MPI_COMM_NULL));
+    MPI_Barrier(this->Communicator);
+    }
 
   /**
    * @brief Parses the parameters from the given dictionary.
