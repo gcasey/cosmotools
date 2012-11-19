@@ -45,9 +45,7 @@ CosmologyToolsManager::CosmologyToolsManager()
 //------------------------------------------------------------------------------
 CosmologyToolsManager::~CosmologyToolsManager()
 {
-  this->Communicator = MPI_COMM_NULL;
-
-  if( this->Particles != NULL )
+   if( this->Particles != NULL )
     {
     delete this->Particles;
     }
@@ -512,8 +510,8 @@ void CosmologyToolsManager::CoProcess()
 //------------------------------------------------------------------------------
 void CosmologyToolsManager::Finalize()
 {
-  this->Communicator      = MPI_COMM_NULL;
-  this->ConfigurationFile = "";
+//  this->Communicator      = MPI_COMM_NULL;
+//  this->ConfigurationFile = "";
   this->ClearAnalysisTools();
 }
 
