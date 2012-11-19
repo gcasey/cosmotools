@@ -608,33 +608,34 @@ void CosmoHaloFinderP::mergeHalos()
                 1, MPI_INT, MPI_MAX, cosmologytools::Partition::getComm());
 #endif
 
-  // If there are no halos to merge, return
-  if (maxNumberOfMixed == 0)
-    return;
-
   // Everyone creates the buffer for maximum halos
   // MASTER will receive into it, others will send from it
   int haloBufSize = maxNumberOfMixed * this->pmin * 2;
-  ID_T* haloBuffer = new ID_T[haloBufSize];
+  ID_T* haloBuffer = NULL;
 
-  // MASTER moves its own mixed halos to mixed halo vector (change index to tag)
-  // then gets messages from others and creates those mixed halos
-  collectMixedHalos(haloBuffer, haloBufSize);
-#ifndef USE_SERIAL_COSMO
-  MPI_Barrier(Partition::getComm());
-#endif
+  if (maxNumberOfMixed != 0)
+    {
+    haloBuffer = new ID_T[haloBufSize];
 
-  // MASTER has all data and runs algorithm to make decisions
-  assignMixedHalos();
-#ifndef USE_SERIAL_COSMO
-  MPI_Barrier(Partition::getComm());
-#endif
+    // MASTER moves its own mixed halos to mixed halo vector (change index to tag)
+    // then gets messages from others and creates those mixed halos
+    collectMixedHalos(haloBuffer, haloBufSize);
+    #ifndef USE_SERIAL_COSMO
+      MPI_Barrier(Partition::getComm());
+    #endif
 
-  // MASTER sends merge results to all processors
-  sendMixedHaloResults(haloBuffer, haloBufSize);
-#ifndef USE_SERIAL_COSMO
-  MPI_Barrier(Partition::getComm());
-#endif
+    // MASTER has all data and runs algorithm to make decisions
+    assignMixedHalos();
+    #ifndef USE_SERIAL_COSMO
+      MPI_Barrier(Partition::getComm());
+    #endif
+
+    // MASTER sends merge results to all processors
+    sendMixedHaloResults(haloBuffer, haloBufSize);
+    #ifndef USE_SERIAL_COSMO
+      MPI_Barrier(Partition::getComm());
+    #endif
+    }
 
   // Collect totals for result checking
   int totalAliveHalos;
@@ -656,8 +657,10 @@ void CosmoHaloFinderP::mergeHalos()
 
   if (this->myProc == MASTER) {
     cout << endl;
-    cout << "Total halos found:    " << totalAliveHalos << endl;
-    cout << "Total halo particles: " << totalAliveHaloParticles << endl;
+    cout << "Number of mixed halos: " << maxNumberOfMixed        << endl;
+    cout << "Total halos found:    "  << totalAliveHalos         << endl;
+    cout << "Total halo particles: "  << totalAliveHaloParticles << endl;
+    cout.flush();
   }
 
   for (unsigned int i = 0; i < this->myMixedHalos.size(); i++)
@@ -671,7 +674,8 @@ void CosmoHaloFinderP::mergeHalos()
   // haloStart information has been moved to vector<int> halos
   clearHaloStart();
 
-  delete [] haloBuffer;
+  if( haloBuffer != NULL )
+    delete [] haloBuffer;
 }
 
 /////////////////////////////////////////////////////////////////////////
