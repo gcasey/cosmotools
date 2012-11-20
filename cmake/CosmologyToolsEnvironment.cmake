@@ -58,5 +58,10 @@ if(NOT BUILD_SHARED_LIBS)
  add_definitions(-fPIC)
 endif()
 
+option(ENABLE_FRAMEWORK_STATISTICS "Enable Framework Statistics" OFF)
+if(${ENABLE_FRAMEWORK_STATISTICS})
+  add_definitions(-DENABLESTATS)
+endif()
+
 ## Choose whether to build tests or not
 option(BUILD_TESTING "Build Tests." OFF)
