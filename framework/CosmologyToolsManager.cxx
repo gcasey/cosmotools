@@ -305,7 +305,7 @@ void CosmologyToolsManager::GatherVector(
 
   // STEP 1: Ensure each process sends the same number of items
   int NTOTAL = 0;
-  MPI_Reduce(&N,&NTOTAL,1,MPI_INT,MPI_SUM,0,this->Communicator);
+  MPI_Allreduce(&N,&NTOTAL,1,MPI_INT,MPI_SUM,this->Communicator);
   assert("pre: Each proc must send the same number of data" &&
           NTOTAL==this->NumRanks*N);
 
