@@ -141,9 +141,9 @@ private:
   std::map<std::string,AnalysisTool*> AnalysisTools;
 
   // Timers & other stats
-  std::map<std::string,REAL>      Timers;       // Discrete times at each tstep
+  std::map<std::string,double>      Timers;       // Discrete times at each tstep
   std::map<std::string, INTEGER > EventCounter; // Number of event occurences
-  std::map<std::string, REAL>     GlobalTimers; // Total times (accumulative)
+  std::map<std::string,double>     GlobalTimers; // Total times (accumulative)
 
   /**
    * @brief Gather send vector on all processes
@@ -152,7 +152,7 @@ private:
    * @note A helper method to collect statistics from all processes
    */
   void GatherVector(
-      std::vector<REAL> &send, std::vector<REAL> &rcv);
+      std::vector<double> &send, std::vector<double> &rcv);
 
   /**
    * @brief Starts a timer for the given event at the given timestep

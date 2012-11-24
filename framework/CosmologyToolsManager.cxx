@@ -245,7 +245,7 @@ void CosmologyToolsManager::StartTimer(
 
 #ifdef ENABLESTATS
   // STEP 0: Get the start time
-  REAL startTime = MPI_Wtime();
+  double startTime = MPI_Wtime();
 
   // STEP 1: Update event counter
   if( this->EventCounter.find(eventName) == this->EventCounter.end() )
@@ -275,7 +275,7 @@ void CosmologyToolsManager::EndTimer(INTEGER tstep, std::string eventName)
 
 #ifdef ENABLESTATS
   // STEP 0: Get the end time
-  REAL endTime = MPI_Wtime();
+  double endTime = MPI_Wtime();
 
   // STEP 1: Get the previously stored start time
   std::ostringstream oss;
@@ -298,7 +298,7 @@ void CosmologyToolsManager::EndTimer(INTEGER tstep, std::string eventName)
 
 //------------------------------------------------------------------------------
 void CosmologyToolsManager::GatherVector(
-      std::vector<REAL> &snd, std::vector<REAL> &rcv)
+      std::vector<double> &snd, std::vector<double> &rcv)
 {
   // STEP 0: Get the number of items each process will send
   int N = static_cast<int>( snd.size() );
@@ -316,8 +316,8 @@ void CosmologyToolsManager::GatherVector(
     }
 
   // STEP 3: Do gather
-  MPI_Gather(&snd[0],N,MPI_REAL_T,
-      &rcv[0],N,MPI_REAL_T,0,this->Communicator);
+  MPI_Gather(&snd[0],N,MPI_DOUBLE,
+      &rcv[0],N,MPI_DOUBLE,0,this->Communicator);
 }
 
 //------------------------------------------------------------------------------
@@ -330,22 +330,22 @@ void CosmologyToolsManager::FinalizeTimers()
     {
     std::string eventName = eventCounterIter->first;
     INTEGER frequency = eventCounterIter->second;
-    PRINTLN( << "EVENT: " << eventName << " RUN " << frequency << "times" );
+    PRINTLN( << "EVENT: " << eventName << " RUN " << frequency << " TIMES" );
     } // END for all events
 
   // STEP 2: Pack the discrete timers for this process
-  std::vector< REAL > processTimers;
+  std::vector< double > processTimers;
   processTimers.resize( this->Timers.size() );
-  std::map<std::string,REAL>::iterator timersIter = this->Timers.begin();
+  std::map<std::string,double>::iterator timersIter = this->Timers.begin();
   for(int idx=0; timersIter != this->Timers.end(); ++timersIter, ++idx )
     {
     processTimers[idx] = timersIter->second;
     } // END for all timers in this process
 
   // STEP 3: Pack the global timers for this process
-  std::vector< REAL > processGlobalTimers;
+  std::vector< double > processGlobalTimers;
   processGlobalTimers.resize( this->GlobalTimers.size() );
-  std::map<std::string,REAL>::iterator globalTimersIter=
+  std::map<std::string,double>::iterator globalTimersIter=
       this->GlobalTimers.begin();
   int idx=0;
   for(;globalTimersIter != this->GlobalTimers.end(); ++globalTimersIter,++idx)
@@ -355,15 +355,15 @@ void CosmologyToolsManager::FinalizeTimers()
 
 
   // STEP 4: Gather vectors
-  std::vector<REAL> DiscreteTimes;
-  std::vector<REAL> TotalTimes;
+  std::vector<double> DiscreteTimes;
+  std::vector<double> TotalTimes;
   this->GatherVector(processTimers,DiscreteTimes);
   this->GatherVector(processGlobalTimers,TotalTimes);
 
   // STEP 4: Process 0 dumps the time statistics
   if( this->Rank == 0 )
     {
-    std::map<std::string,REAL>::iterator iter;
+    std::map<std::string,double>::iterator iter;
     int NEVENTS = 0;
 
     // Write Total times per process

@@ -1,7 +1,7 @@
 #include "LANLHaloFinderAnalysisTool.h"
 #include "Partition.h"
 
-
+#include <iostream>
 #include <cassert>
 #include <fstream>
 #include <sstream>
@@ -27,6 +27,8 @@ LANLHaloFinderAnalysisTool::LANLHaloFinderAnalysisTool()
   this->Communicator       = MPI_COMM_NULL;
 
   this->HaloFinder = new cosmologytools::CosmoHaloFinderP();
+
+  this->HaloParticleStatistics.resize(0);
 }
 
 //-----------------------------------------------------------------------------
@@ -143,6 +145,9 @@ void LANLHaloFinderAnalysisTool::Execute(SimulationParticles *particles)
 
  if( this->Rank()==0 )
    {
+   std::cout << "TOTAL particles= " << totalParticles << std::endl;
+   std::cout << "HALO particles= " << totalhaloParticles << std::endl;
+   std::cout.flush();
    this->HaloParticleStatistics.push_back(totalParticles);
    this->HaloParticleStatistics.push_back(totalhaloParticles);
    }
