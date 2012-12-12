@@ -3,7 +3,12 @@
 // voronoi analysis
 #include "tess.h"
 #include "diy.h"
-void Tessellate(Particles *particles, int rank, int groupsize);
+void Tessellate(Particles *particles, int rank, int groupsize, int step, 
+		int numsteps);
+using namespace std;
+
+// timing
+double tess_times[MAX_TIMES];
 
 //MAIN
 int main(int argc, char* argv[])
@@ -13,13 +18,16 @@ int main(int argc, char* argv[])
   SimpleTimings::TimerRef t_total = SimpleTimings::getTimer("total");
   SimpleTimings::TimerRef t_init = SimpleTimings::getTimer("init");
   SimpleTimings::TimerRef t_stepr = SimpleTimings::getTimer("stepr");
+  SimpleTimings::TimerRef t_step = SimpleTimings::getTimer("step");
   SimpleTimings::TimerRef t_xtra = SimpleTimings::getTimer("xtra");
   SimpleTimings::TimerRef t_sort = SimpleTimings::getTimer("sort");
   SimpleTimings::TimerRef t_map1 = SimpleTimings::getTimer("map1");
 
-  if(argc < 6) {
-    fprintf(stderr,"USAGE: mc3 <indat> <inBase|tfName> <outBase> <INIT|RECORD|BLOCK|COSMO|RESTART> <ROUND_ROBIN|ONE_TO_ONE|restart_step>\n");
+  if(argc < 2) {
+usage:
+    fprintf(stderr,"USAGE: mc3 <indat> <inBase|tfName> <outBase> <INIT|RECORD|BLOCK|COSMO|RESTART> <ROUND_ROBIN|ALL_TO_ALL|ONE_TO_ONE|restart_step>\n");
     fprintf(stderr,"-a <aliveDumpName>   : alive particle dumps\n");
+    fprintf(stderr,"-A <smallDumpName>   : alive particle dumps from rank 0 only\n");
     fprintf(stderr,"-r <restartDumpName> : restart particle dumps\n");
     fprintf(stderr,"-f <refreshStepName> : steps for particle refresh\n");
     fprintf(stderr,"-o <analysisdat>     : config file for analysis\n");
@@ -30,21 +38,43 @@ int main(int argc, char* argv[])
     fprintf(stderr,"-g                   : final grid output\n");
     fprintf(stderr,"-m                   : initialize MPI_Alltoall\n");
     fprintf(stderr,"-p <pkDumpName>      : P(k) dumps (+ initial, final, restarts)\n");
+    fprintf(stderr,"-w                   : use white noise initializer\n");
+    fprintf(stderr,"-I                   : use MPI IO for restart files and pseudo-outputs\n");
+    fprintf(stderr,"-t <NXxNYxNZ>        : use 3D topology NX by NY by NZ\n");
+    fprintf(stderr,"-V <step>            : the step number at which to produce viz. output\n");
+    fprintf(stderr,"-v <step>            : the step number at which to produce viz. slab output\n");
+    fprintf(stderr,"-C                   : write initial conditions to file(s)\n");
     exit(-1);
   }
 
+  //INITIALIZE MPI
+  MPI_Init(&argc, &argv);
 
   //sort command line options
   MC3Options options(argc, argv);
 
+  string indatName;
+  string inBase;
+  string outBase;
+  string dataType;
+  string distributeType;
 
   int argvi = optind;
-  string indatName = argv[argvi++];
-  string inBase = argv[argvi++];
-  string outBase = argv[argvi++];
-  string dataType = argv[argvi++];
-  string distributeType = argv[argvi++];
-
+  if (!options.newParams()) {
+    if (argc < 6) goto usage;
+    indatName = argv[argvi++];
+    inBase = argv[argvi++];
+    outBase = argv[argvi++];
+    dataType = argv[argvi++];
+    distributeType = argv[argvi++];
+  } else {
+    string pName = argv[argvi++];
+    options.readNewParams(pName);
+    inBase = options.inBase();
+    outBase = options.outBase();
+    dataType = options.dataType();
+    distributeType = options.distributeType();
+  }
 
   //starting from restart file
   int restartQ = 0;
@@ -61,19 +91,28 @@ int main(int argc, char* argv[])
     dataType = "RECORD";
   }
 
-
-  //INITIALIZE MPI
-  MPI_Init(&argc, &argv);
-
-
   //INITIALIZE TOPOLOGY
+  int tmpDims[DIMENSION];
+  if(options.topologyQ()) {
+    char *tmpDimsStr = (char *)options.topologyString().c_str();
+    char *tmpDimsTok;
+    tmpDimsTok = strtok(tmpDimsStr,"x");
+    tmpDims[0] = atoi(tmpDimsTok);
+    tmpDimsTok = strtok(NULL,"x");
+    tmpDims[1] = atoi(tmpDimsTok);
+    tmpDimsTok = strtok(NULL,"x");
+    tmpDims[2] = atoi(tmpDimsTok);
+    int nnodes;
+    MPI_Comm_size(MPI_COMM_WORLD, &nnodes);
+    MY_Dims_init_3D(nnodes, DIMENSION, tmpDims);
+  }
   Partition::initialize();
   int numranks = Partition::getNumProc();
   int rank = Partition::getMyProc();
 
 
   //READ INDAT FILE
-  Basedata indat( indatName.c_str() );
+  Basedata indat( indatName.c_str(), options.params() );
 
 
   //INITIALIZE GEOMETRY
@@ -108,13 +147,28 @@ int main(int argc, char* argv[])
     //START FROM THE BEGINNING
     loadParticles(indat, particles, 
 		  inBase, dataType, distributeType, 
-		  cosmoFormatQ);
+		  cosmoFormatQ, options);
   } else {
     //RESTARTING
-    particles.readRestart( create_outName( create_outName( inBase + "." + RESTART_SUFFIX, step0), rank).c_str() );
+    if(options.mpiio()) {
+      particles.readRestart( create_outName( inBase + "." + MPI_RESTART_SUFFIX, step0).c_str() );
+    } else {
+      particles.readRestart( create_outName( create_outName( inBase + "." + RESTART_SUFFIX, step0), rank).c_str() );
+    }
     step0++;
   }
   MPI_Barrier(MPI_COMM_WORLD);
+
+
+  //WRITE OUT INITIAL CONDITIONS
+  if (dataType == "INIT" && options.writeIC()) {
+    if(options.mpiio()) {
+      particles.writeAliveHCosmo( (outBase + "." + MPI_ALIVE_SUFFIX + ".IC").c_str(), 1.0/(1.0+indat.zin()));
+    } else {
+      particles.writeAliveHCosmo( create_outName( outBase + "." + ALIVE_SUFFIX + ".IC", rank).c_str(), 1.0/(1.0+indat.zin()));
+    }
+    MPI_Barrier(MPI_COMM_WORLD);
+  }  
 
 
   //MOVE PARTICLES TO CELL BEFORE ALLOCATING FFT MEMORY
@@ -151,7 +205,8 @@ int main(int argc, char* argv[])
 
   //TIMESTEPPER VARIABLES
   TimeStepper ts(indat.alpha(), indat.ain(), indat.afin(),
-		 indat.nsteps(), indat.omegatot() );
+		 indat.nsteps(), indat.omega_matter(), indat.w_de(),
+                 indat.wa_de());
   int64_t Np_local_alive, Np_global_alive;
   double rho_local_alive, rho_global_alive;
 
@@ -201,6 +256,8 @@ int main(int argc, char* argv[])
 
   //actual timestepping
   for(int step = step0; step < ts.nsteps(); step++) {
+    SimpleTimings::startTimer(t_step);
+
     if(rank==0) {
       printf("STEP %d, pp = %f, a = %f, z = %f\n",
 	     step, ts.pp(), ts.aa(), ts.zz());
@@ -275,6 +332,7 @@ int main(int argc, char* argv[])
     if(extras->extrasStep()) {
       if(rank==0) {
 	printf("EXTRAS: ");
+	if(extras->vizStep() == step)printf("(viz. output) ");
 	if(extras->staticStep())printf("(static output) ");
 	if(extras->lcStep())printf("(light cone update) ");
 	if(extras->aliveStep())printf("(alive particle output) ");
@@ -331,21 +389,79 @@ int main(int argc, char* argv[])
       MPI_Barrier(MPI_COMM_WORLD);
     }
 
-    SimpleTimings::stopTimer(t_xtra);
+    SimpleTimings::stopTimerStats(t_xtra);
+    SimpleTimings::stopTimerStats(t_step);
 
     if(rank==0) {
       printf("\n");
       fflush(stdout);
     }
 
-    // voronoi analysis (only at a single (final) timestep for now)
+//     voronoi analysis (only at a single (final) timestep for now)
+//     if (step % 10 == 1 || step == ts.nsteps() - 1)
     if (step == ts.nsteps() - 1)
-      Tessellate(&particles, rank, numranks);
+      Tessellate(&particles, rank, numranks, step, ts.nsteps());
+
+    // test checkpoint / restart
+    // if (step == ts.nsteps() - 1) {
+    // if (step % 2 == 0) {
+    // if (1) {
+
+    //   // get particles
+    //   vector<POSVEL_T> xx;
+    //   vector<POSVEL_T> yy;
+    //   vector<POSVEL_T> zz;
+    //   vector<POSVEL_T> vx;
+    //   vector<POSVEL_T> vy;
+    //   vector<POSVEL_T> vz;
+    //   vector<POSVEL_T> phi;
+    //   vector<ID_T> pid;
+    //   vector<MASK_T> mask;
+    //   float anow = 1; // not worried about correct velocities
+    //   particles.copyAliveIntoVectors(&xx,&yy,&zz,&vx,&vy,&vz, &phi, &pid, 
+    // 				      &mask, anow);
+
+    //   // write restart
+    //   RestartIO io_wr(IO_WRITE_RESTART, (char *)"out.rs", MPI_COMM_WORLD);
+    //   int64_t num_particles = xx.size();
+    //   io_wr.WriteRestart(num_particles, &xx[0], &yy[0], &zz[0], &vx[0], &vy[0],
+    // 			 &vz[0], &phi[0], &pid[0], &mask[0]);
+
+    //   // define data to be read back in, allocated by ReadRestart()
+    //   int r_num_particles;
+    //   float *r_xx, *r_yy, *r_zz;
+    //   float *r_vx, *r_vy, *r_vz;
+    //   float *r_phi;
+    //   int64_t *r_pid;
+    //   uint16_t *r_mask;
+
+    //   // read restart
+    //   RestartIO io_rr(IO_READ_RESTART, (char *)"out.rs", MPI_COMM_WORLD);
+    //   r_num_particles = io_rr.ReadRestart(r_xx, r_yy, r_zz, r_vx, r_vy, r_vz, 
+    // 					  r_phi, r_pid, r_mask);
+
+    //   // compare written and read restart data
+    //   assert(num_particles == r_num_particles);
+    //   for (int i = 0; i < num_particles; i++) {
+    // 	assert(pid[i] == r_pid[i]);
+    // 	assert(xx[i] == r_xx[i]);
+    // 	assert(yy[i] == r_yy[i]);
+    // 	assert(zz[i] == r_zz[i]);
+    // 	assert(vx[i] == r_vx[i]);
+    // 	assert(vy[i] == r_vy[i]);
+    // 	assert(vz[i] == r_vz[i]);
+    // 	assert(phi[i] == r_phi[i]);
+    // 	assert(mask[i] == r_mask[i]);
+    //   }
+
+    //   fprintf(stderr, "I/O restart at step %d successful\n", step);
+
+    // }
 
   } // end timestepper 
 
 
-  SimpleTimings::stopTimer(t_stepr);
+  SimpleTimings::stopTimerStats(t_stepr);
 
 
   //OUTPUT REST OF LIGHT CONE SKEWERS ACCUMULATED
@@ -400,8 +516,13 @@ int main(int argc, char* argv[])
 //
 // particles: hacc particle structure
 // rank, groupsize: MPI usual
+// step: current timestep
+// numsteps: total number of timesteps
 //
-void Tessellate(Particles *particles, int rank, int groupsize){
+void Tessellate(Particles *particles, int rank, int groupsize, int step,
+		int numsteps) {
+
+  static bool first = true;
 
   unsigned char neigh_dirs[] = {
     DIY_X0,                   DIY_X1,
@@ -420,7 +541,8 @@ void Tessellate(Particles *particles, int rank, int groupsize){
   };
 
   if (rank == 0)
-    fprintf(stderr, "\n*** Calling voronoi tessellation ***\n\n");
+    fprintf(stderr, "\n*** Calling voronoi tessellation on step %d ***\n\n",
+	    step);
 
   // get particles
   vector<POSVEL_T> xx;
@@ -435,8 +557,12 @@ void Tessellate(Particles *particles, int rank, int groupsize){
   float anow = 1; // not worried about correct velocities
   particles->copyAliveIntoVectors(&xx,&yy,&zz,&vx,&vy,&vz, &phi, &id, 
 				 &mask, anow);
-  double **pts = new double*[1]; // one block per process
-  pts[0] = new double[3 * xx.size()];
+
+  /* following must be malloc, not new, because tess will realloc them
+     during its particle exchange, and it is a C library */
+  float **pts = (float **)malloc(sizeof(float*)); // one block per process
+  pts[0] = (float *)malloc(3 * xx.size() * sizeof(float));
+
   int num_pts[1]; // one block per process
   num_pts[0] = xx.size();
   for (int i = 0; i < num_pts[0]; i++) {
@@ -445,68 +571,76 @@ void Tessellate(Particles *particles, int rank, int groupsize){
     pts[0][3 * i + 2] = zz[i];
   }
 
-  // block bounds
-  bb_t bb; // bounds
-  float min[DIMENSION], size[DIMENSION];
-  Domain::rL_local_alive(size);
-  Domain::corner_phys_alive(min);
-  for(int i = 0; i < DIMENSION; i++) {
-    bb.min[i] = min[i];
-    bb.max[i] = min[i] + size[i];
-    // debug
-//     fprintf(stderr, "dimension = %d min = %.3lf max = %.3lf\n", 
-// 	    i, bb.min[i], bb.max[i]);
+  // first timestep
+  if (first) {
+
+    // block bounds
+    bb_t bb; // bounds
+    float min[DIMENSION], size[DIMENSION];
+    Domain::rL_local_alive(size);
+    Domain::corner_phys_alive(min);
+    for(int i = 0; i < DIMENSION; i++) {
+      bb.min[i] = min[i];
+      bb.max[i] = min[i] + size[i];
+    }
+
+    // decomposition size (number of blocks in each dimension)
+    int decomp_size[DIMENSION];
+    Partition::getDecompSize(decomp_size);
+
+    // data overall extents
+    // assume all blocks are same size (as mine)
+    // assume 0,0,0 is the overall data minimum corner
+    float data_mins[DIMENSION], data_maxs[DIMENSION];
+    for (int i = 0; i < DIMENSION; i++) {
+      data_mins[i] = 0.0;
+      data_maxs[i] = data_mins[i] + size[i] * decomp_size[i];
+    }
+
+    // get neighbors
+    // one block per process with 26 neighbors
+    int neigh_gids[NUM_OF_NEIGHBORS]; // gids = process ranks in hacc 
+    Partition::getNeighbors(neigh_gids);
+    gb_t **neighbors = new gb_t*[1];
+    neighbors[0] = new gb_t[NUM_OF_NEIGHBORS];
+    int num_neighbors[1] = { NUM_OF_NEIGHBORS };
+    for (int i = 0; i < NUM_OF_NEIGHBORS; i++) {
+      neighbors[0][i].gid       = neigh_gids[i];
+      neighbors[0][i].proc      = neigh_gids[i];
+      neighbors[0][i].neigh_dir = neigh_dirs[i];
+    }
+
+    // guess at cell size and ghost factor
+    float cell_size = 1.0;
+    float ghost_factor = 2.0;
+
+    // gids are trivial, only one block, my MPI rank
+    int gids[1];
+    gids[0] = rank;
+
+    tess_init(1, groupsize, gids, &bb, neighbors, num_neighbors, 
+	      cell_size, ghost_factor, data_mins, data_maxs, 1, .0001, -1.0, 
+	      MPI_COMM_WORLD, tess_times);
+
+    first = false;
+    delete[] neighbors[0];
+    delete[] neighbors;
+
   }
 
-  // decomposition size (number of blocks in each dimension)
-  int decomp_size[DIMENSION];
-  Partition::getDecompSize(decomp_size);
-  // debug
-//   fprintf(stderr, "Decomposition size: ");
-//   for (int i = 0; i < DIMENSION; i++)
-//     fprintf(stderr, "%d ", decomp_size[i]);
-//   fprintf(stderr, "\n");
+  // every timestep
 
-  // data overall extents
-  // assume all blocks are same size (as mine)
-  // assume 0,0,0 is the overall data minimum corner
-  float data_mins[DIMENSION], data_maxs[DIMENSION];
-  for (int i = 0; i < DIMENSION; i++) {
-    data_mins[i] = 0.0;
-    data_maxs[i] = data_mins[i] + size[i] * decomp_size[i];
-  }
+  char buf[256];
+  sprintf(buf, "/sandbox/vor-%d.out", step);
+  tess(pts, num_pts, buf);
 
-  // get neighbors
-  // one block per process with 26 neighbors
-  int neigh_gids[NUM_OF_NEIGHBORS]; // gids = process ranks in hacc 
-  Partition::getNeighbors(neigh_gids);
-  gb_t **neighbors = new gb_t*[1];
-  neighbors[0] = new gb_t[NUM_OF_NEIGHBORS];
-  int num_neighbors[1] = {NUM_OF_NEIGHBORS};
-  for (int i = 0; i < NUM_OF_NEIGHBORS; i++) {
-    neighbors[0][i].gid       = neigh_gids[i];
-    neighbors[0][i].proc      = neigh_gids[i];
-    neighbors[0][i].neigh_dir = neigh_dirs[i];
-  }
+  // last timestep
+  if (step == numsteps - 1)
+    tess_finalize();
 
-  // debug
-//   fprintf(stderr, "local gid %d neighbor gids: ", rank);
-//   for (int i = 0; i < NUM_OF_NEIGHBORS; i++)
-//     fprintf(stderr, "%d ", neigh_gids[i]);
-//   fprintf(stderr, "\n");
-
-  // guess at cell size and ghost factor
-  float cell_size = 1.0;
-  float ghost_factor = 2.0;
-
-  // gids are trivial, only one block, my MPI rank
-  int gids[1];
-  gids[0] = rank;
-
-  // call tess
-  tess(1, groupsize, gids, &bb, neighbors, num_neighbors, 
-       cell_size, ghost_factor, pts, num_pts, 
-       data_mins, data_maxs, 1, 0.504, -1.0, MPI_COMM_WORLD);
+  // cleanup: free instead of delete, was malloc'ed instead of new'ed
+  free(pts[0]);
+  free(pts);
 
 }
 //-------------------------------------------------------------------

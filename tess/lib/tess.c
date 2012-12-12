@@ -40,8 +40,7 @@ static int **hdrs; /* headers */
 /*
   initialize parallel voronoi (and later possibly delaunay) tesselation
 
-  nblocks: local number of blocks in my process
-  tot_blocks: total number of blocks in the domain
+  num_blocks: local number of blocks in my process
   gids: global ids of my local blocks
   bounds: block bounds (extents) of my local blocks
   neighbors: neighbor lists for each of my local blocks, in lid order
@@ -56,7 +55,7 @@ static int **hdrs; /* headers */
   mpi_comm: MPI communicator
   all_times: times for particle exchange, voronoi cells, convex hulls, and output
 */
-void tess_init(int num_blocks, int tot_blocks, int *gids, 
+void tess_init(int num_blocks, int *gids, 
 	       struct bb_t *bounds, struct gb_t **neighbors, 
 	       int *num_neighbors, float cell_dia, float ghost_mult, 
 	       float *global_mins, float *global_maxs, 
@@ -85,8 +84,8 @@ void tess_init(int num_blocks, int tot_blocks, int *gids,
     times[i] = 0.0;
 
   /* init DIY */
-  DIY_Init(dim, ROUND_ROBIN_ORDER, tot_blocks, &nblocks, NULL, 1, comm);
-  DIY_Decomposed(gids, bounds, NULL, NULL, NULL, NULL, neighbors, 
+  DIY_Init(dim, NULL, 1, comm);
+  DIY_Decomposed(num_blocks, gids, bounds, NULL, NULL, NULL, NULL, neighbors, 
 		 num_neighbors, wrap);
 
 }
@@ -135,7 +134,7 @@ void tess_test(int tot_blocks, int *data_size, float jitter, float cell_size,
   int *num_particles; /* number of particles in each block */
   int dim = 3; /* 3D */
   int given[3] = {0, 0, 0}; /* no constraints on decomposition in {x, y, z} */
-  int ghost[6] = {0, 0, 0, 0, 0, 0};
+  int ghost[6] = {0, 0, 0, 0, 0, 0}; /* ghost in {-x, +x, -y, +y, -z, +z} */
   int nblocks; /* my local number of blocks */
   int i;
 
@@ -150,9 +149,8 @@ void tess_test(int tot_blocks, int *data_size, float jitter, float cell_size,
   }
 
   /* have DIY do the decomposition */
-  DIY_Init(dim, ROUND_ROBIN_ORDER, tot_blocks, &nblocks, data_size,
-	   1, comm);
-  DIY_Decompose(1, ghost, given);
+  DIY_Init(dim, data_size, 1, comm);
+  DIY_Decompose(ROUND_ROBIN_ORDER, tot_blocks, &nblocks, 1, ghost, given);
 
   /* generate test points in each block */
   particles = (float **)malloc(nblocks * sizeof(float *));

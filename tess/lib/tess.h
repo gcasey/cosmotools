@@ -32,7 +32,7 @@ void tess_test(int tot_blocks, int *data_size, float jitter, float cell_size,
 #ifdef __cplusplus
 extern "C"
 #endif
-void tess_init(int num_blocks, int tot_blocks, int *gids, 
+void tess_init(int num_blocks, int *gids, 
 	       struct bb_t *bounds, struct gb_t **neighbors, 
 	       int *num_neighbors, float cell_dia, float ghost_mult, 
 	       float *global_mins, float *global_maxs, 
