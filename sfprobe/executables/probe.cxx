@@ -364,7 +364,7 @@ void WriteProbedGridData(
   int ext[6];
 
   REAL bounds[6];
-  p->GetLangrangeTesselator()->GetBounds(bounds);
+  p->GetLagrangeTesselator()->GetBounds(bounds);
 
   for(int i=0; i < 3; ++i)
     {
@@ -486,7 +486,7 @@ int main(int argc, char **argv)
 
       Probe->BuildLangrangianMesh(Origin,h,ext);
       std::cout << "Number of Langrangian tets: ";
-      std::cout << Probe->GetLangrangeTesselator()->GetNumTets() << std::endl;
+      std::cout << Probe->GetLagrangeTesselator()->GetNumTets() << std::endl;
       std::cout.flush();
       }
 
