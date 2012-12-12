@@ -254,7 +254,7 @@ void TessVoidFinderAnalysisTool::InitializeTess(
 
   // STEP 9: call tess_init
   tess_init(
-      numBlocksPerProcess,totalBlocks,gids,&bb,neighbors,num_neighbors,
+      numBlocksPerProcess,gids,&bb,neighbors,num_neighbors,
       this->CellSize,this->GhostFactor,data_mins,data_maxs,wrap,
       this->MinVol,this->MaxVol,this->Communicator,
       this->TimeStatistics);
