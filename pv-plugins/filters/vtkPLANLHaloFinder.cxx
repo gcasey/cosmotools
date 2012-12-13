@@ -74,6 +74,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "vtkDoubleArray.h"
 #include "vtkDummyController.h"
 #include "vtkFloatArray.h"
+#include "vtkIdTypeArray.h"
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
 #include "vtkIntArray.h"
@@ -489,14 +490,23 @@ void vtkPLANLHaloFinder::VectorizeData(
   // TODO: VTK data arrays must match what POSVEL_T & ID_T are.
 
   vtkPoints     *points   = particles->GetPoints();
+  assert("pre: points should not be NULL!" && (points != NULL) );
+
   vtkFloatArray *velocity = vtkFloatArray::SafeDownCast(
       particles->GetPointData()->GetArray("velocity") );
+  assert("pre: velocity should not be NULL!" && (velocity != NULL) );
+
   vtkFloatArray *pmass = vtkFloatArray::SafeDownCast(
       particles->GetPointData()->GetArray("mass") );
-  vtkIntArray *uid = vtkIntArray::SafeDownCast(
+  assert("pre: pmass should not be NULL!" && (pmass != NULL) );
+
+  vtkIdTypeArray *uid = vtkIdTypeArray::SafeDownCast(
       particles->GetPointData()->GetArray("tag")  );
+  assert("pre: uid should not be NULL!" && (uid != NULL) );
+
   vtkIntArray *owner = vtkIntArray::SafeDownCast(
       particles->GetPointData()->GetArray("ghost") );
+  assert("pre: ownder should not be NULL" && (owner != NULL) );
 
   vtkIntArray *haloTag = vtkIntArray::New();
   haloTag->SetName( "HaloID" );
