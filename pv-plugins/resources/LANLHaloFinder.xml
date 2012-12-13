@@ -21,7 +21,7 @@
      <DoubleVectorProperty
       name="RL"
       command="SetRL"
-      label="rL (physical box side length)"
+      label="Box size"
       number_of_elements="1"
       default_values="100" >
      <DoubleRangeDomain name="range" min="0" />
@@ -35,7 +35,7 @@
      <DoubleVectorProperty
       name="Overlap"
       command="SetOverlap"
-      label="overlap (shared point/ghost cell gap distance)"
+      label="Overlap"
       number_of_elements="1"
       default_values="5" >
      <DoubleRangeDomain name="range" min="0" />
@@ -49,7 +49,7 @@
      <IntVectorProperty
       name="NP"
       command="SetNP"
-      label="np (number of seeded particles in one dimension, i.e., total particles = np^3)"
+      label="Seed particles"
       number_of_elements="1"
       default_values="256" >
      <IntRangeDomain name="range" min="0" />
@@ -62,7 +62,7 @@
      <DoubleVectorProperty
       name="BB"
       command="SetBB"
-      label="bb (linking length)"
+      label="Linking length"
       number_of_elements="1"
       default_values="0.20" >
      <DoubleRangeDomain name="range" min="0" />
@@ -76,7 +76,7 @@
      <IntVectorProperty
       name="PMin"
       command="SetPMin"
-      label="pmin (minimum particle threshold for an FOF halo)"
+      label="FOF particle threshold"
       number_of_elements="1"
       default_values="100" >
      <IntRangeDomain name="range" min="1" />
@@ -89,7 +89,7 @@
       <IntVectorProperty
         name="CenterFindingMethod"
         command="SetCenterFindingMethod"
-        label="Method for detecting the halo center"
+        label="Center finder"
         number_of_elements="1"
         default_values="0">
        <EnumerationDomain name="center_detection_algorithm">
@@ -107,7 +107,7 @@
      <IntVectorProperty
       name="ComputeSOD"
       command="SetComputeSOD"
-      label="Compute spherical overdensity (SOD) halos"
+      label="Sphere Overdensity Halos (SOD)"
       number_of_elements="1"
       default_values="0" >
      <BooleanDomain name="bool" />
@@ -133,7 +133,7 @@
      <DoubleVectorProperty
       name="SODMass"
       command="SetSODMass"
-      label="initial SOD mass"
+      label="Initial SOD mass"
       number_of_elements="1"
       default_values="1.0e14" >
      <DoubleRangeDomain name="range" min="0" />
@@ -145,7 +145,7 @@
      <DoubleVectorProperty
       name="MinRadiusFactor"
       command="SetMinRadiusFactor"
-      label="minimum radius factor"
+      label="Minimum radius factor"
       number_of_elements="1"
       default_values="0.5" >
      <DoubleRangeDomain name="range" min="0" />
@@ -157,7 +157,7 @@
      <DoubleVectorProperty
       name="MaxRadiusFactor"
       command="SetMaxRadiusFactor"
-      label="maximum radius factor"
+      label="Maximum radius factor"
       number_of_elements="1"
       default_values="2.0" >
      <DoubleRangeDomain name="range" min="0" />
@@ -169,7 +169,7 @@
      <IntVectorProperty
       name="SODBins"
       command="SetSODBins"
-      label="number of bins"
+      label="Number of bins"
       number_of_elements="1"
       default_values="20" >
      <IntRangeDomain name="range" min="1" />
@@ -181,7 +181,7 @@
      <IntVectorProperty
       name="MinFOFSize"
       command="SetMinFOFSize"
-      label="minimum FOF size"
+      label="FOF size threshold"
       number_of_elements="1"
       default_values="1000" >
      <IntRangeDomain name="range" min="0" />
@@ -193,7 +193,7 @@
      <DoubleVectorProperty
       name="MinFOFMass"
       command="SetMinFOFMass"
-      label="minimum FOF mass"
+      label="FOF mass threshold"
       number_of_elements="1"
       default_values="5.0e12" >
      <DoubleRangeDomain name="range" />

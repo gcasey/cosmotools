@@ -37,7 +37,7 @@
 
       <DoubleVectorProperty command="SetRL"
                             default_values="100"
-                            label="rL (physical box side length)"
+                            label="Box size"
                             name="RL"
                             number_of_elements="1">
         <DoubleRangeDomain min="0"
@@ -47,7 +47,7 @@
       </DoubleVectorProperty>
       <DoubleVectorProperty command="SetOverlap"
                             default_values="5"
-                            label="overlap (shared point/ghost cell gap distance)"
+                            label="Overlap"
                             name="Overlap"
                             number_of_elements="1">
         <DoubleRangeDomain min="0"
