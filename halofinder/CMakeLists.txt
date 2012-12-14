@@ -27,9 +27,11 @@ add_subdirectory(cosmohalo)
 
 ## List of sources for the halo tracker
 set(HALOTRACKER_SRC
+    DistributedHaloEvolutionTree.cxx
     ForwardHaloTracker.cxx
     Halo.cxx
     HaloDataInformation.cxx
+    HaloMergerTreeKernel.cxx
     TemporalHaloInformation.cxx
     )
 
