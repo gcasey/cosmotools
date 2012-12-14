@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <sstream>
 #include <vector>
 
 namespace cosmotk
@@ -65,6 +66,14 @@ int Halo::Intersect(Halo *h)
   overlap = overlapParticles.size();
   overlapParticles.clear();
   return( overlap );
+}
+
+//-----------------------------------------------------------------------------
+std::string Halo::GetHashCode()
+{
+  std::ostringstream oss;
+  oss << this->TimeStep << "." << this-Tag;
+  return( oss.str() );
 }
 
 } /* namespace cosmotk */

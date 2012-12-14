@@ -52,6 +52,12 @@ public:
    */
   int Intersect(Halo *h);
 
+  /**
+   * @brief Gets the hash code of this halo instance.
+   * @return h a hashcode for this halo instance.
+   */
+  std::string GetHashCode();
+
   int Tag;                      // The tag/ID of the halo
   int TimeStep;                 // The time-step of this halo
   REAL Redshift;                // The corresponding red-shift of the halo
