@@ -10,6 +10,7 @@ namespace cosmotk
 DistributedHaloEvolutionTree::DistributedHaloEvolutionTree()
 {
   this->Communicator = MPI_COMM_NULL;
+  this->FileName = "HaloEvolutionTree.dat";
 }
 
 //------------------------------------------------------------------------------
@@ -20,11 +21,11 @@ DistributedHaloEvolutionTree::~DistributedHaloEvolutionTree()
 
 //------------------------------------------------------------------------------
 void DistributedHaloEvolutionTree::AppendNodes(
-      Halo **halos, const int N)
+      Halo *halos, const int N)
 {
   for( int halo=0; halo < N; ++halo )
     {
-    this->Nodes[ halos[ halo ]->GetHashCode() ] = *(halos[ halo ]);
+    this->Nodes[ halos[ halo ].GetHashCode() ] = halos[ halo ];
     } // END for all halos
 }
 
@@ -81,7 +82,7 @@ void DistributedHaloEvolutionTree::WriteTree()
 {
   assert("pre: NULL communicator!" && (this->Communicator != MPI_COMM_NULL));
   this->RelabelTreeNodes();
-  // TODO: implement this
+  // TODO: Write tree in this->FileName
 }
 
 

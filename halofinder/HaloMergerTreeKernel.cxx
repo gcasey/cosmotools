@@ -26,8 +26,8 @@ HaloMergerTreeKernel::~HaloMergerTreeKernel()
 
 //------------------------------------------------------------------------------
 void HaloMergerTreeKernel::UpdateMergerTree(
-      const int t1, Halo **haloSet1, const int M,
-      const int t2, Halo **haloSet2, const int N,
+      const int t1, Halo *haloSet1, const int M,
+      const int t2, Halo *haloSet2, const int N,
       DistributedHaloEvolutionTree *t )
 {
   this->RegisterHalos( t1,haloSet1,M, t2,haloSet2,N );
@@ -37,8 +37,8 @@ void HaloMergerTreeKernel::UpdateMergerTree(
 
 //------------------------------------------------------------------------------
 void HaloMergerTreeKernel::RegisterHalos(
-    const int t1, Halo **haloSet1, const int M,
-    const int t2, Halo **haloSet2, const int N)
+    const int t1, Halo *haloSet1, const int M,
+    const int t2, Halo *haloSet2, const int N)
 {
   assert("pre: t1 < t2" && (t1 < t2) );
   assert("pre: halo set 1 should not be empty" && (M >= 1) );
@@ -68,7 +68,7 @@ void HaloMergerTreeKernel::ComputeMergerTree( )
     {
     for( int col=0; col < ncol; ++col )
       {
-      int overlap = this->Halos1[row]->Intersect(this->Halos2[col]);
+      int overlap = this->Halos1[row].Intersect(&this->Halos2[col]);
       this->HaloSimilarityMatrix[row*ncol+col] = overlap;
       } // END for all columns
     } // END for all rows
@@ -102,8 +102,8 @@ void HaloMergerTreeKernel::UpdateHaloEvolutionTree(
       if(overlap > this->MergerTreeThreshold)
         {
         t->CreateEdge(
-            this->Halos1[row]->GetHashCode(),
-            this->Halos2[col]->GetHashCode(),
+            this->Halos1[row].GetHashCode(),
+            this->Halos2[col].GetHashCode(),
             overlap);
         } // if the halos are similar
       } // END for all columns

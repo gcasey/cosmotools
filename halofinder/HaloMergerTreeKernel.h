@@ -41,16 +41,16 @@ public:
    * @pre (t != NULL).
    */
   virtual void UpdateMergerTree(
-        const int t1, Halo **haloSet1, const int M,
-        const int t2, Halo **haloSet2, const int N,
+        const int t1, Halo *haloSet1, const int M,
+        const int t2, Halo *haloSet2, const int N,
         DistributedHaloEvolutionTree *t);
 
 protected:
 
   int Timesteps[2]; // The two time-steps of halo-information.
   int Sizes[2];     // The number of halos for each of the two time-steps.
-  Halo **Halos1;     // The set of halos at time-step t1.
-  Halo **Halos2;     // The set of halos at time-step t2.
+  Halo *Halos1;     // The set of halos at time-step t1.
+  Halo *Halos2;     // The set of halos at time-step t2.
 
   std::vector< int > HaloSimilarityMatrix; // Flat 2-D matrix
   int MergerTreeThreshold;
@@ -69,8 +69,8 @@ protected:
    * @pre (haloSet1 != NULL) && (haloSet2 != NULL).
    */
   void RegisterHalos(
-       const int t1, Halo **haloSet1, const int M,
-       const int t2, Halo **haloSet2, const int N);
+       const int t1, Halo *haloSet1, const int M,
+       const int t2, Halo *haloSet2, const int N);
 
   /**
    * @brief Given two sets of halos at different time-steps, this method

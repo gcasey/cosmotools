@@ -32,9 +32,15 @@ public:
   virtual ~DistributedHaloEvolutionTree();
 
   /**
-   * @brief get/set macro for MPI communicator.
+   * @brief Get/Set macro for MPI communicator.
    */
   GetNSetMacro(Communicator,MPI_Comm);
+
+  /**
+   * @brief Get/Set macro for FileName
+   * @note This is the filename where the merger will be written out.
+   */
+  GetNSetMacro(FileName,std::string);
 
   /**
    * @brief Adds the given halos as nodes to this instance of the tree
@@ -42,7 +48,7 @@ public:
    * @note Each tree node is identified by the halo hash-code.
    * @see Halo::GetHashCode()
    */
-  void AppendNodes( Halo** halos, const int N );
+  void AppendNodes( Halo* halos, const int N );
 
   /**
    * @brief Creates an edge from the tree node corresponding to hashCode1
@@ -96,6 +102,8 @@ protected:
   std::map< std::string, Halo > Nodes; // List of nodes in the halo
   std::vector< std::string >    Edges; // List of edges (strided by 2)
   std::vector< int > EdgeWeights;      // Weights associated with edges
+
+  std::string FileName;
 
   MPI_Comm Communicator;
 

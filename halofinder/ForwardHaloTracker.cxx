@@ -1,9 +1,10 @@
 #include "ForwardHaloTracker.h"
 
-#include "FOFHaloProperties.h"
 #include "CosmoHaloFinderP.h"
-#include "HaloFinders.h"
+#include "FOFHaloProperties.h"
 #include "HaloDataInformation.h"
+#include "HaloFinders.h"
+#include "Partition.h"
 #include "TemporalHaloInformation.h"
 
 #include <cassert>
@@ -13,62 +14,38 @@ namespace cosmologytools {
 
 ForwardHaloTracker::ForwardHaloTracker()
 {
-  this->Communicator         = MPI_COMM_WORLD;
-  this->Frequency            = 5;
-  this->RL                   = 100;
-  this->Overlap              = 5;
-  this->LinkingLength        = 0.2;
-  this->UseExplicitTimeSteps = false;
-  this->TemporalHaloData     = new TemporalHaloInformation();
-  this->NumberOfParticles  = 0;
+  this->BoxLength         = 0.0;
+  this->NG                = 5;
+  this->NDIM              = 0;
+  this->PMIN              = 200;
+  this->LinkingLength     = 0.2;
+  this->NumberOfParticles = 0;
+  this->Communicator      = MPI_COMM_NULL;
+
+  this->TemporalHaloData  = new TemporalHaloInformation();
+  this->HaloEvolutionTree = new cosmotk::DistributedHaloEvolutionTree();
+  this->HaloMergerTree    = new cosmotk::ParallelHaloMergerTree();
 }
 
 //------------------------------------------------------------------------------
 ForwardHaloTracker::~ForwardHaloTracker()
 {
-  if (this->TemporalHaloData != NULL)
-  {
-  delete this->TemporalHaloData;
-  }
+  if( this->TemporalHaloData != NULL )
+    {
+    delete this->TemporalHaloData;
+    }
+
+  if( this->HaloEvolutionTree != NULL )
+    {
+    this->HaloEvolutionTree->WriteTree();
+    delete this->HaloEvolutionTree;
+    }
+
+  if( this->HaloMergerTree != NULL )
+    {
+    delete this->HaloMergerTree;
+    }
   this->NumberOfParticles = 0;
-}
-
-//------------------------------------------------------------------------------
-void ForwardHaloTracker::SetExplicitTrackerTimeSteps(
-    INTEGER *tsteps, const INTEGER N)
-{
-  this->UseExplicitTimeSteps = true;
-  for( int i=0; i < N; ++i )
-    {
-    this->TimeSteps.insert( tsteps[i] );
-    }
-}
-
-//------------------------------------------------------------------------------
-bool ForwardHaloTracker::IsTrackerTimeStep(const int tstep)
-{
-  if( this->UseExplicitTimeSteps )
-    {
-    if( this->TimeSteps.find( tstep ) != this->TimeSteps.end() )
-      {
-      return true;
-      }
-    else
-      {
-      return false;
-      }
-    }
-  else
-    {
-    if( (tstep % this->Frequency) == 0)
-      {
-      return true;
-      }
-    else
-      {
-      return false;
-      }
-    }
 }
 
 //------------------------------------------------------------------------------
@@ -76,7 +53,7 @@ void ForwardHaloTracker::RegisterParticles(
     const INTEGER tstep, const REAL redShift,
     POSVEL_T* px, POSVEL_T* py, POSVEL_T*pz,
     POSVEL_T* vx, POSVEL_T* vy, POSVEL_T*vz,
-    REAL* mass, POTENTIAL_T* potential,
+    POSVEL_T* mass, POTENTIAL_T* potential,
     ID_T* id, MASK_T* mask, STATUS_T* state,
     INTEGER N)
 {
@@ -91,156 +68,139 @@ void ForwardHaloTracker::RegisterParticles(
   assert("pre: mask particles array is NULL!" && (mask != NULL) );
   assert("pre: state particles arrray is NULL!" && (state != NULL) );
 
-  if( this->IsTrackerTimeStep( tstep ) )
-    {
-    this->NumberOfParticles = N;
+  this->TimeStep = tstep;
+  this->RedShift = redShift;
 
-    CosmoHaloFinderP *haloFinder = new CosmoHaloFinderP;
+  this->Px = px; this->Py = py; this->Pz = pz;
+  this->Vx = vx; this->Vy = vy; this->Vz = vz;
+  this->Mass              = mass;
+  this->Potential         = potential;
+  this->Mask              = mask;
+  this->State             = state;
+  this->NumberOfParticles = N;
+}
 
-    // Create vectors from the pointers since the halo-finder accepts vectors
-    // NOTE: these are slow...halo-finder ought to work with pointers, my 2c.
-    this->Px.assign(px, px+N);
-    this->Py.assign(py, py+N);
-    this->Pz.assign(pz, pz+N);
-    this->Vx.assign(vx, vx+N);
-    this->Vy.assign(vy, vy+N);
-    this->Vz.assign(vz, vz+N);
-    this->Potential.assign(potential,potential+N);
-    this->Mass.assign(mass,mass+N);
-    this->Id.assign(id,id+N);
-    this->Mask.assign(mask,mask+N);
-    this->State.assign(state,state+N);
+//------------------------------------------------------------------------------
+void ForwardHaloTracker::TrackHalos()
+{
+  // STEP 0: Execute the halo-finder
+  cosmologytools::Partition::initialize(this->Communicator);
+  cosmologytools::CosmoHaloFinderP *haloFinder=
+     new cosmologytools::CosmoHaloFinderP();
+  this->ExecuteHaloFinder(haloFinder);
 
-    haloFinder->setParticles(
-        &(this->Px),&(this->Py),&(this->Pz),
-        &(this->Vx),&(this->Vy),&(this->Vz),
-        &(this->Potential),
-        &(this->Id),
-        &(this->Mask),
-        &(this->State)
-        );
+  // STEP 1: Get halos at this time-step. Note, the pointer to currentHaloData
+  // is managed by the TemporalHaloData object.
+  HaloDataInformation *currentHaloData = new HaloDataInformation();
+  this->GetHaloInformation(currentHaloData,haloFinder);
 
-    this->Barrier();
-    haloFinder->executeHaloFinder();
-    this->Barrier();
-    haloFinder->collectHalos();
-    this->Barrier();
-    haloFinder->mergeHalos();
-    this->Barrier();
+  // STEP 2: Update temporal halo information
+  this->TemporalHaloData->Update(currentHaloData);
 
-    // Extract the halo information data at this time-step. Note, these objects
-    // are managed by the TemporalHaloInformation object. TemporalHaloData
-    // de-allocates the HaloDataInformation once they go out-of-scope, that's
-    // why the object is not de-allocated here.
-    HaloDataInformation *hinfo = new HaloDataInformation();
-    hinfo->RedShift = redShift;
-    hinfo->TimeStep = tstep;
-    this->GetHaloInformation(hinfo, haloFinder);
-
-    // Update the Temporal halo-information
-    this->TemporalHaloData->Update(hinfo);
-    delete haloFinder;
-    }
-
-  // Synch all procs
+  // STEP 3: Update merger-tree
+  this->UpdateMergerTree();
   this->Barrier();
 }
 
 //------------------------------------------------------------------------------
-void ForwardHaloTracker::UpdateMergerTree(const int tstep)
+void ForwardHaloTracker::ExecuteHaloFinder(
+        CosmoHaloFinderP* haloFinder)
 {
-  if( this->IsTrackerTimeStep(tstep) && this->TemporalHaloData->IsComplete() )
+  assert("pre: HaloFinder is NULL" && (haloFinder != NULL) );
+
+  // STEP 0: Set the parameters for the halo-finder
+  haloFinder->setParameters(
+      "",this->BoxLength,this->NG,this->NDIM,this->PMIN,
+      this->LinkingLength);
+
+  // STEP 1: Set the particle input dataset
+  haloFinder->setParticles(
+      this->Px,this->Py,this->Pz,
+      this->Vx,this->Vy,this->Vz,
+      this->Potential,this->Id,
+      this->Mask,this->State,
+      this->NumberOfParticles);
+
+  // STEP 2: Run the halo-finder in parallel
+  haloFinder->executeHaloFinder();
+
+  // STEP 3: Merge results across ranks
+  haloFinder->collectHalos(false /*clearSerial*/);
+  haloFinder->mergeHalos();
+}
+
+//------------------------------------------------------------------------------
+void ForwardHaloTracker::UpdateMergerTree()
+{
+  if( this->TemporalHaloData->IsComplete() )
     {
-    // TODO: update the merger trees here
-    // Plug-in Jay's code here!
-    }
-  this->Barrier();
+    HaloDataInformation* current  = this->TemporalHaloData->GetCurrent();
+    HaloDataInformation* previous = this->TemporalHaloData->GetPrevious();
+    this->HaloMergerTree->UpdateMergerTree(
+        current->TimeStep,&current->Halos[0],current->NumberOfHalos,
+        previous->TimeStep,&previous->Halos[0],previous->NumberOfHalos,
+        this->HaloEvolutionTree);
+    } // END if update merger-tree
 }
 
 //------------------------------------------------------------------------------
 void ForwardHaloTracker::GetHaloInformation(
-    HaloDataInformation* hinfo, CosmoHaloFinderP* hfinder)
+    HaloDataInformation* haloData, CosmoHaloFinderP* haloFinder)
 {
-  assert("pre: halo information object is NULL" && hinfo != NULL);
-  assert("pre: hfinder information object is NULL" && hfinder != NULL);
+  assert("pre: halo information object is NULL" && haloData != NULL);
+  assert("pre: hfinder information object is NULL" && haloFinder != NULL);
 
   // STEP 0: Get halo-finder properties
-  int numberOfHalos = hfinder->getNumberOfHalos();
-  int *fofHalos     = hfinder->getHalos();
-  int *fofHaloCount = hfinder->getHaloCount();
-  int *fofHaloList  = hfinder->getHaloList();
+  int numberOfHalos = haloFinder->getNumberOfHalos();
+  int *fofHalos     = haloFinder->getHalos();
+  int *fofHaloCount = haloFinder->getHaloCount();
+  int *fofHaloList  = haloFinder->getHaloList();
 
   // STEP 1: Construct FOFHaloProperties object
   cosmologytools::FOFHaloProperties* fof =
       new cosmologytools::FOFHaloProperties();
   fof->setHalos(numberOfHalos,fofHalos,fofHaloCount,fofHaloList);
-  fof->setParameters("",this->RL,this->Overlap,this->LinkingLength);
+  fof->setParameters("",this->BoxLength,this->NG,this->LinkingLength);
   fof->setParticles(
-      &(this->Px),&(this->Py),&(this->Pz),
-      &(this->Vx),&(this->Vy),&(this->Vz),
-      &(this->Mass),
-      &(this->Potential),
-      &(this->Id),
-      &(this->Mask),
-      &(this->State)
-      );
+      this->NumberOfParticles,
+      this->Px,this->Py,this->Pz,
+      this->Vx,this->Vy,this->Vz,
+      this->Mass,
+      this->Id );
 
-  // STEP 2: Filter out the halos within the PMIN threshold
-  std::vector< int > extractedHalos;
-  for(int halo=0; halo < numberOfHalos; ++halo )
+  // STEP 2: Extract halo information
+  haloData->NumberOfHalos = 0;
+  haloData->TimeStep      = this->TimeStep;
+  haloData->RedShift      = this->RedShift;
+
+  cosmotk::Halo myHalo;
+
+  for( int halo=0; halo < numberOfHalos; ++halo)
     {
-    if( fofHaloCount[halo] >= this->PMin )
+    if( fofHaloCount[halo] >= this->PMIN )
       {
-      extractedHalos.push_back( halo );
-      } // END if the halo is within the pmin threshold
+      myHalo.Tag = haloData->NumberOfHalos;
+      haloData->NumberOfHalos++;
+
+      myHalo.TimeStep = this->TimeStep;
+      myHalo.Redshift = this->RedShift;
+
+      ID_T* haloParticles = new ID_T[fofHaloCount[halo]];
+      fof->extractHaloParticleIds(halo,haloParticles);
+      for( int hpidx=0; hpidx < fofHaloCount[halo]; ++hpidx)
+        {
+        myHalo.ParticleIds.insert( haloParticles[hpidx] );
+        } // END for all halo particles
+      delete [] haloParticles;
+
+      fof->FOFHaloPosition(halo,myHalo.Center);
+      fof->FOFHaloVelocity(halo,myHalo.AverageVelocity);
+
+      haloData->Halos.push_back(myHalo);
+      } // END if halo is big enough
     } // END for all halos
 
-
-  hinfo->Allocate( extractedHalos.size() );
-
-  // STEP 3: Extract particle halo ids and particle ids
-  for(int halo=0; halo < static_cast<int>(extractedHalos.size()); ++halo )
-    {
-    int internalHaloIdx     = extractedHalos[ halo ];
-    int NumParticlesInHalo  = fofHaloCount[ internalHaloIdx ];
-
-    // TODO: we should change the way we access the halo-finder information
-    // here. We need to have a more efficient and intuitive API.
-    POSVEL_T *xlocHalo = new POSVEL_T[ NumParticlesInHalo ];
-    POSVEL_T *ylocHalo = new POSVEL_T[ NumParticlesInHalo ];
-    POSVEL_T *zlocHalo = new POSVEL_T[ NumParticlesInHalo ];
-    POSVEL_T *xVelHalo = new POSVEL_T[ NumParticlesInHalo ];
-    POSVEL_T *yVelHalo = new POSVEL_T[ NumParticlesInHalo ];
-    POSVEL_T *zVelHalo = new POSVEL_T[ NumParticlesInHalo ];
-    POSVEL_T *massHalo = new POSVEL_T[ NumParticlesInHalo ];
-    ID_T  *id          = new ID_T[ NumParticlesInHalo ];
-    int *actualIdx     = new int[ NumParticlesInHalo ];
-
-    fof->extractInformation(
-        internalHaloIdx,actualIdx,
-        xlocHalo,ylocHalo,zlocHalo,
-        xVelHalo,yVelHalo,zVelHalo,
-        massHalo,id);
-
-    for(int hpidx=0; hpidx < NumParticlesInHalo; ++hpidx )
-      {
-      hinfo->GlobalIds.push_back( id[ actualIdx[hpidx] ] );
-      hinfo->HaloTags.push_back( internalHaloIdx );
-      } // END for all particles in halo
-
-    delete [] xlocHalo;
-    delete [] ylocHalo;
-    delete [] zlocHalo;
-    delete [] xVelHalo;
-    delete [] yVelHalo;
-    delete [] zVelHalo;
-    delete [] massHalo;
-    delete [] id;
-    delete [] actualIdx;
-    } // END for all extracted halos
-
-
-  // STEP 4: Delete FOFHaloProperties
+  // STEP 3: Delete FOFHaloProperties
   delete fof;
 }
 
