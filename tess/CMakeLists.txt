@@ -18,12 +18,14 @@ foreach(header ${HEADERS})
   file(COPY ${header} DESTINATION ${HEADER_INCLUDES_DIRECTORY})
 endforeach()
 
+## This is resolved at the top level, since DIY is now used at the framework
+## level.
 ## Find DIY library
-find_package(DIY REQUIRED)
-if(NOT DIY_FOUND)
- message(FATAL_ERROR "Could not find DIY!")
-endif()
-message(STATUS "-- DIY is found!")
+#find_package(DIY REQUIRED)
+#if(NOT DIY_FOUND)
+# message(FATAL_ERROR "Could not find DIY!")
+#endif()
+#essage(STATUS "-- DIY is found!")
 
 ## Find Qhull
 find_package(Qhull REQUIRED)
