@@ -30,6 +30,73 @@
 
 namespace cosmotk {
 
+unsigned char neigh_dirs[] = {
+  DIY_X0,                   DIY_X1,
+  DIY_Y0,                   DIY_Y1,
+  DIY_Z0,                   DIY_Z1,
+  DIY_X0 | DIY_Y0,          DIY_X1 | DIY_Y1,
+  DIY_X0 | DIY_Y1,          DIY_X1 | DIY_Y0,
+  DIY_Y0 | DIY_Z0,          DIY_Y1 | DIY_Z1,
+  DIY_Y0 | DIY_Z1,          DIY_Y1 | DIY_Z0,
+  DIY_Z0 | DIY_X0,          DIY_Z1 | DIY_X1,
+  DIY_Z0 | DIY_X1,          DIY_Z1 | DIY_X0,
+  DIY_X0 | DIY_Y0 | DIY_Z0, DIY_X1 | DIY_Y1 | DIY_Z1,
+  DIY_X0 | DIY_Y0 | DIY_Z1, DIY_X1 | DIY_Y1 | DIY_Z0,
+  DIY_X0 | DIY_Y1 | DIY_Z0, DIY_X1 | DIY_Y0 | DIY_Z1,
+  DIY_X0 | DIY_Y1 | DIY_Z1, DIY_X1 | DIY_Y0 | DIY_Z0,
+};
+
+
+//
+// Neighbors are enumerated so that particles can be attached to the correct
+// neighbor, but these pairs must be preserved for the ParticleExchange.
+// Every processor should be able to send and receive on every iteration of
+// the exchange, so if everyone sends RIGHT and receives LEFT it works
+//
+// Do not change this pairing order.
+//
+enum NEIGHBOR
+{
+  X0,                   // Left face
+  X1,                   // Right face
+
+  Y0,                   // Bottom face
+  Y1,                   // Top face
+
+  Z0,                   // Front face
+  Z1,                   // Back face
+
+  X0_Y0,                // Left   bottom edge
+  X1_Y1,                // Right  top    edge
+
+  X0_Y1,                // Left   top    edge
+  X1_Y0,                // Right  bottom edge
+
+  Y0_Z0,                // Bottom front  edge
+  Y1_Z1,                // Top    back   edge
+
+  Y0_Z1,                // Bottom back   edge
+  Y1_Z0,                // Top    front  edge
+
+  Z0_X0,                // Front  left   edge
+  Z1_X1,                // Back   right  edge
+
+  Z0_X1,                // Front  right  edge
+  Z1_X0,                // Back   left   edge
+
+  X0_Y0_Z0,             // Left  bottom front corner
+  X1_Y1_Z1,             // Right top    back  corner
+
+  X0_Y0_Z1,             // Left  bottom back  corner
+  X1_Y1_Z0,             // Right top    front corner
+
+  X0_Y1_Z0,             // Left  top    front corner
+  X1_Y0_Z1,             // Right bottom back  corner
+
+  X0_Y1_Z1,             // Left  top    back  corner
+  X1_Y0_Z0              // Right bottom front corner
+};
+
 //------------------------------------------------------------------------------
 CosmologyToolsManager::CosmologyToolsManager()
 {
@@ -64,6 +131,179 @@ CosmologyToolsManager::~CosmologyToolsManager()
 }
 
 //------------------------------------------------------------------------------
+void CosmologyToolsManager::ComputeRankNeighbors(
+        int pos[3], int neighbor[26] )
+{
+  assert("pre: communicator is not cartesian!" &&
+            this->IsCartesianCommunicator());
+
+  int xpos = pos[0];
+  int ypos = pos[1];
+  int zpos = pos[2];
+
+  // Face neighbors
+  neighbor[X0] = this->GetRankByPosition(xpos-1, ypos, zpos);
+  neighbor[X1] = this->GetRankByPosition(xpos+1, ypos, zpos);
+  neighbor[Y0] = this->GetRankByPosition(xpos, ypos-1, zpos);
+  neighbor[Y1] = this->GetRankByPosition(xpos, ypos+1, zpos);
+  neighbor[Z0] = this->GetRankByPosition(xpos, ypos, zpos-1);
+  neighbor[Z1] = this->GetRankByPosition(xpos, ypos, zpos+1);
+
+  // Edge neighbors
+  neighbor[X0_Y0] = this->GetRankByPosition(xpos-1, ypos-1, zpos);
+  neighbor[X0_Y1] = this->GetRankByPosition(xpos-1, ypos+1, zpos);
+  neighbor[X1_Y0] = this->GetRankByPosition(xpos+1, ypos-1, zpos);
+  neighbor[X1_Y1] = this->GetRankByPosition(xpos+1, ypos+1, zpos);
+
+  neighbor[Y0_Z0] = this->GetRankByPosition(xpos, ypos-1, zpos-1);
+  neighbor[Y0_Z1] = this->GetRankByPosition(xpos, ypos-1, zpos+1);
+  neighbor[Y1_Z0] = this->GetRankByPosition(xpos, ypos+1, zpos-1);
+  neighbor[Y1_Z1] = this->GetRankByPosition(xpos, ypos+1, zpos+1);
+
+  neighbor[Z0_X0] = this->GetRankByPosition(xpos-1, ypos, zpos-1);
+  neighbor[Z0_X1] = this->GetRankByPosition(xpos+1, ypos, zpos-1);
+  neighbor[Z1_X0] = this->GetRankByPosition(xpos-1, ypos, zpos+1);
+  neighbor[Z1_X1] = this->GetRankByPosition(xpos+1, ypos, zpos+1);
+
+  // Corner neighbors
+  neighbor[X0_Y0_Z0] = this->GetRankByPosition(xpos-1, ypos-1, zpos-1);
+  neighbor[X1_Y0_Z0] = this->GetRankByPosition(xpos+1, ypos-1, zpos-1);
+  neighbor[X0_Y1_Z0] = this->GetRankByPosition(xpos-1, ypos+1, zpos-1);
+  neighbor[X1_Y1_Z0] = this->GetRankByPosition(xpos+1, ypos+1, zpos-1);
+  neighbor[X0_Y0_Z1] = this->GetRankByPosition(xpos-1, ypos-1, zpos+1);
+  neighbor[X1_Y0_Z1] = this->GetRankByPosition(xpos+1, ypos-1, zpos+1);
+  neighbor[X0_Y1_Z1] = this->GetRankByPosition(xpos-1, ypos+1, zpos+1);
+  neighbor[X1_Y1_Z1] = this->GetRankByPosition(xpos+1, ypos+1, zpos+1);
+}
+
+//------------------------------------------------------------------------------
+void CosmologyToolsManager::GetBlockBounds(
+        int decompSize[3], int pos[3], float min[3], float size[3])
+{
+  // NOTE: This method essentially computes the following from HACC
+  // Domain::rL_local_alive(size);
+  // Domain::corner_phys_alive(min);
+
+  float m_grid2phys_pos = this->BoxLength/static_cast<float>(this->NDIM);
+
+  for(int i=0; i < 3; ++i)
+    {
+    size[i] = this->BoxLength/static_cast<float>(decompSize[i]);
+    float m_corner_grid_alive = pos[i]*(this->NDIM/decompSize[i]);
+    min[i] = m_corner_grid_alive*m_grid2phys_pos;
+    } // END for
+}
+
+//------------------------------------------------------------------------------
+int CosmologyToolsManager::GetRankByPosition(int i, int j, int k)
+{
+  assert("pre: communicator is not cartesian!" &&
+               this->IsCartesianCommunicator());
+  int ijk[3];
+  ijk[0]=i; ijk[1]=j; ijk[2]=k;
+  int rnk;
+  MPI_Cart_rank(this->Communicator,ijk,&rnk);
+  return( rnk );
+}
+
+//------------------------------------------------------------------------------
+bool CosmologyToolsManager::IsCartesianCommunicator()
+{
+  assert("pre: MPI communicator is NULL!" &&
+         (this->Communicator != MPI_COMM_NULL) );
+
+  int topology = 0;
+  MPI_Topo_test(this->Communicator,&topology);
+  return( (topology==MPI_CART) );
+}
+
+//------------------------------------------------------------------------------
+void CosmologyToolsManager::SetupDIYDecomposition()
+{
+  assert("pre: MPI communicator is NULL!" &&
+         (this->Communicator != MPI_COMM_NULL) );
+
+  // STEP 0: We are dealing with a 3-D domain and with structured topology, so,
+  // each block has 26 neighbors.
+  const int DIMENSION        = 3;
+  const int NUM_OF_NEIGHBORS = 26;
+
+  // STEP 1: Ensure we are dealing with a cartesian communicator
+  // TODO: In the long run we should have a way of dealing with non-cartesian
+  // communicators.
+  assert("pre: communicator is not cartesian!" &&
+          this->IsCartesianCommunicator());
+  if( this->IsCartesianCommunicator() )
+    {
+    std::cerr << "ERROR: cosmotools is expecting a cartesian communicator!\n";
+    MPI_Abort(this->Communicator,-1);
+    }
+
+  // STEP 2: Get cartesian topology
+  int myPosition[DIMENSION];  // the position of this rank
+  int decomp_size[DIMENSION]; // the dimensions of the cartesian topology
+  int periodicity[DIMENSION]; // periodicity for each direction
+  MPI_Cart_get(
+      this->Communicator,DIMENSION,decomp_size,periodicity,myPosition);
+
+  // STEP 3: Compute number of blocks per process and total number of blocks
+  // Currently, numBlocksPerProcess = 1 and totalNumberOfBlocks is given by
+  // numBlocksPerProcess * numRanks.
+  int numBlocksPerProcess = 1;
+  int totalBlocks = 0;
+  int numRanks = 0;
+  int rank = 0;
+  MPI_Comm_rank(this->Communicator,&rank);
+  MPI_Comm_size(this->Communicator,&numRanks);
+  totalBlocks = numBlocksPerProcess * numRanks;
+
+  // STEP 4: Get the Block bounds
+  bb_t bb;
+  float min[DIMENSION], size[DIMENSION];
+  this->GetBlockBounds(decomp_size,myPosition,min,size);
+  for( int i=0; i < DIMENSION; ++i )
+    {
+    bb.min[i] = min[i];
+    bb.max[i] = min[i] + size[i];
+    }
+
+  // STEP 5: data overall extents
+  // assume all blocks are same size (as mine)
+  // assume 0,0,0 is the overall data minimum corner
+  float data_mins[DIMENSION], data_maxs[DIMENSION];
+  for (int i = 0; i < DIMENSION; i++) {
+    data_mins[i] = 0.0;
+    data_maxs[i] = data_mins[i] + size[i] * decomp_size[i];
+  }
+
+  // STEP 6: Get neighbors
+  int neigh_gids[NUM_OF_NEIGHBORS];
+  this->ComputeRankNeighbors(myPosition,neigh_gids);
+  gb_t **neighbors = new gb_t*[1];
+  neighbors[0] = new gb_t[NUM_OF_NEIGHBORS];
+  int num_neighbors[1] = { NUM_OF_NEIGHBORS };
+  for (int i = 0; i < NUM_OF_NEIGHBORS; i++)
+    {
+    neighbors[0][i].gid       = neigh_gids[i];
+    neighbors[0][i].proc      = neigh_gids[i];
+    neighbors[0][i].neigh_dir = neigh_dirs[i];
+    } // END for all neighbors
+
+  // STEP 7: gids are trivial, only one block, my MPI rank
+  int gids[1];
+  gids[0] = rank;
+
+  // STEP 8: Get wrap
+  int wrap = (this->XYZPeriodic)? 1:0;
+
+  // STEP 9: Describe the already decomposed domain in DIY
+  DIY_Decomposed(numBlocksPerProcess,gids,&bb,
+                  NULL,NULL,NULL,NULL,
+                  neighbors,num_neighbors,wrap);
+
+}
+
+//------------------------------------------------------------------------------
 void CosmologyToolsManager::Initialize(MPI_Comm comm)
 {
   assert("pre: invalid communicator" && (comm != MPI_COMM_NULL) );
@@ -72,6 +312,7 @@ void CosmologyToolsManager::Initialize(MPI_Comm comm)
   MPI_Comm_rank(this->Communicator,&this->Rank);
 
   DIY_Init(3,NULL,1,this->Communicator);
+  this->SetupDIYDecomposition();
 }
 
 //------------------------------------------------------------------------------

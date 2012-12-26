@@ -146,6 +146,51 @@ private:
   std::map<std::string,double>     GlobalTimers; // Total times (accumulative)
 
   /**
+   * @brief Checks if the communicator associated with this instance of the
+   * CosmologyToolsManager is a cartesian communicator.
+   * @return status true if the communicator is cartesian, else, false.
+   */
+  bool IsCartesianCommunicator();
+
+  /**
+   * @brief Computes the linear rank of the process with the given position
+   * @param i the ith position of the rank in query
+   * @param j the jth position of the rank in query
+   * @param k the kth position of the rank in query
+   * @return r the linear rank.
+   * @pre The communicator topology must be cartesian
+   */
+  int GetRankByPosition(int i, int j, int k);
+
+  /**
+   * @brief Given the cartesian position of this rank, this method computes
+   * the neighbors of this rank, including periodic neighbors.
+   * @param pos the position of this rank (in)
+   * @param neighbor the ranks of the 26 neighbors.
+   * @note The domain is XYZ-periodic, hence, each rank will have exactly 26
+   * neighbors, i.e., 6 face neighbors, 12 edge neighbors, 8 corner neighbors.
+   * @pre Assumes a cartesian communicator.
+   */
+  void ComputeRankNeighbors(
+          int pos[3], int neighbor[26]);
+
+  /**
+   * Computes this rank's block origin, i.e., min, and size based on the
+   * decomposition size and the position.
+   * @param decompSize the cartesian decomposition dimensions (in)
+   * @param pos the position of this rank within the cartesian communicator (in)
+   * @param min the origin (x,y,z) coordinates of this block (out)
+   * @param size the size of this block (out)
+   */
+  void GetBlockBounds(
+       int decompSize[3], int pos[3], float min[3], float size[3]);
+
+  /**
+   * @brief Describe the decomposition for DIY.
+   */
+  void SetupDIYDecomposition();
+
+  /**
    * @brief Gather send vector on all processes
    * @param send the send of vector on this process
    * @param rcv the rcv vector consisting of the data from all processes
