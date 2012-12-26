@@ -1,7 +1,7 @@
 ## Set the minimum version for cmake to 2.8
 cmake_minimum_required(VERSION 2.8)
 
-## Set the project name and enable C/C++ and Fortran support
+## Set the project name and enable C/C++ support by default
 project(CosmologyTools C CXX)
 
 ## Set path for cmake modules
@@ -13,7 +13,8 @@ include(GetPackageSources)
 
 ## list of required libraries for the entire package
 set(CosmoRequiredLibs
-    ${MPI_C_LIBRARIES})
+    ${MPI_C_LIBRARIES}
+    ${DIY_LIBRARIES})
 
 ## Set the list of all the cosmotools sources
 set(cosmosrclist)
