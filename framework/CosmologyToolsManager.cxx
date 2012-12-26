@@ -5,6 +5,7 @@
 #include "CosmologyToolsConfiguration.h"
 #include "SimulationParticles.h"
 
+#include "diy.h"
 
 #include <cassert>
 #include <iostream>
@@ -69,6 +70,8 @@ void CosmologyToolsManager::Initialize(MPI_Comm comm)
   this->Communicator = comm;
   MPI_Comm_size(this->Communicator,&this->NumRanks);
   MPI_Comm_rank(this->Communicator,&this->Rank);
+
+  DIY_Init(3,NULL,1,this->Communicator);
 }
 
 //------------------------------------------------------------------------------
@@ -513,6 +516,7 @@ void CosmologyToolsManager::Finalize()
 //  this->Communicator      = MPI_COMM_NULL;
 //  this->ConfigurationFile = "";
   this->ClearAnalysisTools();
+  DIY_Finalize();
 }
 
 } // END cosmotk namespace
