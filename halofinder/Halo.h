@@ -137,7 +137,7 @@ public:
  static void CreateDIYHaloType(DIY_Datatype *dtype);
 
  /**
-  * @brief Regists a DIY data-type to represent halo particles.
+  * @brief Registers a DIY data-type to represent halo particles.
   * @param dtype pointer to the DIY data type
   */
  static void CreateDIYHaloParticleType(DIY_Datatype *dtype);

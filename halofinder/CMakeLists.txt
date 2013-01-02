@@ -49,3 +49,6 @@ else()
 endif()
 target_link_libraries(fwdhalotracker
     ${PACKAGE_halofinder_LIBRARIES} ${MPI_C_LIBRARIES})
+
+## Add executables directory to the build
+add_subdirectory(executables)
