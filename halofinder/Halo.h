@@ -9,6 +9,7 @@
 
 #include "CosmologyToolsMacros.h"
 
+#include <iostream> // For ostream
 #include <set> // For STL set
 
 namespace cosmotk
@@ -57,6 +58,13 @@ public:
    * @return h a hashcode for this halo instance.
    */
   std::string GetHashCode();
+
+  /**
+   * @brief Prints a halo to the given C++ output stream
+   * @param os the output stream object
+   * @note Used for debugging.
+   */
+  void Print(std::ostream &os);
 
   int Tag;                      // The tag/ID of the halo
   int TimeStep;                 // The time-step of this halo

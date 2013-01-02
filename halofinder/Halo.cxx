@@ -76,4 +76,28 @@ std::string Halo::GetHashCode()
   return( oss.str() );
 }
 
+//-----------------------------------------------------------------------------
+void Halo::Print(std::ostream &os)
+{
+  os << std::endl;
+  os << "================================\n";
+  os << "HALO TAG: "    << this->Tag      << std::endl;
+  os << "TSTEP: "       << this->TimeStep << std::endl;
+  os << "RED-SHIFT: "   << this->Redshift << std::endl;
+  os << "HALO Center: ";
+  for(int i=0; i < 3; os << this->Center[i++] << " ");
+  os << std::endl;
+  os << "HALO Average Velocity: ";
+  for(int i=0; i < 3; os << this->AverageVelocity[i++] << " ");
+  os << std::endl;
+
+  os << "HALO Particles: " << std::endl << "\t";
+  std::set< ID_T >::iterator iter = this->ParticleIds.begin();
+  for( ; iter != this->ParticleIds.end(); ++iter )
+    {
+    os << *iter << " ";
+    } // END for all halo particles
+  os << std::endl;
+}
+
 } /* namespace cosmotk */
