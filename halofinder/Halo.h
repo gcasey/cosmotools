@@ -12,6 +12,22 @@
 #include <iostream> // For ostream
 #include <set> // For STL set
 
+#include "diy.h" // For DIY_Datatype
+
+/* TODO: for now, we explicitely define a max number of halos */
+#define MAX_PARTICLES_IN_HALO 5
+
+struct DIYHaloItem {
+  int Tag;
+  int TimeStep;
+  REAL Redshift;
+  POSVEL_T Center[3];
+  POSVEL_T AverageVelocity[3];
+  ID_T HaloParticles[MAX_PARTICLES_IN_HALO];
+  int NumberOfHaloParticles;
+};
+
+
 namespace cosmotk
 {
 
@@ -40,6 +56,13 @@ public:
         ID_T *particleIds, int N);
 
   /**
+   * @brief Construct a halo instance from the given DIYHaloItem
+   * @param halo an instance of DIYHaloItem
+   * @pre halo != NULL
+   */
+  Halo( DIYHaloItem *halo);
+
+  /**
    * @brief Destructor.
    */
   virtual ~Halo();
@@ -66,12 +89,53 @@ public:
    */
   void Print(std::ostream &os);
 
+  /**
+   * @brief Get a pointer to the corresponding DIY halo data type.
+   * @return ptr Pointer to a registered DIY datatype.
+   * @post ptr != NULL
+   */
+  DIY_Datatype* GetDIYHaloType();
+
+  /**
+   * @brief Populates a corresponding instance of DIYHaloItem
+   * @param halo the DIYHaloItem instance to populate
+   * @pre halo != NULL
+   */
+  void GetDIYHaloItem(DIYHaloItem *halo);
+
+  /**
+   * @brief Registers a DIY data-type to represent a halo object.
+   * @note User is responsible for calling DIY_Destroy_datatype to
+   * properly release the registered object.
+   */
+ static void CreateDIYHaloType(DIY_Datatype *dtype);
+
+
   int Tag;                      // The tag/ID of the halo
   int TimeStep;                 // The time-step of this halo
   REAL Redshift;                // The corresponding red-shift of the halo
   POSVEL_T Center[3];           // The halo-center
   POSVEL_T AverageVelocity[3];  // The average velocity of the halo
   std::set< ID_T > ParticleIds; // The global particle IDs of the halo
+
+
+private:
+  DIY_Datatype* DIYHaloType;
+
+  /**
+   * @brief Custom constructor
+   * @param Tag the tag of the halo
+   * @param TimeStep the time-step the halo is
+   * @param redShift the corresponding red-shift
+   * @param cntr the halo-center
+   * @param vel the velocity of the halo
+   * @param particleIds the particle IDs of the halo
+   * @param N the total number of particles
+   */
+  void InitHalo(
+          int Tag, int TimeStep, REAL redShift,
+          POSVEL_T cntr[3], POSVEL_T vel[3],
+          ID_T *particleIds, int N);
 };
 
 } /* namespace cosmotk */
