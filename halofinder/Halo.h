@@ -120,7 +120,6 @@ public:
 
 
 private:
-  DIY_Datatype* DIYHaloType;
 
   /**
    * @brief Custom constructor

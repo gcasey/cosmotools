@@ -35,7 +35,6 @@ Halo::Halo()
   this->AverageVelocity[0] =
   this->AverageVelocity[1] =
   this->AverageVelocity[2] = 0.;
-  this->DIYHaloType = NULL;
 }
 
 //-----------------------------------------------------------------------------
@@ -66,10 +65,6 @@ Halo::Halo(
 Halo::~Halo()
 {
   this->ParticleIds.clear();
-  if( this->DIYHaloType != NULL )
-    {
-    DIY_Destroy_datatype(this->DIYHaloType);
-    }
 }
 
 //-----------------------------------------------------------------------------
@@ -90,7 +85,6 @@ void Halo::InitHalo(
     {
     this->ParticleIds.insert( particleIds[i] );
     }
-  this->DIYHaloType = NULL;
 }
 
 //-----------------------------------------------------------------------------
@@ -170,16 +164,6 @@ void Halo::GetDIYHaloItem(DIYHaloItem *halo)
     {
     halo->HaloParticles[ idx ] = *iter;
     } // END for all particle IDs
-}
-
-//-----------------------------------------------------------------------------
-DIY_Datatype* Halo::GetDIYHaloType()
-{
-  if(this->DIYHaloType==NULL)
-    {
-    Halo::CreateDIYHaloType(this->DIYHaloType);
-    }
-  return(this->DIYHaloType);
 }
 
 
