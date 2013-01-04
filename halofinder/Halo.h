@@ -10,23 +10,34 @@
 #include "CosmologyToolsMacros.h"
 
 #include <iostream> // For ostream
-#include <set> // For STL set
+#include <set>      // For STL set
+#include <vector>   // For STL vector
 
 #include "diy.h" // For DIY_Datatype
 
-/* TODO: for now, we explicitely define a max number of halos */
-#define MAX_PARTICLES_IN_HALO 5
-
+/**
+ * @struct DIYHaloItem
+ * @brief Used to encapsulate static size halo information for communication
+ * over DIY.
+ */
 struct DIYHaloItem {
   int Tag;
   int TimeStep;
   REAL Redshift;
   POSVEL_T Center[3];
   POSVEL_T AverageVelocity[3];
-  ID_T HaloParticles[MAX_PARTICLES_IN_HALO];
-  int NumberOfHaloParticles;
 };
 
+/**
+ * @struct DIYHaloParticleItem
+ * @brief Used to encapsulate a *single* halo particle ID for communication
+ * over DIY.
+ */
+struct DIYHaloParticleItem {
+  int Tag;
+  int TimeStep;
+  ID_T HaloParticleID;
+};
 
 namespace cosmotk
 {
@@ -68,6 +79,14 @@ public:
   virtual ~Halo();
 
   /**
+   * @brief Sets the halo particles of this instance.
+   * @param particleIds pointer to an array of particle IDs
+   * @param N the number of particles.
+   * @note particleIds==NULL iff N==0.
+   */
+  void SetHaloParticles(ID_T *particleIds, int N);
+
+  /**
    * @brief Intersects this halo instance with another halo
    * @param h the halo to intersect with
    * @return N the number of halos that intersect between this halo
@@ -90,13 +109,6 @@ public:
   void Print(std::ostream &os);
 
   /**
-   * @brief Get a pointer to the corresponding DIY halo data type.
-   * @return ptr Pointer to a registered DIY datatype.
-   * @post ptr != NULL
-   */
-  DIY_Datatype* GetDIYHaloType();
-
-  /**
    * @brief Populates a corresponding instance of DIYHaloItem
    * @param halo the DIYHaloItem instance to populate
    * @pre halo != NULL
@@ -104,11 +116,23 @@ public:
   void GetDIYHaloItem(DIYHaloItem *halo);
 
   /**
-   * @brief Registers a DIY data-type to represent a halo object.
-   * @note User is responsible for calling DIY_Destroy_datatype to
-   * properly release the registered object.
+   * @brief
+   * @param haloParticles
+   */
+  void GetDIYHaloParticleItemsVector(
+          std::vector<DIYHaloParticleItem> &haloParticles);
+
+  /**
+   * @brief Registers a DIY data-type to represent static halo data.
+   * @param dtype pointer to the DIY data type
    */
  static void CreateDIYHaloType(DIY_Datatype *dtype);
+
+ /**
+  * @brief Regists a DIY data-type to represent halo particles.
+  * @param dtype pointer to the DIY data type
+  */
+ static void CreateDIYHaloParticleType(DIY_Datatype *dtype);
 
 
   int Tag;                      // The tag/ID of the halo

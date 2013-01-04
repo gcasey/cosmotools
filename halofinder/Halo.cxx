@@ -13,16 +13,25 @@ namespace cosmotk
 //-----------------------------------------------------------------------------
 void Halo::CreateDIYHaloType(DIY_Datatype *dtype)
 {
-  struct map_block_t halo_map[7] = {
-    {DIY_INT,     OFST, 1,                     offsetof(struct DIYHaloItem, Tag)},
-    {DIY_INT,     OFST, 1,                     offsetof(struct DIYHaloItem, TimeStep)},
-    {DIY_REAL_T,   OFST, 1,                     offsetof(struct DIYHaloItem, Redshift)},
-    {DIY_POSVEL_T, OFST, 3,                     offsetof(struct DIYHaloItem, Center)},
-    {DIY_POSVEL_T, OFST, 3,                     offsetof(struct DIYHaloItem, AverageVelocity)},
-    {DIY_ID_T,     OFST, MAX_PARTICLES_IN_HALO, offsetof(struct DIYHaloItem, HaloParticles)},
-    {DIY_INT,     OFST, 1,                     offsetof(struct DIYHaloItem, NumberOfHaloParticles)},
+  struct map_block_t halo_map[5] = {
+   {DIY_INT,     OFST, 1, offsetof(struct DIYHaloItem, Tag)},
+   {DIY_INT,     OFST, 1, offsetof(struct DIYHaloItem, TimeStep)},
+   {DIY_REAL_T,   OFST, 1, offsetof(struct DIYHaloItem, Redshift)},
+   {DIY_POSVEL_T, OFST, 3, offsetof(struct DIYHaloItem, Center)},
+   {DIY_POSVEL_T, OFST, 3, offsetof(struct DIYHaloItem, AverageVelocity)},
   };
-  DIY_Create_struct_datatype(0, 7, halo_map, dtype);
+  DIY_Create_struct_datatype(0, 5, halo_map, dtype);
+}
+
+//-----------------------------------------------------------------------------
+void Halo::CreateDIYHaloParticleType(DIY_Datatype *dtype)
+{
+  struct map_block_t halo_part_map[3] = {
+   {DIY_INT,  OFST, 1, offsetof(struct DIYHaloParticleItem, Tag)},
+   {DIY_INT,  OFST, 1, offsetof(struct DIYHaloParticleItem, TimeStep)},
+   {DIY_ID_T,  OFST, 1, offsetof(struct DIYHaloParticleItem, HaloParticleID)},
+  };
+  DIY_Create_struct_datatype(0, 3, halo_part_map, dtype);
 }
 
 //-----------------------------------------------------------------------------
@@ -41,13 +50,14 @@ Halo::Halo()
 Halo::Halo( DIYHaloItem *halo )
 {
   assert("pre: DIYHaloItem is NULL!" && (halo != NULL) );
-  this->InitHalo(halo->Tag,
+  this->InitHalo(
+        halo->Tag,
         halo->TimeStep,
         halo->Redshift,
         halo->Center,
         halo->AverageVelocity,
-        halo->HaloParticles,
-        halo->NumberOfHaloParticles );
+        NULL,
+        0 );
 }
 
 //-----------------------------------------------------------------------------
@@ -81,10 +91,31 @@ void Halo::InitHalo(
     this->Center[i]          = cntr[i];
     this->AverageVelocity[i] = vel[i];
     }
+
+  if(particleIds==NULL)
+    {
+    return;
+    }
+
   for( int i=0; i < N; ++i )
     {
     this->ParticleIds.insert( particleIds[i] );
     }
+}
+
+//-----------------------------------------------------------------------------
+void Halo::SetHaloParticles(ID_T *particleIds, int N)
+{
+  this->ParticleIds.clear();
+  if( particleIds == NULL )
+    {
+    return;
+    }
+
+  for(int i=0; i < N; ++i)
+    {
+    this->ParticleIds.insert(particleIds[i]);
+    } // END for
 }
 
 //-----------------------------------------------------------------------------
@@ -151,20 +182,20 @@ void Halo::GetDIYHaloItem(DIYHaloItem *halo)
     halo->Center[i]          = this->Center[i];
     halo->AverageVelocity[i] = this->AverageVelocity[i];
     }
-
-  halo->NumberOfHaloParticles = static_cast<int>(this->ParticleIds.size());
-
-  // TODO: Must handle variable sizes of halos
-  assert("pre: number of halo particles exceeds max" &&
-          halo->NumberOfHaloParticles <= MAX_PARTICLES_IN_HALO);
-
-  std::set< ID_T >::iterator iter = this->ParticleIds.begin();
-  int idx = 0;
-  for( ; iter != this->ParticleIds.end(); ++iter, ++idx )
-    {
-    halo->HaloParticles[ idx ] = *iter;
-    } // END for all particle IDs
 }
 
+//-----------------------------------------------------------------------------
+void Halo::GetDIYHaloParticleItemsVector(
+          std::vector<DIYHaloParticleItem> &haloParticles)
+{
+  haloParticles.resize(this->ParticleIds.size());
+  std::set< ID_T >::iterator iter = this->ParticleIds.begin();
+  for(int idx=0; iter != this->ParticleIds.end(); ++iter, ++idx)
+    {
+    haloParticles[ idx ].Tag            = this->Tag;
+    haloParticles[ idx ].TimeStep       = this->TimeStep;
+    haloParticles[ idx ].HaloParticleID = *iter;
+    } // END for all particles
+}
 
 } /* namespace cosmotk */
