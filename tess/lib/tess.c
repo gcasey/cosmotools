@@ -513,8 +513,7 @@ void neighbor_particles(int nblocks, float **particles, int *num_particles,
   } /* for all blocks */
 
   /* exchange neighbors */
-  DIY_Exchange_neighbors(recv_particles, num_recv_particles, 1.0, &recv_type,
-			 &send_type);
+  DIY_Exchange_neighbors(recv_particles, num_recv_particles, 1.0, &item_type);
 
   /* copy received particles to particles */
   for (i = 0; i < nblocks; i++) {
@@ -537,53 +536,18 @@ void neighbor_particles(int nblocks, float **particles, int *num_particles,
   }
 
   /* clean up */
-  DIY_Flush_neighbors(recv_particles, num_recv_particles, &recv_type);
+  DIY_Flush_neighbors(recv_particles, num_recv_particles, &item_type);
   free(num_recv_particles);
   free(recv_particles);
 
 }
 /*--------------------------------------------------------------------------*/
 /*
- makes MPI datatype for receiving one item
-
- cts: pointer to counts message
-
- side effects: allocates MPI datatype
-
- returns: pointer to MPI datatype
+ makes DIY datatype for sending / receiving one item
 */
-MPI_Datatype* recv_type(int *cts) {
+void item_type(DIY_Datatype *dtype) {
 
-  cts = cts; // quiet compiler warning
-
-  MPI_Datatype *dtype;
-  dtype = (MPI_Datatype*)malloc(sizeof(MPI_Datatype));
   DIY_Create_vector_datatype(3, 1, DIY_FLOAT, dtype);
-
-  return dtype;
-
-}
-/*--------------------------------------------------------------------------*/
-/*
- makes an MPI datatype for sending one item
-
- cts: pointer to counts message
- pts: pointer to points message
-
- side effects: allocates MPI datatype
-
- returns: pointer to MPI datatype
-*/
-MPI_Datatype* send_type(int *cts, char** pts) {
-
-  cts = cts; // quiet compiler warnings
-  pts = pts;
-
-  MPI_Datatype *dtype;
-  dtype = (MPI_Datatype*)malloc(sizeof(MPI_Datatype));
-  DIY_Create_vector_datatype(3, 1, DIY_FLOAT, dtype);
-
-  return dtype;
 
 }
 /*--------------------------------------------------------------------------*/
@@ -1771,7 +1735,7 @@ void convex_to_voronoi(struct cblock_t *cblock, struct vblock_t *vblock,
 }
 /*--------------------------------------------------------------------------*/
 /*
-  creates MPI datatype for the subset of the voronoi block to write to disk
+  creates DIY datatype for the subset of the voronoi block to write to disk
 
   vblock: voronoi block
   lid: local block number (unused in this case)
@@ -1781,7 +1745,7 @@ void convex_to_voronoi(struct cblock_t *cblock, struct vblock_t *vblock,
 
   returns: pointer to base address associated with the dataytpe
 */
-void *create_datatype(void* vblock, int lid, MPI_Datatype *dtype) {
+void *create_datatype(void* vblock, int lid, DIY_Datatype *dtype) {
 
   lid = lid; // quite compiler warning
 

@@ -19,6 +19,7 @@
 #include "qhull_a.h"
 
 #include "voronoi.h"
+#include "diy.h"
 
 /* public */
 
@@ -55,9 +56,7 @@ void voronoi(int nblocks, float **particles, int *num_particles,
 	     double *times, char *out_file);
 int gen_particles(int lid, float **particles, float jitter);
 void gen_voronoi_output(facetT *facetlist, struct vblock_t *vblock);
-void *create_datatype(void *vblock, int lid, MPI_Datatype *dtype);
-void test_datatype(struct vblock_t *vblock, int *hdr, 
-		   void* (*type_func)(void*, MPI_Datatype*));
+void *create_datatype(void *vblock, int lid, DIY_Datatype *dtype);
 int gen_convex_output(facetT *facetlist, struct cblock_t *cblock);
 void convex_to_voronoi(struct cblock_t *cblock, struct vblock_t *vblock,
 		       int *vmap, int cell);
@@ -73,10 +72,7 @@ void neighbor_particles(int nblocks, float **particles, int *num_particles,
 			float ghost);
 void write_out(int nblocks, struct vblock_t *vblocks, int **hdrs,
 	       char *out_file);
-MPI_Datatype* recv_type(int *cts);
-MPI_Datatype* send_type(int *cts, char** pts);
-void del_recv_type(MPI_Datatype *dtype);
-void del_send_type(MPI_Datatype *dtype);
+void item_type(DIY_Datatype *type);
 void destroy_blocks(int num_blocks, struct vblock_t *vblocks, int **hdrs);
 void collect_stats(int nblocks, struct vblock_t *vblocks, double *times);
 void aggregate_stats(int nblocks, struct vblock_t *vblocks, 
