@@ -139,8 +139,14 @@ int Halo::Intersect(Halo *h)
 //-----------------------------------------------------------------------------
 std::string Halo::GetHashCode()
 {
+  return( Halo::GetHashCodeForHalo(this->Tag,this->TimeStep));
+}
+
+//-----------------------------------------------------------------------------
+std::string Halo::GetHashCodeForHalo(int tag, int timestep)
+{
   std::ostringstream oss;
-  oss << this->TimeStep << "." << this-Tag;
+  oss << timestep << "." << tag;
   return( oss.str() );
 }
 

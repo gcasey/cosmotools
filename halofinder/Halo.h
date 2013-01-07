@@ -96,6 +96,14 @@ public:
   int Intersect(Halo *h);
 
   /**
+   * @brief Computes a hashcode for a halo with the given tag(ID) and timestep.
+   * @param tag the tag or ID of the halo
+   * @param timestep the timestep of the halo
+   * @return h a hashcode for a halo with the given tag and timestep
+   */
+  static std::string GetHashCodeForHalo(int tag, int timestep);
+
+  /**
    * @brief Gets the hash code of this halo instance.
    * @return h a hashcode for this halo instance.
    */
