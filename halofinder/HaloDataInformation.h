@@ -12,6 +12,8 @@
 #include "CosmologyToolsMacros.h"
 #include <vector> // For STL vector
 
+#include "Halo.h"
+
 namespace cosmologytools
 {
 
@@ -21,29 +23,11 @@ public:
   HaloDataInformation();
   virtual ~HaloDataInformation();
 
-  /**
-   * @brief Allocates internal data-structures
-   * @param N the number of halos
-   */
-  void Allocate(int N)
-    {
-    this->NumberOfHalos = N;
-    this->HaloCenter.resize( 3*N, 0.0 );
-    this->HaloAverageVelocity.resize( 3*N, 0.0 );
-    this->HaloVelocityDispersion.resize( N, 0.0 );
-    this->HaloMass.resize( N, 0.0 );
-    }
-
   REAL RedShift;
   int TimeStep;
   int NumberOfHalos;
 
-  std::vector< POSVEL_T > HaloCenter;
-  std::vector< REAL > HaloVelocityDispersion;
-  std::vector< REAL > HaloAverageVelocity;
-  std::vector< REAL > HaloMass;
-  std::vector< ID_T > GlobalIds;
-  std::vector< ID_T > HaloTags;
+  std::vector<cosmotk::Halo> Halos;
 
 private:
   DISABLE_COPY_AND_ASSIGNMENT(HaloDataInformation);
