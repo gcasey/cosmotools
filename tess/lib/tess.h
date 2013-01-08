@@ -27,18 +27,27 @@
 extern "C"
 #endif
 void tess_test(int tot_blocks, int *data_size, float jitter, float cell_size,
-	       float ghost_factor, float minvol, float maxvol, 
-	       double *all_times);
+         float ghost_factor, float minvol, float maxvol,
+         double *all_times);
 
 #ifdef __cplusplus
 extern "C"
 #endif
-void tess_init(int num_blocks, int *gids, 
-	       struct bb_t *bounds, struct gb_t **neighbors, 
-	       int *num_neighbors, float cell_dia, float ghost_mult, 
-	       float *global_mins, float *global_maxs, 
-	       int wrap, float minvol, float maxvol, MPI_Comm mpi_comm,
-	       double *times);
+void tess_init_diy_initialized(
+        int num_blocks,
+        float cell_dia, float ghost_mult,
+        float minvol, float maxvol,
+        MPI_Comm mpi_comm,double *times);
+
+#ifdef __cplusplus
+extern "C"
+#endif
+void tess_init(int num_blocks, int *gids,
+         struct bb_t *bounds, struct gb_t **neighbors,
+         int *num_neighbors, float cell_dia, float ghost_mult,
+         float *global_mins, float *global_maxs,
+         int wrap, float minvol, float maxvol, MPI_Comm mpi_comm,
+         double *times);
 #ifdef __cplusplus
 extern "C"
 #endif
@@ -52,40 +61,40 @@ void tess(float **particles, int *num_particles, char *out_file);
 #ifdef __cplusplus
 extern "C"
 #endif
-void tess_post(int num_blocks, int *gids, 
-	       struct bb_t *bounds, struct gb_t **neighbors, 
-	       int *num_neighbors, float cell_dia, float ghost_mult,
-	       float *global_mins, float *global_maxs, 
-	       int wrap, float minvol, float maxvol, MPI_Comm mpi_comm,
-	       double *all_times, float **particles, int *num_particles, 
-	       char *out_file);
+void tess_post(int num_blocks, int *gids,
+         struct bb_t *bounds, struct gb_t **neighbors,
+         int *num_neighbors, float cell_dia, float ghost_mult,
+         float *global_mins, float *global_maxs,
+         int wrap, float minvol, float maxvol, MPI_Comm mpi_comm,
+         double *all_times, float **particles, int *num_particles,
+         char *out_file);
 
 /* private */
 
-void voronoi(int nblocks, float **particles, int *num_particles, 
-	     float cell_size, float ghost_factor,
-	     double *times, char *out_file);
+void voronoi(int nblocks, float **particles, int *num_particles,
+       float cell_size, float ghost_factor,
+       double *times, char *out_file);
 int gen_particles(int lid, float **particles, float jitter);
 void gen_voronoi_output(facetT *facetlist, struct vblock_t *vblock,
-			int num_particles);
+      int num_particles);
 int gen_convex_output(facetT *facetlist, struct cblock_t *cblock);
 void convex_to_voronoi(struct cblock_t *cblock, struct vblock_t *vblock,
-		       int *vmap, int cell);
+           int *vmap, int cell);
 void complete_cells(struct vblock_t *vblock, int lid, float ghost);
 void prep_vertices(struct vblock_t *vblock, int comp_cell, double *vertices,
-		   int *vmap);
+       int *vmap);
 void create_blocks(int num_blocks, struct vblock_t **vblocks, int ***hdrs);
 void orig_cells(int nblocks, struct vblock_t *vblocks, int dim,
-		int *num_particles, int *num_orig_particles, 
-		float **particles, float ghost);
+    int *num_particles, int *num_orig_particles,
+    float **particles, float ghost);
 void cell_hulls(int nblocks, struct vblock_t *vblocks, int dim);
-void neighbor_particles(int nblocks, float **particles, int *num_particles, 
-			float ghost);
+void neighbor_particles(int nblocks, float **particles, int *num_particles,
+      float ghost);
 void item_type(DIY_Datatype *type);
 void destroy_blocks(int num_blocks, struct vblock_t *vblocks, int **hdrs);
 void collect_stats(int nblocks, struct vblock_t *vblocks, double *times);
-void aggregate_stats(int nblocks, struct vblock_t *vblocks, 
-		     struct stats_t *loc_stats);
+void aggregate_stats(int nblocks, struct vblock_t *vblocks,
+         struct stats_t *loc_stats);
 void average(void *in, void *inout, int *len, MPI_Datatype *type);
 void histogram(void *in, void *inout, int *len, MPI_Datatype *type);
 void print_block(struct vblock_t *vblock, int gid);

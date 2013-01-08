@@ -30,6 +30,8 @@ static float cell_size; /* maximum expected cell diameter */
 static float ghost_factor; /* ghost size multiplier */
 static double *times; /* timing info */
 
+static int DIYCalledExternal;/* indicates,whether DIY is called externally*/
+
 /* datatype profiling for John Jenkins' research */
 /* #define DATATYPE_PROFILE */
 
@@ -39,6 +41,37 @@ static int **hdrs; /* headers */
 
 /* #define PNETCDF_IO */
 
+/*------------------------------------------------------------------------*/
+/*
+  Initialize parallel voronoi (and later possibly delaunay) tesselation.
+  Assumes that the external application has initialized DIY.
+
+  num_blocks: local number of blocks in my process
+  cell_dia: maximum expeted cell diameter
+  ghost_mult: ghost size multiplier
+  global_mins, global_maxs: overall data extents
+  minvol, maxvol: filter range for which cells to keep
+  pass -1.0 to skip either or both bounds
+  mpi_comm: MPI communicator
+  all_times: times for particle exchange, voronoi cells, convex hulls, and output
+*/
+void tess_init_diy_initialized(
+            int num_blocks,
+            float cell_dia, float ghost_mult,
+            float minvol, float maxvol,
+            MPI_Comm mpi_comm,double *all_times)
+{
+  /* save globals */
+  comm = mpi_comm;
+  nblocks = num_blocks;
+  cell_size = cell_dia;
+  ghost_factor = ghost_mult;
+  min_vol = minvol;
+  max_vol = maxvol;
+  times   = all_times;
+
+  DIYCalledExternal = 1;
+}
 /*------------------------------------------------------------------------*/
 /*
   initialize parallel voronoi (and later possibly delaunay) tesselation
@@ -58,12 +91,12 @@ static int **hdrs; /* headers */
   mpi_comm: MPI communicator
   all_times: times for particle exchange, voronoi cells, convex hulls, and output
 */
-void tess_init(int num_blocks, int *gids, 
-	       struct bb_t *bounds, struct gb_t **neighbors, 
-	       int *num_neighbors, float cell_dia, float ghost_mult, 
-	       float *global_mins, float *global_maxs, 
-	       int wrap, float minvol, float maxvol, MPI_Comm mpi_comm,
-	       double *all_times) {
+void tess_init(int num_blocks, int *gids,
+         struct bb_t *bounds, struct gb_t **neighbors,
+         int *num_neighbors, float cell_dia, float ghost_mult,
+         float *global_mins, float *global_maxs,
+         int wrap, float minvol, float maxvol, MPI_Comm mpi_comm,
+         double *all_times) {
 
   int i;
 
@@ -88,9 +121,10 @@ void tess_init(int num_blocks, int *gids,
 
   /* init DIY */
   DIY_Init(dim, NULL, 1, comm);
-  DIY_Decomposed(num_blocks, gids, bounds, NULL, NULL, NULL, NULL, neighbors, 
-		 num_neighbors, wrap);
+  DIY_Decomposed(num_blocks, gids, bounds, NULL, NULL, NULL, NULL, neighbors,
+     num_neighbors, wrap);
 
+  DIYCalledExternal = 0;
 }
 /*------------------------------------------------------------------------*/
 /*
@@ -98,14 +132,14 @@ finalize parallel voronoi (and later possibly delaunay) tesselation
 */
 void tess_finalize() {
 
-  DIY_Finalize();
-
+  if( DIYCalledExternal == 0)
+    DIY_Finalize();
 }
 /*------------------------------------------------------------------------*/
 /*
   tessellate parallel voronoi (and later possibly delaunay) tesselation
 
-  particles: particles[block_num][particle] 
+  particles: particles[block_num][particle]
   where each particle is 3 values, px, py, pz
   num_particles; number of particles in each block
   out_file: output file name
@@ -113,7 +147,7 @@ void tess_finalize() {
 void tess(float **particles, int *num_particles, char *out_file) {
 
   voronoi(nblocks, particles, num_particles, cell_size, ghost_factor,
-	  times, out_file);
+    times, out_file);
 
 }
 /*------------------------------------------------------------------------*/
@@ -130,10 +164,10 @@ void tess(float **particles, int *num_particles, char *out_file) {
   times: times for particle exchange, voronoi cells, convex hulls, and output
 */
 void tess_test(int tot_blocks, int *data_size, float jitter, float cell_size,
-	       float ghost_factor, float minvol, float maxvol, double *times) {
+         float ghost_factor, float minvol, float maxvol, double *times) {
 
-  float **particles; /* particles[block_num][particle] 
-			 where each particle is 3 values, px, py, pz */
+  float **particles; /* particles[block_num][particle]
+       where each particle is 3 values, px, py, pz */
   int *num_particles; /* number of particles in each block */
   int dim = 3; /* 3D */
   int given[3] = {0, 0, 0}; /* no constraints on decomposition in {x, y, z} */
@@ -162,7 +196,7 @@ void tess_test(int tot_blocks, int *data_size, float jitter, float cell_size,
     num_particles[i] = gen_particles(i, &particles[i], jitter);
 
   voronoi(nblocks, particles, num_particles, cell_size, ghost_factor,
-	  times, "vor.out");
+    times, "vor.out");
 
   /* cleanup */
   for (i = 0; i < nblocks; i++)
@@ -243,7 +277,7 @@ void tess_post(int num_blocks, int *gids,
   test of parallel voronoi (and later possibly delaunay) tesselation
 
   nblocks: local number of blocks
-  particles: particles[block_num][particle] 
+  particles: particles[block_num][particle]
   where each particle is 3 values, px, py, pz
   num_particles; number of particles in each block
   cell_size: maximum expeted cell diameter
@@ -251,12 +285,12 @@ void tess_post(int num_blocks, int *gids,
   times: times for particle exchange, voronoi cells, convex hulls, and output
   out_file: output file name
 */
-void voronoi(int nblocks, float **particles, int *num_particles, 
-	     float cell_size, float ghost_factor, double *times, 
-	     char *out_file) {
+void voronoi(int nblocks, float **particles, int *num_particles,
+       float cell_size, float ghost_factor, double *times,
+       char *out_file) {
 
   int *num_orig_particles; /* number of original particles, before any
-			      neighbor exchange */
+            neighbor exchange */
 
   int dim = 3; /* 3D */
 
