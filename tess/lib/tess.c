@@ -29,6 +29,8 @@ static float cell_size; /* maximum expected cell diameter */
 static float ghost_factor; /* ghost size multiplier */
 static double *times; /* timing info */
 
+static int DIYCalledExternal;/* indicates,whether DIY is called externally*/
+
 /* datatype profiling for John Jenkins' research */
 /* #define DATATYPE_PROFILE */
 
@@ -36,6 +38,37 @@ static double *times; /* timing info */
 static int **hdrs; /* headers */
 #endif
 
+/*------------------------------------------------------------------------*/
+/*
+  Initialize parallel voronoi (and later possibly delaunay) tesselation.
+  Assumes that the external application has initialized DIY.
+
+  num_blocks: local number of blocks in my process
+  cell_dia: maximum expeted cell diameter
+  ghost_mult: ghost size multiplier
+  global_mins, global_maxs: overall data extents
+  minvol, maxvol: filter range for which cells to keep
+  pass -1.0 to skip either or both bounds
+  mpi_comm: MPI communicator
+  all_times: times for particle exchange, voronoi cells, convex hulls, and output
+*/
+void tess_init_diy_initialized(
+            int num_blocks,
+            float cell_dia, float ghost_mult,
+            float minvol, float maxvol,
+            MPI_Comm mpi_comm,double *all_times)
+{
+  /* save globals */
+  comm = mpi_comm;
+  nblocks = num_blocks;
+  cell_size = cell_dia;
+  ghost_factor = ghost_mult;
+  min_vol = minvol;
+  max_vol = maxvol;
+  times   = all_times;
+
+  DIYCalledExternal = 1;
+}
 /*------------------------------------------------------------------------*/
 /*
   initialize parallel voronoi (and later possibly delaunay) tesselation
@@ -55,12 +88,12 @@ static int **hdrs; /* headers */
   mpi_comm: MPI communicator
   all_times: times for particle exchange, voronoi cells, convex hulls, and output
 */
-void tess_init(int num_blocks, int *gids, 
-	       struct bb_t *bounds, struct gb_t **neighbors, 
-	       int *num_neighbors, float cell_dia, float ghost_mult, 
-	       float *global_mins, float *global_maxs, 
-	       int wrap, float minvol, float maxvol, MPI_Comm mpi_comm,
-	       double *all_times) {
+void tess_init(int num_blocks, int *gids,
+         struct bb_t *bounds, struct gb_t **neighbors,
+         int *num_neighbors, float cell_dia, float ghost_mult,
+         float *global_mins, float *global_maxs,
+         int wrap, float minvol, float maxvol, MPI_Comm mpi_comm,
+         double *all_times) {
 
   int i;
 
@@ -85,9 +118,10 @@ void tess_init(int num_blocks, int *gids,
 
   /* init DIY */
   DIY_Init(dim, NULL, 1, comm);
-  DIY_Decomposed(num_blocks, gids, bounds, NULL, NULL, NULL, NULL, neighbors, 
-		 num_neighbors, wrap);
+  DIY_Decomposed(num_blocks, gids, bounds, NULL, NULL, NULL, NULL, neighbors,
+     num_neighbors, wrap);
 
+  DIYCalledExternal = 0;
 }
 /*------------------------------------------------------------------------*/
 /*
@@ -95,14 +129,14 @@ finalize parallel voronoi (and later possibly delaunay) tesselation
 */
 void tess_finalize() {
 
-  DIY_Finalize();
-
+  if( DIYCalledExternal == 0)
+    DIY_Finalize();
 }
 /*------------------------------------------------------------------------*/
 /*
   tessellate parallel voronoi (and later possibly delaunay) tesselation
 
-  particles: particles[block_num][particle] 
+  particles: particles[block_num][particle]
   where each particle is 3 values, px, py, pz
   num_particles; number of particles in each block
   out_file: output file name
@@ -110,7 +144,7 @@ void tess_finalize() {
 void tess(float **particles, int *num_particles, char *out_file) {
 
   voronoi(nblocks, particles, num_particles, cell_size, ghost_factor,
-	  times, out_file);
+    times, out_file);
 
 }
 /*------------------------------------------------------------------------*/
@@ -127,10 +161,10 @@ void tess(float **particles, int *num_particles, char *out_file) {
   times: times for particle exchange, voronoi cells, convex hulls, and output
 */
 void tess_test(int tot_blocks, int *data_size, float jitter, float cell_size,
-	       float ghost_factor, float minvol, float maxvol, double *times) {
+         float ghost_factor, float minvol, float maxvol, double *times) {
 
-  float **particles; /* particles[block_num][particle] 
-			 where each particle is 3 values, px, py, pz */
+  float **particles; /* particles[block_num][particle]
+       where each particle is 3 values, px, py, pz */
   int *num_particles; /* number of particles in each block */
   int dim = 3; /* 3D */
   int given[3] = {0, 0, 0}; /* no constraints on decomposition in {x, y, z} */
@@ -159,7 +193,7 @@ void tess_test(int tot_blocks, int *data_size, float jitter, float cell_size,
     num_particles[i] = gen_particles(i, &particles[i], jitter);
 
   voronoi(nblocks, particles, num_particles, cell_size, ghost_factor,
-	  times, "vor.out");
+    times, "vor.out");
 
   /* cleanup */
   for (i = 0; i < nblocks; i++)
@@ -175,7 +209,7 @@ void tess_test(int tot_blocks, int *data_size, float jitter, float cell_size,
   test of parallel voronoi (and later possibly delaunay) tesselation
 
   nblocks: local number of blocks
-  particles: particles[block_num][particle] 
+  particles: particles[block_num][particle]
   where each particle is 3 values, px, py, pz
   num_particles; number of particles in each block
   cell_size: maximum expeted cell diameter
@@ -183,12 +217,12 @@ void tess_test(int tot_blocks, int *data_size, float jitter, float cell_size,
   times: times for particle exchange, voronoi cells, convex hulls, and output
   out_file: output file name
 */
-void voronoi(int nblocks, float **particles, int *num_particles, 
-	     float cell_size, float ghost_factor, double *times, 
-	     char *out_file) {
+void voronoi(int nblocks, float **particles, int *num_particles,
+       float cell_size, float ghost_factor, double *times,
+       char *out_file) {
 
   int *num_orig_particles; /* number of original particles, before any
-			      neighbor exchange */
+            neighbor exchange */
 
   int dim = 3; /* 3D */
 
@@ -210,7 +244,7 @@ void voronoi(int nblocks, float **particles, int *num_particles,
 
   /* exchange particless with neighbors */
   neighbor_particles(nblocks, particles,
-		     num_particles, cell_size * ghost_factor);
+         num_particles, cell_size * ghost_factor);
 
 #ifdef TIMING
   MPI_Barrier(comm);
@@ -227,7 +261,7 @@ void voronoi(int nblocks, float **particles, int *num_particles,
 
   /* create original voronoi cells */
   orig_cells(nblocks, vblocks, dim, num_particles, num_orig_particles,
-	     particles, cell_size * ghost_factor);
+       particles, cell_size * ghost_factor);
 
 #ifdef TIMING
   /* no barrier here; want min and max time */
@@ -283,11 +317,11 @@ void voronoi(int nblocks, float **particles, int *num_particles,
   ghost: extra size per side beyond block bounds to consider vertices as valid
 */
 void orig_cells(int nblocks, struct vblock_t *vblocks, int dim,
-		int *num_particles, int *num_orig_particles, 
-		float **particles, float ghost) {
+    int *num_particles, int *num_orig_particles,
+    float **particles, float ghost) {
 
   boolT ismalloc = False;    /* True if qhull should free points in
-				qh_freeqhull() or reallocation */
+        qh_freeqhull() or reallocation */
   char flags[250];          /* option flags for qhull, see qh-quick.htm */
   int exitcode;             /* 0 if no error from qhull */
   int curlong, totlong;     /* memory remaining after qh_memfreeshort */
@@ -309,10 +343,10 @@ void orig_cells(int nblocks, struct vblock_t *vblocks, int dim,
     sprintf (flags, "qhull v o Fv"); /* voronoi cells and adjacencies */
 
     /* eat qhull output by sending it to dev/null
-       need to see how this behaves on BG/P, will get I/O forwarded but will 
+       need to see how this behaves on BG/P, will get I/O forwarded but will
        stop there and not proceed to storage */
     exitcode = qh_new_qhull(dim, num_particles[i], pts, ismalloc,
-			    flags, dev_null, stderr);
+          flags, dev_null, stderr);
 
     free(pts);
 
@@ -339,7 +373,7 @@ void orig_cells(int nblocks, struct vblock_t *vblocks, int dim,
     qh_memfreeshort(&curlong, &totlong);  /* free short memory */
     if (curlong || totlong)
       fprintf (stderr, "qhull internal warning: did not free %d bytes of "
-	       "long memory (%d pieces)\n", totlong, curlong);
+         "long memory (%d pieces)\n", totlong, curlong);
 
   } /* for all blocks */
 
@@ -357,7 +391,7 @@ void orig_cells(int nblocks, struct vblock_t *vblocks, int dim,
 void cell_hulls(int nblocks, struct vblock_t *vblocks, int dim) {
 
   boolT ismalloc = False;    /* True if qhull should free points in
-				qh_freeqhull() or reallocation */
+        qh_freeqhull() or reallocation */
   char flags[250];          /* option flags for qhull, see qh-quick.htm */
   int exitcode;             /* 0 if no error from qhull */
   int curlong, totlong;     /* memory remaining after qh_memfreeshort */
@@ -382,14 +416,14 @@ void cell_hulls(int nblocks, struct vblock_t *vblocks, int dim) {
     vblocks[i].num_complete_cells = 0;
 
     /* for all complete cells in the current block */
-    for (j = 0; j < vblocks[i].temp_num_complete_cells; j++) { 
+    for (j = 0; j < vblocks[i].temp_num_complete_cells; j++) {
 
       /* debug */
       t0 = MPI_Wtime();
 
       /* prepare vertices and compute convex hull */
-      int num_verts = 
-	vblocks[i].num_cell_verts[vblocks[i].temp_complete_cells[j]];
+      int num_verts =
+  vblocks[i].num_cell_verts[vblocks[i].temp_complete_cells[j]];
       vertices = (double *)malloc(num_verts * 3 * sizeof(double));
       vmap = (int *)malloc(num_verts * sizeof(int));
       prep_vertices(&vblocks[i], j, vertices, vmap);
@@ -400,20 +434,20 @@ void cell_hulls(int nblocks, struct vblock_t *vblocks, int dim) {
 
       sprintf (flags, "qhull o FS"); /* convex hull */
       exitcode = qh_new_qhull(dim, num_verts, vertices, ismalloc,
-			      flags, dev_null, stderr);
+            flags, dev_null, stderr);
 
       /* debug */
       proc_time += (MPI_Wtime() - t0);
       t0 = MPI_Wtime();
 
       /* compute convex hull, check volume against filter range, and
-	 store the complete cell if it passes */
+   store the complete cell if it passes */
       if (gen_convex_output(qh facet_list, &cblock)) {
-	vblocks[i].complete_cells[vblocks[i].num_complete_cells] = 
-	  vblocks[i].temp_complete_cells[j];
-	vblocks[i].num_complete_cells++;
-	convex_to_voronoi(&cblock, &vblocks[i], vmap, 
-			  vblocks[i].num_complete_cells - 1);
+  vblocks[i].complete_cells[vblocks[i].num_complete_cells] =
+    vblocks[i].temp_complete_cells[j];
+  vblocks[i].num_complete_cells++;
+  convex_to_voronoi(&cblock, &vblocks[i], vmap,
+        vblocks[i].num_complete_cells - 1);
       }
 
       /* debug */
@@ -425,8 +459,8 @@ void cell_hulls(int nblocks, struct vblock_t *vblocks, int dim) {
       qh_freeqhull(!qh_ALL);                 /* free long memory */
       qh_memfreeshort(&curlong, &totlong);  /* free short memory and */
       if (curlong || totlong)
-	fprintf (stderr, "qhull internal warning: did not free %d bytes of "
-		 "long memory (%d pieces)\n", totlong, curlong);
+  fprintf (stderr, "qhull internal warning: did not free %d bytes of "
+     "long memory (%d pieces)\n", totlong, curlong);
 
     } /* for all complete cells in the current block */
 
@@ -472,14 +506,14 @@ void cell_hulls(int nblocks, struct vblock_t *vblocks, int dim) {
   nblocks: number of blocks
   particles: old particles before neighbor exchange
   num_particles: number of new particles in each block (input / output)
-  ghost: proximity threshold to neighbors, to determine wheter near enough 
+  ghost: proximity threshold to neighbors, to determine wheter near enough
   to send the site to the neighbor
 */
 void neighbor_particles(int nblocks, float **particles, int *num_particles,
-			float ghost) {
+      float ghost) {
 
-  void ***recv_particles; /* pointers to particles in ecah block 
-			     that are received from neighbors */
+  void ***recv_particles; /* pointers to particles in ecah block
+           that are received from neighbors */
   int *num_recv_particles; /* number of received particles for each block */
   int i, j;
   struct bb_t bb; // current block bounds
@@ -497,16 +531,16 @@ void neighbor_particles(int nblocks, float **particles, int *num_particles,
 
       /* only enqueue particles close enough to block boundary */
       if (particles[i][3 * j]   -   bb.min[0] < ghost ||
-	  bb.max[0]   -   particles[i][3 * j] < ghost ||
-	  particles[i][3 * j + 1] - bb.min[1] < ghost ||
-	  bb.max[1] - particles[i][3 * j + 1] < ghost ||
-	  particles[i][3 * j + 2] - bb.min[2] < ghost ||
-	  bb.max[2] - particles[i][3 * j + 2] < ghost)
+    bb.max[0]   -   particles[i][3 * j] < ghost ||
+    particles[i][3 * j + 1] - bb.min[1] < ghost ||
+    bb.max[1] - particles[i][3 * j + 1] < ghost ||
+    particles[i][3 * j + 2] - bb.min[2] < ghost ||
+    bb.max[2] - particles[i][3 * j + 2] < ghost)
 
-	DIY_Enqueue_item_all_near(i, (void *)(&(particles[i][3 * j])),
-				  NULL, 3 * sizeof(float),
-				  &particles[i][3 * j],
-				  ghost, &transform_particle);
+  DIY_Enqueue_item_all_near(i, (void *)(&(particles[i][3 * j])),
+          NULL, 3 * sizeof(float),
+          &particles[i][3 * j],
+          ghost, &transform_particle);
 
     }
 
@@ -518,18 +552,18 @@ void neighbor_particles(int nblocks, float **particles, int *num_particles,
   /* copy received particles to particles */
   for (i = 0; i < nblocks; i++) {
 
-    particles[i] = 
-      (float *)realloc(particles[i], 
-		       (num_particles[i] + num_recv_particles[i]) *
-					    3 * sizeof(float));
+    particles[i] =
+      (float *)realloc(particles[i],
+           (num_particles[i] + num_recv_particles[i]) *
+              3 * sizeof(float));
 
     for (j = 0; j < num_recv_particles[i]; j++) { /* copy received particles */
       particles[i][3 * num_particles[i]] =
-	((float*)recv_particles[i][j])[0];
+  ((float*)recv_particles[i][j])[0];
       particles[i][3 * num_particles[i] + 1] =
-	((float*)recv_particles[i][j])[1];
+  ((float*)recv_particles[i][j])[1];
       particles[i][3 * num_particles[i] + 2] =
-	((float*)recv_particles[i][j])[2];
+  ((float*)recv_particles[i][j])[2];
       num_particles[i]++;
     }
 
@@ -559,8 +593,8 @@ void item_type(DIY_Datatype *dtype) {
   hdrs: block headers
   out_file: output file name
 */
-void write_out(int nblocks, struct vblock_t *vblocks, int ** hdrs, 
-	       char *out_file) {
+void write_out(int nblocks, struct vblock_t *vblocks, int ** hdrs,
+         char *out_file) {
 
   int i;
 
@@ -591,8 +625,8 @@ void collect_stats(int nblocks, struct vblock_t *vblocks, double *times) {
   int i, j, k, m, n, v, f;
   int tot_num_cell_verts = 0; /* number of cell verts in all local blocks */
   int tot_num_face_verts = 0; /* number of face verts in all local blocks */
-  int unique_verts[AVG_CELL_FACES * AVG_FACE_VERTS]; /* unique vertices in 
-							one cell */
+  int unique_verts[AVG_CELL_FACES * AVG_FACE_VERTS]; /* unique vertices in
+              one cell */
   int num_unique_verts; /* number of unique vertices in one cell*/
   float vol_bin_width; /* width of a volume histogram bin */
   float dense_bin_width; /* width of a density histogram bin */
@@ -610,7 +644,7 @@ void collect_stats(int nblocks, struct vblock_t *vblocks, double *times) {
   stats.min_hull_time = times[HULL_TIME];
   stats.max_hull_time = times[HULL_TIME];
 
-  /* --- first pass: find average number of vertices per cell and 
+  /* --- first pass: find average number of vertices per cell and
      volume range --- */
 
   stats.tot_cells = 0;
@@ -633,13 +667,13 @@ void collect_stats(int nblocks, struct vblock_t *vblocks, double *times) {
     for (j = 0; j < vblocks[i].num_complete_cells; j++) {
 
       if (vblocks[i].vols[j] == 0.0)
-	fprintf(stderr, "found cell with 0.0 volume--this should not happen\n");
+  fprintf(stderr, "found cell with 0.0 volume--this should not happen\n");
 
       tot_cell_vol += vblocks[i].vols[j];
       float dense = 0.0;
       if (vblocks[i].vols[j] > 0.0) {
-	dense = 1.0 / vblocks[i].vols[j];
-	tot_cell_dense += dense;
+  dense = 1.0 / vblocks[i].vols[j];
+  tot_cell_dense += dense;
       }
 
       stats.tot_faces += vblocks[i].num_cell_faces[j];
@@ -647,51 +681,51 @@ void collect_stats(int nblocks, struct vblock_t *vblocks, double *times) {
 
       /* volume range */
       if (i == 0 && j == 0) {
-	stats.min_cell_vol = vblocks[i].vols[j];
-	stats.max_cell_vol = vblocks[i].vols[j];
+  stats.min_cell_vol = vblocks[i].vols[j];
+  stats.max_cell_vol = vblocks[i].vols[j];
       }
       else {
-	if (vblocks[i].vols[j] < stats.min_cell_vol)
-	  stats.min_cell_vol = vblocks[i].vols[j];
-	if (vblocks[i].vols[j] > stats.max_cell_vol)
-	  stats.max_cell_vol = vblocks[i].vols[j];
+  if (vblocks[i].vols[j] < stats.min_cell_vol)
+    stats.min_cell_vol = vblocks[i].vols[j];
+  if (vblocks[i].vols[j] > stats.max_cell_vol)
+    stats.max_cell_vol = vblocks[i].vols[j];
       }
 
       /* density range */
       if (first_dense && vblocks[i].vols[j] > 0.0) {
-	stats.min_cell_dense = dense;
-	stats.max_cell_dense = stats.min_cell_dense;
-	first_dense = 0;
+  stats.min_cell_dense = dense;
+  stats.max_cell_dense = stats.min_cell_dense;
+  first_dense = 0;
       }
       else if (vblocks[i].vols[j] > 0.0) {
-	if (dense < stats.min_cell_dense)
-	  stats.min_cell_dense = dense;
-	if (dense > stats.max_cell_dense)
-	  stats.max_cell_dense = dense;
+  if (dense < stats.min_cell_dense)
+    stats.min_cell_dense = dense;
+  if (dense > stats.max_cell_dense)
+    stats.max_cell_dense = dense;
       }
 
       /* for all faces in the current cell */
       for (k = 0; k < vblocks[i].num_cell_faces[j]; k++) {
 
-	tot_num_face_verts += vblocks[i].num_face_verts[f++];
+  tot_num_face_verts += vblocks[i].num_face_verts[f++];
 
-	/* for all verts in the current face */
-	for (m = 0; m < vblocks[i].num_face_verts[k]; m++) {
+  /* for all verts in the current face */
+  for (m = 0; m < vblocks[i].num_face_verts[k]; m++) {
 
-	  /* check if we already counted it */
-	  for (n = 0; n < num_unique_verts; n++) {
-	    if (vblocks[i].face_verts[v] == unique_verts[n])
-	      break;
-	  }
-	  if (n == num_unique_verts) {
-	    unique_verts[n] = vblocks[i].face_verts[v];
-	    num_unique_verts++;
-	    assert(num_unique_verts < AVG_CELL_FACES * AVG_FACE_VERTS - 1);
-	  }
+    /* check if we already counted it */
+    for (n = 0; n < num_unique_verts; n++) {
+      if (vblocks[i].face_verts[v] == unique_verts[n])
+        break;
+    }
+    if (n == num_unique_verts) {
+      unique_verts[n] = vblocks[i].face_verts[v];
+      num_unique_verts++;
+      assert(num_unique_verts < AVG_CELL_FACES * AVG_FACE_VERTS - 1);
+    }
 
-	  v++;
+    v++;
 
-	} /* for all verts */
+  } /* for all verts */
 
 
       } /* for all faces */
@@ -725,51 +759,51 @@ void collect_stats(int nblocks, struct vblock_t *vblocks, double *times) {
   /* --- print output --- */
 
   /* global stats */
-  vol_bin_width = (stats.max_cell_vol - stats.min_cell_vol) / 
+  vol_bin_width = (stats.max_cell_vol - stats.min_cell_vol) /
     stats.num_vol_bins;
-  dense_bin_width = (stats.max_cell_dense - stats.min_cell_dense) / 
+  dense_bin_width = (stats.max_cell_dense - stats.min_cell_dense) /
     stats.num_dense_bins;
   if (rank == 0) {
     fprintf(stderr, "----------------- global stats ------------------\n");
     fprintf(stderr, "particle exchange time = %.3lf s\n", times[EXCH_TIME]);
     fprintf(stderr, "[min, max] voronoi cell time = [%.3lf, %.3lf] s\n",
-	    stats.min_cell_time, stats.max_cell_time);
+      stats.min_cell_time, stats.max_cell_time);
     fprintf(stderr, "[min, max] convex hull time = [%.3lf, %.3lf] s\n",
-	    stats.min_hull_time, stats.max_hull_time);
+      stats.min_hull_time, stats.max_hull_time);
     fprintf(stderr, "output time = %.3lf s\n", times[OUT_TIME]);
     fprintf(stderr, "-----\n");
     fprintf(stderr, "total cells found = %d\n", stats.tot_cells);
     fprintf(stderr, "total cell vertices found = %d\n", stats.tot_verts);
     fprintf(stderr, "average number of vertices per cell = %.0lf\n",
-	    stats.avg_cell_verts);
+      stats.avg_cell_verts);
     fprintf(stderr, "average number of faces per cell = %.0lf\n",
-	    stats.avg_cell_faces);
+      stats.avg_cell_faces);
     fprintf(stderr, "average number of vertices per face = %.0lf\n",
-	    stats.avg_face_verts);
+      stats.avg_face_verts);
     fprintf(stderr, "-----\n");
     fprintf(stderr, "min cell volume = %.3lf max cell volume = %.3lf "
-	    "avg cell volume = %.3lf units^3\n",
-	    stats.min_cell_vol, stats.max_cell_vol, stats.avg_cell_vol);
+      "avg cell volume = %.3lf units^3\n",
+      stats.min_cell_vol, stats.max_cell_vol, stats.avg_cell_vol);
     fprintf(stderr, "number of cell volume histogram bins = %d\n",
-	    stats.num_vol_bins);
+      stats.num_vol_bins);
     fprintf(stderr, "-----\n");
     fprintf(stderr, "cell volume histogram:\n");
     fprintf(stderr, "min value\tcount\t\tmax value\n");
     for (k = 0; k < stats.num_vol_bins; k++)
-      fprintf(stderr, "%.3lf\t\t%d\t\t%.3lf\n", 
-	      stats.min_cell_vol + k * vol_bin_width, stats.vol_hist[k], 
-	      stats.min_cell_vol + (k + 1) * vol_bin_width);
+      fprintf(stderr, "%.3lf\t\t%d\t\t%.3lf\n",
+        stats.min_cell_vol + k * vol_bin_width, stats.vol_hist[k],
+        stats.min_cell_vol + (k + 1) * vol_bin_width);
     fprintf(stderr, "-----\n");
     fprintf(stderr, "min cell density = %.3lf max cell density = %.3lf "
-	    "avg cell density = %.3lf units^3\n",
-	    stats.min_cell_dense, stats.max_cell_dense, stats.avg_cell_dense);
+      "avg cell density = %.3lf units^3\n",
+      stats.min_cell_dense, stats.max_cell_dense, stats.avg_cell_dense);
     fprintf(stderr, "-----\n");
     fprintf(stderr, "cell density histogram:\n");
     fprintf(stderr, "min value\tcount\t\tmax value\n");
     for (k = 0; k < stats.num_dense_bins; k++)
-      fprintf(stderr, "%.3lf\t\t%d\t\t%.3lf\n", 
-	      stats.min_cell_dense + k * dense_bin_width, stats.dense_hist[k], 
-	      stats.min_cell_dense + (k + 1) * dense_bin_width);
+      fprintf(stderr, "%.3lf\t\t%d\t\t%.3lf\n",
+        stats.min_cell_dense + k * dense_bin_width, stats.dense_hist[k],
+        stats.min_cell_dense + (k + 1) * dense_bin_width);
     fprintf(stderr, "-------------------------------------------------\n");
   }
 
@@ -782,8 +816,8 @@ void collect_stats(int nblocks, struct vblock_t *vblocks, double *times) {
   vblocks: pointer to array of vblocks
   loc_stats: local statistics
 */
-void aggregate_stats(int nblocks, struct vblock_t *vblocks, 
-		     struct stats_t *loc_stats) {
+void aggregate_stats(int nblocks, struct vblock_t *vblocks,
+         struct stats_t *loc_stats) {
 
   float vol_bin_width; /* width of a volume histogram bin */
   float dense_bin_width; /* width of a density histogram bin */
@@ -801,46 +835,46 @@ void aggregate_stats(int nblocks, struct vblock_t *vblocks,
     /* create datatype */
     struct map_block_t map[] = {
 
-      { DIY_INT,   OFST, 1, 
-	offsetof(struct stats_t, tot_cells)      },
-      { DIY_INT,   OFST, 1, 
-	offsetof(struct stats_t, tot_faces)      },
-      { DIY_INT,   OFST, 1, 
-	offsetof(struct stats_t, tot_verts)      },
-      { DIY_FLOAT, OFST, 1, 
-	offsetof(struct stats_t, avg_cell_verts) },
-      { DIY_FLOAT, OFST, 1, 
-	offsetof(struct stats_t, avg_cell_faces) },
-      { DIY_FLOAT, OFST, 1, 
-	offsetof(struct stats_t, avg_face_verts) },
-      { DIY_FLOAT, OFST, 1, 
-	offsetof(struct stats_t, min_cell_vol)   },
-      { DIY_FLOAT, OFST, 1, 
-	offsetof(struct stats_t, max_cell_vol)   },
-      { DIY_FLOAT, OFST, 1, 
-	offsetof(struct stats_t, avg_cell_vol)   },
-      { DIY_FLOAT, OFST, 1, 
-	offsetof(struct stats_t, min_cell_dense) },
-      { DIY_FLOAT, OFST, 1, 
-	offsetof(struct stats_t, max_cell_dense) },
-      { DIY_FLOAT, OFST, 1, 
-	offsetof(struct stats_t, avg_cell_dense) },
-      { DIY_FLOAT, OFST, 1, 
-	offsetof(struct stats_t, min_cell_time)  },
-      { DIY_FLOAT, OFST, 1, 
-	offsetof(struct stats_t, max_cell_time)  },
-      { DIY_FLOAT, OFST, 1, 
-	offsetof(struct stats_t, min_hull_time)  },
-      { DIY_FLOAT, OFST, 1, 
-	offsetof(struct stats_t, max_hull_time)  },
-      { DIY_INT,   OFST, 1, 
-	offsetof(struct stats_t, num_vol_bins)   },
-      { DIY_INT,   OFST, 1, 
-	offsetof(struct stats_t, num_dense_bins) },
-      { DIY_INT,   OFST, MAX_HIST_BINS, 
-	offsetof(struct stats_t, vol_hist)       },
-      { DIY_INT,   OFST, MAX_HIST_BINS, 
-	offsetof(struct stats_t, dense_hist)     },
+      { DIY_INT,   OFST, 1,
+  offsetof(struct stats_t, tot_cells)      },
+      { DIY_INT,   OFST, 1,
+  offsetof(struct stats_t, tot_faces)      },
+      { DIY_INT,   OFST, 1,
+  offsetof(struct stats_t, tot_verts)      },
+      { DIY_FLOAT, OFST, 1,
+  offsetof(struct stats_t, avg_cell_verts) },
+      { DIY_FLOAT, OFST, 1,
+  offsetof(struct stats_t, avg_cell_faces) },
+      { DIY_FLOAT, OFST, 1,
+  offsetof(struct stats_t, avg_face_verts) },
+      { DIY_FLOAT, OFST, 1,
+  offsetof(struct stats_t, min_cell_vol)   },
+      { DIY_FLOAT, OFST, 1,
+  offsetof(struct stats_t, max_cell_vol)   },
+      { DIY_FLOAT, OFST, 1,
+  offsetof(struct stats_t, avg_cell_vol)   },
+      { DIY_FLOAT, OFST, 1,
+  offsetof(struct stats_t, min_cell_dense) },
+      { DIY_FLOAT, OFST, 1,
+  offsetof(struct stats_t, max_cell_dense) },
+      { DIY_FLOAT, OFST, 1,
+  offsetof(struct stats_t, avg_cell_dense) },
+      { DIY_FLOAT, OFST, 1,
+  offsetof(struct stats_t, min_cell_time)  },
+      { DIY_FLOAT, OFST, 1,
+  offsetof(struct stats_t, max_cell_time)  },
+      { DIY_FLOAT, OFST, 1,
+  offsetof(struct stats_t, min_hull_time)  },
+      { DIY_FLOAT, OFST, 1,
+  offsetof(struct stats_t, max_hull_time)  },
+      { DIY_INT,   OFST, 1,
+  offsetof(struct stats_t, num_vol_bins)   },
+      { DIY_INT,   OFST, 1,
+  offsetof(struct stats_t, num_dense_bins) },
+      { DIY_INT,   OFST, MAX_HIST_BINS,
+  offsetof(struct stats_t, vol_hist)       },
+      { DIY_INT,   OFST, MAX_HIST_BINS,
+  offsetof(struct stats_t, dense_hist)     },
 
     };
 
@@ -880,9 +914,9 @@ void aggregate_stats(int nblocks, struct vblock_t *vblocks,
   }
 
   /* find local cell volume and density histograms */
-  vol_bin_width = (glo_stats.max_cell_vol - glo_stats.min_cell_vol) / 
+  vol_bin_width = (glo_stats.max_cell_vol - glo_stats.min_cell_vol) /
     glo_stats.num_vol_bins; /* volume */
-  dense_bin_width = (glo_stats.max_cell_dense - glo_stats.min_cell_dense) / 
+  dense_bin_width = (glo_stats.max_cell_dense - glo_stats.min_cell_dense) /
     glo_stats.num_dense_bins; /* density */
   for (k = 0; k < glo_stats.num_vol_bins; k++) /* volume */
     glo_stats.vol_hist[k] = 0;
@@ -894,31 +928,31 @@ void aggregate_stats(int nblocks, struct vblock_t *vblocks,
 
       /* volume */
       for (k = 0; k < glo_stats.num_vol_bins; k++) { /* for all bins */
-	if (vblocks[i].vols[j] >= glo_stats.min_cell_vol + k * vol_bin_width && 
-	    vblocks[i].vols[j] < 
-	    glo_stats.min_cell_vol + (k + 1) * vol_bin_width) {
-	  glo_stats.vol_hist[k]++;
-	  break;
-	}
+  if (vblocks[i].vols[j] >= glo_stats.min_cell_vol + k * vol_bin_width &&
+      vblocks[i].vols[j] <
+      glo_stats.min_cell_vol + (k + 1) * vol_bin_width) {
+    glo_stats.vol_hist[k]++;
+    break;
+  }
       } /* for all bins */
       if (k == glo_stats.num_vol_bins)
-	glo_stats.vol_hist[k - 1]++; /* catch roundoff error and open
-					interval on right side of bin */
+  glo_stats.vol_hist[k - 1]++; /* catch roundoff error and open
+          interval on right side of bin */
 
       /* density */
       for (k = 0; k < glo_stats.num_dense_bins; k++) { /* for all bins */
-	if (vblocks[i].vols[j] > 0.0) {
-	  float dense = 1.0 /vblocks[i].vols[j];
-	  if (dense >= glo_stats.min_cell_dense + k * dense_bin_width && 
-	      dense <  glo_stats.min_cell_dense + (k + 1) * dense_bin_width) {
-	    glo_stats.dense_hist[k]++;
-	    break;
-	  }
-	}
+  if (vblocks[i].vols[j] > 0.0) {
+    float dense = 1.0 /vblocks[i].vols[j];
+    if (dense >= glo_stats.min_cell_dense + k * dense_bin_width &&
+        dense <  glo_stats.min_cell_dense + (k + 1) * dense_bin_width) {
+      glo_stats.dense_hist[k]++;
+      break;
+    }
+  }
       } /* for all bins */
       if (k == glo_stats.num_dense_bins)
-	glo_stats.dense_hist[k - 1]++; /* catch roundoff error and open
-					interval on right side of bin */
+  glo_stats.dense_hist[k - 1]++; /* catch roundoff error and open
+          interval on right side of bin */
 
     } /* for all cells */
 
@@ -989,9 +1023,9 @@ void average(void *in, void *inout, int *len, MPI_Datatype *type) {
   struct stats_t *stats2 = (struct stats_t *)inout;
 
   /* weights for weighted averages based on cell counts */
-  float w1 = (float)stats1->tot_cells / 
+  float w1 = (float)stats1->tot_cells /
     (stats1->tot_cells + stats2->tot_cells);
-  float w2 = (float)stats2->tot_cells / 
+  float w2 = (float)stats2->tot_cells /
     (stats1->tot_cells + stats2->tot_cells);
 
   /* weighted average of two averages */
@@ -1005,13 +1039,13 @@ void average(void *in, void *inout, int *len, MPI_Datatype *type) {
     w2 * stats2->avg_cell_dense;
 
   /* new weights for weighted averages based on face counts */
-  w1 = (float)stats1->tot_faces / 
+  w1 = (float)stats1->tot_faces /
     (stats1->tot_faces + stats2->tot_faces);
-  w2 = (float)stats2->tot_faces / 
+  w2 = (float)stats2->tot_faces /
     (stats1->tot_faces + stats2->tot_faces);
 
   /* weighted average of two averages */
-  stats2->avg_face_verts = w1 * stats1->avg_face_verts + 
+  stats2->avg_face_verts = w1 * stats1->avg_face_verts +
     w2 * stats2->avg_face_verts;
 
   stats2->tot_cells += stats1->tot_cells;
@@ -1109,8 +1143,8 @@ void prep_out(int nblocks, struct vblock_t *vblocks, int **hdrs) {
 
   /* save vertices (float version) */
   for (i = 0; i < nblocks; i++) {
-    vblocks[i].save_verts = (float *)malloc(vblocks[i].num_verts * 3 * 
-					       sizeof(float));
+    vblocks[i].save_verts = (float *)malloc(vblocks[i].num_verts * 3 *
+                 sizeof(float));
     for (j = 0; j < vblocks[i].num_verts; j++) {
       /* added by jingyuan
        * check and remove vertices that are out of data extent
@@ -1166,8 +1200,8 @@ void create_blocks(int num_blocks, struct vblock_t **vblocks, int ***hdrs) {
   int i, j;
 
   /* allocate blocks and headers */
-  *vblocks = (struct vblock_t*)malloc(sizeof(struct vblock_t) * 
-				      num_blocks);
+  *vblocks = (struct vblock_t*)malloc(sizeof(struct vblock_t) *
+              num_blocks);
   *hdrs = (int **)malloc(sizeof(int*) * num_blocks);
 
   for (i = 0; i < num_blocks; i++) {
@@ -1269,9 +1303,9 @@ void complete_cells(struct vblock_t *vblock, int lid, float ghost) {
      only need a fraction of this memory
      todo: fix this with my own memory manager */
   vblock->temp_complete_cells =
-	  (int *)malloc(vblock->num_cells * sizeof(int));
+    (int *)malloc(vblock->num_cells * sizeof(int));
   vblock->complete_cells =
-	  (int *)malloc(vblock->num_cells * sizeof(int));
+    (int *)malloc(vblock->num_cells * sizeof(int));
   vblock->areas =
     (float *)malloc(vblock->num_cells * sizeof(float));
   vblock->vols =
@@ -1279,16 +1313,16 @@ void complete_cells(struct vblock_t *vblock, int lid, float ghost) {
   vblock->num_cell_faces =
     (int *)malloc(vblock->num_cells * sizeof(int));
   vblock->num_face_verts =
-	  (int *)malloc(vblock->num_cells * AVG_CELL_FACES * sizeof(int));
+    (int *)malloc(vblock->num_cells * AVG_CELL_FACES * sizeof(int));
   vblock->face_verts =
-	  (int *)malloc(vblock->num_cells * AVG_CELL_FACES *
-			AVG_FACE_VERTS * sizeof(int));
+    (int *)malloc(vblock->num_cells * AVG_CELL_FACES *
+      AVG_FACE_VERTS * sizeof(int));
 
   /* init */
   memset(vblock->num_face_verts, 0,
-	 vblock->num_cells * AVG_CELL_FACES * sizeof(int));
+   vblock->num_cells * AVG_CELL_FACES * sizeof(int));
   memset(vblock->face_verts, 0, vblock->num_cells * AVG_CELL_FACES *
-	 AVG_FACE_VERTS * sizeof(int));
+   AVG_FACE_VERTS * sizeof(int));
   vblock->tot_num_cell_faces = 0;
   vblock->tot_num_face_verts = 0;
 
@@ -1315,58 +1349,58 @@ void complete_cells(struct vblock_t *vblock, int lid, float ghost) {
     for (k = 0; k < vblock->num_cell_verts[j]; k++) {
 
       if (k == 0)
-	start_n = n;
+  start_n = n;
 
       vid = vblock->cells[n];
 
       if ( /* vertex can fail for the following reasons */
-	  /* qhull's "infinite vertex" */
-	  vblock->cells[n] == 0 ||
-	  /* out of block bounds */
-	  vblock->verts[3 * vid]     < bounds.min[0] - ghost ||
-	  vblock->verts[3 * vid]     > bounds.max[0] + ghost ||
-	  vblock->verts[3 * vid + 1] < bounds.min[1] - ghost ||
-	  vblock->verts[3 * vid + 1] > bounds.max[1] + ghost ||
-	  vblock->verts[3 * vid + 2] < bounds.min[2] - ghost ||
-	  vblock->verts[3 * vid + 2] > bounds.max[2] + ghost ||
-	  /* out of overall data bounds */
-	  vblock->verts[3 * vid]     < data_mins[0] ||
-	  vblock->verts[3 * vid]     > data_maxs[0] ||
-	  vblock->verts[3 * vid + 1] < data_mins[1] ||
-	  vblock->verts[3 * vid + 1] > data_maxs[1] ||
-	  vblock->verts[3 * vid + 2] < data_mins[2] ||
-	  vblock->verts[3 * vid + 2] > data_maxs[2]
-	   ) {
-	complete = 0;
-	n += (vblock->num_cell_verts[j] - k); /* skip rest of this cell */
-	break;
+    /* qhull's "infinite vertex" */
+    vblock->cells[n] == 0 ||
+    /* out of block bounds */
+    vblock->verts[3 * vid]     < bounds.min[0] - ghost ||
+    vblock->verts[3 * vid]     > bounds.max[0] + ghost ||
+    vblock->verts[3 * vid + 1] < bounds.min[1] - ghost ||
+    vblock->verts[3 * vid + 1] > bounds.max[1] + ghost ||
+    vblock->verts[3 * vid + 2] < bounds.min[2] - ghost ||
+    vblock->verts[3 * vid + 2] > bounds.max[2] + ghost ||
+    /* out of overall data bounds */
+    vblock->verts[3 * vid]     < data_mins[0] ||
+    vblock->verts[3 * vid]     > data_maxs[0] ||
+    vblock->verts[3 * vid + 1] < data_mins[1] ||
+    vblock->verts[3 * vid + 1] > data_maxs[1] ||
+    vblock->verts[3 * vid + 2] < data_mins[2] ||
+    vblock->verts[3 * vid + 2] > data_maxs[2]
+     ) {
+  complete = 0;
+  n += (vblock->num_cell_verts[j] - k); /* skip rest of this cell */
+  break;
       } /* if */
 
       /* check minimum volume if enabled and it has not been excceded yet */
       if (too_small) {
 
-	/* for all vertices in this cell */
-	for (m = start_n; m < start_n + vblock->num_cell_verts[j]; m++) {
-	  vid1 = vblock->cells[m];
-	  double d2 =
-	    (vblock->verts[3 * vid] - vblock->verts[3 * vid1]) *
-	    (vblock->verts[3 * vid] - vblock->verts[3 * vid1]) +
-	    (vblock->verts[3 * vid + 1] - vblock->verts[3 * vid1 + 1]) *
-	    (vblock->verts[3 * vid + 1] - vblock->verts[3 * vid1 + 1]) +
-	    (vblock->verts[3 * vid + 2] - vblock->verts[3 * vid1 + 2]) *
-	    (vblock->verts[3 * vid + 2] - vblock->verts[3 * vid1 + 2]);
-	  if (d2 > d2_min) {
-	    too_small = 0;
-	    break;
-	  }
+  /* for all vertices in this cell */
+  for (m = start_n; m < start_n + vblock->num_cell_verts[j]; m++) {
+    vid1 = vblock->cells[m];
+    double d2 =
+      (vblock->verts[3 * vid] - vblock->verts[3 * vid1]) *
+      (vblock->verts[3 * vid] - vblock->verts[3 * vid1]) +
+      (vblock->verts[3 * vid + 1] - vblock->verts[3 * vid1 + 1]) *
+      (vblock->verts[3 * vid + 1] - vblock->verts[3 * vid1 + 1]) +
+      (vblock->verts[3 * vid + 2] - vblock->verts[3 * vid1 + 2]) *
+      (vblock->verts[3 * vid + 2] - vblock->verts[3 * vid1 + 2]);
+    if (d2 > d2_min) {
+      too_small = 0;
+      break;
+    }
 
-	} /* all vertices in this cell */
+  } /* all vertices in this cell */
 
       } /* samll volume threshold */
 
       /* check if volume is too small at the end of the cell */
       if (k == vblock->num_cell_verts[j] - 1 && too_small)
-	complete = 0;
+  complete = 0;
 
       n++;
 
@@ -1389,7 +1423,7 @@ void complete_cells(struct vblock_t *vblock, int lid, float ghost) {
   by caller
 */
 void prep_vertices(struct vblock_t *vblock, int cell, double *vertices,
-		   int *vmap) {
+       int *vmap) {
 
   int i, k;
   int num_verts = vblock->num_cell_verts[vblock->temp_complete_cells[cell]];
@@ -1415,7 +1449,7 @@ void prep_vertices(struct vblock_t *vblock, int cell, double *vertices,
   generates test particles for a  block
 
   lid: local id of block
-  particles: pointer to particle vector in this order: 
+  particles: pointer to particle vector in this order:
   particle0x, particle0y, particle0z, particle1x, particle1y, particle1z, ...
   jitter: maximum amount to randomly move particles
 
@@ -1448,38 +1482,38 @@ int gen_particles(int lid, float **particles, float jitter) {
     for (j = 0; j < sizes[1]; j++) {
       for (k = 0; k < sizes[2]; k++) {
 
-	// start with particles on a grid
-	(*particles)[3 * n] = bounds.min[0] + i;
-	(*particles)[3 * n + 1] = bounds.min[1] + j;
-	(*particles)[3 * n + 2] = bounds.min[2] + k;
+  // start with particles on a grid
+  (*particles)[3 * n] = bounds.min[0] + i;
+  (*particles)[3 * n + 1] = bounds.min[1] + j;
+  (*particles)[3 * n + 2] = bounds.min[2] + k;
 
-	// and now jitter them
-	jit = rand() / (float)RAND_MAX * 2 * jitter - jitter;
-	if ((*particles)[3 * n] - jit >= bounds.min[0] && 
-	    (*particles)[3 * n] - jit <= bounds.max[0])
-	  (*particles)[3 * n] -= jit;
-	else if ((*particles)[3 * n] + jit >= bounds.min[0] && 
-		 (*particles)[3 * n] + jit <= bounds.max[0])
-	  (*particles)[3 * n] += jit;
+  // and now jitter them
+  jit = rand() / (float)RAND_MAX * 2 * jitter - jitter;
+  if ((*particles)[3 * n] - jit >= bounds.min[0] &&
+      (*particles)[3 * n] - jit <= bounds.max[0])
+    (*particles)[3 * n] -= jit;
+  else if ((*particles)[3 * n] + jit >= bounds.min[0] &&
+     (*particles)[3 * n] + jit <= bounds.max[0])
+    (*particles)[3 * n] += jit;
 
-	jit = rand() / (float)RAND_MAX * 2 * jitter - jitter;
-	if ((*particles)[3 * n + 1] - jit >= bounds.min[1] && 
-	    (*particles)[3 * n + 1] - jit <= bounds.max[1])
-	  (*particles)[3 * n + 1] -= jit;
-	else if ((*particles)[3 * n + 1] + jit >= bounds.min[1] && 
-		 (*particles)[3 * n + 1] + jit <= bounds.max[1])
-	  (*particles)[3 * n + 1] += jit;
+  jit = rand() / (float)RAND_MAX * 2 * jitter - jitter;
+  if ((*particles)[3 * n + 1] - jit >= bounds.min[1] &&
+      (*particles)[3 * n + 1] - jit <= bounds.max[1])
+    (*particles)[3 * n + 1] -= jit;
+  else if ((*particles)[3 * n + 1] + jit >= bounds.min[1] &&
+     (*particles)[3 * n + 1] + jit <= bounds.max[1])
+    (*particles)[3 * n + 1] += jit;
 
-	jit = rand() / (float)RAND_MAX * 2 * jitter - jitter;
-	if ((*particles)[3 * n + 2] - jit >= bounds.min[2] && 
-	    (*particles)[3 * n + 2] - jit <= bounds.max[2])
-	  (*particles)[3 * n + 2] -= jit;
-	else if ((*particles)[3 * n + 2] + jit >= bounds.min[2] && 
-		 (*particles)[3 * n + 2] + jit <= bounds.max[2])
-	  (*particles)[3 * n + 2] += jit;
+  jit = rand() / (float)RAND_MAX * 2 * jitter - jitter;
+  if ((*particles)[3 * n + 2] - jit >= bounds.min[2] &&
+      (*particles)[3 * n + 2] - jit <= bounds.max[2])
+    (*particles)[3 * n + 2] -= jit;
+  else if ((*particles)[3 * n + 2] + jit >= bounds.min[2] &&
+     (*particles)[3 * n + 2] + jit <= bounds.max[2])
+    (*particles)[3 * n + 2] += jit;
 
 
-	n++;
+  n++;
 
       }
     }
@@ -1532,9 +1566,9 @@ void gen_voronoi_output(facetT *facetlist, struct vblock_t *vblock) {
   }
   /* number of verts and cells may appear to be reversed, but this is
      qhull's nomenclature and is actually correct
-     also, num_cells is temporary because it includes cells formed by 
+     also, num_cells is temporary because it includes cells formed by
      ghost perticles
-     eventually vblock->num_cells will be (permanentlly) set to only the 
+     eventually vblock->num_cells will be (permanentlly) set to only the
      cells derived from original particles
   */
   vblock->num_verts = numcenters;
@@ -1547,7 +1581,7 @@ void gen_voronoi_output(facetT *facetlist, struct vblock_t *vblock) {
   FORALLfacet_(facetlist) {
     if (facet->visitid && facet->visitid < numfacets) {
       if (!facet->center)
-	facet->center = qh_facetcenter(facet->vertices);
+  facet->center = qh_facetcenter(facet->vertices);
       vblock->verts[3 * i] = facet->center[0];
       vblock->verts[3 * i + 1] = facet->center[1];
       vblock->verts[3 * i + 2] = facet->center[2];
@@ -1569,7 +1603,7 @@ void gen_voronoi_output(facetT *facetlist, struct vblock_t *vblock) {
           numneighbors++;
       }
       if (numinf)
-	numneighbors++;
+  numneighbors++;
       vblock->num_cell_verts[i++] = numneighbors;
     }
   }
@@ -1586,15 +1620,15 @@ void gen_voronoi_output(facetT *facetlist, struct vblock_t *vblock) {
     if (vertex) {
       numinf = 0;
       FOREACHneighbor_(vertex) {
-	if (neighbor->visitid < numfacets) {
-	  if (!numinf || neighbor->visitid > 0) {
-	    vblock->cells[i++] = neighbor->visitid;
-	    if (neighbor->visitid == 0)
-	      numinf++;
-	  }
-	}
-	else if (numinf && neighbor->visitid < numfacets)
-	  vblock->cells[i++] = neighbor->visitid;
+  if (neighbor->visitid < numfacets) {
+    if (!numinf || neighbor->visitid > 0) {
+      vblock->cells[i++] = neighbor->visitid;
+      if (neighbor->visitid == 0)
+        numinf++;
+    }
+  }
+  else if (numinf && neighbor->visitid < numfacets)
+    vblock->cells[i++] = neighbor->visitid;
       }
     }
   }
@@ -1626,7 +1660,7 @@ void gen_voronoi_output(facetT *facetlist, struct vblock_t *vblock) {
   returns: 0 = hull did not pass volume filter test, discard
   1 = hull passed volume filter test, save
 
-  side effects: if return value is 1, allocates num_cell_faces, 
+  side effects: if return value is 1, allocates num_cell_faces,
   num_face_verts, face_verts, areas,
   vols data structures inside of vblock, caller's responsibility to free
 */
@@ -1649,10 +1683,10 @@ int gen_convex_output(facetT *facetlist, struct cblock_t *cblock) {
     cblock->num_cell_faces++;
 
   /* allocate memory and assign values */
-  cblock->num_face_verts = 
-	  (int *)malloc(cblock->num_cell_faces * sizeof(int));
-  cblock->face_verts = 
-	  (int **)malloc(cblock->num_cell_faces * sizeof(int *));
+  cblock->num_face_verts =
+    (int *)malloc(cblock->num_cell_faces * sizeof(int));
+  cblock->face_verts =
+    (int **)malloc(cblock->num_cell_faces * sizeof(int *));
 
   face = 0;
   FORALLfacet_(facetlist) {
@@ -1689,7 +1723,7 @@ int gen_convex_output(facetT *facetlist, struct cblock_t *cblock) {
   data structures inside of vblock, caller's responsibility to free
 */
 void convex_to_voronoi(struct cblock_t *cblock, struct vblock_t *vblock,
-		       int *vmap, int cell) {
+           int *vmap, int cell) {
 
   int j, k;
 
@@ -1703,21 +1737,21 @@ void convex_to_voronoi(struct cblock_t *cblock, struct vblock_t *vblock,
 
   /* confirm that the size of vblock->num_face_verts is large enough */
   assert(vblock->tot_num_cell_faces + (vblock->num_cell_faces)[cell] <=
-	 vblock->temp_num_complete_cells * AVG_CELL_FACES);
+   vblock->temp_num_complete_cells * AVG_CELL_FACES);
 
   for (j = 0; j < (vblock->num_cell_faces)[cell]; j++) {
 
-    (vblock->num_face_verts)[vblock->tot_num_cell_faces] = 
+    (vblock->num_face_verts)[vblock->tot_num_cell_faces] =
       (cblock->num_face_verts)[j];
 
     /* confirm that the size of vblock->face_verts is large enough */
-    assert(vblock->tot_num_face_verts + 
-	   (vblock->num_face_verts)[vblock->tot_num_cell_faces] <=
-	   vblock->temp_num_complete_cells * AVG_CELL_FACES * AVG_FACE_VERTS);
+    assert(vblock->tot_num_face_verts +
+     (vblock->num_face_verts)[vblock->tot_num_cell_faces] <=
+     vblock->temp_num_complete_cells * AVG_CELL_FACES * AVG_FACE_VERTS);
 
     for (k = 0; k < (vblock->num_face_verts)[vblock->tot_num_cell_faces]; k++) {
-      (vblock->face_verts)[vblock->tot_num_face_verts] = 
-	vmap[(cblock->face_verts)[j][k]];
+      (vblock->face_verts)[vblock->tot_num_face_verts] =
+  vmap[(cblock->face_verts)[j][k]];
       vblock->tot_num_face_verts++;
 
     }
@@ -1752,25 +1786,25 @@ void *create_datatype(void* vblock, int lid, DIY_Datatype *dtype) {
   struct vblock_t *v = (struct vblock_t *)vblock;
   struct map_block_t map[] = {
 
-    { DIY_FLOAT,  OFST, 3, 
+    { DIY_FLOAT,  OFST, 3,
       offsetof(struct vblock_t, mins)                 },
-    { DIY_FLOAT, ADDR, v->num_verts * 3, 
+    { DIY_FLOAT, ADDR, v->num_verts * 3,
       DIY_Addr(v->save_verts)                              },
     { DIY_FLOAT, ADDR, v->num_orig_particles * 3,
       DIY_Addr(v->sites)                              },
-    { DIY_INT,    ADDR, v->num_complete_cells, 
+    { DIY_INT,    ADDR, v->num_complete_cells,
       DIY_Addr(v->complete_cells)                     },
-    { DIY_FLOAT, ADDR, v->num_complete_cells, 
+    { DIY_FLOAT, ADDR, v->num_complete_cells,
       DIY_Addr(v->areas)                              },
-    { DIY_FLOAT, ADDR, v->num_complete_cells, 
+    { DIY_FLOAT, ADDR, v->num_complete_cells,
       DIY_Addr(v->vols)                               },
-    { DIY_INT,    ADDR, v->num_complete_cells, 
+    { DIY_INT,    ADDR, v->num_complete_cells,
       DIY_Addr(v->num_cell_faces)                     },
-    { DIY_INT,    ADDR, v->tot_num_cell_faces, 
+    { DIY_INT,    ADDR, v->tot_num_cell_faces,
       DIY_Addr(v->num_face_verts)                     },
-    { DIY_INT,    ADDR, v->tot_num_face_verts, 
+    { DIY_INT,    ADDR, v->tot_num_face_verts,
       DIY_Addr(v->face_verts)                         },
-    { DIY_FLOAT,  OFST, 3, 
+    { DIY_FLOAT,  OFST, 3,
       offsetof(struct vblock_t, maxs)                 },
 
   };
@@ -1782,29 +1816,29 @@ void *create_datatype(void* vblock, int lid, DIY_Datatype *dtype) {
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   fprintf(stderr, "Rank %d creating MPI struct datatype:\n"
-	  "base type = MPI_INT,   quantity = 7, address = %p\n"
-	  "base type = MPI_FLOAT, quantity = 3, address = %p\n"
-	  "base type = MPI_FLOAT, quantity = %d, address = %p\n"
-	  "base type = MPI_FLOAT, quantity = %d, address = %p\n"
-	  "base type = MPI_INT,   quantity = %d, address = %p\n"
-	  "base type = MPI_FLOAT, quantity = %d, address = %p\n"
-	  "base type = MPI_FLOAT, quantity = %d, address = %p\n"
-	  "base type = MPI_INT,   quantity = %d, address = %p\n"
-	  "base type = MPI_INT,   quantity = %d, address = %p\n"
-	  "base type = MPI_INT,   quantity = %d, address = %p\n"
-	  "base type = MPI_FLOAT, quantity = 3, address =  %p\n\n\n", 
-	  rank,
-	  hdrs[lid],
-	  vblock + offsetof(struct vblock_t, mins), 
-	  v->num_verts * 3, v->save_verts,
-	  v->num_orig_particles * 3, v->sites,
-	  v->num_complete_cells, v->complete_cells,
-	  v->num_complete_cells, v->areas,
-	  v->num_complete_cells, v->vols,
-	  v->num_complete_cells, v->num_cell_faces,
-	  v->tot_num_cell_faces, v->num_face_verts,
-	  v->tot_num_face_verts, v->face_verts,
-	  vblock + offsetof(struct vblock_t, maxs));
+    "base type = MPI_INT,   quantity = 7, address = %p\n"
+    "base type = MPI_FLOAT, quantity = 3, address = %p\n"
+    "base type = MPI_FLOAT, quantity = %d, address = %p\n"
+    "base type = MPI_FLOAT, quantity = %d, address = %p\n"
+    "base type = MPI_INT,   quantity = %d, address = %p\n"
+    "base type = MPI_FLOAT, quantity = %d, address = %p\n"
+    "base type = MPI_FLOAT, quantity = %d, address = %p\n"
+    "base type = MPI_INT,   quantity = %d, address = %p\n"
+    "base type = MPI_INT,   quantity = %d, address = %p\n"
+    "base type = MPI_INT,   quantity = %d, address = %p\n"
+    "base type = MPI_FLOAT, quantity = 3, address =  %p\n\n\n",
+    rank,
+    hdrs[lid],
+    vblock + offsetof(struct vblock_t, mins),
+    v->num_verts * 3, v->save_verts,
+    v->num_orig_particles * 3, v->sites,
+    v->num_complete_cells, v->complete_cells,
+    v->num_complete_cells, v->areas,
+    v->num_complete_cells, v->vols,
+    v->num_complete_cells, v->num_cell_faces,
+    v->tot_num_cell_faces, v->num_face_verts,
+    v->tot_num_face_verts, v->face_verts,
+    vblock + offsetof(struct vblock_t, maxs));
 #endif
 
   return DIY_BOTTOM;
@@ -1821,8 +1855,8 @@ void print_block(struct vblock_t *vblock, int gid) {
 
   int i;
 
-  fprintf(stderr, "block gid = %d, %d complete cells: ", 
-	  gid, vblock->num_complete_cells);
+  fprintf(stderr, "block gid = %d, %d complete cells: ",
+    gid, vblock->num_complete_cells);
   for (i = 0; i < vblock->num_complete_cells; i++)
     fprintf(stderr, "%d ", vblock->complete_cells[i]);
   fprintf(stderr, "\n");
@@ -1842,8 +1876,8 @@ void print_particles(float *particles, int num_particles, int gid) {
 
   for (n = 0; n < num_particles; n++)
     fprintf(stderr, "block = %d particle[%d] = [%.1lf %.1lf %.1lf]\n",
-	    gid, n, particles[3 * n], particles[3 * n + 1],
-	    particles[3 * n + 2]);
+      gid, n, particles[3 * n], particles[3 * n + 1],
+      particles[3 * n + 2]);
 
 }
 /*--------------------------------------------------------------------------*/
