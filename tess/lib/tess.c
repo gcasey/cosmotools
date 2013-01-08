@@ -29,6 +29,8 @@ static float cell_size; /* maximum expected cell diameter */
 static float ghost_factor; /* ghost size multiplier */
 static double *times; /* timing info */
 
+static int DIYCalledExternal;/* indicates,whether DIY is called externally*/
+
 /* datatype profiling for John Jenkins' research */
 /* #define DATATYPE_PROFILE */
 
@@ -36,6 +38,37 @@ static double *times; /* timing info */
 static int **hdrs; /* headers */
 #endif
 
+/*------------------------------------------------------------------------*/
+/*
+  Initialize parallel voronoi (and later possibly delaunay) tesselation.
+  Assumes that the external application has initialized DIY.
+
+  num_blocks: local number of blocks in my process
+  cell_dia: maximum expeted cell diameter
+  ghost_mult: ghost size multiplier
+  global_mins, global_maxs: overall data extents
+  minvol, maxvol: filter range for which cells to keep
+  pass -1.0 to skip either or both bounds
+  mpi_comm: MPI communicator
+  all_times: times for particle exchange, voronoi cells, convex hulls, and output
+*/
+void tess_init_diy_initialized(
+            int num_blocks,
+            float cell_dia, float ghost_mult,
+            float minvol, float maxvol,
+            MPI_Comm mpi_comm,double *all_times)
+{
+  /* save globals */
+  comm = mpi_comm;
+  nblocks = num_blocks;
+  cell_size = cell_dia;
+  ghost_factor = ghost_mult;
+  min_vol = minvol;
+  max_vol = maxvol;
+  times   = all_times;
+
+  DIYCalledExternal = 1;
+}
 /*------------------------------------------------------------------------*/
 /*
   initialize parallel voronoi (and later possibly delaunay) tesselation
@@ -88,6 +121,7 @@ void tess_init(int num_blocks, int *gids,
   DIY_Decomposed(num_blocks, gids, bounds, NULL, NULL, NULL, NULL, neighbors, 
 		 num_neighbors, wrap);
 
+  DIYCalledExternal = 0;
 }
 /*------------------------------------------------------------------------*/
 /*
@@ -95,8 +129,8 @@ finalize parallel voronoi (and later possibly delaunay) tesselation
 */
 void tess_finalize() {
 
-  DIY_Finalize();
-
+  if( DIYCalledExternal == 0)
+    DIY_Finalize();
 }
 /*------------------------------------------------------------------------*/
 /*
