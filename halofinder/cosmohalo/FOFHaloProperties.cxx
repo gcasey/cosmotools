@@ -152,7 +152,7 @@ void FOFHaloProperties::setParticles(
 }
 
 void FOFHaloProperties::setParticles(
-			long count,
+      long count,
                         POSVEL_T* xLoc,
                         POSVEL_T* yLoc,
                         POSVEL_T* zLoc,
@@ -306,6 +306,28 @@ void FOFHaloProperties::FOFPosition(
 
 /////////////////////////////////////////////////////////////////////////
 //
+// Calculate the average position of particles of a *given* FOF halo
+//
+// x_FOF = ((Sum i=1 to n_FOF) x_i) / n_FOF
+//    x_FOF is the average position vector
+//    n_FOF is the number of particles in the halo
+//    x_i is the position vector of particle i
+//
+/////////////////////////////////////////////////////////////////////////
+
+void FOFHaloProperties::FOFHaloPosition(int halo, POSVEL_T pos[3])
+{
+  double xKahan = KahanSummation(halo,this->xx);
+  double yKahan = KahanSummation(halo,this->yy);
+  double zKahan = KahanSummation(halo,this->zz);
+
+  pos[0] = static_cast<POSVEL_T>(xKahan/this->haloCount[halo]);
+  pos[1] = static_cast<POSVEL_T>(yKahan/this->haloCount[halo]);
+  pos[2] = static_cast<POSVEL_T>(zKahan/this->haloCount[halo]);
+}
+
+/////////////////////////////////////////////////////////////////////////
+//
 // Calculate the average velocity of particles of every FOF halo
 //
 // v_FOF = ((Sum i=1 to n_FOF) v_i) / n_FOF
@@ -336,6 +358,28 @@ void FOFHaloProperties::FOFVelocity(
     (*yMeanVel).push_back(yMean);
     (*zMeanVel).push_back(zMean);
   }
+}
+
+/////////////////////////////////////////////////////////////////////////
+//
+// Calculate the average velocity of particles of a *given* FOF halo
+//
+// v_FOF = ((Sum i=1 to n_FOF) v_i) / n_FOF
+//    v_FOF is the average velocity vector
+//    n_FOF is the number of particles in the halo
+//    v_i is the velocity vector of particle i
+//
+/////////////////////////////////////////////////////////////////////////
+void FOFHaloProperties::FOFHaloVelocity(
+        int halo, POSVEL_T vel[3])
+{
+  double xKahan = KahanSummation(halo, this->vx);
+  double yKahan = KahanSummation(halo, this->vy);
+  double zKahan = KahanSummation(halo, this->vz);
+
+  vel[0] = static_cast<POSVEL_T>(xKahan/this->haloCount[halo]);
+  vel[1] = static_cast<POSVEL_T>(yKahan/this->haloCount[halo]);
+  vel[2] = static_cast<POSVEL_T>(zKahan/this->haloCount[halo]);
 }
 
 /////////////////////////////////////////////////////////////////////////
@@ -614,17 +658,35 @@ void FOFHaloProperties::printHaloSizes(int minSize)
 
 /////////////////////////////////////////////////////////////////////////
 //
+// Copy halo particle tags to the allocated array
+//
+/////////////////////////////////////////////////////////////////////////
+void FOFHaloProperties::extractHaloParticleIds(
+      int halo, ID_T *haloParticleTags)
+{
+  assert("pre: haloParticleTags==NULL" && (haloParticleTags != NULL) );
+
+  int p = this->halos[halo];
+  for(int i=0; i < this->haloCount[halo]; ++i )
+    {
+    haloParticleTags[i]=this->tag[p];
+    p = this->haloList[p]; // Hmm...?
+    } // END for all particles within a halo
+}
+
+/////////////////////////////////////////////////////////////////////////
+//
 // Copy locations and tags of halo particles to the allocated arrays
 //
 /////////////////////////////////////////////////////////////////////////
 
 void FOFHaloProperties::extractLocation(
-				int halo,
-				int* actualIndx,
-				POSVEL_T* xLocHalo,
-				POSVEL_T* yLocHalo,
-				POSVEL_T* zLocHalo,
-				ID_T* id)
+        int halo,
+        int* actualIndx,
+        POSVEL_T* xLocHalo,
+        POSVEL_T* yLocHalo,
+        POSVEL_T* zLocHalo,
+        ID_T* id)
 {
   int p = this->halos[halo];
   for (int i = 0; i < this->haloCount[halo]; i++) {
@@ -644,16 +706,16 @@ void FOFHaloProperties::extractLocation(
 /////////////////////////////////////////////////////////////////////////
 
 void FOFHaloProperties::extractInformation(
-				int halo,
-				int* actualIndx,
-				POSVEL_T* xLocHalo,
-				POSVEL_T* yLocHalo,
-				POSVEL_T* zLocHalo,
-				POSVEL_T* xVelHalo,
-				POSVEL_T* yVelHalo,
-				POSVEL_T* zVelHalo,
-				POSVEL_T* massHalo,
-				ID_T* id)
+        int halo,
+        int* actualIndx,
+        POSVEL_T* xLocHalo,
+        POSVEL_T* yLocHalo,
+        POSVEL_T* zLocHalo,
+        POSVEL_T* xVelHalo,
+        POSVEL_T* yVelHalo,
+        POSVEL_T* zVelHalo,
+        POSVEL_T* massHalo,
+        ID_T* id)
 {
   int p = this->halos[halo];
   for (int i = 0; i < this->haloCount[halo]; i++) {
