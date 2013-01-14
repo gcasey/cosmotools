@@ -46,8 +46,7 @@ public:
    * @return True iff (this->GetCurrent()!=NULL && this->GetPrevious()!=NULL)
    * holds. Otherwise, false.
    */
-  bool IsComplete() {
-    return( (this->Current!=NULL) && (this->Previous!=NULL)); };
+  bool IsComplete();
 
 protected:
   HaloDataInformation *Current;

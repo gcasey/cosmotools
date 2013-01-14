@@ -53,4 +53,15 @@ void TemporalHaloInformation::Update(HaloDataInformation *haloInfo)
    }
 }
 
+//------------------------------------------------------------------------------
+bool TemporalHaloInformation::IsComplete()
+{
+  if( (this->Current != NULL)  &&
+      (this->Previous != NULL) &&
+      (this->Current->NumberOfHalos > 0) &&
+      (this->Previous->NumberOfHalos > 0) )
+      return true;
+  return false;
+}
+
 } /* namespace cosmogolytools */
