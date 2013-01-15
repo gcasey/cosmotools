@@ -41,6 +41,7 @@ set(FRAMEWORK_SRC
     AnalysisToolInstantiator.cxx
     CosmologyToolsConfiguration.cxx
     CosmologyToolsManager.cxx
+    HaloTrackerAnalysisTool.cxx
     LANLHaloFinderAnalysisTool.cxx
     SimulationParticles.cxx
     TessVoidFinderAnalysisTool.cxx
