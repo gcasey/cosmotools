@@ -6,12 +6,25 @@
 namespace cosmotk
 {
 
+namespace HaloTrackerInternals
+{
+  enum CenterFinder
+  {
+    AVERAGE = 0,
+    CENTER_OF_MASS = 1,
+    MBP = 2,
+    MCP = 3,
+
+    NUMBER_OF_CENTER_FINDER_METHODS
+  };
+} // END HaloTrackerInternals
+
 HaloTrackerAnalysisTool::HaloTrackerAnalysisTool()
 {
   this->Name               = "HALOTRACKER";
   this->LinkingLength      = 0.2;
   this->PMIN               = 250;
-  this->CenterFinderMethod = AVERAGE;
+  this->CenterFinderMethod = HaloTrackerInternals::AVERAGE;
   this->ComputSODHalos     = false;
   this->RHO_C              = 2.77537e+11;
   this->INITIAL_SOD_MASS   = 1e+14;
@@ -44,9 +57,10 @@ void HaloTrackerAnalysisTool::ParseParameters()
   this->PMIN = this->GetIntParameter("PMIN");
 
   this->CenterFinderMethod = this->GetIntParameter("CENTER_FINDER_METHOD");
-  assert("pre: Invalid center finder method" &&
-          (this->CenterFinderMethod >= 0) &&
-          (this->CenterFinderMethod < NUMBER_OF_CENTER_FINDER_METHODS));
+  assert(
+    "pre: Invalid center finder method" &&
+    (this->CenterFinderMethod >= 0) &&
+    (this->CenterFinderMethod < HaloTrackerInternals::NUMBER_OF_CENTER_FINDER_METHODS));
 
   this->ComputSODHalos = this->GetBooleanParameter("COMPUTE_SOD_HALOS");
 
