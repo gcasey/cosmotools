@@ -35,6 +35,10 @@ AnalysisTool* AnalysisToolInstantiator::CreateInstance(
     {
     tool = new TessVoidFinderAnalysisTool();
     }
+  else if(instanceName == "HALOTRACKER")
+    {
+    tool = new HaloTrackerAnalysisTool();
+    }
   else
     {
     std::cerr << "ERROR: undefined analysis tool: " << instanceName;
