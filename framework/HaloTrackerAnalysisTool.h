@@ -75,7 +75,7 @@ protected:
 
 
 private:
-  DISABLE_COOPY_AND_ASSIGNMENT(HaloTrackerAnalysisTool);
+  DISABLE_COPY_AND_ASSIGNMENT(HaloTrackerAnalysisTool);
 };
 
 } /* namespace cosmotk */

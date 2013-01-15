@@ -3,6 +3,8 @@
 #include "AnalysisTool.h"
 #include "LANLHaloFinderAnalysisTool.h"
 #include "TessVoidFinderAnalysisTool.h"
+#include "HaloTrackerAnalysisTool.h"
+
 
 #include <iostream>
 #include <cassert>
