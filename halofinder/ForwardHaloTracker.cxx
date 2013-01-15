@@ -21,10 +21,14 @@ ForwardHaloTracker::ForwardHaloTracker()
   this->LinkingLength     = 0.2;
   this->NumberOfParticles = 0;
   this->Communicator      = MPI_COMM_NULL;
+  this->Initialized       = false;
 
-  this->TemporalHaloData  = new TemporalHaloInformation();
-  this->HaloEvolutionTree = new cosmotk::DistributedHaloEvolutionTree();
-  this->HaloMergerTree    = new cosmotk::ParallelHaloMergerTree();
+  this->MergerTreeFileName  = "MergerTree.dat";
+  this->MergerTreeThreshold = 10;
+
+  this->TemporalHaloData   = new TemporalHaloInformation();
+  this->HaloEvolutionTree  = new cosmotk::DistributedHaloEvolutionTree();
+  this->HaloMergerTree     = new cosmotk::ParallelHaloMergerTree();
 }
 
 //------------------------------------------------------------------------------
@@ -81,23 +85,50 @@ void ForwardHaloTracker::RegisterParticles(
 }
 
 //------------------------------------------------------------------------------
+void ForwardHaloTracker::Initialize()
+{
+  if(this->Initialized)
+    {
+    return;
+    }
+
+  assert("pre: No MPI Communicator supplied" &&
+          (this->Communicator != MPI_COMM_NULL) );
+
+  // Set parameters for the halo evolution tree
+  this->HaloEvolutionTree->SetCommunicator(this->Communicator);
+  this->HaloEvolutionTree->SetFileName(this->MergerTreeFileName);
+
+  // Set parameters for the merger-tree
+  this->HaloMergerTree->SetCommunicator(this->Communicator);
+  this->HaloMergerTree->SetMergerTreeThreshold(this->MergerTreeThreshold);
+
+  this->Initialized = true;
+}
+
+//------------------------------------------------------------------------------
 void ForwardHaloTracker::TrackHalos()
 {
-  // STEP 0: Execute the halo-finder
+  // STEP 0: Initialize
+  this->Initialize();
+  assert("pre: internal data-structures not initialized!" &&
+          this->Initialized);
+
+  // STEP 1: Execute the halo-finder
   cosmologytools::Partition::initialize(this->Communicator);
   cosmologytools::CosmoHaloFinderP *haloFinder=
      new cosmologytools::CosmoHaloFinderP();
   this->ExecuteHaloFinder(haloFinder);
 
-  // STEP 1: Get halos at this time-step. Note, the pointer to currentHaloData
+  // STEP 2: Get halos at this time-step. Note, the pointer to currentHaloData
   // is managed by the TemporalHaloData object.
   HaloDataInformation *currentHaloData = new HaloDataInformation();
   this->GetHaloInformation(currentHaloData,haloFinder);
 
-  // STEP 2: Update temporal halo information
+  // STEP 3: Update temporal halo information
   this->TemporalHaloData->Update(currentHaloData);
 
-  // STEP 3: Update merger-tree
+  // STEP 4: Update merger-tree
   this->UpdateMergerTree();
   this->Barrier();
 }

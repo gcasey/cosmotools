@@ -14,6 +14,7 @@
 // C++ includes
 #include <set>
 #include <vector>
+#include <string>
 
 // CosmologyTools includes
 #include "Halo.h"
@@ -65,6 +66,8 @@ public:
   GetNSetMacro(PMIN,INTEGER);
   GetNSetMacro(LinkingLength,REAL);
   GetNSetMacro(Communicator,MPI_Comm);
+  GetNSetMacro(MergerTreeFileName,std::string);
+  GetNSetMacro(MergerTreeThreshold,int);
 
   /**
    * @brief Tracks halos.
@@ -92,6 +95,14 @@ protected:
   void GetHaloInformation(
       HaloDataInformation* hinfo, CosmoHaloFinderP* hfinder);
 
+  /**
+   * @brief Initializes internal data-structures.
+   * @post this->Initialized == true
+   */
+  void Initialize();
+
+  bool Initialized;
+
   // Halo finder parameters
   REAL BoxLength;     // length of the box domain
   INTEGER NG;         // size of overlap, percentage of the BoxLength
@@ -102,6 +113,9 @@ protected:
 
   INTEGER TimeStep;
   REAL RedShift;
+
+  std::string MergerTreeFileName;
+  int MergerTreeThreshold;
 
   // Registered particles, these pointers are owned by the caller!
   POSVEL_T* Px;
