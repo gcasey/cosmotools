@@ -108,6 +108,12 @@ protected:
   MPI_Comm Communicator;
 
   /**
+   * @brief Computes the range of IDs for this process via a prefix-sum
+   * @param range the range (out)
+   */
+  void GetNodeRangeForProcess(int range[2]);
+
+  /**
    * @brief Relabels s.t. all nodes are uniquely identified by an integer ID.
    */
   void RelabelTreeNodes();

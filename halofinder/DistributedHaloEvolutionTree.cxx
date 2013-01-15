@@ -74,6 +74,23 @@ bool DistributedHaloEvolutionTree::HasNode(std::string hashCode)
 }
 
 //------------------------------------------------------------------------------
+void DistributedHaloEvolutionTree::GetNodeRangeForProcess(int r[2])
+{
+  assert("pre: NULL communicator!" && (this->Communicator != MPI_COMM_NULL));
+
+  // STEP 0: Get number of nodes in this process
+  ID_T numNodes = static_cast<ID_T>( this->Nodes.size() );
+
+  // STEP 1: Do a prefix sum
+  ID_T mySum = -1;
+  MPI_Scan(&numNodes,&mySum,1,MPI_ID_T,MPI_SUM,this->Communicator);
+
+  // STEP 2: Get range in this process
+  r[0] = (mySum-1)-numNodes+1;
+  r[1] = mySum-1;
+}
+
+//------------------------------------------------------------------------------
 void DistributedHaloEvolutionTree::RelabelTreeNodes()
 {
   assert("pre: NULL communicator!" && (this->Communicator != MPI_COMM_NULL));
