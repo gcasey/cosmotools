@@ -96,6 +96,13 @@ public:
   int Intersect(Halo *h);
 
   /**
+   * @brief Returns the the number of particles in the halo
+   * @return N the number of particles
+   */
+  int GetNumberOfParticles()
+    {return static_cast<int>(this->ParticleIds.size());}
+
+  /**
    * @brief Computes a hashcode for a halo with the given tag(ID) and timestep.
    * @param tag the tag or ID of the halo
    * @param timestep the timestep of the halo

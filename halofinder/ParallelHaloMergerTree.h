@@ -21,7 +21,7 @@ namespace cosmotk
 // Forward declarations
 class Halo;
 
-//
+// Data-structure to store halos based on hash-code
 typedef std::map<std::string,Halo> HaloHashMap;
 
 class ParallelHaloMergerTree: public HaloMergerTreeKernel
