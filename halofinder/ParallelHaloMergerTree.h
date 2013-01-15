@@ -111,7 +111,7 @@ protected:
 
 
 private:
-  DISABLE_COPY_AND_ASSIGNMENT(ParallelHaloMergerTree);
+   DISABLE_COPY_AND_ASSIGNMENT(ParallelHaloMergerTree);
 };
 
 } /* namespace cosmotk */
