@@ -8,7 +8,7 @@ namespace cosmotk
 
 HaloTrackerAnalysisTool::HaloTrackerAnalysisTool()
 {
-  this->Name               = "LANLHaloFinder";
+  this->Name               = "HALOTRACKER";
   this->LinkingLength      = 0.2;
   this->PMIN               = 250;
   this->CenterFinderMethod = AVERAGE;
