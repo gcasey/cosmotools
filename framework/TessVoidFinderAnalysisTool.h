@@ -55,45 +55,6 @@ protected:
   double *TimeStatistics; // Used by tess profiling
 
   /**
-   * @brief Computes the linear rank of the process with the given position
-   * @param i the ith position of the rank in query
-   * @param j the jth position of the rank in query
-   * @param k the kth position of the rank in query
-   * @return r the linear rank.
-   * @pre The communicator topology must be cartesian
-   */
-  int GetRankByPosition(int i, int j, int k)
-    {
-    int ijk[3];
-    ijk[0]=i; ijk[1]=j; ijk[2]=k;
-    int rank;
-    MPI_Cart_rank(this->Communicator,ijk,&rank);
-    return( rank );
-    }
-
-  /**
-   * @brief Given the cartesian position of this rank, this method computes the
-   * neighbors of this rank, including periodic neighbors
-   * @param pos the cartesian position of this rank (in)
-   * @param neighbors the neighbors of this rank (out)
-   * @note Because the domain is XYZ periodic each rank will have exactly
-   * 26 neighbors,i.e.,6 face neighbors,12 edge neighbors,8 corner neighbors
-   * @pre The communicator topology must be cartesian
-   */
-  void ComputeRankNeighbors(int pos[3],int neighbors[26]);
-
-  /**
-   * @brief Given the cartesian topology of this rank, this method computes
-   * the local block bounds.
-   * @param decompSize the dimensions of the cartesian topology (in)
-   * @param pos the position of this rank within the cartesian communicator (in)
-   * @param min the minimum cartesian coordinates of this block (out)
-   * @param size the size of this block (out)
-   */
-  void GetBlockBounds(
-      int decompSize[3], int pos[3], float min[3], float size[3]);
-
-  /**
    * @brief Initializes Tess
    * @post this->Initialized == true
    */
