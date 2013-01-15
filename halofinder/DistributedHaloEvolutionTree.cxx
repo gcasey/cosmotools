@@ -26,6 +26,9 @@ void DistributedHaloEvolutionTree::AppendNodes(
   for( int halo=0; halo < N; ++halo )
     {
     this->Nodes[ halos[ halo ].GetHashCode() ] = halos[ halo ];
+
+    // Remove the particle Ids of the object
+    this->Nodes[ halos[ halo ].GetHashCode() ].ParticleIds.clear();
     } // END for all halos
 }
 
