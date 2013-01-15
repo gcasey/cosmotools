@@ -25,6 +25,11 @@ public:
   virtual ~HaloMergerTreeKernel();
 
   /**
+   * @brief Get/Set macro for the merger-tree. Default is 10.
+   */
+  GetNSetMacro(MergerTreeThreshold,int);
+
+  /**
    * @brief Given two sets of halos at different time-steps, this method
    * updates the merger-tree, represented by a user-supplied halo evolution
    * tree instance.
