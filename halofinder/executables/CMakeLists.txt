@@ -2,7 +2,9 @@ include_directories(${PACKAGE_halofinder_INCLUDE_DIRS})
 
 ## list of executables
 set(executables
-    haloExchangeDIY.cxx)
+    DIYMergerTreeIO.cxx
+    haloExchangeDIY.cxx
+    )
 
 ## Setup required libraries
 set(RequiredLibs
