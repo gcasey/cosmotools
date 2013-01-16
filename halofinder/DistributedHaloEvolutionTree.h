@@ -13,11 +13,53 @@
 #include "CosmologyToolsMacros.h"
 
 // C++ STL includes
-#include <vector>
-#include <map>
+#include <vector> // For STL vector
+#include <map>    // For STL map
 
 // MPI
 #include <mpi.h>
+
+// DIY
+#include "diy.h" // For DIY_Datatype
+
+/**
+ * @struct DIYTreeNodeType
+ * @brief Used to store tree nodes.
+ */
+struct DIYTreeNodeType {
+  ID_T UniqueNodeID;
+  ID_T HaloTag;
+  ID_T TimeStep;
+  REAL RedShift;
+  POSVEL_T HaloCenter[3];
+  POSVEL_T HaloVelocity[3];
+};
+
+/**
+ * @struct DIYTreeEdgeType
+ * @brief Used to store tree edges.
+ */
+struct DIYTreeEdgeType {
+  ID_T EndNodes[2];
+  int EdgeWeight;
+  int EdgeEvent;
+};
+
+/**
+ * @struct DIYTree
+ * @brief Stores pointers to tree nodes and tree edges.
+ */
+struct DIYTree {
+  DIYTreeNodeType* TreeNodes;
+
+  // NOTE: Metadata, these fields are skipped when creating a DIY data type,
+  // hence, they are injected in the middle of the struct, s.t. MPI will compute
+  // the extents of the datatype correctly.
+  int NumberOfNodes;
+  int NumberOfEdges;
+
+  DIYTreeEdgeType* TreeEdges;
+};
 
 namespace cosmotk
 {
@@ -98,8 +140,37 @@ public:
    */
   void Barrier() { MPI_Barrier(this->Communicator); }
 
+  /**
+   * @brief Get DIYTree instance for the halo-evolution tree
+   * @param tree pointer to the DIYTree struct (in/out)
+   */
+  void GetDIYTree(DIYTree* tree);
+
+  /**
+   * @brief Returns the unique ID for a given node
+   * @param hashCode the hashcode for the node
+   * @return idx the ID of the node
+   */
+  ID_T GetNodeIndex(std::string hashCode);
+
+  /**
+   * @brief Relabels s.t. all nodes are uniquely identified by an integer ID
+   * across all processes.
+   */
+  void RelabelTreeNodes();
+
+  /**
+   * @brief Registers a DIY data-type to represent a DIY tree.
+   * @param myTree pointer to a DIY tree instance (in)
+   * @param dtype pointer to the DIY data type (out)
+   * @note This DIY datatype should only be used in the context of
+   * DIY I/O since each type has variable sizes
+   */
+  static void CreateDIYTreeType(DIYTree *myTree, DIY_Datatype *dtype);
+
 protected:
   std::map< std::string, Halo > Nodes; // List of nodes in the halo
+  std::map< std::string, ID_T > Node2UniqueIdx; // Maps halo nodes to a idx
   std::vector< std::string >    Edges; // List of edges (strided by 2)
   std::vector< int > EdgeWeights;      // Weights associated with edges
 
@@ -111,12 +182,8 @@ protected:
    * @brief Computes the range of IDs for this process via a prefix-sum
    * @param range the range (out)
    */
-  void GetNodeRangeForProcess(int range[2]);
+  void GetNodeRangeForProcess(ID_T range[2]);
 
-  /**
-   * @brief Relabels s.t. all nodes are uniquely identified by an integer ID.
-   */
-  void RelabelTreeNodes();
 
 private:
   DISABLE_COPY_AND_ASSIGNMENT(DistributedHaloEvolutionTree);
