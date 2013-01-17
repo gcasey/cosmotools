@@ -3,6 +3,7 @@ include_directories(${PACKAGE_halofinder_INCLUDE_DIRS})
 ## list of executables
 set(executables
     DIYMergerTreeIO.cxx
+    DIYMergerTreeReader.cxx
     haloExchangeDIY.cxx
     )
 

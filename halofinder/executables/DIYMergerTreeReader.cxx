@@ -5,6 +5,7 @@
 
 // C++ includes
 #include <iostream>
+#include <fstream>
 
 // MPI include
 #include <mpi.h>
@@ -50,13 +51,17 @@ std::string FileName = "MergerTree.dat";
 //==============================================================================
 // Function prototypes
 //==============================================================================
-void CreateMergerTree();
-void WriteMergerTree();
+void ReadData();
 
-void* create_datatype(void *block, int lid, DIY_Datatype *dtype)
+void* create_datatype(int lid, int *hdr, DIY_Datatype *dtype)
 {
+  std::cerr << "Header: " << hdr[0] << " " << hdr[1] << std::endl;
+  MTree.NumberOfNodes = hdr[0];
+  MTree.NumberOfEdges = hdr[1];
+  MTree.TreeNodes = new DIYTreeNodeType[MTree.NumberOfNodes];
+  MTree.TreeEdges = new DIYTreeEdgeType[MTree.NumberOfEdges];
   cosmotk::DistributedHaloEvolutionTree::CreateDIYTreeType(&MTree,dtype);
-  return DIY_BOTTOM;
+  return &MTree;
 }
 
 //==============================================================================
@@ -83,82 +88,66 @@ int main(int argc, char **argv)
   DIY_Decompose(ROUND_ROBIN_ORDER,tot_blocks,&nblocks,1,ghost,given);
   PRINTLN("- Prescribed decomposition to DIY...[DONE]");
 
-  // STEP 3: Create MergerTree at each process
-  CreateMergerTree();
-  PRINTLN("- Build fake merger-tree...[DONE]");
+  // STEP 3: Read the data
+  ReadData();
 
-  // STEP 4: Get DIY Tree
-  HaloMergerTree.GetDIYTree(&MTree);
-
-  // STEP 5: Write Merger-Tree
-  WriteMergerTree();
-  PRINTLN("- Write merger-tree...[DONE]");
-
-  // STEP 6: Finalize DIY
+  // STEP 4: Finalize DIY
   DIY_Finalize();
   PRINTLN("- Finalized DIY...[DONE]");
 
-  // STEP 7: Finalize MPI
+  // STEP 5: Finalize MPI
   MPI_Finalize();
   return 0;
 }
 
-//------------------------------------------------------------------------------
-void WriteMergerTree()
+//==============================================================================
+void ReadData()
 {
-  int nblocks = 1;
-  int **hdrs = new int*[nblocks];
+  int swap     = 0;
+  int compress = 0;
+  DIY_Read_open_all(const_cast<char *>(FileName.c_str()),swap,compress);
+  PRINTLN("- Open output file...[DONE]");
+
   void **pmblocks;
-  pmblocks = new void*[nblocks];
-  for(int blkIdx=0; blkIdx < nblocks; ++blkIdx )
+  int **hdrs = new int*[1];
+  hdrs[0]    = new int[2];
+  int numblocks = 0;
+
+  PRINT("- Read blocks...");
+  DIY_Read_blocks_all(&pmblocks,&numblocks,hdrs,&create_datatype);
+  PRINTLN("[DONE]");
+
+  PRINT("- Close file...");
+  DIY_Read_close_all();
+  PRINTLN("[DONE]");
+
+  std::ofstream ofs;
+  ofs.open("MergerTreeAscii.dat");
+  ofs << "NUMBER OF BLOCKS " << numblocks           << std::endl;
+  ofs << "NUMBER OF NODES "  << MTree.NumberOfNodes << std::endl;
+  for(int nodeIdx=0; nodeIdx < MTree.NumberOfNodes; ++nodeIdx)
     {
-    std::cerr << "Block: "    << blkIdx              << std::endl;
-    std::cerr << "NumNodes: " << MTree.NumberOfNodes << std::endl;
-    std::cerr << "NumEdges: " << MTree.NumberOfEdges << std::endl;
-
-    hdrs[blkIdx]     = new int[2];
-    hdrs[blkIdx][0]  = MTree.NumberOfNodes;
-    hdrs[blkIdx][1]  = MTree.NumberOfEdges;
-    pmblocks[blkIdx] = &MTree;
-    }
-  DIY_Write_open_all(const_cast<char*>(FileName.c_str()),0);
-  DIY_Write_blocks_all(pmblocks, nblocks, hdrs, 2, &create_datatype);
-  DIY_Write_close_all();
-
-  delete [] pmblocks;
-}
-
-//------------------------------------------------------------------------------
-void CreateMergerTree()
-{
-  HaloMergerTree.SetCommunicator(comm);
-
-  int numHalosToCreate = 2;
-  int numParticles     = 5;
-
-  std::vector< cosmotk::Halo > halos;
-  halos.resize(numHalosToCreate);
-  for( int haloIdx=0; haloIdx < numHalosToCreate; ++haloIdx )
+    ofs << MTree.TreeNodes[nodeIdx].UniqueNodeID    << "\t";
+    ofs << MTree.TreeNodes[nodeIdx].HaloTag         << "\t";
+    ofs << MTree.TreeNodes[nodeIdx].TimeStep        << "\t";
+    ofs << MTree.TreeNodes[nodeIdx].HaloCenter[0]   << ",";
+    ofs << MTree.TreeNodes[nodeIdx].HaloCenter[1]   << ",";
+    ofs << MTree.TreeNodes[nodeIdx].HaloCenter[2]   << "\t";
+    ofs << MTree.TreeNodes[nodeIdx].HaloVelocity[0] << ",";
+    ofs << MTree.TreeNodes[nodeIdx].HaloVelocity[1] << ",";
+    ofs << MTree.TreeNodes[nodeIdx].HaloVelocity[2] << "\t";
+    ofs << std::endl;
+    } // END for all nodes
+  ofs << std::endl << std::endl;
+  ofs << "NUMBER OF EDGES "  << MTree.NumberOfEdges << std::endl;
+  for(int edgeIdx=0; edgeIdx < MTree.NumberOfEdges; ++edgeIdx)
     {
-    halos[haloIdx].TimeStep = 200;
-    halos[haloIdx].Redshift = 20;
-    halos[haloIdx].Tag      = rank*10+haloIdx;
+    ofs << MTree.TreeEdges[edgeIdx].EndNodes[0] << ",";
+    ofs << MTree.TreeEdges[edgeIdx].EndNodes[1] << "\t";
+    ofs << MTree.TreeEdges[edgeIdx].EdgeWeight  << "\t";
+    ofs << MTree.TreeEdges[edgeIdx].EdgeEvent   << "\t";
+    ofs << std::endl;
+    } // END for all edges
+  ofs.close();
 
-    for( int pIdx=0; pIdx < numParticles; ++pIdx )
-      {
-      ID_T particleID = halos[haloIdx].Tag + pIdx;
-      halos[haloIdx].ParticleIds.insert(particleID);
-      } // END for all halo particles
-    } // END for all halos
-
-  HaloMergerTree.AppendNodes( &halos[0], halos.size() );
-
-  for(int haloIdx=0; haloIdx < halos.size()-1; ++haloIdx)
-    {
-    HaloMergerTree.CreateEdge(
-        halos[haloIdx].GetHashCode(),
-        halos[haloIdx+1].GetHashCode() );
-    }
-
-  HaloMergerTree.RelabelTreeNodes();
 }
