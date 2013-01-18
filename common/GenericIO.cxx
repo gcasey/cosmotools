@@ -11,7 +11,7 @@
 #endif
 
 using namespace std;
-namespace cosmologytools {
+namespace cosmotk {
 
 static bool isBigEndian() {
   const uint32_t one = 1;
@@ -287,7 +287,7 @@ void GenericIO::openAndReadHeader(bool MustMatch) {
         int Dims[3], Periods[3], Coords[3];
         MPI_Cart_get(Comm, 3, Dims, Periods, Coords);
 
-        bool DimsMatch = true;       
+        bool DimsMatch = true;
         for (int i = 0; i < 3; ++i) {
           if ((uint64_t) Dims[i] != GH.Dims[i]) {
             DimsMatch = false;
@@ -507,7 +507,7 @@ void GenericIO::readData(int EffRank, bool PrintStats) {
       if (MPI_File_read_at(FH.get(), Offset, Vars[i].Data, ReadSize,
                            MPI_BYTE, &status) != MPI_SUCCESS)
 #else
-      
+
       if (!FH.get().seekg(Offset) || !FH.get().read((char *) Vars[i].Data, ReadSize))
 #endif
       {

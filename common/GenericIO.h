@@ -14,7 +14,7 @@
 #include <fstream>
 #endif
 
-namespace cosmologytools {
+namespace cosmotk {
 
 class GenericIO {
 protected:
@@ -149,7 +149,7 @@ protected:
 
     void allocate() {
       close();
-      CountedFH = new FHWCnt; 
+      CountedFH = new FHWCnt;
     };
 
     void close() {
