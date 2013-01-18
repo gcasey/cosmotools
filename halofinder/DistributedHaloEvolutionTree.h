@@ -11,6 +11,8 @@
 #define DISTRIBUTEDHALOEVOLUTIONTREE_H_
 
 #include "CosmologyToolsMacros.h"
+#include "MergerTreeEvent.h"
+#include "MergerTreeFileFormat.h"
 
 // C++ STL includes
 #include <vector> // For STL vector
@@ -66,6 +68,7 @@ namespace cosmotk
 
 // Forward declarations
 class Halo;
+class GenericIO;
 
 class DistributedHaloEvolutionTree
 {
@@ -85,6 +88,13 @@ public:
   GetNSetMacro(FileName,std::string);
 
   /**
+   * @brief Get/Set macro for the MergerTree format
+   * @note Default is set to GENERIC_IO
+   * @see enum MergerTreeFormat
+   */
+  GetNSetMacro(IOFormat,int);
+
+  /**
    * @brief Adds the given halos as nodes to this instance of the tree
    * @param halos the set of halos to be added in the tree.
    * @note Each tree node is identified by the halo hash-code.
@@ -102,7 +112,8 @@ public:
   void CreateEdge(
           std::string hashCode1,
           std::string hashCode2,
-          int weight=1);
+          int weight=1,
+          int event=MergerTreeEvent::UNDEFINED);
 
   /**
    * @brief Checks if the tree is empty.
@@ -120,7 +131,7 @@ public:
    * @brief Computes the number of edges.
    * @return N the number of edges.
    */
-  int GetNunmberOfEdges();
+  int GetNumberOfEdges();
 
   /**
    * @brief Checks if the halo corresponding to the given hashCode exists
@@ -134,6 +145,17 @@ public:
    * @brief Relabels the tree and dumps it into a file.
    */
   void WriteTree();
+
+  /**
+   * @brief Reads the tree from a file.
+   */
+  void ReadTree();
+
+  /**
+   * @brief Clears out all the data in this tree
+   * @post this->IsEmpty()==true
+   */
+  void Clear();
 
   /**
    * @brief Barrier synchronization among all processes
@@ -160,6 +182,13 @@ public:
   void RelabelTreeNodes();
 
   /**
+   * @brief Creates an ASCII string representation of the given tree
+   * @return a string representing the data in the tree
+   * @note Used mainly for debugging.
+   */
+  std::string ToString();
+
+  /**
    * @brief Registers a DIY data-type to represent a DIY tree.
    * @param myTree pointer to a DIY tree instance (in)
    * @param dtype pointer to the DIY data type (out)
@@ -173,10 +202,45 @@ protected:
   std::map< std::string, ID_T > Node2UniqueIdx; // Maps halo nodes to a idx
   std::vector< std::string >    Edges; // List of edges (strided by 2)
   std::vector< int > EdgeWeights;      // Weights associated with edges
+  std::vector< int > EdgeEvents;       // edge events
 
   std::string FileName;
 
   MPI_Comm Communicator;
+
+  int IOFormat;
+
+  /**
+   * @brief Gets the variables associated with each tree edge in flat arrays.
+   * @param startNodeIdx list of start node indices
+   * @param endNodeIdx list of end node indices
+   * @param weights list of edge weights
+   * @param eventType list of edge event types
+   */
+  void GetFlatTreeEdgeArrays(ID_T *startNodeIdx, ID_T *endNodeIdx);
+
+  /**
+   * @brief Gets the variables associated with each tree node in flat arrays.
+   * @param nodeIds the unique index (computed) of node (i.e.,halo) in the tree
+   * @param haloTags the original halo tag (computed from the halo-finder)
+   * @param redShift the red-shift of the associate halo
+   * @param center_x the x-coordinate of the halo center
+   * @param center_y the y-coordinate of the halo center
+   * @param center_z the z-coordinate of the halo center
+   * @param vx the x-coordinate of the halo velocity vector
+   * @param vy the y-coordinate of the halo velocity vector
+   * @param vz the z-coordinate of the halo velocity vector
+   * @pre All arrays that are passed in must be pre-allocated
+   * @note This method is used to create the flat arrays needed for the
+   * GenericIO
+   */
+  void GetFlatTreeNodeArrays(
+      ID_T *nodeIds,
+      ID_T *haloTags,
+      ID_T *timestep,
+      REAL *redShift,
+      POSVEL_T *center_x, POSVEL_T *center_y, POSVEL_T *center_z,
+      POSVEL_T *vx, POSVEL_T *vy, POSVEL_T *vz);
 
   /**
    * @brief Computes the range of IDs for this process via a prefix-sum
@@ -184,6 +248,48 @@ protected:
    */
   void GetNodeRangeForProcess(ID_T range[2]);
 
+  /**
+   * @brief Performs round-robin assignment of NBlocks to each process
+   * @param NBlocks the total number of blocks to be distributed
+   * @param assigned a vector consisting the blocks that are assigned at
+   * each process.
+   */
+  void RoundRobinAssignment(int NBlocks, std::vector<int> &assigned);
+
+  /**
+   * @brief Reads data in DIY format
+   */
+  void ReadWithDIY();
+
+  /**
+   * @brief Writes data in DIY format
+   */
+  void WriteWithDIY();
+
+  /**
+   * @brief Reads data in GenericIO format
+   */
+  void ReadWithGenericIO();
+
+  /**
+   * @brief Reads in the given block
+   * @param block the block to read
+   * @param nodesReader pointer to the nodes reader
+   * @param edgesReader pointer to the edges reader
+   * @pre nodesReader != NULL
+   * @pre edgesReader != NULL
+   * @note Called from ReadWithGenericIO to read in a
+   * particular block to handle the case where each process
+   * reads more than one block.
+   */
+  void ReadBlock(
+      int block, cosmotk::GenericIO *nodesReader,
+      cosmotk::GenericIO *edgesReader);
+
+  /**
+   * @brief Writes data in GenericIO format
+   */
+  void WriteWithGenericIO();
 
 private:
   DISABLE_COPY_AND_ASSIGNMENT(DistributedHaloEvolutionTree);

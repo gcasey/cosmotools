@@ -4,6 +4,8 @@ include_directories(${PACKAGE_halofinder_INCLUDE_DIRS})
 set(executables
     DIYMergerTreeIO.cxx
     DIYMergerTreeReader.cxx
+    GenericIOMergerTreeIO.cxx
+    GenericIOMergerTreeReader.cxx
     haloExchangeDIY.cxx
     )
 

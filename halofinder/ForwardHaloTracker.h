@@ -116,6 +116,7 @@ protected:
 
   std::string MergerTreeFileName;
   int MergerTreeThreshold;
+  int MergerTreeFileFormat;
 
   // Registered particles, these pointers are owned by the caller!
   POSVEL_T* Px;

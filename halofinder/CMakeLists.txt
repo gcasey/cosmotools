@@ -7,6 +7,7 @@ set(PACKAGE_halofinder_INCLUDE_DIRS
     CACHE INTERNAL "package include directories")
 set(PACKAGE_halofinder_LIBRARIES
     ${PACKAGE_halofinder_LIBRARIES}
+    common
     fwdhalotracker
     CACHE INTERNAL "package libraries")
 
@@ -49,7 +50,9 @@ else()
  add_library(fwdhalotracker STATIC ${HALOTRACKER_SRC})
 endif()
 target_link_libraries(fwdhalotracker
-    ${PACKAGE_halofinder_LIBRARIES} ${MPI_C_LIBRARIES})
+    ${PACKAGE_halofinder_LIBRARIES}
+    ${DIY_LIBRARIES}
+    ${MPI_C_LIBRARIES})
 
 ## Add executables directory to the build
 add_subdirectory(executables)

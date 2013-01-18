@@ -1,10 +1,38 @@
 #include "DistributedHaloEvolutionTree.h"
 
+// CosmologyTools includes
+#include "GenericIO.h"
 #include "Halo.h"
 
-#include <cstdio>
-#include <cstddef>
+// STL includes
 #include <cassert>
+#include <cstddef>
+#include <cstdio>
+#include <sstream>
+
+//------------------------------------------------------------------------------
+// DIY callback routines
+//------------------------------------------------------------------------------
+void* create_write_type(void* block, int lid, DIY_Datatype *dtype)
+{
+  DIYTree *treePtr = static_cast<DIYTree*>(block);
+  cosmotk::DistributedHaloEvolutionTree::CreateDIYTreeType(treePtr,dtype);
+  return DIY_BOTTOM;
+}
+
+void* create_read_type(int lid, int *hdr, DIY_Datatype *dtype)
+{
+  DIYTree *treePtr       = new DIYTree();
+  treePtr->NumberOfNodes = hdr[0];
+  treePtr->NumberOfEdges = hdr[1];
+  treePtr->TreeNodes = new DIYTreeNodeType[treePtr->NumberOfNodes];
+  treePtr->TreeEdges = new DIYTreeEdgeType[treePtr->NumberOfEdges];
+  cosmotk::DistributedHaloEvolutionTree::CreateDIYTreeType(treePtr,dtype);
+  // TODO: We should delete treePtr here?
+  return dtype;
+}
+
+//------------------------------------------------------------------------------
 
 namespace cosmotk
 {
@@ -53,12 +81,13 @@ DistributedHaloEvolutionTree::DistributedHaloEvolutionTree()
 {
   this->Communicator = MPI_COMM_NULL;
   this->FileName = "HaloEvolutionTree.dat";
+  this->IOFormat = MergerTreeFileFormat::GENERIC_IO;
 }
 
 //------------------------------------------------------------------------------
 DistributedHaloEvolutionTree::~DistributedHaloEvolutionTree()
 {
-  // TODO Auto-generated destructor stub
+  this->Clear();
 }
 
 //------------------------------------------------------------------------------
@@ -68,7 +97,7 @@ void DistributedHaloEvolutionTree::GetDIYTree(DIYTree* tree)
 
   // STEP 0: Allocate data-structures
   tree->NumberOfNodes = this->GetNumberOfNodes();
-  tree->NumberOfEdges = this->GetNunmberOfEdges();
+  tree->NumberOfEdges = this->GetNumberOfEdges();
   tree->TreeNodes     = new DIYTreeNodeType[tree->NumberOfNodes];
   tree->TreeEdges     = new DIYTreeEdgeType[tree->NumberOfEdges];
 
@@ -76,20 +105,28 @@ void DistributedHaloEvolutionTree::GetDIYTree(DIYTree* tree)
   std::map<std::string,Halo>::iterator iter = this->Nodes.begin();
   for(int idx=0; iter != this->Nodes.end(); ++iter, ++idx)
     {
-    std::string hcode = iter->first;
+    std::string hcode                 = iter->first;
+    tree->TreeNodes[idx].HaloTag      = iter->second.Tag;
+    tree->TreeNodes[idx].TimeStep     = iter->second.TimeStep;
+    tree->TreeNodes[idx].RedShift     = iter->second.Redshift;
+    tree->TreeNodes[idx].UniqueNodeID = this->GetNodeIndex( hcode );
+    for( int i=0; i < 3; ++i )
+      {
+      tree->TreeNodes[idx].HaloCenter[i]   = iter->second.Center[i];
+      tree->TreeNodes[idx].HaloVelocity[i] = iter->second.AverageVelocity[i];
+      }
+
     } // END for all nodes
 
   // STEP 2: Fill edges
-  for(int edgeIdx=0; edgeIdx < this->GetNunmberOfEdges(); ++edgeIdx)
+  for(int edgeIdx=0; edgeIdx < this->GetNumberOfEdges(); ++edgeIdx)
     {
     ID_T node1 = this->GetNodeIndex( this->Edges[edgeIdx*2]   );
     ID_T node2 = this->GetNodeIndex( this->Edges[edgeIdx*2+1] );
     tree->TreeEdges[edgeIdx].EndNodes[0] = node1;
     tree->TreeEdges[edgeIdx].EndNodes[1] = node2;
     tree->TreeEdges[edgeIdx].EdgeWeight  = this->EdgeWeights[edgeIdx];
-
-    // TODO: Handle edge events correctly
-    tree->TreeEdges[edgeIdx].EdgeEvent  = 0;
+    tree->TreeEdges[edgeIdx].EdgeEvent   = this->EdgeEvents[edgeIdx];
     } // END for all edges
 }
 
@@ -110,13 +147,25 @@ void DistributedHaloEvolutionTree::AppendNodes(
 void DistributedHaloEvolutionTree::CreateEdge(
       const std::string halo1,
       const std::string halo2,
-      int w)
+      int w,
+      int e)
 {
   assert("pre: node halo1 does not exist" && this->HasNode(halo1) );
   assert("pre: node halo2 does not exist" && this->HasNode(halo2) );
   this->Edges.push_back( halo1 );
   this->Edges.push_back( halo2 );
   this->EdgeWeights.push_back( w );
+  this->EdgeEvents.push_back( e );
+}
+
+//------------------------------------------------------------------------------
+void DistributedHaloEvolutionTree::Clear()
+{
+  this->Nodes.clear();
+  this->Node2UniqueIdx.clear();
+  this->Edges.clear();
+  this->EdgeWeights.clear();
+  this->EdgeEvents.clear();
 }
 
 //------------------------------------------------------------------------------
@@ -132,9 +181,9 @@ int DistributedHaloEvolutionTree::GetNumberOfNodes()
 }
 
 //------------------------------------------------------------------------------
-int DistributedHaloEvolutionTree::GetNunmberOfEdges()
+int DistributedHaloEvolutionTree::GetNumberOfEdges()
 {
-  return( this->Edges.size()/2 );
+  return( this->EdgeWeights.size() );
 }
 
 //------------------------------------------------------------------------------
@@ -195,13 +244,452 @@ void DistributedHaloEvolutionTree::RelabelTreeNodes()
 }
 
 //------------------------------------------------------------------------------
+std::string DistributedHaloEvolutionTree::ToString()
+{
+  std::ostringstream oss;
+  oss << "NUMNODES " << this->GetNumberOfNodes() << std::endl;
+  std::map<std::string, Halo>::iterator NodeIter = this->Nodes.begin();
+  for(;NodeIter != this->Nodes.end(); ++NodeIter)
+    {
+    oss << this->GetNodeIndex(NodeIter->first) << " ";
+    oss << NodeIter->second.TimeStep  << " ";
+    oss << NodeIter->second.Tag       << " ";
+    oss << NodeIter->second.Redshift  << " ";
+    oss << NodeIter->second.Center[0] << " ";
+    oss << NodeIter->second.Center[1] << " ";
+    oss << NodeIter->second.Center[2] << " ";
+    oss << NodeIter->second.AverageVelocity[0] << " ";
+    oss << NodeIter->second.AverageVelocity[1] << " ";
+    oss << NodeIter->second.AverageVelocity[2] << " ";
+    oss << std::endl;
+    } // END for all nodes
+
+  oss << "NUMEDGES " << this->GetNumberOfEdges() << std::endl;
+  for(int edgeIdx=0; edgeIdx < this->GetNumberOfEdges(); ++edgeIdx)
+    {
+    oss << this->GetNodeIndex( this->Edges[edgeIdx*2] ) << " ";
+    oss << this->GetNodeIndex( this->Edges[edgeIdx*2+1] ) << " ";
+    oss << this->EdgeWeights[edgeIdx] << " ";
+    oss << this->EdgeEvents[edgeIdx] << " ";
+    oss << std::endl;
+    } // END for all edges
+
+  return( oss.str() );
+}
+
+//------------------------------------------------------------------------------
 void DistributedHaloEvolutionTree::WriteTree()
 {
   assert("pre: NULL communicator!" && (this->Communicator != MPI_COMM_NULL));
   this->RelabelTreeNodes();
-  // TODO: Write tree in this->FileName
+
+  switch(this->IOFormat)
+    {
+    case MergerTreeFileFormat::DIY:
+      this->WriteWithDIY();
+      break;
+    case MergerTreeFileFormat::GENERIC_IO:
+      this->WriteWithGenericIO();
+      break;
+    default:
+      std::cerr << "ERROR: Undefined IO format!" << std::endl;
+      assert(false);
+    }
 }
 
+//------------------------------------------------------------------------------
+void DistributedHaloEvolutionTree::ReadTree()
+{
+  switch(this->IOFormat)
+    {
+    case MergerTreeFileFormat::DIY:
+      this->ReadWithDIY();
+      break;
+    case MergerTreeFileFormat::GENERIC_IO:
+      this->ReadWithGenericIO();
+      break;
+    default:
+      std::cerr << "ERROR: Undefined IO format!" << std::endl;
+      assert(false);
+    }
+}
 
+//------------------------------------------------------------------------------
+void DistributedHaloEvolutionTree::ReadWithDIY()
+{
+  // STEP 0: Open file to read
+  int swap     = 0;
+  int compress = 0;
+  DIY_Read_open_all(
+      const_cast<char*>(this->FileName.c_str()),swap,compress);
+
+  // STEP 1: Read blocks (this is not quit working)
+  void **pmblocks;
+  int **hdrs = new int*[1]; // How do we know the number of blocks a priori?
+  hdrs[0] = new int[2];
+  int numblocks = 0;
+
+  // TODO: Fix crash here.
+  DIY_Read_blocks_all(&pmblocks,&numblocks,hdrs,&create_read_type);
+
+  // STEP 2: Unpack
+  // TODO: implement this
+
+  // STEP 3: Close file
+  DIY_Read_close_all();
+}
+
+//------------------------------------------------------------------------------
+void DistributedHaloEvolutionTree::WriteWithDIY()
+{
+  // STEP 0: Get DIYTree representation
+  DIYTree *mtree = new DIYTree;
+  this->GetDIYTree( mtree );
+
+  // STEP 1: Pack DIY tree
+  int nblocks = 1;
+  int **hdrs  = new int*[nblocks];
+  void **pmblocks;
+  pmblocks = new void*[nblocks];
+  for( int blkIdx=0; blkIdx < nblocks; ++blkIdx)
+    {
+    hdrs[blkIdx]     = new int[2];
+    hdrs[blkIdx][0]  = mtree->NumberOfNodes;
+    hdrs[blkIdx][1]  = mtree->NumberOfEdges;
+    pmblocks[blkIdx] = mtree;
+    } // END for all blocks
+
+  // STEP 2: DIY write
+  int compress = 0;
+  DIY_Write_open_all(const_cast<char*>(this->FileName.c_str()),compress);
+  DIY_Write_blocks_all(pmblocks,nblocks,hdrs,2,&create_write_type);
+  DIY_Write_close_all();
+
+  // STEP 3: Clean up
+  delete mtree;
+  for(int blkIdx=0; blkIdx < nblocks; ++blkIdx)
+    {
+    delete [] hdrs[blkIdx];
+    } // END for all blocks
+  delete [] hdrs;
+  delete [] pmblocks;
+}
+
+//------------------------------------------------------------------------------
+void DistributedHaloEvolutionTree::GetFlatTreeNodeArrays(
+      ID_T *nodeIdx, ID_T *haloTags, ID_T *tstep, REAL *redShift,
+      POSVEL_T *center_x, POSVEL_T *center_y, POSVEL_T *center_z,
+      POSVEL_T *vx, POSVEL_T *vy, POSVEL_T *vz)
+{
+  assert("pre: nodeIdx array is NULL!"  && (nodeIdx != NULL) );
+  assert("pre: haloTags array is NULL!" && (haloTags != NULL) );
+  assert("pre: redShift array is NULL!" && (redShift != NULL) );
+  assert("pre: center_x array is NULL!" && (center_x != NULL) );
+  assert("pre: center_y array is NULL!" && (center_y != NULL) );
+  assert("pre: center_z array is NULL!" && (center_z != NULL) );
+  assert("pre: vx array is NULL!" && (vx != NULL) );
+  assert("pre: vy array is NULL!" && (vy != NULL) );
+  assert("pre: vz array is NULL!" && (vz != NULL) );
+
+  int idx = 0;
+  std::map<std::string,Halo>::iterator NodesIter = this->Nodes.begin();
+  for(; NodesIter != this->Nodes.end(); ++NodesIter, ++idx)
+    {
+    std::string hashCode = NodesIter->first;
+    nodeIdx[ idx ]  = this->GetNodeIndex( hashCode );
+    haloTags[ idx ] = NodesIter->second.Tag;
+    tstep[ idx ]    = NodesIter->second.TimeStep;
+    redShift[ idx ] = NodesIter->second.Redshift;
+    center_x[ idx ] = NodesIter->second.Center[0];
+    center_y[ idx ] = NodesIter->second.Center[1];
+    center_z[ idx ] = NodesIter->second.Center[2];
+    vx[ idx ] = NodesIter->second.AverageVelocity[0];
+    vy[ idx ] = NodesIter->second.AverageVelocity[1];
+    vz[ idx ] = NodesIter->second.AverageVelocity[2];
+    } // END for all nodes
+}
+
+//------------------------------------------------------------------------------
+void DistributedHaloEvolutionTree::GetFlatTreeEdgeArrays(
+        ID_T *startNodeIdx, ID_T *endNodeIdx )
+{
+  assert("pre: startNodeIdx array is NULL!" && (startNodeIdx != NULL) );
+  assert("pre: endNodeIdx array is NULL!" && (endNodeIdx != NULL) );
+
+  for( int edgeIdx=0; edgeIdx < this->GetNumberOfEdges(); ++edgeIdx )
+    {
+    startNodeIdx[edgeIdx] = this->GetNodeIndex(this->Edges[edgeIdx*2]);
+    endNodeIdx[edgeIdx]   = this->GetNodeIndex(this->Edges[edgeIdx*2+1]);
+    } // END for all edges
+}
+
+//------------------------------------------------------------------------------
+void DistributedHaloEvolutionTree::ReadWithGenericIO()
+{
+  // STEP 0: Clear data
+  this->Clear();
+
+  // STEP 1: Initialize Nodes and Edge reader
+  std::ostringstream oss;
+  oss << this->FileName << ".nodes";
+  cosmotk::GenericIO GIONodeReader(this->Communicator,oss.str());
+
+  oss.clear(); oss.str("");
+  oss << this->FileName << ".edges";
+  cosmotk::GenericIO GIOEdgesReader(this->Communicator,oss.str());
+
+  // STEP 2: Read headers
+  GIONodeReader.openAndReadHeader(false);
+  GIOEdgesReader.openAndReadHeader(false);
+  assert( "pre: nodes file and edges file rank mismatch!" &&
+   GIONodeReader.readNRanks() == GIOEdgesReader.readNRanks() );
+
+  // STEP 3: Assign blocks to processes
+  int numBlocks = GIONodeReader.readNRanks();
+  std::vector<int> assignedBlocks;
+  this->RoundRobinAssignment(numBlocks,assignedBlocks);
+
+// DEBUG
+  int myRank  = -1;
+  MPI_Comm_rank(this->Communicator,&myRank);
+// END DEBUG
+
+  // STEP 4: Read in the data for rank in file
+  for(unsigned int i=0; i < assignedBlocks.size(); ++i)
+    {
+    int block = assignedBlocks[i];
+// DEBUG
+    std::cerr << "rank: " << myRank << " ";
+    std::cerr << "idx: " << block << std::endl;
+// END DEBUG
+    this->ReadBlock(block,&GIONodeReader,&GIOEdgesReader);
+    } // END for all ranks
+
+  GIONodeReader.close();
+  GIOEdgesReader.close();
+}
+
+//------------------------------------------------------------------------------
+void DistributedHaloEvolutionTree::ReadBlock(
+        int block,
+        cosmotk::GenericIO *nodesReader,
+        cosmotk::GenericIO *edgesReader)
+{
+  assert("pre: Nodes reader is NULL!" && (nodesReader != NULL) );
+  assert("pre: Nodes reader is NULL!" && (edgesReader != NULL) );
+
+  // STEP 0: Get number of nodes
+  int numNodes = nodesReader->readNumElems(block);
+
+  // STEP 1: Allocate temporary arrays
+  // TODO: Should I allocate extra space here? Not sure how?
+  ID_T *nodeIdx      = new ID_T[numNodes];
+  ID_T *haloTags     = new ID_T[numNodes];
+  ID_T *tstep        = new ID_T[numNodes];
+  REAL *redShift     = new REAL[numNodes];
+  POSVEL_T *center_x = new POSVEL_T[numNodes];
+  POSVEL_T *center_y = new POSVEL_T[numNodes];
+  POSVEL_T *center_z = new POSVEL_T[numNodes];
+  POSVEL_T *vx = new POSVEL_T[numNodes];
+  POSVEL_T *vy = new POSVEL_T[numNodes];
+  POSVEL_T *vz = new POSVEL_T[numNodes];
+
+  // STEP 2: Add variables to be read
+  nodesReader->addVariable("UniqueIndex", nodeIdx, true);
+  nodesReader->addVariable("HaloTags", haloTags, true);
+  nodesReader->addVariable("TimeStep", tstep, true);
+  nodesReader->addVariable("Red-Shifts", redShift, true);
+  nodesReader->addVariable("Center-X", center_x, true);
+  nodesReader->addVariable("Center-Y", center_y, true);
+  nodesReader->addVariable("Center-Z", center_z, true);
+  nodesReader->addVariable("Velocity-X", vx, true);
+  nodesReader->addVariable("Velocity-Y", vy, true);
+  nodesReader->addVariable("Velocity-Z", vz, true);
+
+  // STEP 3: Do the I/O
+  nodesReader->readData(block,false);
+
+  // STEP 4: Unpack the nodes
+  std::map< ID_T, std::string > index2hashcode;
+  cosmotk::Halo h;
+  for( int idx=0; idx < numNodes; ++idx)
+    {
+    h.Tag = haloTags[ idx ];
+    h.TimeStep = tstep[ idx ];
+    h.Redshift = redShift[ idx ];
+    h.Center[0] = center_x[ idx ];
+    h.Center[1] = center_y[ idx ];
+    h.Center[2] = center_z[ idx ];
+    h.AverageVelocity[0] = vx[ idx ];
+    h.AverageVelocity[1] = vy[ idx ];
+    h.AverageVelocity[2] = vz[ idx ];
+    index2hashcode[ nodeIdx[idx] ] = h.GetHashCode();
+    this->Node2UniqueIdx[ h.GetHashCode() ] = nodeIdx[idx];
+    this->Nodes[ h.GetHashCode() ] = h;
+    } // END for all nodes
+
+  // STEP 5: Clean Up temporary flat arrays
+  delete [] nodeIdx;
+  delete [] haloTags;
+  delete [] tstep;
+  delete [] redShift;
+  delete [] center_x;
+  delete [] center_y;
+  delete [] center_z;
+  delete [] vx;
+  delete [] vy;
+  delete [] vz;
+
+  // STEP 6: Get number of edges
+  int numEdges = edgesReader->readNumElems(block);
+
+  // STEP 7: Allocate and acquire flat edge arrays
+  // TODO: Should I allocate extra space here? Not sure how?
+  ID_T *startNodeIdx = new ID_T[numEdges];
+  ID_T *endNodeIdx = new ID_T[numEdges];
+  this->EdgeWeights.resize(numEdges);
+  this->EdgeEvents.resize(numEdges);
+
+  // STEP 8: Add variables to be read
+  edgesReader->addVariable("StartNode", startNodeIdx,true);
+  edgesReader->addVariable("EndNode", endNodeIdx,true);
+  edgesReader->addVariable("Weights", &this->EdgeWeights[0],true);
+  edgesReader->addVariable("Events", &this->EdgeEvents[0],true);
+
+  // STEP 9: Do the I/O
+  edgesReader->readData(block,false);
+
+  // STEP 10: UnPack
+  for(int idx=0; idx < numEdges; ++idx)
+    {
+    assert( "ERROR: cannot find hashcode for edge start index" &&
+      index2hashcode.find(startNodeIdx[idx]) != index2hashcode.end());
+    assert( "ERROR: cannot find hashcode for edge node index" &&
+      index2hashcode.find(endNodeIdx[idx]) != index2hashcode.end());
+    this->Edges.push_back(index2hashcode[startNodeIdx[idx]]);
+    this->Edges.push_back(index2hashcode[endNodeIdx[idx]]);
+    } // END for all edges
+
+  // STEP 11: Clean up temporary flat arrays
+  delete [] startNodeIdx;
+  delete [] endNodeIdx;
+}
+
+//------------------------------------------------------------------------------
+void DistributedHaloEvolutionTree::RoundRobinAssignment(
+        int numBlocks, std::vector<int> &assigned)
+{
+  // TODO: Perhaps this RoundRobinAssignment can be implemented directly
+  // within the GenericIO infrastructure ???
+
+  assert("pre: NBLOCKS > 0" && (numBlocks > 0) );
+  assert("pre: NULL Communicator" && this->Communicator != MPI_COMM_NULL);
+
+  int myRank    = -1;
+  int numRanks  = -1;
+  MPI_Comm_rank(this->Communicator,&myRank);
+  MPI_Comm_size(this->Communicator,&numRanks);
+
+  if( numRanks < numBlocks )
+    {
+    // round-robin assignment
+    for(int blkIdx=0; blkIdx < numBlocks; ++blkIdx)
+      {
+      if( (blkIdx%numRanks) == myRank )
+        {
+        assigned.push_back(blkIdx);
+        } // END if this process has this block
+      } // END for all blocks in the file
+    } // END if
+  else if( numRanks > numBlocks )
+    {
+    if( myRank < numBlocks )
+      {
+      assigned.push_back(myRank);
+      }
+    } // END else-if
+  else
+    {
+    // one-to-one mapping
+    assigned.push_back(myRank);
+    } // END else
+}
+
+//------------------------------------------------------------------------------
+void DistributedHaloEvolutionTree::WriteWithGenericIO()
+{
+  // STEP 0: Initialize Nodes writer
+  std::ostringstream oss;
+  oss << this->FileName << ".nodes";
+  cosmotk::GenericIO GIONodeWriter(this->Communicator,oss.str());
+  GIONodeWriter.setNumElems(this->GetNumberOfNodes());
+
+  // STEP 1: Allocate and acquire flat node arrays
+  ID_T *nodeIdx      = new ID_T[this->GetNumberOfNodes()];
+  ID_T *haloTags     = new ID_T[this->GetNumberOfNodes()];
+  ID_T *tstep        = new ID_T[this->GetNumberOfNodes()];
+  REAL *redShift     = new REAL[this->GetNumberOfNodes()];
+  POSVEL_T *center_x = new POSVEL_T[this->GetNumberOfNodes()];
+  POSVEL_T *center_y = new POSVEL_T[this->GetNumberOfNodes()];
+  POSVEL_T *center_z = new POSVEL_T[this->GetNumberOfNodes()];
+  POSVEL_T *vx = new POSVEL_T[this->GetNumberOfNodes()];
+  POSVEL_T *vy = new POSVEL_T[this->GetNumberOfNodes()];
+  POSVEL_T *vz = new POSVEL_T[this->GetNumberOfNodes()];
+  this->GetFlatTreeNodeArrays(
+      nodeIdx,haloTags,tstep, redShift,
+      center_x,center_y,center_z,
+      vx,vy,vz);
+
+  // STEP 2: Add variables to be written
+  GIONodeWriter.addVariable("UniqueIndex", nodeIdx);
+  GIONodeWriter.addVariable("HaloTags", haloTags);
+  GIONodeWriter.addVariable("TimeStep", tstep);
+  GIONodeWriter.addVariable("Red-Shifts", redShift);
+  GIONodeWriter.addVariable("Center-X", center_x);
+  GIONodeWriter.addVariable("Center-Y", center_y);
+  GIONodeWriter.addVariable("Center-Z", center_z);
+  GIONodeWriter.addVariable("Velocity-X", vx);
+  GIONodeWriter.addVariable("Velocity-Y", vy);
+  GIONodeWriter.addVariable("Velocity-Z", vz);
+
+  // STEP 3: Do the I/O
+  GIONodeWriter.write();
+
+  // STEP 4: Clean Up temporary flat arrays
+  delete [] nodeIdx;
+  delete [] haloTags;
+  delete [] tstep;
+  delete [] redShift;
+  delete [] center_x;
+  delete [] center_y;
+  delete [] center_z;
+  delete [] vx;
+  delete [] vy;
+  delete [] vz;
+
+  // STEP 5: Initialize edges writer
+  oss.clear(); oss.str("");
+  oss << this->FileName << ".edges";
+  cosmotk::GenericIO GIOEdgeWriter(this->Communicator,oss.str());
+  GIOEdgeWriter.setNumElems(this->GetNumberOfEdges());
+
+  // STEP 6: Allocate and acquire flat edge arrays
+  ID_T *startNodeIdx = new ID_T[this->GetNumberOfEdges()];
+  ID_T *endNodeIdx = new ID_T[this->GetNumberOfEdges()];
+  this->GetFlatTreeEdgeArrays(startNodeIdx, endNodeIdx);
+
+  // STEP 7: Add variables to be written
+  GIOEdgeWriter.addVariable("StartNode", startNodeIdx);
+  GIOEdgeWriter.addVariable("EndNode", endNodeIdx);
+  GIOEdgeWriter.addVariable("Weights",&this->EdgeWeights[0]);
+  GIOEdgeWriter.addVariable("Events", &this->EdgeEvents[0]);
+
+  // STEP 8: Do the I/O
+  GIOEdgeWriter.write();
+
+  // STEP 9: Clean up temporary flat arrays
+  delete [] startNodeIdx;
+  delete [] endNodeIdx;
+}
 
 } /* namespace cosmotk */

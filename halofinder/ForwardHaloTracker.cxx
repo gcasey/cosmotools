@@ -6,6 +6,7 @@
 #include "HaloFinders.h"
 #include "Partition.h"
 #include "TemporalHaloInformation.h"
+#include "MergerTreeFileFormat.h"
 
 #include <cassert>
 #include <vector>
@@ -23,8 +24,9 @@ ForwardHaloTracker::ForwardHaloTracker()
   this->Communicator      = MPI_COMM_NULL;
   this->Initialized       = false;
 
-  this->MergerTreeFileName  = "MergerTree.dat";
-  this->MergerTreeThreshold = 10;
+  this->MergerTreeFileName   = "MergerTree.dat";
+  this->MergerTreeThreshold  = 10;
+  this->MergerTreeFileFormat = cosmotk::MergerTreeFileFormat::GENERIC_IO;
 
   this->TemporalHaloData   = new TemporalHaloInformation();
   this->HaloEvolutionTree  = new cosmotk::DistributedHaloEvolutionTree();
@@ -98,6 +100,7 @@ void ForwardHaloTracker::Initialize()
   // Set parameters for the halo evolution tree
   this->HaloEvolutionTree->SetCommunicator(this->Communicator);
   this->HaloEvolutionTree->SetFileName(this->MergerTreeFileName);
+  this->HaloEvolutionTree->SetIOFormat(this->MergerTreeFileFormat);
 
   // Set parameters for the merger-tree
   this->HaloMergerTree->SetCommunicator(this->Communicator);
