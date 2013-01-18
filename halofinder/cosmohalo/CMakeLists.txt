@@ -35,7 +35,6 @@ set(Cosmo_SOURCES
   CosmoHaloFinder.cxx
   CosmoHaloFinderP.cxx
   FOFHaloProperties.cxx
-  GenericIO.cxx
   GridExchange.cxx
   HaloCenterFinder.cxx
   HaloFinderInput.cxx
