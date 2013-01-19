@@ -56,7 +56,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 using namespace std;
 using cosmologytools::Partition;
-using cosmologytools::GenericIO;
+using cosmotk::GenericIO;
 
 namespace cosmologytools {
 

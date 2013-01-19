@@ -628,7 +628,7 @@ void FOFHaloProperties::FOFHaloCatalog(
     centerZ[halo] = this->zz[centerIndex];
   }
 
-  GenericIO GIO(Partition::getComm(), cname.str());
+  cosmotk::GenericIO GIO(Partition::getComm(), cname.str());
   GIO.setNumElems(this->numberOfHalos);
   GIO.addVariable("fof_halo_tag", haloTags);
   GIO.addVariable("fof_halo_mass", *haloMass);
