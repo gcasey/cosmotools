@@ -432,11 +432,13 @@ void DistributedHaloEvolutionTree::ReadWithGenericIO()
   // STEP 1: Initialize Nodes and Edge reader
   std::ostringstream oss;
   oss << this->FileName << ".nodes";
-  cosmotk::GenericIO GIONodeReader(this->Communicator,oss.str());
+  std::string nodesFile = oss.str();
+  cosmotk::GenericIO GIONodeReader(this->Communicator,nodesFile);
 
   oss.clear(); oss.str("");
   oss << this->FileName << ".edges";
-  cosmotk::GenericIO GIOEdgesReader(this->Communicator,oss.str());
+  std::string edgesFile = oss.str();
+  cosmotk::GenericIO GIOEdgesReader(this->Communicator,edgesFile);
 
   // STEP 2: Read headers
   GIONodeReader.openAndReadHeader(false);
@@ -449,19 +451,10 @@ void DistributedHaloEvolutionTree::ReadWithGenericIO()
   std::vector<int> assignedBlocks;
   this->RoundRobinAssignment(numBlocks,assignedBlocks);
 
-// DEBUG
-  int myRank  = -1;
-  MPI_Comm_rank(this->Communicator,&myRank);
-// END DEBUG
-
   // STEP 4: Read in the data for rank in file
   for(unsigned int i=0; i < assignedBlocks.size(); ++i)
     {
     int block = assignedBlocks[i];
-// DEBUG
-    std::cerr << "rank: " << myRank << " ";
-    std::cerr << "idx: " << block << std::endl;
-// END DEBUG
     this->ReadBlock(block,&GIONodeReader,&GIOEdgesReader);
     } // END for all ranks
 
@@ -573,6 +566,10 @@ void DistributedHaloEvolutionTree::ReadBlock(
   // STEP 11: Clean up temporary flat arrays
   delete [] startNodeIdx;
   delete [] endNodeIdx;
+
+  // STEP 12: Clear variables since the readers are called iteratively
+  nodesReader->clearVariables();
+  edgesReader->clearVariables();
 }
 
 //------------------------------------------------------------------------------
