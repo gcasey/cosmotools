@@ -428,7 +428,7 @@ void GenericIO::readCoords(int Coords[3], int EffRank) {
 
 // Note: Errors from this function should be recoverable. This means that if
 // one rank throws an exception, then all ranks should.
-void GenericIO::readData(int EffRank, bool PrintStats) {
+void GenericIO::readData(int EffRank, bool PrintStats, bool CollStats) {
   assert(FH.getHeaderCache().size() && "HeaderCache must not be empty");
 
   int Rank;
@@ -535,7 +535,14 @@ void GenericIO::readData(int EffRank, bool PrintStats) {
 
   int AllNErrs[2];
 #ifndef GENERICIO_NO_MPI
-  MPI_Allreduce(&NErrs, &AllNErrs, 2, MPI_INT, MPI_SUM, Comm);
+  if(CollStats)
+    {
+    MPI_Allreduce(&NErrs, &AllNErrs, 2, MPI_INT, MPI_SUM, Comm);
+    }
+  else
+    {
+    AllNErrs[0] = NErrs[0]; AllNErrs[1] = NErrs[1];
+    }
 #else
   AllNErrs[0] = NErrs[0]; AllNErrs[1] = NErrs[1];
 #endif
@@ -548,10 +555,6 @@ void GenericIO::readData(int EffRank, bool PrintStats) {
   }
 
 #ifndef GENERICIO_NO_MPI
-  MPI_Barrier(Comm);
-#endif
-
-#ifndef GENERICIO_NO_MPI
   double EndTime = MPI_Wtime();
 #else
   double EndTime = double(clock())/CLOCKS_PER_SEC;
@@ -560,14 +563,20 @@ void GenericIO::readData(int EffRank, bool PrintStats) {
   double TotalTime = EndTime - StartTime;
   double MaxTotalTime;
 #ifndef GENERICIO_NO_MPI
-  MPI_Reduce(&TotalTime, &MaxTotalTime, 1, MPI_DOUBLE, MPI_MAX, 0, Comm);
+  if(CollStats)
+    {
+    MPI_Reduce(&TotalTime, &MaxTotalTime, 1, MPI_DOUBLE, MPI_MAX, 0, Comm);
+    }
 #else
   MaxTotalTime = TotalTime;
 #endif
 
   uint64_t AllTotalReadSize;
 #ifndef GENERICIO_NO_MPI
-  MPI_Reduce(&TotalReadSize, &AllTotalReadSize, 1, MPI_UINT64_T, MPI_SUM, 0, Comm);
+  if(CollStats)
+    {
+    MPI_Reduce(&TotalReadSize, &AllTotalReadSize, 1, MPI_UINT64_T, MPI_SUM, 0, Comm);
+    }
 #else
   AllTotalReadSize = TotalReadSize;
 #endif

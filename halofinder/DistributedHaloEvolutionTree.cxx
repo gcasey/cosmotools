@@ -516,7 +516,7 @@ void DistributedHaloEvolutionTree::ReadBlock(
   nodesReader->addVariable("Velocity-Z", vz, true);
 
   // STEP 3: Do the I/O
-  nodesReader->readData(block,false);
+  nodesReader->readData(block,false,false);
 
   // STEP 4: Unpack the nodes
   std::map< ID_T, std::string > index2hashcode;
@@ -567,14 +567,14 @@ void DistributedHaloEvolutionTree::ReadBlock(
   edgesReader->addVariable("Events", edgeEvents,true);
 
   // STEP 9: Do the I/O
-  edgesReader->readData(block,false);
+  edgesReader->readData(block,false,false);
 
   // STEP 10: UnPack
   for(int idx=0; idx < numEdges; ++idx)
     {
-    assert( "ERROR: cannot find hashcode for edge start index" &&
+    assert( "ERROR: cannot find hash-code for edge start index" &&
       index2hashcode.find(startNodeIdx[idx]) != index2hashcode.end());
-    assert( "ERROR: cannot find hashcode for edge node index" &&
+    assert( "ERROR: cannot find hash-code for edge end index" &&
       index2hashcode.find(endNodeIdx[idx]) != index2hashcode.end());
     this->Edges.push_back(index2hashcode[startNodeIdx[idx]]);
     this->Edges.push_back(index2hashcode[endNodeIdx[idx]]);

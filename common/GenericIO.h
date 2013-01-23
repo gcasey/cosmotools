@@ -100,7 +100,7 @@ public:
   std::size_t readNumElems(int EffRank = -1);
   void readCoords(int Coords[3], int EffRank = -1);
 
-  void readData(int EffRank = -1, bool PrintStats = true);
+  void readData(int EffRank = -1, bool PrintStats = true, bool CollStats = true);
 
   void close() {
     FH.close();
