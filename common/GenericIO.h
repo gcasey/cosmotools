@@ -91,6 +91,10 @@ public:
     bool IsSigned;
   };
 
+  void clearVariables() { this->Vars.clear(); };
+
+  int getNumberOfVariables() { return this->Vars.size(); };
+
   void getVariableInfo(std::vector<VariableInfo> &VI);
 
   std::size_t readNumElems(int EffRank = -1);
