@@ -71,6 +71,11 @@ FOF_SIZE_THRESHOLD 500
 MERGER_TREE_THRESHOLD 100
 MERGER_TREE_FILE MergerTree.dat
 
+## Set the file format to write the merger-tree
+## DIY - 0
+## GenericIO - 1
+MERGER_TREE_FILE_FORMAT 1
+
 #-------------------------------------------------------------------------------
 # LANLHALOFINDER(BB=0.2) SECTION
 #-------------------------------------------------------------------------------

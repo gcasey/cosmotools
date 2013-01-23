@@ -133,6 +133,10 @@ void ForwardHaloTracker::TrackHalos()
 
   // STEP 4: Update merger-tree
   this->UpdateMergerTree();
+
+  // STEP 5: Clean up memory
+  delete haloFinder;
+
   this->Barrier();
 }
 

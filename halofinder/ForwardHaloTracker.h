@@ -68,6 +68,7 @@ public:
   GetNSetMacro(Communicator,MPI_Comm);
   GetNSetMacro(MergerTreeFileName,std::string);
   GetNSetMacro(MergerTreeThreshold,int);
+  GetNSetMacro(MergerTreeFileFormat,int);
 
   /**
    * @brief Tracks halos.

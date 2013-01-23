@@ -84,6 +84,9 @@ void HaloTrackerAnalysisTool::ParseParameters()
   this->MERGER_TREE_FILE =
       this->GetStringParameter("MERGER_TREE_FILE");
 
+  this->MERGER_TREE_FILE_FORMAT =
+      this->GetIntParameter("MERGER_TREE_FILE_FORMAT");
+
 }
 
 //------------------------------------------------------------------------------
