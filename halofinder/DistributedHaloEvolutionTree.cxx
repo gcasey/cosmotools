@@ -249,6 +249,17 @@ std::string DistributedHaloEvolutionTree::ToString()
   std::ostringstream oss;
   oss << "NUMNODES " << this->GetNumberOfNodes() << std::endl;
   std::map<std::string, Halo>::iterator NodeIter = this->Nodes.begin();
+  oss << "ID ";
+  oss << "TIMESTEP ";
+  oss << "TAG ";
+  oss << "REDSHIFT ";
+  oss << "CENTER_X ";
+  oss << "CENTER_Y ";
+  oss << "CENTER_Z ";
+  oss << "V_X ";
+  oss << "V_Y ";
+  oss << "V_Z ";
+  oss << std::endl;
   for(;NodeIter != this->Nodes.end(); ++NodeIter)
     {
     oss << this->GetNodeIndex(NodeIter->first) << " ";
@@ -265,6 +276,11 @@ std::string DistributedHaloEvolutionTree::ToString()
     } // END for all nodes
 
   oss << "NUMEDGES " << this->GetNumberOfEdges() << std::endl;
+  oss << "START ";
+  oss << "END ";
+  oss << "WEIGHTS ";
+  oss << "EVENTS ";
+  oss << std::endl;
   for(int edgeIdx=0; edgeIdx < this->GetNumberOfEdges(); ++edgeIdx)
     {
     oss << this->GetNodeIndex( this->Edges[edgeIdx*2] ) << " ";
@@ -540,14 +556,15 @@ void DistributedHaloEvolutionTree::ReadBlock(
   // TODO: Should I allocate extra space here? Not sure how?
   ID_T *startNodeIdx = new ID_T[numEdges];
   ID_T *endNodeIdx = new ID_T[numEdges];
-  this->EdgeWeights.resize(numEdges);
-  this->EdgeEvents.resize(numEdges);
+  int *edgeWeights = new int[numEdges];
+  int *edgeEvents  = new int[numEdges];
+
 
   // STEP 8: Add variables to be read
   edgesReader->addVariable("StartNode", startNodeIdx,true);
   edgesReader->addVariable("EndNode", endNodeIdx,true);
-  edgesReader->addVariable("Weights", &this->EdgeWeights[0],true);
-  edgesReader->addVariable("Events", &this->EdgeEvents[0],true);
+  edgesReader->addVariable("Weights", edgeWeights,true);
+  edgesReader->addVariable("Events", edgeEvents,true);
 
   // STEP 9: Do the I/O
   edgesReader->readData(block,false);
@@ -561,11 +578,15 @@ void DistributedHaloEvolutionTree::ReadBlock(
       index2hashcode.find(endNodeIdx[idx]) != index2hashcode.end());
     this->Edges.push_back(index2hashcode[startNodeIdx[idx]]);
     this->Edges.push_back(index2hashcode[endNodeIdx[idx]]);
+    this->EdgeWeights.push_back( edgeWeights[idx] );
+    this->EdgeEvents.push_back( edgeEvents[idx] );
     } // END for all edges
 
   // STEP 11: Clean up temporary flat arrays
   delete [] startNodeIdx;
   delete [] endNodeIdx;
+  delete [] edgeWeights;
+  delete [] edgeEvents;
 
   // STEP 12: Clear variables since the readers are called iteratively
   nodesReader->clearVariables();
