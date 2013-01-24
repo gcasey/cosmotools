@@ -139,7 +139,19 @@ protected:
   cosmotk::DistributedHaloEvolutionTree *HaloEvolutionTree;
   cosmotk::ParallelHaloMergerTree *HaloMergerTree;
 
+  // time-step to linear index
+  std::map<int,int> TimeStepToLinearIdx;
+
+  // prefix sum of the number of halos over time
+  std::vector< int > HaloPrefixSum;
+
 private:
+
+  /**
+   * @brief Updates the total number of halos across all processes
+   * @param N the number of halos in this process
+   */
+  void UpdateHaloPrefixSum(int N);
 
   /**
    * @brief Updates the merger-tree

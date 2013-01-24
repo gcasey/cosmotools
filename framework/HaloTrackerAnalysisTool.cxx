@@ -108,6 +108,7 @@ void HaloTrackerAnalysisTool::Execute(SimulationParticles *particles)
   this->HaloTracker->SetPMIN(this->PMIN);
   this->HaloTracker->SetMergerTreeFileName(this->MERGER_TREE_FILE);
   this->HaloTracker->SetMergerTreeThreshold(this->MERGER_TREE_THRESHOLD);
+  this->HaloTracker->SetMergerTreeFileFormat(this->MERGER_TREE_FILE_FORMAT);
 
   // STEP 2: Register particles
   this->HaloTracker->RegisterParticles(

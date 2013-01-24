@@ -165,6 +165,30 @@ void ForwardHaloTracker::ExecuteHaloFinder(
   // STEP 3: Merge results across ranks
   haloFinder->collectHalos(false /*clearSerial*/);
   haloFinder->mergeHalos();
+
+  // STEP 4: Update total number of halos
+  this->UpdateHaloPrefixSum( haloFinder->getNumberOfHalos() );
+}
+
+//------------------------------------------------------------------------------
+void ForwardHaloTracker::UpdateHaloPrefixSum(int N)
+{
+  // STEP 0: Get the total number of time-steps so far
+  int nsteps = this->HaloPrefixSum.size();
+
+  // STEP 1: Compute the linear index, of this time-step
+  int lidx   = (nsteps==0)? 0:nsteps;
+
+  // STEP 2: Compute the sum thus far
+  int pvsum  = (nsteps==0)? 0:this->HaloPrefixSum[lidx-1];
+
+  // STEP 3: Compute the total number of halos at this time-step
+  int total = 0;
+  MPI_Allreduce(&N,&total,1,MPI_INT,MPI_SUM,this->Communicator);
+
+  // STEP 4: Update halo prefix sum
+  this->HaloPrefixSum.push_back( (pvsum+total) );
+  this->TimeStepToLinearIdx[ this->TimeStep ] = lidx;
 }
 
 //------------------------------------------------------------------------------
