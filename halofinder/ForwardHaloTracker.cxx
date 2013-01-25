@@ -24,7 +24,7 @@ ForwardHaloTracker::ForwardHaloTracker()
   this->Communicator      = MPI_COMM_NULL;
   this->Initialized       = false;
 
-  this->MergerTreeFileName   = "MergerTree.dat";
+  this->MergerTreeFileName   = "MergerTree";
   this->MergerTreeThreshold  = 10;
   this->MergerTreeFileFormat = cosmotk::MergerTreeFileFormat::GENERIC_IO;
 

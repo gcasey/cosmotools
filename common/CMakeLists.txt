@@ -39,3 +39,5 @@ else()
  add_library(common STATIC ${SOURCES})
 endif()
 target_link_libraries(common ${MPI_C_LIBRARIES})
+
+add_subdirectory(executables)
