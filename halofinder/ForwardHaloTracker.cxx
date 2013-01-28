@@ -43,7 +43,6 @@ ForwardHaloTracker::~ForwardHaloTracker()
 
   if( this->HaloEvolutionTree != NULL )
     {
-    this->HaloEvolutionTree->WriteTree();
     delete this->HaloEvolutionTree;
     }
 
@@ -138,6 +137,51 @@ void ForwardHaloTracker::TrackHalos()
   delete haloFinder;
 
   this->Barrier();
+}
+
+//------------------------------------------------------------------------------
+void ForwardHaloTracker::TrackHalos(
+      INTEGER tstep, REAL redshift, std::vector<cosmotk::Halo> &halos)
+{
+  // STEP 0: Initialize
+  this->Initialize();
+  assert("pre: internal data-structures not initialized!" &&
+         this->Initialized);
+  this->TimeStep = tstep;
+  this->RedShift = redshift;
+
+  // STEP 1: Update current halo information. Note, the pointer to
+  // currentHaloData is managed by the TemporalHaloData object, hence,
+  // this pointer is not de-allocated here.
+  HaloDataInformation *currentHaloData = new HaloDataInformation();
+  currentHaloData->RedShift      = redshift;
+  currentHaloData->TimeStep      = tstep;
+  currentHaloData->NumberOfHalos = halos.size();
+  currentHaloData->Halos         = halos;
+
+  // STEP 2: Update halo-prefix sum
+  this->UpdateHaloPrefixSum( currentHaloData->NumberOfHalos );
+
+  // STEP 3: Update temporal halo information
+  this->TemporalHaloData->Update(currentHaloData);
+
+  // STEP 4: Update the merger-tree
+  this->UpdateMergerTree();
+
+  // STEP 4: Barrier synchronization
+  this->Barrier();
+}
+
+//------------------------------------------------------------------------------
+void ForwardHaloTracker::WriteMergerTree(std::string fileName)
+{
+  assert("pre: HaloEvolutionTree is NULL!" &&
+          (this->HaloEvolutionTree != NULL) );
+
+  this->HaloEvolutionTree->SetCommunicator(this->Communicator);
+  this->HaloEvolutionTree->SetFileName(fileName);
+  this->HaloEvolutionTree->SetIOFormat(this->MergerTreeFileFormat);
+  this->HaloEvolutionTree->WriteTree();
 }
 
 //------------------------------------------------------------------------------

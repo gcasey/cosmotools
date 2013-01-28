@@ -21,12 +21,14 @@
 #include "DistributedHaloEvolutionTree.h"
 #include "ParallelHaloMergerTree.h"
 
+
 namespace cosmologytools {
 
 // Forward declarations
 class HaloDataInformation;
 class TemporalHaloInformation;
 class CosmoHaloFinderP;
+
 
 class ForwardHaloTracker
 {
@@ -71,10 +73,29 @@ public:
   GetNSetMacro(MergerTreeFileFormat,int);
 
   /**
-   * @brief Tracks halos.
+   * @brief This method finds the halos at the given, registered particle
+   * data set. Once the halos are found, the merger-tree is updated to track
+   * the evolution of the halos in time.
    * @note This method is intended to be called repeateadly
    */
   void TrackHalos();
+
+  /**
+   * @brief Given halos at the given time-step/red-shift, this method updates
+   * the merger-tree data-structure (kept internally) to track the evolution
+   * of the halos in time.
+   * @param tstep the current time-step of the halos
+   * @param redshift the current red-shift of the halos
+   * @param halos the halos at the current time-step/red-shift.
+   */
+  void TrackHalos(
+      INTEGER tstep, REAL redshift, std::vector<cosmotk::Halo> &halos);
+
+  /**
+   * @brief Writes the merger-tree at the given file name.
+   * @param fileName the file where the merger-tree will be written.
+   */
+  void WriteMergerTree( std::string fileName );
 
   /**
    * @brief Barrier synchronization among all processes on the communicator
