@@ -7,6 +7,7 @@ set(executables
     GenericIOMergerTreeIO.cxx
     GenericIOMergerTreeReader.cxx
     haloExchangeDIY.cxx
+    halotracker.cxx
     )
 
 ## Setup required libraries
