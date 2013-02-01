@@ -13,14 +13,14 @@
 //------------------------------------------------------------------------------
 // DIY callback routines
 //------------------------------------------------------------------------------
-void* create_write_type(void* block, int lid, DIY_Datatype *dtype)
+void* create_write_type(void* block, int did, int lid, DIY_Datatype *dtype)
 {
   DIYTree *treePtr = static_cast<DIYTree*>(block);
   cosmotk::DistributedHaloEvolutionTree::CreateDIYTreeType(treePtr,dtype);
   return DIY_BOTTOM;
 }
 
-void* create_read_type(int lid, int *hdr, DIY_Datatype *dtype)
+void* create_read_type(int did, int lid, int *hdr, DIY_Datatype *dtype)
 {
   DIYTree *treePtr       = new DIYTree();
   treePtr->NumberOfNodes = hdr[0];
@@ -336,23 +336,26 @@ void DistributedHaloEvolutionTree::ReadWithDIY()
   // STEP 0: Open file to read
   int swap     = 0;
   int compress = 0;
-  DIY_Read_open_all(
-      const_cast<char*>(this->FileName.c_str()),swap,compress);
+  int numblocks =
+      DIY_Read_open_all(
+          0,const_cast<char*>(this->FileName.c_str()),swap,compress);
 
-  // STEP 1: Read blocks (this is not quit working)
+  // STEP 1: Allocate headers for blocks
   void **pmblocks;
-  int **hdrs = new int*[1]; // How do we know the number of blocks a priori?
-  hdrs[0] = new int[2];
-  int numblocks = 0;
+  int **hdrs = new int*[numblocks]; // How do we know the number of blocks a priori?
+  for(int i=0; i < numblocks; ++i)
+    {
+    hdrs[i] = new int[DIY_MAX_HDR_ELEMENTS];
+    }
 
-  // TODO: Fix crash here.
-  DIY_Read_blocks_all(&pmblocks,&numblocks,hdrs,&create_read_type);
+  // STEP 2: Read blocks
+  DIY_Read_blocks_all(0,&pmblocks,hdrs,&create_read_type);
 
-  // STEP 2: Unpack
+  // STEP 3: Unpack
   // TODO: implement this
 
-  // STEP 3: Close file
-  DIY_Read_close_all();
+  // STEP 4: Close file
+  DIY_Read_close_all(0);
 }
 
 //------------------------------------------------------------------------------
@@ -369,7 +372,7 @@ void DistributedHaloEvolutionTree::WriteWithDIY()
   pmblocks = new void*[nblocks];
   for( int blkIdx=0; blkIdx < nblocks; ++blkIdx)
     {
-    hdrs[blkIdx]     = new int[2];
+    hdrs[blkIdx]     = new int[DIY_MAX_HDR_ELEMENTS];
     hdrs[blkIdx][0]  = mtree->NumberOfNodes;
     hdrs[blkIdx][1]  = mtree->NumberOfEdges;
     pmblocks[blkIdx] = mtree;
@@ -377,9 +380,9 @@ void DistributedHaloEvolutionTree::WriteWithDIY()
 
   // STEP 2: DIY write
   int compress = 0;
-  DIY_Write_open_all(const_cast<char*>(this->FileName.c_str()),compress);
-  DIY_Write_blocks_all(pmblocks,nblocks,hdrs,2,&create_write_type);
-  DIY_Write_close_all();
+  DIY_Write_open_all(0,const_cast<char*>(this->FileName.c_str()),compress);
+  DIY_Write_blocks_all(0,pmblocks,nblocks,hdrs,&create_write_type);
+  DIY_Write_close_all(0);
 
   // STEP 3: Clean up
   delete mtree;
