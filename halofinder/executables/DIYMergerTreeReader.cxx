@@ -53,7 +53,7 @@ std::string FileName = "MergerTree.dat";
 //==============================================================================
 void ReadData();
 
-void* create_datatype(int lid, int *hdr, DIY_Datatype *dtype)
+void* create_datatype(int did, int lid, int *hdr, DIY_Datatype *dtype)
 {
   std::cerr << "Header: " << hdr[0] << " " << hdr[1] << std::endl;
   MTree.NumberOfNodes = hdr[0];
@@ -105,20 +105,23 @@ void ReadData()
 {
   int swap     = 0;
   int compress = 0;
-  DIY_Read_open_all(const_cast<char *>(FileName.c_str()),swap,compress);
+  int numblocks =
+   DIY_Read_open_all(0,const_cast<char *>(FileName.c_str()),swap,compress);
   PRINTLN("- Open output file...[DONE]");
 
   void **pmblocks;
-  int **hdrs = new int*[1];
-  hdrs[0]    = new int[2];
-  int numblocks = 0;
+  int **hdrs = new int*[numblocks];
+  for(int i=0; i < numblocks; ++i )
+    {
+    hdrs[i] = new int[DIY_MAX_HDR_ELEMENTS];
+    }
 
   PRINT("- Read blocks...");
-  DIY_Read_blocks_all(&pmblocks,&numblocks,hdrs,&create_datatype);
+  DIY_Read_blocks_all(0,&pmblocks,hdrs,&create_datatype);
   PRINTLN("[DONE]");
 
   PRINT("- Close file...");
-  DIY_Read_close_all();
+  DIY_Read_close_all(0);
   PRINTLN("[DONE]");
 
   std::ofstream ofs;
@@ -149,5 +152,4 @@ void ReadData()
     ofs << std::endl;
     } // END for all edges
   ofs.close();
-
 }
