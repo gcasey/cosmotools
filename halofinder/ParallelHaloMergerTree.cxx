@@ -109,7 +109,7 @@ void ParallelHaloMergerTree::ExchangeHaloInfo(
     {
     halos[ hidx ].GetDIYHaloItem( &haloInfo );
     DIY_Enqueue_item_all(
-        0, (void *)&haloInfo, NULL, sizeof(DIYHaloItem), NULL);
+        0, 0, (void *)&haloInfo, NULL, sizeof(DIYHaloItem), NULL);
     } // END for all halos
 
   // STEP 1: Neighbor exchange
@@ -117,7 +117,7 @@ void ParallelHaloMergerTree::ExchangeHaloInfo(
   void ***rcvHalos     = new void**[nblocks];
   int *numHalosReceived = new int[nblocks];
   DIY_Exchange_neighbors(
-      rcvHalos,numHalosReceived,1.0,&cosmotk::Halo::CreateDIYHaloType);
+      0,rcvHalos,numHalosReceived,1.0,&cosmotk::Halo::CreateDIYHaloType);
 
   // STEP 2: Unpack received halos and store them in the halo hash by
   // a halo hash code.
@@ -134,7 +134,7 @@ void ParallelHaloMergerTree::ExchangeHaloInfo(
 
   // STEP 3: Clean up
   DIY_Flush_neighbors(
-      rcvHalos,numHalosReceived,&cosmotk::Halo::CreateDIYHaloType);
+      0,rcvHalos,numHalosReceived,&cosmotk::Halo::CreateDIYHaloType);
   delete [] numHalosReceived;
 
 }
@@ -151,7 +151,7 @@ void ParallelHaloMergerTree::ExchangeHaloParticles(
     for( int pidx=0; pidx < haloParticles.size(); ++pidx )
       {
       DIY_Enqueue_item_all(
-          0,
+          0,0,
           (void*)&haloParticles[pidx],
           NULL,
           sizeof(DIYHaloParticleItem),
@@ -164,7 +164,7 @@ void ParallelHaloMergerTree::ExchangeHaloParticles(
   void ***rcvHalos = new void**[nblocks];
   int *numHalosReceived = new int[nblocks];
   DIY_Exchange_neighbors(
-      rcvHalos,numHalosReceived,1.0,&cosmotk::Halo::CreateDIYHaloParticleType);
+      0,rcvHalos,numHalosReceived,1.0,&cosmotk::Halo::CreateDIYHaloParticleType);
 
   // STEP 2: Unpack data to neighbor halos in the haloHash
   DIYHaloParticleItem *haloParticle = NULL;
@@ -183,7 +183,7 @@ void ParallelHaloMergerTree::ExchangeHaloParticles(
 
   // STEP 3: Clean up
   DIY_Flush_neighbors(
-      rcvHalos,numHalosReceived,&cosmotk::Halo::CreateDIYHaloParticleType);
+      0,rcvHalos,numHalosReceived,&cosmotk::Halo::CreateDIYHaloParticleType);
   delete [] numHalosReceived;
 }
 
