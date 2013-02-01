@@ -53,7 +53,7 @@ std::string FileName = "MergerTree.dat";
 void CreateMergerTree();
 void WriteMergerTree();
 
-void* create_datatype(void *block, int lid, DIY_Datatype *dtype)
+void* create_datatype(void *block, int did, int lid, DIY_Datatype *dtype)
 {
   cosmotk::DistributedHaloEvolutionTree::CreateDIYTreeType(&MTree,dtype);
   return DIY_BOTTOM;
@@ -116,14 +116,14 @@ void WriteMergerTree()
     std::cerr << "NumNodes: " << MTree.NumberOfNodes << std::endl;
     std::cerr << "NumEdges: " << MTree.NumberOfEdges << std::endl;
 
-    hdrs[blkIdx]     = new int[2];
+    hdrs[blkIdx]     = new int[DIY_MAX_HDR_ELEMENTS];
     hdrs[blkIdx][0]  = MTree.NumberOfNodes;
     hdrs[blkIdx][1]  = MTree.NumberOfEdges;
     pmblocks[blkIdx] = &MTree;
     }
-  DIY_Write_open_all(const_cast<char*>(FileName.c_str()),0);
-  DIY_Write_blocks_all(pmblocks, nblocks, hdrs, 2, &create_datatype);
-  DIY_Write_close_all();
+  DIY_Write_open_all(0,const_cast<char*>(FileName.c_str()),0);
+  DIY_Write_blocks_all(0,pmblocks, nblocks, hdrs, &create_datatype);
+  DIY_Write_close_all(0);
 
   delete [] pmblocks;
 }
