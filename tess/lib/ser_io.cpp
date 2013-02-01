@@ -143,11 +143,11 @@ void SER_IO::ReadHeader(FILE *fd, int *hdr, int64_t ofst) {
   int count;
 
   fseek(fd, ofst, SEEK_SET);
-  count = fread(hdr, sizeof(int), HDR_ELEMS, fd);
-  assert(count == HDR_ELEMS);
+  count = fread(hdr, sizeof(int), DIY_MAX_HDR_ELEMENTS, fd);
+  assert(count == DIY_MAX_HDR_ELEMENTS);
 
   if (swap_bytes)
-    Swap((char *)hdr, HDR_ELEMS, sizeof(int));
+    Swap((char *)hdr, DIY_MAX_HDR_ELEMENTS, sizeof(int));
 
 }
 //----------------------------------------------------------------------------
@@ -161,12 +161,12 @@ void SER_IO::ReadHeader(FILE *fd, int *hdr, int64_t ofst) {
 //
 int SER_IO::CopyHeader(unsigned char *in_buf, int *hdr) {
 
-  memcpy(hdr, in_buf, HDR_ELEMS * sizeof(int));
+  memcpy(hdr, in_buf, DIY_MAX_HDR_ELEMENTS * sizeof(int));
 
   if (swap_bytes)
-    Swap((char *)hdr, HDR_ELEMS, sizeof(int));
+    Swap((char *)hdr, DIY_MAX_HDR_ELEMENTS, sizeof(int));
 
-  return(HDR_ELEMS * sizeof(int));
+  return(DIY_MAX_HDR_ELEMENTS * sizeof(int));
 
 }
 //----------------------------------------------------------------------------
@@ -182,7 +182,7 @@ int SER_IO::CopyHeader(unsigned char *in_buf, int *hdr) {
 void SER_IO::ReadBlock(FILE *fd, vblock_t* &v, int64_t ofst) {
 
   // get header info
-  int hdr[HDR_ELEMS];
+  int hdr[DIY_MAX_HDR_ELEMENTS];
   ReadHeader(fd, hdr, ofst);
 
   // create block
@@ -254,7 +254,7 @@ void SER_IO::CopyBlock(unsigned char *in_buf, vblock_t* &v) {
   int ofst = 0; // offset in buffer for next section of data to read
 
   // get header info
-  int hdr[HDR_ELEMS];
+  int hdr[DIY_MAX_HDR_ELEMENTS];
   ofst += CopyHeader(in_buf, hdr);
 
   // create block

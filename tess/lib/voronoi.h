@@ -16,7 +16,7 @@
 #define _VORONOI_H
 
 /* header */
-#define HDR_ELEMS 7 /* number of header elements */
+/* #define HDR_ELEMS 7 /\* number of header elements used *\/ */
 #define NUM_VERTS 0 /* indices of header elements */
 #define NUM_CELLS 1
 #define TOT_NUM_CELL_VERTS 2

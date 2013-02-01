@@ -34,6 +34,7 @@
 
 using namespace std;
 
+#define DIY_MAX_HDR_ELEMENTS 256
 #define CHUNK 262144 // chunk size for zlib
 
 //------------------------------------------------------------------------------
