@@ -25,7 +25,7 @@ int size;
 MPI_Comm comm;
 cosmotk::DistributedHaloEvolutionTree HaloMergerTree;
 
-DIYTree MTree;
+DIYTree *MTree;
 
 std::string FileName = "MergerTree.dat";
 
@@ -56,12 +56,13 @@ void ReadData();
 void* create_datatype(int did, int lid, int *hdr, DIY_Datatype *dtype)
 {
   std::cerr << "Header: " << hdr[0] << " " << hdr[1] << std::endl;
-  MTree.NumberOfNodes = hdr[0];
-  MTree.NumberOfEdges = hdr[1];
-  MTree.TreeNodes = new DIYTreeNodeType[MTree.NumberOfNodes];
-  MTree.TreeEdges = new DIYTreeEdgeType[MTree.NumberOfEdges];
-  cosmotk::DistributedHaloEvolutionTree::CreateDIYTreeType(&MTree,dtype);
-  return &MTree;
+  MTree = new DIYTree;
+  MTree->NumberOfNodes = hdr[0];
+  MTree->NumberOfEdges = hdr[1];
+  MTree->TreeNodes = new DIYTreeNodeType[MTree->NumberOfNodes];
+  MTree->TreeEdges = new DIYTreeEdgeType[MTree->NumberOfEdges];
+  cosmotk::DistributedHaloEvolutionTree::CreateDIYTreeType(MTree,dtype);
+  return MTree;
 }
 
 //==============================================================================
@@ -109,7 +110,7 @@ void ReadData()
    DIY_Read_open_all(0,const_cast<char *>(FileName.c_str()),swap,compress);
   PRINTLN("- Open output file...[DONE]");
 
-  void **pmblocks;
+  void **pmblocks = new void*[numblocks];
   int **hdrs = new int*[numblocks];
   for(int i=0; i < numblocks; ++i )
     {
@@ -127,28 +128,28 @@ void ReadData()
   std::ofstream ofs;
   ofs.open("MergerTreeAscii.dat");
   ofs << "NUMBER OF BLOCKS " << numblocks           << std::endl;
-  ofs << "NUMBER OF NODES "  << MTree.NumberOfNodes << std::endl;
-  for(int nodeIdx=0; nodeIdx < MTree.NumberOfNodes; ++nodeIdx)
+  ofs << "NUMBER OF NODES "  << MTree->NumberOfNodes << std::endl;
+  for(int nodeIdx=0; nodeIdx < MTree->NumberOfNodes; ++nodeIdx)
     {
-    ofs << MTree.TreeNodes[nodeIdx].UniqueNodeID    << "\t";
-    ofs << MTree.TreeNodes[nodeIdx].HaloTag         << "\t";
-    ofs << MTree.TreeNodes[nodeIdx].TimeStep        << "\t";
-    ofs << MTree.TreeNodes[nodeIdx].HaloCenter[0]   << ",";
-    ofs << MTree.TreeNodes[nodeIdx].HaloCenter[1]   << ",";
-    ofs << MTree.TreeNodes[nodeIdx].HaloCenter[2]   << "\t";
-    ofs << MTree.TreeNodes[nodeIdx].HaloVelocity[0] << ",";
-    ofs << MTree.TreeNodes[nodeIdx].HaloVelocity[1] << ",";
-    ofs << MTree.TreeNodes[nodeIdx].HaloVelocity[2] << "\t";
+    ofs << MTree->TreeNodes[nodeIdx].UniqueNodeID    << "\t";
+    ofs << MTree->TreeNodes[nodeIdx].HaloTag         << "\t";
+    ofs << MTree->TreeNodes[nodeIdx].TimeStep        << "\t";
+    ofs << MTree->TreeNodes[nodeIdx].HaloCenter[0]   << ",";
+    ofs << MTree->TreeNodes[nodeIdx].HaloCenter[1]   << ",";
+    ofs << MTree->TreeNodes[nodeIdx].HaloCenter[2]   << "\t";
+    ofs << MTree->TreeNodes[nodeIdx].HaloVelocity[0] << ",";
+    ofs << MTree->TreeNodes[nodeIdx].HaloVelocity[1] << ",";
+    ofs << MTree->TreeNodes[nodeIdx].HaloVelocity[2] << "\t";
     ofs << std::endl;
     } // END for all nodes
   ofs << std::endl << std::endl;
-  ofs << "NUMBER OF EDGES "  << MTree.NumberOfEdges << std::endl;
-  for(int edgeIdx=0; edgeIdx < MTree.NumberOfEdges; ++edgeIdx)
+  ofs << "NUMBER OF EDGES "  << MTree->NumberOfEdges << std::endl;
+  for(int edgeIdx=0; edgeIdx < MTree->NumberOfEdges; ++edgeIdx)
     {
-    ofs << MTree.TreeEdges[edgeIdx].EndNodes[0] << ",";
-    ofs << MTree.TreeEdges[edgeIdx].EndNodes[1] << "\t";
-    ofs << MTree.TreeEdges[edgeIdx].EdgeWeight  << "\t";
-    ofs << MTree.TreeEdges[edgeIdx].EdgeEvent   << "\t";
+    ofs << MTree->TreeEdges[edgeIdx].EndNodes[0] << ",";
+    ofs << MTree->TreeEdges[edgeIdx].EndNodes[1] << "\t";
+    ofs << MTree->TreeEdges[edgeIdx].EdgeWeight  << "\t";
+    ofs << MTree->TreeEdges[edgeIdx].EdgeEvent   << "\t";
     ofs << std::endl;
     } // END for all edges
   ofs.close();

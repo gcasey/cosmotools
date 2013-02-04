@@ -102,8 +102,19 @@ int main(int argc, char **argv)
   ReadInAnalysisTimeSteps();
   PRINTLN("- Read in analysis time-steps...[DONE]");
 
+  for(int t=0; t < timesteps.size(); ++t )
+    {
+    if( rank == 0 )
+      {
+      std::cout << "Read timestep " << t;
+      std::cout << ", t=" << timesteps[t] << std::endl;
+      std::cout.flush();
+      }
+    MPI_Barrier(comm);
+    ReadHalosAtTimeStep( timesteps[t] );
+    }
   // STEP 3: Loop through all time-steps and track halos
-  HaloTracker = new cosmologytools::ForwardHaloTracker();
+/*  HaloTracker = new cosmologytools::ForwardHaloTracker();
   HaloTracker->SetCommunicator( comm );
   HaloTracker->SetMergerTreeThreshold( MergerTreeThreshold );
   for(int t=0; t < timesteps.size(); ++t)
@@ -120,7 +131,7 @@ int main(int argc, char **argv)
 
   // STEP 4: Write the tree
   HaloTracker->WriteMergerTree("MergerTree.dat");
-
+*/
   // STEP 5: Finalize
   delete HaloTracker;
 
@@ -171,6 +182,10 @@ void ReadBlock(int tstep, int blockIdx,
   // Data files store both center x,y,z and mean x,y,z. It is not clear
   // if we should choose one or the either, or both?
   // Do we need halo velocity dispression?
+  std::cout << "t=" << tstep << std::endl;
+  std::cout << "block=" << blockIdx << std::endl;
+  std::cout << "numhalos: " << size << std::endl;
+  std::cout.flush();
   int *haloTags = new int[size];
   POSVEL_T *center_x = new POSVEL_T[size];
   POSVEL_T *center_y = new POSVEL_T[size];
@@ -193,6 +208,8 @@ void ReadBlock(int tstep, int blockIdx,
     {
     int tag = haloTags[i];
     int idx = GetHaloIndex(tstep,tag);
+    assert("pre: halo index is out-of-bounds!" &&
+            (idx >= 0) && (idx < Halos.size()));
     Halos[idx].Center[0] = center_x[i];
     Halos[idx].Center[1] = center_y[i];
     Halos[idx].Center[2] = center_z[i];
@@ -245,18 +262,20 @@ void ReadHalosAtTimeStep(int tstep)
   oss.clear(); oss.str("");
 
   oss << DataPrefix << "." << tstep << ".fofproperties";
-  std::string fofPropertiesFile = oss.str();
+  std::string fofPropertiesFile = std::string( oss.str() );
 
   oss.clear(); oss.str("");
   oss << DataPrefix << "." << tstep << ".haloparticletags";
-  std::string haloParticlesFile = oss.str();
+  std::string haloParticlesFile = std::string( oss.str() );
 
   // STEP 1: Open and read headers
   cosmotk::GenericIO FofPropertiesReader(comm,fofPropertiesFile);
   FofPropertiesReader.openAndReadHeader(false);
+  PRINTLN("Opened FOF properties file!");
 
   cosmotk::GenericIO HaloParticlesReader(comm,haloParticlesFile);
   HaloParticlesReader.openAndReadHeader(false);
+  PRINTLN("Opened Halo particles file!");
   assert(
    "pre: block mismatch between fof properties file and halo particles file" &&
    FofPropertiesReader.readNRanks()==HaloParticlesReader.readNRanks());
@@ -265,6 +284,7 @@ void ReadHalosAtTimeStep(int tstep)
   int numBlocks = FofPropertiesReader.readNRanks();
   std::vector<int> assignedBlocks;
   RoundRobinAssignment(numBlocks,assignedBlocks);
+  PRINTLN("Round-robin assignment of " << numBlocks << " blocks!");
 
   // STEP 3: Loop through assigned blocks and read halos
   for(unsigned int blk=0; blk < assignedBlocks.size(); ++blk)
@@ -272,6 +292,9 @@ void ReadHalosAtTimeStep(int tstep)
     int blockIdx = assignedBlocks[ blk ];
     ReadBlock( tstep, blockIdx,FofPropertiesReader,HaloParticlesReader);
     } // END for all blocks
+
+  FofPropertiesReader.close();
+  HaloParticlesReader.close();
 }
 
 //------------------------------------------------------------------------------
