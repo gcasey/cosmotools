@@ -37,7 +37,7 @@ protected:
 public:
 #ifndef GENERICIO_NO_MPI
   GenericIO(const MPI_Comm &C, const std::string &FN)
-    : NElems(0), Comm(C), FileName(FN) {}
+    : NElems(0), Comm(C), FileName(FN), ShouldSwap(false) {}
 #else
   GenericIO(const std::string &FN)
     : NElems(0), FileName(FN) {}
@@ -113,6 +113,11 @@ protected:
   MPI_Comm Comm;
 #endif
   std::string FileName;
+  bool ShouldSwap;
+
+  // Swap endian of the given buffer pointing to a memory location of
+  // Nb bytes.
+  void SwapEndian(void *Addr, const int Nb);
 
   // This reference counting mechanism allows the the GenericIO class
   // to be used in a cursor mode. To do this, make a copy of the class
