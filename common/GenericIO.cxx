@@ -5,7 +5,6 @@
 #include <stdexcept>
 #include <algorithm>
 #include <cassert>
-#include <cstring>
 
 #ifndef GENERICIO_NO_MPI
 #include <ctime>
@@ -254,42 +253,20 @@ void GenericIO::openAndReadHeader(bool MustMatch) {
       throw runtime_error("Unable to read global header: " + FileName);
     }
 
-    if (string(GH.Magic, GH.Magic + MagicSize - 1) != Magic)
-      {
+    if (string(GH.Magic, GH.Magic + MagicSize - 1) != Magic) {
       string Error;
-      if (string(GH.Magic, GH.Magic + MagicSize - 1) == MagicInv)
-        {
-        this->ShouldSwap = true;
-        for(int i=0; i < MagicSize; ++i )
-          {
-          this->SwapEndian(&GH.Magic[i],sizeof(char));
-          }
-        this->SwapEndian(&GH.NElems,sizeof(uint64_t));
-        this->SwapEndian(&GH.Dims[0],sizeof(uint64_t));
-        this->SwapEndian(&GH.Dims[1],sizeof(uint64_t));
-        this->SwapEndian(&GH.Dims[2],sizeof(uint64_t));
-        this->SwapEndian(&GH.NVars,sizeof(uint64_t));
-        this->SwapEndian(&GH.VarsSize,sizeof(uint64_t));
-        this->SwapEndian(&GH.VarsStart,sizeof(uint64_t));
-        this->SwapEndian(&GH.NRanks,sizeof(uint64_t));
-        this->SwapEndian(&GH.RanksSize,sizeof(uint64_t));
-        this->SwapEndian(&GH.RanksStart,sizeof(uint64_t));
-        this->SwapEndian(&GH.GlobalHeaderSize,sizeof(uint64_t));
-        }
-      else
-        {
+      if (string(GH.Magic, GH.Magic + MagicSize - 1) == MagicInv) {
+        Error = "wrong endianness";
+      } else {
         Error = "invalid file-type identifier";
-        }
+      }
 
 #ifndef GENERICIO_NO_MPI
-      if( !this->ShouldSwap )
-        {
-        MPI_Bcast(&False, 1, MPI_BYTE, 0, Comm);
-        close();
-        throw runtime_error("Won't read " + FileName + ": " + Error);
-        }
+      MPI_Bcast(&False, 1, MPI_BYTE, 0, Comm);
 #endif
-      }
+      close();
+      throw runtime_error("Won't read " + FileName + ": " + Error);
+    }
 
     if (MustMatch) {
       if (NRanks != (int) GH.NRanks) {
@@ -390,28 +367,6 @@ void GenericIO::openAndReadHeader(bool MustMatch) {
                     MPI_MODE_RDONLY, MPI_INFO_NULL, &FH.get()) != MPI_SUCCESS)
     throw runtime_error("Unable to open: " + FileName);
 #endif
-}
-
-void GenericIO::SwapEndian(void *Addr, const int Nb)
-{
-  assert("pre: pointer address is NULL!" && (Addr != NULL) );
-  assert("NB > 0" && Nb > 0);
-
-  // STEP 1: Allocate buffer where the data will be swapped
-  char *Swapped = new char[Nb];
-  assert("pre: Cannot allocate swapped buffer!" && (Swapped != NULL) );
-
-  // STEP 2: Swap data
-  for(int srcOffSet=Nb-1, idx=0; srcOffSet >= 0; --srcOffSet,++idx)
-    {
-    Swapped[idx] = *( (char*)Addr+srcOffSet);
-    } // END for all bytes
-
-  // STEP 3: Copy Swapped data to input buffer
-  memcpy(Addr,(void*)Swapped,Nb);
-
-  // STEP 4:  Clean dynamically allocated memory
-  delete [] Swapped;
 }
 
 int GenericIO::readNRanks() {
@@ -576,17 +531,6 @@ void GenericIO::readData(int EffRank, bool PrintStats, bool CollStats) {
 
     if (NErrs[0] || NErrs[1])
       break;
-
-    // Swap data elements
-    if( this->ShouldSwap )
-      {
-      for(int idx=0; idx < this->NElems; ++idx )
-        {
-        size_t offSet = idx*Vars[i].Size;
-        char* dataPtr = reinterpret_cast<char *>(Vars[i].Data)+offSet;
-        this->SwapEndian(dataPtr,Vars[i].Size);
-        }
-      } // END if
   }
 
   int AllNErrs[2];
