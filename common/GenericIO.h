@@ -16,11 +16,6 @@
 
 namespace cosmotk {
 
-// Forward declrations, defined in the implementation
-struct GlobalHeader;
-struct VariableHeader;
-struct RankHeader;
-
 class GenericIO {
 protected:
   struct Variable {
@@ -119,10 +114,6 @@ protected:
 #endif
   std::string FileName;
   bool ShouldSwap;
-
-  // Swaps the data in the global header
-  void SwapGlobalHeader(GlobalHeader* GH);
-  void SwapRankHeader(RankHeader* RH);
 
   // Swap endian of the given buffer pointing to a memory location of
   // Nb bytes.

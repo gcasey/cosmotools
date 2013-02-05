@@ -204,37 +204,6 @@ void GenericIO::write() {
 }
 #endif // GENERICIO_NO_MPI
 
-void GenericIO::SwapRankHeader(RankHeader *RH)
-{
-  assert("pre: Rank header is NULL!" && (RH!=NULL) );
-  this->SwapEndian(&RH->Coords[0],sizeof(uint64_t));
-  this->SwapEndian(&RH->Coords[1],sizeof(uint64_t));
-  this->SwapEndian(&RH->Coords[2],sizeof(uint64_t));
-  this->SwapEndian(&RH->NElems,sizeof(uint64_t));
-  this->SwapEndian(&RH->Start,sizeof(uint64_t));
-}
-
-void GenericIO::SwapGlobalHeader(GlobalHeader *GH)
-{
-  assert("pre: Global header is NULL!" && (GH!=NULL) );
-  for(int i=0; i < MagicSize; ++i )
-    {
-    this->SwapEndian(&GH->Magic[i],sizeof(char));
-    }
-  this->SwapEndian(&GH->HeaderSize,sizeof(uint64_t));
-  this->SwapEndian(&GH->NElems,sizeof(uint64_t));
-  this->SwapEndian(&GH->Dims[0],sizeof(uint64_t));
-  this->SwapEndian(&GH->Dims[1],sizeof(uint64_t));
-  this->SwapEndian(&GH->Dims[2],sizeof(uint64_t));
-  this->SwapEndian(&GH->NVars,sizeof(uint64_t));
-  this->SwapEndian(&GH->VarsSize,sizeof(uint64_t));
-  this->SwapEndian(&GH->VarsStart,sizeof(uint64_t));
-  this->SwapEndian(&GH->NRanks,sizeof(uint64_t));
-  this->SwapEndian(&GH->RanksSize,sizeof(uint64_t));
-  this->SwapEndian(&GH->RanksStart,sizeof(uint64_t));
-  this->SwapEndian(&GH->GlobalHeaderSize,sizeof(uint64_t));
-}
-
 // Note: Errors from this function should be recoverable. This means that if
 // one rank throws an exception, then all ranks should.
 void GenericIO::openAndReadHeader(bool MustMatch) {
@@ -250,7 +219,6 @@ void GenericIO::openAndReadHeader(bool MustMatch) {
   NRanks = 1;
 #endif
 
-  int shouldSwapInt = 0;
   uint64_t HeaderSize;
   vector<char> Header;
 
@@ -292,7 +260,22 @@ void GenericIO::openAndReadHeader(bool MustMatch) {
       if (string(GH.Magic, GH.Magic + MagicSize - 1) == MagicInv)
         {
         this->ShouldSwap = true;
-        this->SwapGlobalHeader( &GH );
+        for(int i=0; i < MagicSize; ++i )
+          {
+          this->SwapEndian(&GH.Magic[i],sizeof(char));
+          }
+        this->SwapEndian(&GH.HeaderSize,sizeof(uint64_t));
+        this->SwapEndian(&GH.NElems,sizeof(uint64_t));
+        this->SwapEndian(&GH.Dims[0],sizeof(uint64_t));
+        this->SwapEndian(&GH.Dims[1],sizeof(uint64_t));
+        this->SwapEndian(&GH.Dims[2],sizeof(uint64_t));
+        this->SwapEndian(&GH.NVars,sizeof(uint64_t));
+        this->SwapEndian(&GH.VarsSize,sizeof(uint64_t));
+        this->SwapEndian(&GH.VarsStart,sizeof(uint64_t));
+        this->SwapEndian(&GH.NRanks,sizeof(uint64_t));
+        this->SwapEndian(&GH.RanksSize,sizeof(uint64_t));
+        this->SwapEndian(&GH.RanksStart,sizeof(uint64_t));
+        this->SwapEndian(&GH.GlobalHeaderSize,sizeof(uint64_t));
         }
       else
         {
@@ -352,7 +335,6 @@ void GenericIO::openAndReadHeader(bool MustMatch) {
 #endif
     }
 
-    shouldSwapInt = (this->ShouldSwap)?1:0;
     HeaderSize = GH.HeaderSize;
     Header.resize(HeaderSize + CRCSize, 0xFE /* poison */);
 #ifndef GENERICIO_NO_MPI
@@ -368,14 +350,6 @@ void GenericIO::openAndReadHeader(bool MustMatch) {
       close();
       throw runtime_error("Unable to read header: " + FileName);
     }
-
-    if( this->ShouldSwap )
-      {
-      for(int idx=0; idx < Header.size(); ++idx )
-        {
-        this->SwapEndian(&Header[idx],sizeof(char));
-        }
-      }
 
     uint64_t CRC = crc64_omp(&Header[0], HeaderSize + CRCSize);
     if (CRC != (uint64_t) -1) {
@@ -400,8 +374,6 @@ void GenericIO::openAndReadHeader(bool MustMatch) {
   }
 
 #ifndef GENERICIO_NO_MPI
-  MPI_Bcast(&shouldSwapInt,1,MPI_INT,0,Comm);
-  this->ShouldSwap = (shouldSwapInt==1)?true:false;
   MPI_Bcast(&HeaderSize, 1, MPI_UINT64_T, 0, Comm);
 #endif
 
@@ -412,10 +384,6 @@ void GenericIO::openAndReadHeader(bool MustMatch) {
 
   FH.getHeaderCache().clear();
   FH.getHeaderCache().swap(Header);
-  if(this->ShouldSwap)
-    {
-    this->SwapGlobalHeader((GlobalHeader *)&FH.getHeaderCache()[0]);
-    }
 
 #ifndef GENERICIO_NO_MPI
   MPI_Barrier(Comm);
@@ -481,11 +449,6 @@ size_t GenericIO::readNumElems(int EffRank) {
 
   RankHeader *RH = (RankHeader *) &FH.getHeaderCache()[GH->RanksStart +
                                                EffRank*GH->RanksSize];
-  if(this->ShouldSwap)
-    {
-    this->SwapRankHeader(RH);
-    }
-
   return (size_t) RH->NElems;
 }
 

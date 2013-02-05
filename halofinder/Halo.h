@@ -24,7 +24,6 @@ struct DIYHaloItem {
   int Tag;
   int TimeStep;
   REAL Redshift;
-  REAL HaloMass;
   POSVEL_T Center[3];
   POSVEL_T AverageVelocity[3];
 };
@@ -154,7 +153,6 @@ public:
   int Tag;                      // The tag/ID of the halo
   int TimeStep;                 // The time-step of this halo
   REAL Redshift;                // The corresponding red-shift of the halo
-  REAL HaloMass;                // The mass of the halo
   POSVEL_T Center[3];           // The halo-center
   POSVEL_T AverageVelocity[3];  // The average velocity of the halo
   std::set< ID_T > ParticleIds; // The global particle IDs of the halo

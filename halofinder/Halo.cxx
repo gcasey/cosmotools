@@ -40,7 +40,6 @@ Halo::Halo()
   this->Tag = -1;
   this->TimeStep = 0;
   this->Redshift = 0.;
-  this->HaloMass = 0.;
   this->Center[0] = this->Center[1] = this->Center[2] = 0.;
   this->AverageVelocity[0] =
   this->AverageVelocity[1] =
