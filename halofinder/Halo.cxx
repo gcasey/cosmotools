@@ -13,14 +13,16 @@ namespace cosmotk
 //-----------------------------------------------------------------------------
 void Halo::CreateDIYHaloType(DIY_Datatype *dtype)
 {
-  struct map_block_t halo_map[5] = {
+  struct map_block_t halo_map[7] = {
    {DIY_INT,     OFST, 1, offsetof(struct DIYHaloItem, Tag)},
    {DIY_INT,     OFST, 1, offsetof(struct DIYHaloItem, TimeStep)},
    {DIY_REAL_T,   OFST, 1, offsetof(struct DIYHaloItem, Redshift)},
+   {DIY_REAL_T,   OFST, 1, offsetof(struct DIYHaloItem, HaloMass)},
    {DIY_POSVEL_T, OFST, 3, offsetof(struct DIYHaloItem, Center)},
    {DIY_POSVEL_T, OFST, 3, offsetof(struct DIYHaloItem, AverageVelocity)},
+   {DIY_INT,     OFST, 1, offsetof(struct DIYHaloItem, DIYGlobalId)},
   };
-  DIY_Create_struct_datatype(0, 5, halo_map, dtype);
+  DIY_Create_struct_datatype(0, 7, halo_map, dtype);
 }
 
 //-----------------------------------------------------------------------------
@@ -40,6 +42,9 @@ Halo::Halo()
   this->Tag = -1;
   this->TimeStep = 0;
   this->Redshift = 0.;
+  this->HaloType = cosmotk::NORMALHALO;
+  this->HaloMass = 0.;
+  this->OwnerBlockId = DIY_Gid(0,0);
   this->Center[0] = this->Center[1] = this->Center[2] = 0.;
   this->AverageVelocity[0] =
   this->AverageVelocity[1] =
@@ -58,6 +63,12 @@ Halo::Halo( DIYHaloItem *halo )
         halo->AverageVelocity,
         NULL,
         0 );
+  this->HaloMass     = halo->HaloMass;
+  this->OwnerBlockId = halo->DIYGlobalId;
+  if(this->OwnerBlockId != DIY_Gid(0,0))
+    {
+    this->HaloType = cosmotk::GHOSTHALO;
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -86,6 +97,7 @@ void Halo::InitHalo(
   this->Tag      = Tag;
   this->TimeStep = TimeStep;
   this->Redshift = redShift;
+  this->HaloType = cosmotk::NORMALHALO;
   for( int i=0; i < 3; ++i )
     {
     this->Center[i]          = cntr[i];
@@ -182,12 +194,13 @@ void Halo::GetDIYHaloItem(DIYHaloItem *halo)
   halo->Tag      = this->Tag;
   halo->TimeStep = this->TimeStep;
   halo->Redshift = this->Redshift;
-
+  halo->HaloMass = this->HaloMass;
   for( int i=0; i < 3; ++i )
     {
     halo->Center[i]          = this->Center[i];
     halo->AverageVelocity[i] = this->AverageVelocity[i];
     }
+  halo->DIYGlobalId = this->OwnerBlockId;
 }
 
 //-----------------------------------------------------------------------------

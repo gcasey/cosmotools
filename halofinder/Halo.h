@@ -24,8 +24,10 @@ struct DIYHaloItem {
   int Tag;
   int TimeStep;
   REAL Redshift;
+  REAL HaloMass;
   POSVEL_T Center[3];
   POSVEL_T AverageVelocity[3];
+  int DIYGlobalId;
 };
 
 /**
@@ -42,7 +44,12 @@ struct DIYHaloParticleItem {
 namespace cosmotk
 {
 
-
+enum HaloTypeEnum {
+  NORMALHALO, // normal halos are halos that are owned by the given process
+  GHOSTHALO,  // Ghost halos are halos that exist on other processes
+  ZOMBIEHALO  // Zombie halos, are halos that existed in some previous time-step
+              // and then seized to exist
+};
 class Halo
 {
 public:
@@ -152,7 +159,11 @@ public:
 
   int Tag;                      // The tag/ID of the halo
   int TimeStep;                 // The time-step of this halo
+  int HaloType;                 // The type of the halo, see HaloTypeEnum
+  int OwnerBlockId;             // The (DIY) global block ID that owns this
+                                // halo
   REAL Redshift;                // The corresponding red-shift of the halo
+  REAL HaloMass;                // Mass of the halos
   POSVEL_T Center[3];           // The halo-center
   POSVEL_T AverageVelocity[3];  // The average velocity of the halo
   std::set< ID_T > ParticleIds; // The global particle IDs of the halo
