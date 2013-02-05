@@ -264,7 +264,6 @@ void GenericIO::openAndReadHeader(bool MustMatch) {
           {
           this->SwapEndian(&GH.Magic[i],sizeof(char));
           }
-        this->SwapEndian(&GH.HeaderSize,sizeof(uint64_t));
         this->SwapEndian(&GH.NElems,sizeof(uint64_t));
         this->SwapEndian(&GH.Dims[0],sizeof(uint64_t));
         this->SwapEndian(&GH.Dims[1],sizeof(uint64_t));
