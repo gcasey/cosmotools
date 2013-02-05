@@ -123,4 +123,5 @@ typedef uint16_t MASK_T;
 typedef std::map<std::string,std::string> Dictionary;
 typedef Dictionary::iterator DictionaryIterator;
 
+const REAL RHO_C = 2.77536627e11;
 #endif /* COSMOLOGYTOOLSDEFINITIONS_H_ */
