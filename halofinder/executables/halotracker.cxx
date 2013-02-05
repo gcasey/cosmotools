@@ -4,8 +4,12 @@
  */
 
 // C++ includes
+#include <algorithm>
+#include <cassert>
+#include <cmath>
 #include <fstream>
 #include <iostream>
+#include <iterator>
 #include <map>
 #include <sstream>
 #include <vector>
@@ -14,6 +18,7 @@
 #include <mpi.h>
 
 // CosmologyTools includes
+#include "CosmologyToolsMacros.h"
 #include "ForwardHaloTracker.h"
 #include "GenericIO.h"
 #include "Halo.h"
@@ -28,22 +33,44 @@ MPI_Comm comm = MPI_COMM_WORLD;
 cosmologytools::ForwardHaloTracker *HaloTracker;
 
 // Command line parameters
-std::string DataPrefix;
-std::string TimeStepsFile;
-int MergerTreeThreshold;
+std::string DataPrefix = "";
+std::string TimeStepsFile = "";
+std::string InDatFile = "";
+int MergerTreeThreshold = -1;
 
 std::vector< int > timesteps;
 std::vector<cosmotk::Halo> Halos;
 std::map<std::string,int> Halo2Idx;
 
+// These parameters are parsed from indat file
+struct sim_parameters_t {
+  REAL z_in;      // initial red-shift
+  REAL z_fin;     // final red-shift
+  INTEGER nsteps; // total number of time-steps
+  REAL alpha;     // scale factor
+  REAL omega_cdm;
+  REAL deut;
+  REAL hubble;
+  REAL rl;
+  INTEGER np;
+
+  // computed values
+  REAL p_in;
+  REAL p_fin;
+  REAL epsilon;
+} SimulationParameters;
+
 //==============================================================================
 // Function prototypes
 //==============================================================================
 void CartCommInit(MPI_Comm comm);
+void ParseArguments(int argc, char **argv);
+void ParseSimulationParameters();
 void RoundRobinAssignment(int numBlocks, std::vector<int> &assigned);
 void ReadInAnalysisTimeSteps();
 void ReadHalosAtTimeStep(int tstep);
 int GetHaloIndex(int tstep,int haloTag);
+REAL ComputeRedShift(const int tstep);
 void ReadBlock(int tstep, int blockIdx,
                  cosmotk::GenericIO &fofReader,
                  cosmotk::GenericIO &haloParticlesReader);
@@ -84,19 +111,15 @@ int main(int argc, char **argv)
   PRINTLN("- Initialize MPI...[DONE]");
 
   // STEP 1: Parse arguments
-  if( argc != 4 )
-    {
-    std::cerr << "Usage: mpirun -n <NumProcs> "
-              << "./halotracker <prefix> <timesteps.dat> <threshold>\n";
-    MPI_Abort(comm,-1);
-    }
-  DataPrefix = std::string(argv[1]);
-  TimeStepsFile = std::string(argv[2]);
-  MergerTreeThreshold = atoi(argv[3]);
+  ParseArguments(argc,argv);
 
-  // STEP 1: Get cartesian communicator, needed for GenericIO
+  // STEP 2: Get cartesian communicator, needed for GenericIO
   CartCommInit(comm);
   PRINTLN("- Initialize cartesian communicator...[DONE]");
+
+  // STEP 3: Parse Simulation parameters
+  ParseSimulationParameters();
+  PRINTLN("- Parse simulation parameters...[DONE]");
 
   // STEP 2: Get time-steps
   ReadInAnalysisTimeSteps();
@@ -108,16 +131,17 @@ int main(int argc, char **argv)
   HaloTracker->SetMergerTreeThreshold( MergerTreeThreshold );
   for(int t=0; t < timesteps.size(); ++t)
     {
+    REAL z = ComputeRedShift(timesteps[t]);
+    PRINTLN("t=" << timesteps[t] << " redshift=" << z);
     ReadHalosAtTimeStep( timesteps[t] );
 
-    // TODO: How do we get red-shift information ???
-    HaloTracker->TrackHalos(t,-1.0,Halos);
+    HaloTracker->TrackHalos(t,z,Halos);
+
 
     PRINTLN( "\t - Processed time-step " << t
              << "/" << timesteps.size()
              << " SIM TSTEP=" << timesteps[t] << "\n ");
     } // END for all time-step
-
   // STEP 4: Write the tree
   HaloTracker->WriteMergerTree("MergerTree.dat");
 
@@ -126,6 +150,164 @@ int main(int argc, char **argv)
 
   MPI_Finalize();
   return 0;
+}
+
+//------------------------------------------------------------------------------
+void ParseArguments(int argc, char **argv)
+{
+  for(int i=1; i < argc; ++i )
+    {
+    if(strcmp(argv[i],"--timesteps")==0)
+      {
+      TimeStepsFile = std::string(argv[++i]);
+      }
+    else if(strcmp(argv[i],"--prefix")==0)
+      {
+      DataPrefix = std::string(argv[++i]);
+      }
+    else if(strcmp(argv[i],"--indat")==0)
+      {
+      InDatFile = std::string(argv[++i]);
+      }
+    else if(strcmp(argv[i],"--threshold")==0)
+      {
+      MergerTreeThreshold = atoi(argv[++i]);
+      }
+    else
+      {
+      std::cerr << "ERROR: invalid argument " << argv[i] << std::endl;
+      MPI_Abort(comm,-1);
+      }
+    } // END for all arguments
+
+  assert("pre: specify [--prefix <prefix>] arg" && (DataPrefix != "") );
+  assert("pre: specify [--timesteps <timesteps.dat> arg" &&
+          (TimeStepsFile!="") );
+  assert("pre: specify [--indat <indat.dat>] arg" && (InDatFile != ""));
+  assert("pre: specify [--threshold <t>] arg (NOTE: t > 1)" &&
+          (MergerTreeThreshold > 1) );
+
+  MPI_Barrier(comm);
+}
+
+//------------------------------------------------------------------------------
+void ParseSimulationParameters()
+{
+  // STEP 0: Parse raw data at rank 0 and broadcast to all ranks
+  int buffSize  = 0;
+  char *buffer = NULL;
+  std::string indatfile;
+  switch( rank )
+    {
+    case 0:
+        {
+        std::ifstream ifs;
+        ifs.open(InDatFile.c_str());
+        if( !ifs.is_open() )
+          {
+          std::cerr << "ERROR: Cannot open file: " << InDatFile << std::endl;
+          std::cerr << "FILE: " << __FILE__ << std::endl;
+          std::cerr << "LINE: " << __LINE__ << std::endl;
+          MPI_Abort(comm,-1);
+          }
+        std::stringstream sstream;
+        sstream.str(std::string(""));
+        sstream << ifs.rdbuf();
+        ifs.close();
+        indatfile = sstream.str();
+
+        buffSize = static_cast<int>(indatfile.size()+1);
+        MPI_Bcast(&buffSize,1,MPI_INT,0,comm);
+        MPI_Bcast(const_cast<char*>(indatfile.c_str()),
+                    buffSize,
+                    MPI_CHAR,
+                    0,
+                    comm);
+        }
+      break;
+    default:
+      MPI_Bcast(&buffSize,1,MPI_INT,0,comm);
+
+      buffer = new char[buffSize];
+      MPI_Bcast(buffer,buffSize,MPI_CHAR,0,comm);
+      indatfile = std::string(buffer);
+      delete [] buffer;
+    } // END switch
+
+  // STEP 1: Setup <key,value> dictionary
+  Dictionary IndatParams;
+  std::string line = "";
+  std::stringstream parser(indatfile);
+  while(std::getline(parser,line))
+    {
+    // Tokenize line
+    std::istringstream iss(line);
+    std::vector<std::string> tokens;
+    std::copy(std::istream_iterator<std::string>(iss),
+              std::istream_iterator<std::string>(),
+              std::back_inserter< std::vector<std::string>  >(tokens));
+
+    if(tokens.size()==2)
+      {
+      IndatParams[ tokens[0] ] = tokens[1];
+      }
+    else
+      {
+      continue;
+      }
+    } // END while
+
+  // STEP 2: Get indat arguments
+  assert("pre: Did not find Z_IN" &&
+   (IndatParams.find("Z_IN") != IndatParams.end()));
+  assert("pre: Did not find Z_FIN" &&
+   (IndatParams.find("Z_FIN") != IndatParams.end()));
+  assert("pre: Did not find N_STEPS" &&
+   (IndatParams.find("N_STEPS") != IndatParams.end()));
+  assert("pre: Did not find ALPHA" &&
+   (IndatParams.find("ALPHA") != IndatParams.end()));
+  assert("pre: Did not find OMEGA_CDM" &&
+   (IndatParams.find("OMEGA_CDM") != IndatParams.end()));
+  assert("pre: Did not find DEUT" &&
+   (IndatParams.find("DEUT") != IndatParams.end() ) );
+  assert("pre: Did not find HUBBLE" &&
+   (IndatParams.find("HUBBLE") != IndatParams.end()));
+  assert("pre: Did not find RL" &&
+   (IndatParams.find("RL") != IndatParams.end()));
+  assert("pre: Did not find NP" &&
+   (IndatParams.find("NP") != IndatParams.end()));
+
+  SimulationParameters.z_in = std::atof(IndatParams["Z_IN"].c_str());
+  SimulationParameters.z_fin = std::atof(IndatParams["Z_FIN"].c_str());
+  SimulationParameters.nsteps = std::atoi(IndatParams["N_STEPS"].c_str());
+  SimulationParameters.alpha = std::atof(IndatParams["ALPHA"].c_str());
+  SimulationParameters.deut = std::atof(IndatParams["DEUT"].c_str());
+  SimulationParameters.hubble = std::atof(IndatParams["HUBBLE"].c_str());
+  SimulationParameters.rl = std::atof(IndatParams["RL"].c_str());
+  SimulationParameters.np = std::atoi(IndatParams["NP"].c_str());
+  SimulationParameters.omega_cdm =
+      std::atof(IndatParams["OMEGA_CDM"].c_str());
+
+  // STEP 3: Compute derived quantities
+  REAL a_in  = 1.0/(1.0+SimulationParameters.z_in);
+  REAL a_fin = 1.0/(1.0+SimulationParameters.z_fin);
+  SimulationParameters.p_in  = std::pow(a_in,SimulationParameters.alpha);
+  SimulationParameters.p_fin = std::pow(a_fin,SimulationParameters.alpha);
+  REAL delta_p = SimulationParameters.p_fin - SimulationParameters.p_in;
+  SimulationParameters.epsilon = delta_p/SimulationParameters.nsteps;
+
+  // STEP 4: synchronize with all processes
+  MPI_Barrier(comm);
+}
+
+//------------------------------------------------------------------------------
+REAL ComputeRedShift(const int tstep)
+{
+  REAL base =
+      SimulationParameters.p_in+(tstep+1)*SimulationParameters.epsilon;
+  REAL power = (-1.0)/SimulationParameters.alpha;
+  REAL z = static_cast<REAL>( pow(base,power) ) - 1.0;
+  return( z );
 }
 
 //------------------------------------------------------------------------------
