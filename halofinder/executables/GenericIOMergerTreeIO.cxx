@@ -70,6 +70,14 @@ int main(int argc, char **argv)
   CartCommInit(comm);
   PRINTLN("- Initialize cartesian communicator...[DONE]");
 
+  DIY_Init(3,NULL,1,comm);
+
+  int tot_blocks = size; // total number of blocks is equal to number of ranks
+  int nblocks    = 1;     // local blocks per process is 1
+  int given[3]   = {0, 0, 0}; // no constraints on decomposition in {x, y, z}
+  int ghost[6]   = {0, 0, 0, 0, 0, 0}; // -x, +x, -y, +y, -z, +z ghost
+  DIY_Decompose(ROUND_ROBIN_ORDER,tot_blocks,&nblocks,1,ghost,given);
+
   // STEP 2: Create MergerTree at each process
   CreateMergerTree();
   PRINTLN("- Build fake merger-tree...[DONE]");
@@ -92,6 +100,8 @@ int main(int argc, char **argv)
   // STEP 4: Read Merger-Tree
   ReadMergerTree();
   PRINTLN("- Read merger-tree...[DONE]");
+
+  DIY_Finalize();
 
   // STEP 5: Finalize MPI
   MPI_Finalize();
