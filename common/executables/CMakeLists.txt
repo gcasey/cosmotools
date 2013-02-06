@@ -2,7 +2,10 @@ include_directories(${PACKAGE_common_INCLUDE_DIRS})
 
 ## list of executables
 set(executables
+    GenericIO2Cosmo.cxx
     GenericIOInspector.cxx
+    GenericIOPrint.cxx
+    GenericIOVerify.cxx
     )
 
 ## Setup required libraries

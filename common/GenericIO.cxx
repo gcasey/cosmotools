@@ -5,13 +5,183 @@
 #include <stdexcept>
 #include <algorithm>
 #include <cassert>
+#include <cstddef>
 
 #ifndef GENERICIO_NO_MPI
 #include <ctime>
 #endif
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <errno.h>
+
+#ifdef __bgq__
+#include <spi/include/kernel/location.h>
+#include <spi/include/kernel/process.h>
+#include <firmware/include/personality.h>
+#endif
+
+#ifndef MPI_UINT64_T
+#define MPI_UINT64_T (sizeof(long) == 8 ? MPI_LONG : MPI_LONG_LONG)
+#endif
+
 using namespace std;
+
 namespace cosmotk {
+
+
+#ifndef GENERICIO_NO_MPI
+GenericFileIO_MPI::~GenericFileIO_MPI() {
+  (void) MPI_File_close(&FH);
+}
+
+void GenericFileIO_MPI::open(const std::string &FN, bool ForReading) {
+  FileName = FN;
+
+  int amode = ForReading ? MPI_MODE_RDONLY : (MPI_MODE_WRONLY | MPI_MODE_CREATE);
+  if (MPI_File_open(Comm, const_cast<char *>(FileName.c_str()), amode,
+                    MPI_INFO_NULL, &FH) != MPI_SUCCESS)
+    throw runtime_error((!ForReading ? "Unable to create the file: " :
+                                       "Unable to open the file: ") +
+                        FileName);
+}
+
+void GenericFileIO_MPI::setSize(size_t sz) {
+  if (MPI_File_set_size(FH, sz) != MPI_SUCCESS)
+    throw runtime_error("Unable to set size for file: " + FileName);
+}
+
+void GenericFileIO_MPI::read(void *buf, size_t count, off_t offset,
+                             const std::string &D) {
+  while (count > 0) {
+    MPI_Status status;
+    if (MPI_File_read_at(FH, offset, buf, count, MPI_BYTE, &status) != MPI_SUCCESS)
+      throw runtime_error("Unable to read " + D + " from file: " + FileName);
+
+    int scount;
+    (void) MPI_Get_count(&status, MPI_BYTE, &scount);
+
+    count -= scount;
+    buf = ((char *) buf) + scount;
+    offset += scount;
+  }
+}
+
+void GenericFileIO_MPI::write(const void *buf, size_t count, off_t offset,
+                              const std::string &D) {
+  while (count > 0) {
+    MPI_Status status;
+    if (MPI_File_write_at(FH, offset, (void *) buf, count, MPI_BYTE, &status) != MPI_SUCCESS)
+      throw runtime_error("Unable to write " + D + " to file: " + FileName);
+
+    int scount;
+    (void) MPI_Get_count(&status, MPI_BYTE, &scount);
+
+    count -= scount;
+    buf = ((char *) buf) + scount;
+    offset += scount;
+  }
+}
+
+void GenericFileIO_MPICollective::read(void *buf, size_t count, off_t offset,
+                             const std::string &D) {
+  int Continue = 0;
+
+  do {
+    MPI_Status status;
+    if (MPI_File_read_at_all(FH, offset, buf, count, MPI_BYTE, &status) != MPI_SUCCESS)
+      throw runtime_error("Unable to read " + D + " from file: " + FileName);
+
+    int scount;
+    (void) MPI_Get_count(&status, MPI_BYTE, &scount);
+
+    count -= scount;
+    buf = ((char *) buf) + scount;
+    offset += scount;
+
+    int NeedContinue = (count > 0);
+    MPI_Allreduce(&NeedContinue, &Continue, 1, MPI_INT, MPI_SUM, Comm);
+  } while (Continue);
+}
+
+void GenericFileIO_MPICollective::write(const void *buf, size_t count, off_t offset,
+                              const std::string &D) {
+  int Continue = 0;
+
+  do {
+    MPI_Status status;
+    if (MPI_File_write_at_all(FH, offset, (void *) buf, count, MPI_BYTE, &status) != MPI_SUCCESS)
+      throw runtime_error("Unable to write " + D + " to file: " + FileName);
+
+    int scount;
+    (void) MPI_Get_count(&status, MPI_BYTE, &scount);
+
+    count -= scount;
+    buf = ((char *) buf) + scount;
+    offset += scount;
+
+    int NeedContinue = (count > 0);
+    MPI_Allreduce(&NeedContinue, &Continue, 1, MPI_INT, MPI_SUM, Comm);
+  } while (Continue);
+}
+#endif
+
+GenericFileIO_POSIX::~GenericFileIO_POSIX() {
+  if (FH != -1) close(FH);
+}
+
+void GenericFileIO_POSIX::open(const std::string &FN, bool ForReading) {
+  FileName = FN;
+
+  int flags = ForReading ? O_RDONLY : (O_WRONLY | O_CREAT);
+  int mode = S_IRUSR | S_IWUSR | S_IRGRP;
+  if ((FH = ::open(FileName.c_str(), flags, mode)) == -1)
+    throw runtime_error((!ForReading ? "Unable to create the file: " :
+                                       "Unable to open the file: ") +
+                        FileName);
+}
+
+void GenericFileIO_POSIX::setSize(size_t sz) {
+  if (ftruncate(FH, sz) == -1)
+    throw runtime_error("Unable to set size for file: " + FileName);
+}
+
+void GenericFileIO_POSIX::read(void *buf, size_t count, off_t offset,
+                               const std::string &D) {
+  while (count > 0) {
+    ssize_t scount;
+    errno = 0;
+    if ((scount = pread(FH, buf, count, offset)) == -1) {
+      if (errno == EINTR)
+        continue;
+
+      throw runtime_error("Unable to read " + D + " from file: " + FileName);
+    }
+
+    count -= scount;
+    buf = ((char *) buf) + scount;
+    offset += scount;
+  }
+}
+
+void GenericFileIO_POSIX::write(const void *buf, size_t count, off_t offset,
+                                const std::string &D) {
+  while (count > 0) {
+    ssize_t scount;
+    errno = 0;
+    if ((scount = pwrite(FH, buf, count, offset)) == -1) {
+      if (errno == EINTR)
+        continue;
+
+      throw runtime_error("Unable to write " + D + " to file: " + FileName);
+    }
+
+    count -= scount;
+    buf = ((char *) buf) + scount;
+    offset += scount;
+  }
+}
 
 static bool isBigEndian() {
   const uint32_t one = 1;
@@ -36,11 +206,17 @@ struct GlobalHeader {
   uint64_t RanksSize;
   uint64_t RanksStart;
   uint64_t GlobalHeaderSize;
+  double   PhysOrigin[3];
+  double   PhysScale[3];
 } __attribute__((packed));
 
 enum {
-  FloatValue =  (1 << 0),
-  SignedValue = (1 << 1)
+  FloatValue          = (1 << 0),
+  SignedValue         = (1 << 1),
+  ValueIsPhysCoordX   = (1 << 2),
+  ValueIsPhysCoordY   = (1 << 3),
+  ValueIsPhysCoordZ   = (1 << 4),
+  ValueMaybePhysGhost = (1 << 5)
 };
 
 static const size_t NameSize = 256;
@@ -54,7 +230,15 @@ struct RankHeader {
   uint64_t Coords[3];
   uint64_t NElems;
   uint64_t Start;
+  uint64_t GlobalRank;
 } __attribute__((packed));
+
+unsigned GenericIO::DefaultFileIOType = FileIOPOSIX;
+int GenericIO::DefaultPartition = 0;
+
+#ifndef GENERICIO_NO_MPI
+std::size_t GenericIO::CollectiveMPIIOThreshold = 0;
+#endif
 
 #ifndef GENERICIO_NO_MPI
 // Note: writing errors are not currently recoverable (one rank may fail
@@ -68,18 +252,71 @@ void GenericIO::write() {
   MPI_Comm_rank(Comm, &Rank);
   MPI_Comm_size(Comm, &NRanks);
 
+#ifdef __bgq__
+  MPI_Barrier(Comm);
+#endif
+  MPI_Comm_split(Comm, Partition, Rank, &SplitComm);
+
+  int SplitNRanks, SplitRank;
+  MPI_Comm_rank(SplitComm, &SplitRank);
+  MPI_Comm_size(SplitComm, &SplitNRanks);
+
+  string LocalFileName;
+  if (SplitNRanks != NRanks) {
+    if (Rank == 0) {
+      // In split mode, the specified file becomes the rank map, and the real
+      // data is partitioned.
+
+      vector<int> MapRank, MapPartition;
+      MapRank.resize(NRanks);
+      for (int i = 0; i < NRanks; ++i) MapRank[i] = i;
+
+      MapPartition.resize(NRanks);
+      MPI_Gather(&Partition, 1, MPI_INT, &MapPartition[0], 1, MPI_INT, 0, Comm);
+
+      GenericIO GIO(MPI_COMM_SELF, FileName, FileIOType);
+      GIO.setNumElems(NRanks);
+      GIO.addVariable("$rank", MapRank); /* this is for use by humans; the reading
+                                            code assumes that the partitions are in
+                                            rank order */
+      GIO.addVariable("$partition", MapPartition);
+      GIO.write();
+    } else {
+      MPI_Gather(&Partition, 1, MPI_INT, 0, 0, MPI_INT, 0, Comm);
+    }
+
+    stringstream ss;
+    ss << FileName << "#" << Partition;
+    LocalFileName = ss.str();
+  } else {
+    LocalFileName = FileName;
+  }
+
   RankHeader RHLocal;
   int Dims[3], Periods[3], Coords[3];
-  MPI_Cart_get(Comm, 3, Dims, Periods, Coords);
+
+  int TopoStatus;
+  MPI_Topo_test(Comm, &TopoStatus);
+  if (TopoStatus == MPI_CART) {
+    MPI_Cart_get(Comm, 3, Dims, Periods, Coords);
+  } else {
+    Dims[0] = NRanks;
+    std::fill(Dims + 1, Dims + 3, 1);
+    std::fill(Periods, Periods + 3, 0);
+    Coords[0] = Rank;
+    std::fill(Coords + 1, Coords + 3, 0);
+  }
+
   std::copy(Coords, Coords + 3, RHLocal.Coords);
   RHLocal.NElems = NElems;
   RHLocal.Start = 0;
+  RHLocal.GlobalRank = Rank;
 
   double StartTime = MPI_Wtime();
 
-  if (Rank == 0) {
+  if (SplitRank == 0) {
     uint64_t HeaderSize = sizeof(GlobalHeader) + Vars.size()*sizeof(VariableHeader) +
-                          NRanks*sizeof(RankHeader) + CRCSize;
+                          SplitNRanks*sizeof(RankHeader) + CRCSize;
     vector<char> Header(HeaderSize, 0);
     GlobalHeader *GH = (GlobalHeader *) &Header[0];
     std::copy(Magic, Magic + MagicSize, GH->Magic);
@@ -89,10 +326,12 @@ void GenericIO::write() {
     GH->NVars = Vars.size();
     GH->VarsSize = sizeof(VariableHeader);
     GH->VarsStart = sizeof(GlobalHeader);
-    GH->NRanks = NRanks;
+    GH->NRanks = SplitNRanks;
     GH->RanksSize = sizeof(RankHeader);
     GH->RanksStart = GH->VarsStart + Vars.size()*sizeof(VariableHeader);
     GH->GlobalHeaderSize = sizeof(GlobalHeader);
+    std::copy(PhysOrigin, PhysOrigin + 3, GH->PhysOrigin);
+    std::copy(PhysScale,  PhysScale  + 3, GH->PhysScale);
 
     uint64_t RecordSize = 0;
     VariableHeader *VH = (VariableHeader *) &Header[GH->VarsStart];
@@ -103,16 +342,20 @@ void GenericIO::write() {
       std::copy(VName.begin(), VName.end(), VH->Name);
       if (Vars[i].IsFloat)  VH->Flags |= FloatValue;
       if (Vars[i].IsSigned) VH->Flags |= SignedValue;
+      if (Vars[i].IsPhysCoordX) VH->Flags |= ValueIsPhysCoordX;
+      if (Vars[i].IsPhysCoordY) VH->Flags |= ValueIsPhysCoordY;
+      if (Vars[i].IsPhysCoordZ) VH->Flags |= ValueIsPhysCoordZ;
+      if (Vars[i].MaybePhysGhost) VH->Flags |= ValueMaybePhysGhost;
       RecordSize += VH->Size = Vars[i].Size;
     }
 
     MPI_Gather(&RHLocal, sizeof(RHLocal), MPI_BYTE,
                &Header[GH->RanksStart], sizeof(RHLocal),
-               MPI_BYTE, 0, Comm);
+               MPI_BYTE, 0, SplitComm);
 
     RankHeader *RH = (RankHeader *) &Header[GH->RanksStart];
     RH->Start = HeaderSize; ++RH;
-    for (int i = 1; i < NRanks; ++i, ++RH) {
+    for (int i = 1; i < SplitNRanks; ++i, ++RH) {
       uint64_t PrevNElems = RH[-1].NElems;
       uint64_t PrevData = PrevNElems*RecordSize + CRCSize*Vars.size();
       RH->Start = RH[-1].Start + PrevData;
@@ -127,62 +370,54 @@ void GenericIO::write() {
     // Now that the starting offset has been computed, send it back to each rank.
     MPI_Scatter(&Header[GH->RanksStart], sizeof(RHLocal),
                 MPI_BYTE, &RHLocal, sizeof(RHLocal),
-                MPI_BYTE, 0, Comm);
+                MPI_BYTE, 0, SplitComm);
 
     uint64_t HeaderCRC = crc64_omp(&Header[0], HeaderSize - CRCSize);
     crc64_invert(HeaderCRC, &Header[HeaderSize - CRCSize]);
 
-    if (MPI_File_open(MPI_COMM_SELF, const_cast<char *>(FileName.c_str()),
-                      MPI_MODE_WRONLY | MPI_MODE_CREATE,
-                      MPI_INFO_NULL, &FH.get()) != MPI_SUCCESS)
-      throw runtime_error("Unable to create the output file: " + FileName);
+    if (FileIOType == FileIOMPI)
+      FH.get() = new GenericFileIO_MPI(MPI_COMM_SELF);
+    else if (FileIOType == FileIOMPICollective)
+      FH.get() = new GenericFileIO_MPICollective(MPI_COMM_SELF);
+    else
+      FH.get() = new GenericFileIO_POSIX();
 
-    MPI_File_set_size(FH.get(), FileSize);
-
-    MPI_Status status;
-    if (MPI_File_write_at(FH.get(), 0, &Header[0], HeaderSize, MPI_BYTE, &status) != MPI_SUCCESS) {
-      close();
-      throw runtime_error("Unable to write header to file: " + FileName);
-    }
+    FH.get()->open(LocalFileName);
+    FH.get()->setSize(FileSize);
+    FH.get()->write(&Header[0], HeaderSize, 0, "header");
 
     close();
   } else {
-    MPI_Gather(&RHLocal, sizeof(RHLocal), MPI_BYTE, 0, 0, MPI_BYTE, 0, Comm);
-    MPI_Scatter(0, 0, MPI_BYTE, &RHLocal, sizeof(RHLocal), MPI_BYTE, 0, Comm);
+    MPI_Gather(&RHLocal, sizeof(RHLocal), MPI_BYTE, 0, 0, MPI_BYTE, 0, SplitComm);
+    MPI_Scatter(0, 0, MPI_BYTE, &RHLocal, sizeof(RHLocal), MPI_BYTE, 0, SplitComm);
   }
 
-  MPI_Barrier(Comm);
+  MPI_Barrier(SplitComm);
 
-  if (MPI_File_open(Comm, const_cast<char *>(FileName.c_str()), MPI_MODE_WRONLY,
-      MPI_INFO_NULL, &FH.get()) != MPI_SUCCESS)
-    throw runtime_error("Unable to create the output file: " + FileName);
+  if (FileIOType == FileIOMPI)
+    FH.get() = new GenericFileIO_MPI(SplitComm);
+  else if (FileIOType == FileIOMPICollective)
+    FH.get() = new GenericFileIO_MPICollective(SplitComm);
+  else
+    FH.get() = new GenericFileIO_POSIX();
+
+  FH.get()->open(LocalFileName);
 
   uint64_t Offset = RHLocal.Start;
   for (size_t i = 0; i < Vars.size(); ++i) {
-    MPI_Status status;
     uint64_t WriteSize = NElems*Vars[i].Size;
     uint64_t CRC = crc64_omp(Vars[i].Data, WriteSize);
     char *CRCLoc = Vars[i].HasExtraSpace ?
       ((char *) Vars[i].Data) + WriteSize : (char *) &CRC;
     crc64_invert(CRC, CRCLoc);
 
-    int e;
     if (Vars[i].HasExtraSpace) {
-      e = MPI_File_write_at(FH.get(), Offset, Vars[i].Data, WriteSize + CRCSize,
-                            MPI_BYTE, &status);
+      FH.get()->write(Vars[i].Data, WriteSize + CRCSize, Offset, Vars[i].Name + " with CRC");
     } else {
-      e =  MPI_File_write_at(FH.get(), Offset, Vars[i].Data, WriteSize,
-                             MPI_BYTE, &status);
-      if (e == MPI_SUCCESS)
-        e = MPI_File_write_at(FH.get(), Offset + WriteSize, CRCLoc, CRCSize,
-                              MPI_BYTE, &status);
+      FH.get()->write(Vars[i].Data, WriteSize, Offset, Vars[i].Name);
+      FH.get()->write(CRCLoc, CRCSize, Offset + WriteSize, Vars[i].Name + " CRC");
     }
 
-    if (e != MPI_SUCCESS) {
-      close();
-      throw runtime_error("Unable to write variable: " + Vars[i].Name +
-                              " to file: " + FileName);
-    }
     Offset += WriteSize + CRCSize;
   }
 
@@ -194,18 +429,26 @@ void GenericIO::write() {
   double MaxTotalTime;
   MPI_Reduce(&TotalTime, &MaxTotalTime, 1, MPI_DOUBLE, MPI_MAX, 0, Comm);
 
+  if (SplitNRanks != NRanks) {
+    uint64_t ContribFileSize = (SplitRank == 0) ? FileSize : 0;
+    MPI_Reduce(&ContribFileSize, &FileSize, 1, MPI_UINT64_T, MPI_SUM, 0, Comm);
+  }
+
   if (Rank == 0) {
     double Rate = ((double) FileSize) / MaxTotalTime / (1024.*1024.);
     cout << "Wrote " << Vars.size() << " variables to " << FileName <<
             " (" << FileSize << " bytes) in " << MaxTotalTime << "s: " <<
             Rate << " MB/s" << endl;
   }
+
+  MPI_Comm_free(&SplitComm);
+  SplitComm = MPI_COMM_NULL;
 }
 #endif // GENERICIO_NO_MPI
 
 // Note: Errors from this function should be recoverable. This means that if
 // one rank throws an exception, then all ranks should.
-void GenericIO::openAndReadHeader(bool MustMatch) {
+void GenericIO::openAndReadHeader(bool MustMatch, int EffRank, bool CheckPartMap) {
   const char *Magic = isBigEndian() ? MagicBE : MagicLE;
   const char *MagicInv = isBigEndian() ? MagicLE : MagicBE;
 
@@ -218,158 +461,216 @@ void GenericIO::openAndReadHeader(bool MustMatch) {
   NRanks = 1;
 #endif
 
+  if (EffRank == -1)
+    EffRank = Rank;
+
+  if (RankMap.empty() && CheckPartMap) {
+    // First, check to see if the file is a rank map.
+    unsigned long RanksInMap = 0;
+    if (Rank == 0) {
+      try {
+#ifndef GENERICIO_NO_MPI
+        GenericIO GIO(MPI_COMM_SELF, FileName, FileIOType);
+#else
+        GenericIO GIO(FileName, FileIOType);
+#endif
+        GIO.openAndReadHeader(true, 0, false);
+        RanksInMap = GIO.readNumElems();
+
+        RankMap.resize(RanksInMap + GIO.requestedExtraSpace()/sizeof(int));
+        GIO.addVariable("$partition", RankMap, true);
+
+        GIO.readData(0, false);
+        RankMap.resize(RanksInMap);
+      } catch (...) {
+        RankMap.clear();
+        RanksInMap = 0;
+      }
+    }
+
+#ifndef GENERICIO_NO_MPI
+    MPI_Bcast(&RanksInMap, 1, MPI_UNSIGNED_LONG, 0, Comm);
+    if (RanksInMap > 0) {
+      RankMap.resize(RanksInMap);
+      MPI_Bcast(&RankMap[0], RanksInMap, MPI_INT, 0, Comm);
+    }
+#endif
+  }
+
+  string LocalFileName;
+  if (RankMap.empty()) {
+    LocalFileName = FileName;
+#ifndef GENERICIO_NO_MPI
+    MPI_Comm_dup(Comm, &SplitComm);
+#endif
+  } else {
+    stringstream ss;
+    ss << FileName << "#" << RankMap[EffRank];
+    LocalFileName = ss.str();
+#ifndef GENERICIO_NO_MPI
+#ifdef __bgq__
+    MPI_Barrier(Comm);
+#endif
+    MPI_Comm_split(Comm, RankMap[EffRank], Rank, &SplitComm);
+#endif
+  }
+
+  if (LocalFileName == OpenFileName)
+    return;
+  FH.close();
+
+  int SplitNRanks, SplitRank;
+#ifndef GENERICIO_NO_MPI
+  MPI_Comm_rank(SplitComm, &SplitRank);
+  MPI_Comm_size(SplitComm, &SplitNRanks);
+#else
+  SplitRank = 0;
+  SplitNRanks = 1;
+#endif
+
   uint64_t HeaderSize;
   vector<char> Header;
 
-  if (Rank == 0) {
+  if (SplitRank == 0) {
+#ifndef GENERICIO_NO_MPI
+    if (FileIOType == FileIOMPI)
+      FH.get() = new GenericFileIO_MPI(MPI_COMM_SELF);
+    else if (FileIOType == FileIOMPICollective)
+      FH.get() = new GenericFileIO_MPICollective(MPI_COMM_SELF);
+    else
+#endif
+      FH.get() = new GenericFileIO_POSIX();
+
 #ifndef GENERICIO_NO_MPI
     char True = 1, False = 0;
-    if (MPI_File_open(MPI_COMM_SELF, const_cast<char *>(FileName.c_str()),
-                      MPI_MODE_RDONLY, MPI_INFO_NULL, &FH.get()) != MPI_SUCCESS)
-#else
-    FH.get().open(FileName.c_str(), ios_base::in);
-    if (!FH.get())
 #endif
-    {
-#ifndef GENERICIO_NO_MPI
-      MPI_Bcast(&False, 1, MPI_BYTE, 0, Comm);
-#endif
-      throw runtime_error("Unable to open: " + FileName);
-    }
 
-    GlobalHeader GH;
-#ifndef GENERICIO_NO_MPI
-    MPI_Status status;
-    if (MPI_File_read_at(FH.get(), 0, &GH, sizeof(GlobalHeader),
-        MPI_BYTE, &status) != MPI_SUCCESS)
-#else
-    if (!FH.get().seekg(0) || !FH.get().read((char *) &GH, sizeof(GlobalHeader)))
-#endif
-    {
-#ifndef GENERICIO_NO_MPI
-      MPI_Bcast(&False, 1, MPI_BYTE, 0, Comm);
-#endif
-      close();
-      throw runtime_error("Unable to read global header: " + FileName);
-    }
+    try {
+      FH.get()->open(LocalFileName, true);
 
-    if (string(GH.Magic, GH.Magic + MagicSize - 1) != Magic) {
-      string Error;
-      if (string(GH.Magic, GH.Magic + MagicSize - 1) == MagicInv) {
-        Error = "wrong endianness";
-      } else {
-        Error = "invalid file-type identifier";
-      }
+      GlobalHeader GH;
+      FH.get()->read(&GH, sizeof(GlobalHeader), 0, "global header");
 
-#ifndef GENERICIO_NO_MPI
-      MPI_Bcast(&False, 1, MPI_BYTE, 0, Comm);
-#endif
-      close();
-      throw runtime_error("Won't read " + FileName + ": " + Error);
-    }
-
-    if (MustMatch) {
-      if (NRanks != (int) GH.NRanks) {
-        stringstream ss;
-        ss << "Won't read " << FileName << ": communicator-size mismatch: " <<
-              "current: " << NRanks << ", file: " << GH.NRanks;
-#ifndef GENERICIO_NO_MPI
-        MPI_Bcast(&False, 1, MPI_BYTE, 0, Comm);
-#endif
-        close();
-        throw runtime_error(ss.str());
-      }
-
-#ifndef GENERICIO_NO_MPI
-      int TopoStatus;
-      MPI_Topo_test(Comm, &TopoStatus);
-      if (TopoStatus == MPI_CART) {
-        int Dims[3], Periods[3], Coords[3];
-        MPI_Cart_get(Comm, 3, Dims, Periods, Coords);
-
-        bool DimsMatch = true;
-        for (int i = 0; i < 3; ++i) {
-          if ((uint64_t) Dims[i] != GH.Dims[i]) {
-            DimsMatch = false;
-            break;
-          }
+      if (string(GH.Magic, GH.Magic + MagicSize - 1) != Magic) {
+        string Error;
+        if (string(GH.Magic, GH.Magic + MagicSize - 1) == MagicInv) {
+          Error = "wrong endianness";
+        } else {
+          Error = "invalid file-type identifier";
         }
+        throw runtime_error("Won't read " + LocalFileName + ": " + Error);
+      }
 
-        if (!DimsMatch) {
+      if (MustMatch) {
+        if (SplitNRanks != (int) GH.NRanks) {
           stringstream ss;
-          ss << "Won't read " << FileName <<
-                ": communicator-decomposition mismatch: " <<
-                "current: " << Dims[0] << "x" << Dims[1] << "x" << Dims[2] <<
-                ", file: " << GH.Dims[0] << "x" << GH.Dims[1] << "x" <<
-                GH.Dims[2];
-          MPI_Bcast(&False, 1, MPI_BYTE, 0, Comm);
-
-          close();
+          ss << "Won't read " << LocalFileName << ": communicator-size mismatch: " <<
+                "current: " << SplitNRanks << ", file: " << GH.NRanks;
           throw runtime_error(ss.str());
         }
+
+#ifndef GENERICIO_NO_MPI
+        int TopoStatus;
+        MPI_Topo_test(Comm, &TopoStatus);
+        if (TopoStatus == MPI_CART) {
+          int Dims[3], Periods[3], Coords[3];
+          MPI_Cart_get(Comm, 3, Dims, Periods, Coords);
+
+          bool DimsMatch = true;
+          for (int i = 0; i < 3; ++i) {
+            if ((uint64_t) Dims[i] != GH.Dims[i]) {
+              DimsMatch = false;
+              break;
+            }
+          }
+
+          if (!DimsMatch) {
+            stringstream ss;
+            ss << "Won't read " << LocalFileName <<
+                  ": communicator-decomposition mismatch: " <<
+                  "current: " << Dims[0] << "x" << Dims[1] << "x" << Dims[2] <<
+                  ", file: " << GH.Dims[0] << "x" << GH.Dims[1] << "x" <<
+                  GH.Dims[2];
+            throw runtime_error(ss.str());
+          }
+        }
+#endif
       }
-#endif
-    }
 
-    HeaderSize = GH.HeaderSize;
-    Header.resize(HeaderSize + CRCSize, 0xFE /* poison */);
+      HeaderSize = GH.HeaderSize;
+      Header.resize(HeaderSize + CRCSize, 0xFE /* poison */);
+      FH.get()->read(&Header[0], HeaderSize + CRCSize, 0, "header");
+
+      uint64_t CRC = crc64_omp(&Header[0], HeaderSize + CRCSize);
+      if (CRC != (uint64_t) -1) {
+        throw runtime_error("Header CRC check failed: " + LocalFileName);
+      }
+
 #ifndef GENERICIO_NO_MPI
-    if (MPI_File_read_at(FH.get(), 0, &Header[0], HeaderSize + CRCSize,
-        MPI_BYTE, &status) != MPI_SUCCESS)
-#else
-    if (!FH.get().seekg(0) || !FH.get().read((char *) &Header[0], HeaderSize + CRCSize))
+      close();
+      MPI_Bcast(&True, 1, MPI_BYTE, 0, SplitComm);
 #endif
-    {
+    } catch (...) {
 #ifndef GENERICIO_NO_MPI
-      MPI_Bcast(&False, 1, MPI_BYTE, 0, Comm);
+      MPI_Bcast(&False, 1, MPI_BYTE, 0, SplitComm);
 #endif
       close();
-      throw runtime_error("Unable to read header: " + FileName);
+      throw;
     }
-
-    uint64_t CRC = crc64_omp(&Header[0], HeaderSize + CRCSize);
-    if (CRC != (uint64_t) -1) {
-#ifndef GENERICIO_NO_MPI
-      MPI_Bcast(&False, 1, MPI_BYTE, 0, Comm);
-#endif
-      close();
-      throw runtime_error("Header CRC check failed: " + FileName);
-    }
-
-#ifndef GENERICIO_NO_MPI
-    close();
-    MPI_Bcast(&True, 1, MPI_BYTE, 0, Comm);
-#endif
   } else {
 #ifndef GENERICIO_NO_MPI
     char Okay;
-    MPI_Bcast(&Okay, 1, MPI_BYTE, 0, Comm);
+    MPI_Bcast(&Okay, 1, MPI_BYTE, 0, SplitComm);
     if (!Okay)
       throw runtime_error("Failure broadcast from rank 0");
 #endif
   }
 
 #ifndef GENERICIO_NO_MPI
-  MPI_Bcast(&HeaderSize, 1, MPI_UINT64_T, 0, Comm);
+  MPI_Bcast(&HeaderSize, 1, MPI_UINT64_T, 0, SplitComm);
 #endif
 
   Header.resize(HeaderSize, 0xFD /* poison */);
 #ifndef GENERICIO_NO_MPI
-  MPI_Bcast(&Header[0], HeaderSize, MPI_BYTE, 0, Comm);
+  MPI_Bcast(&Header[0], HeaderSize, MPI_BYTE, 0, SplitComm);
 #endif
 
   FH.getHeaderCache().clear();
   FH.getHeaderCache().swap(Header);
+  OpenFileName = LocalFileName;
 
 #ifndef GENERICIO_NO_MPI
   MPI_Barrier(Comm);
-  if (MPI_File_open(Comm, const_cast<char *>(FileName.c_str()),
-                    MPI_MODE_RDONLY, MPI_INFO_NULL, &FH.get()) != MPI_SUCCESS)
-    throw runtime_error("Unable to open: " + FileName);
+
+  if (FileIOType == FileIOMPI)
+    FH.get() = new GenericFileIO_MPI(SplitComm);
+  else if (FileIOType == FileIOMPICollective)
+    FH.get() = new GenericFileIO_MPICollective(SplitComm);
+  else
+    FH.get() = new GenericFileIO_POSIX();
+
+  int OpenErr = 0, TotOpenErr;
+  try {
+    FH.get()->open(LocalFileName, true);
+    MPI_Allreduce(&OpenErr, &TotOpenErr, 1, MPI_INT, MPI_SUM, Comm);
+  } catch (...) {
+    OpenErr = 1;
+    MPI_Allreduce(&OpenErr, &TotOpenErr, 1, MPI_INT, MPI_SUM, Comm);
+    throw;
+  }
+
+  if (TotOpenErr > 0) {
+    stringstream ss;
+    ss << TotOpenErr << " ranks failed to open file: " << LocalFileName;
+    throw runtime_error(ss.str());
+  }
 #endif
 }
 
 int GenericIO::readNRanks() {
+  if (RankMap.size())
+    return RankMap.size();
+
   assert(FH.getHeaderCache().size() && "HeaderCache must not be empty");
   GlobalHeader *GH = (GlobalHeader *) &FH.getHeaderCache()[0];
   return (int) GH->NRanks;
@@ -382,14 +683,53 @@ void GenericIO::readDims(int Dims[3]) {
 }
 
 uint64_t GenericIO::readTotalNumElems() {
+  if (RankMap.size())
+    return (uint64_t) -1;
+
   assert(FH.getHeaderCache().size() && "HeaderCache must not be empty");
   GlobalHeader *GH = (GlobalHeader *) &FH.getHeaderCache()[0];
   return GH->NElems;
 }
 
-size_t GenericIO::readNumElems(int EffRank) {
+void GenericIO::readPhysOrigin(double Origin[3]) {
   assert(FH.getHeaderCache().size() && "HeaderCache must not be empty");
+  GlobalHeader *GH = (GlobalHeader *) &FH.getHeaderCache()[0];
+  if (offsetof(GlobalHeader, PhysOrigin) >= GH->GlobalHeaderSize) {
+    std::fill(Origin, Origin + 3, 0.0);
+    return;
+  }
 
+  std::copy(GH->PhysOrigin, GH->PhysOrigin + 3, Origin);
+}
+
+void GenericIO::readPhysScale(double Scale[3]) {
+  assert(FH.getHeaderCache().size() && "HeaderCache must not be empty");
+  GlobalHeader *GH = (GlobalHeader *) &FH.getHeaderCache()[0];
+  if (offsetof(GlobalHeader, PhysScale) >= GH->GlobalHeaderSize) {
+    std::fill(Scale, Scale + 3, 0.0);
+    return;
+  }
+
+  std::copy(GH->PhysScale, GH->PhysScale + 3, Scale);
+}
+
+static size_t getRankIndex(int EffRank, GlobalHeader *GH,
+                           vector<int> &RankMap, vector<char> &HeaderCache) {
+  if (offsetof(RankHeader, GlobalRank) >= GH->RanksSize || RankMap.empty())
+    return EffRank;
+
+  for (size_t i = 0; i < GH->NRanks; ++i) {
+    RankHeader *RH = (RankHeader *) &HeaderCache[GH->RanksStart +
+                                                 i*GH->RanksSize];
+    if ((int) RH->GlobalRank == EffRank)
+      return i;
+  }
+
+  assert(false && "Index requested of an invalid rank");
+  return (size_t) -1;
+}
+
+int GenericIO::readGlobalRankNumber(int EffRank) {
   if (EffRank == -1) {
 #ifndef GENERICIO_NO_MPI
     MPI_Comm_rank(Comm, &EffRank);
@@ -398,17 +738,48 @@ size_t GenericIO::readNumElems(int EffRank) {
 #endif
   }
 
+  openAndReadHeader(false, EffRank, false);
+
+  assert(FH.getHeaderCache().size() && "HeaderCache must not be empty");
+
   GlobalHeader *GH = (GlobalHeader *) &FH.getHeaderCache()[0];
-  assert(EffRank <= (int) GH->NRanks && "Invalid rank specified");
+  size_t RankIndex = getRankIndex(EffRank, GH, RankMap, FH.getHeaderCache());
+
+  assert(RankIndex < GH->NRanks && "Invalid rank specified");
+
+  if (offsetof(RankHeader, GlobalRank) >= GH->RanksSize)
+    return EffRank;
 
   RankHeader *RH = (RankHeader *) &FH.getHeaderCache()[GH->RanksStart +
-                                               EffRank*GH->RanksSize];
+                                               RankIndex*GH->RanksSize];
+
+  return (int) RH->GlobalRank;
+}
+
+size_t GenericIO::readNumElems(int EffRank) {
+  if (EffRank == -1) {
+#ifndef GENERICIO_NO_MPI
+    MPI_Comm_rank(Comm, &EffRank);
+#else
+    EffRank = 0;
+#endif
+  }
+
+  openAndReadHeader(false, EffRank, false);
+
+  assert(FH.getHeaderCache().size() && "HeaderCache must not be empty");
+
+  GlobalHeader *GH = (GlobalHeader *) &FH.getHeaderCache()[0];
+  size_t RankIndex = getRankIndex(EffRank, GH, RankMap, FH.getHeaderCache());
+
+  assert(RankIndex < GH->NRanks && "Invalid rank specified");
+
+  RankHeader *RH = (RankHeader *) &FH.getHeaderCache()[GH->RanksStart +
+                                               RankIndex*GH->RanksSize];
   return (size_t) RH->NElems;
 }
 
 void GenericIO::readCoords(int Coords[3], int EffRank) {
-  assert(FH.getHeaderCache().size() && "HeaderCache must not be empty");
-
   if (EffRank == -1) {
 #ifndef GENERICIO_NO_MPI
     MPI_Comm_rank(Comm, &EffRank);
@@ -417,11 +788,17 @@ void GenericIO::readCoords(int Coords[3], int EffRank) {
 #endif
   }
 
+  openAndReadHeader(false, EffRank, false);
+
+  assert(FH.getHeaderCache().size() && "HeaderCache must not be empty");
+
   GlobalHeader *GH = (GlobalHeader *) &FH.getHeaderCache()[0];
-  assert(EffRank <= (int) GH->NRanks && "Invalid rank specified");
+  size_t RankIndex = getRankIndex(EffRank, GH, RankMap, FH.getHeaderCache());
+
+  assert(RankIndex < GH->NRanks && "Invalid rank specified");
 
   RankHeader *RH = (RankHeader *) &FH.getHeaderCache()[GH->RanksStart +
-                                               EffRank*GH->RanksSize];
+                                               RankIndex*GH->RanksSize];
 
   std::copy(RH->Coords, RH->Coords + 3, Coords);
 }
@@ -429,8 +806,6 @@ void GenericIO::readCoords(int Coords[3], int EffRank) {
 // Note: Errors from this function should be recoverable. This means that if
 // one rank throws an exception, then all ranks should.
 void GenericIO::readData(int EffRank, bool PrintStats, bool CollStats) {
-  assert(FH.getHeaderCache().size() && "HeaderCache must not be empty");
-
   int Rank;
 #ifndef GENERICIO_NO_MPI
   MPI_Comm_rank(Comm, &Rank);
@@ -438,14 +813,20 @@ void GenericIO::readData(int EffRank, bool PrintStats, bool CollStats) {
   Rank = 0;
 #endif
 
+  openAndReadHeader(false, EffRank, false);
+
+  assert(FH.getHeaderCache().size() && "HeaderCache must not be empty");
+
   if (EffRank == -1)
     EffRank = Rank;
 
   GlobalHeader *GH = (GlobalHeader *) &FH.getHeaderCache()[0];
-  assert(EffRank <= (int) GH->NRanks && "Invalid rank specified");
+  size_t RankIndex = getRankIndex(EffRank, GH, RankMap, FH.getHeaderCache());
+
+  assert(RankIndex < GH->NRanks && "Invalid rank specified");
 
   RankHeader *RH = (RankHeader *) &FH.getHeaderCache()[GH->RanksStart +
-                                               EffRank*GH->RanksSize];
+                                               RankIndex*GH->RanksSize];
 
   uint64_t TotalReadSize = 0;
 #ifndef GENERICIO_NO_MPI
@@ -479,14 +860,14 @@ void GenericIO::readData(int EffRank, bool PrintStats, bool CollStats) {
       if (VH->Size != Vars[i].Size) {
         stringstream ss;
         ss << "Size mismatch for variable " << Vars[i].Name <<
-              " in: " << FileName << ": current: " << Vars[i].Size <<
+              " in: " << OpenFileName << ": current: " << Vars[i].Size <<
               ", file: " << VH->Size;
         throw runtime_error(ss.str());
       } else if (IsFloat != Vars[i].IsFloat) {
         string Float("float"), Int("integer");
         stringstream ss;
         ss << "Type mismatch for variable " << Vars[i].Name <<
-              " in: " << FileName << ": current: " <<
+              " in: " << OpenFileName << ": current: " <<
               (Vars[i].IsFloat ? Float : Int) <<
               ", file: " << (IsFloat ? Float : Int);
         throw runtime_error(ss.str());
@@ -494,7 +875,7 @@ void GenericIO::readData(int EffRank, bool PrintStats, bool CollStats) {
         string Signed("signed"), Uns("unsigned");
         stringstream ss;
         ss << "Type mismatch for variable " << Vars[i].Name <<
-              " in: " << FileName << ": current: " <<
+              " in: " << OpenFileName << ": current: " <<
               (Vars[i].IsSigned ? Signed : Uns) <<
               ", file: " << (IsSigned ? Signed : Uns);
         throw runtime_error(ss.str());
@@ -502,15 +883,9 @@ void GenericIO::readData(int EffRank, bool PrintStats, bool CollStats) {
 
       assert(Vars[i].HasExtraSpace && "Extra space required for reading");
 
-#ifndef GENERICIO_NO_MPI
-      MPI_Status status;
-      if (MPI_File_read_at(FH.get(), Offset, Vars[i].Data, ReadSize,
-                           MPI_BYTE, &status) != MPI_SUCCESS)
-#else
-
-      if (!FH.get().seekg(Offset) || !FH.get().read((char *) Vars[i].Data, ReadSize))
-#endif
-      {
+      try {
+        FH.get()->read(Vars[i].Data, ReadSize, Offset, Vars[i].Name);
+      } catch (...) {
         ++NErrs[0];
         break;
       }
@@ -527,7 +902,7 @@ void GenericIO::readData(int EffRank, bool PrintStats, bool CollStats) {
 
     if (!VarFound)
       throw runtime_error("Variable " + Vars[i].Name +
-                          " not found in: " + FileName);
+                          " not found in: " + OpenFileName);
 
     if (NErrs[0] || NErrs[1])
       break;
@@ -535,14 +910,7 @@ void GenericIO::readData(int EffRank, bool PrintStats, bool CollStats) {
 
   int AllNErrs[2];
 #ifndef GENERICIO_NO_MPI
-  if(CollStats)
-    {
-    MPI_Allreduce(&NErrs, &AllNErrs, 2, MPI_INT, MPI_SUM, Comm);
-    }
-  else
-    {
-    AllNErrs[0] = NErrs[0]; AllNErrs[1] = NErrs[1];
-    }
+  MPI_Allreduce(NErrs, AllNErrs, 2, MPI_INT, MPI_SUM, Comm);
 #else
   AllNErrs[0] = NErrs[0]; AllNErrs[1] = NErrs[1];
 #endif
@@ -550,9 +918,13 @@ void GenericIO::readData(int EffRank, bool PrintStats, bool CollStats) {
   if (AllNErrs[0] > 0 || AllNErrs[1] > 0) {
     stringstream ss;
     ss << "Experienced " << AllNErrs[0] << " I/O error(s) and " <<
-          AllNErrs[1] << " CRC error(s) reading: " << FileName;
+          AllNErrs[1] << " CRC error(s) reading: " << OpenFileName;
     throw runtime_error(ss.str());
   }
+
+#ifndef GENERICIO_NO_MPI
+  MPI_Barrier(Comm);
+#endif
 
 #ifndef GENERICIO_NO_MPI
   double EndTime = MPI_Wtime();
@@ -563,23 +935,19 @@ void GenericIO::readData(int EffRank, bool PrintStats, bool CollStats) {
   double TotalTime = EndTime - StartTime;
   double MaxTotalTime;
 #ifndef GENERICIO_NO_MPI
-  if(CollStats)
-    {
+  if (CollStats)
     MPI_Reduce(&TotalTime, &MaxTotalTime, 1, MPI_DOUBLE, MPI_MAX, 0, Comm);
-    }
-#else
-  MaxTotalTime = TotalTime;
+  else
 #endif
+  MaxTotalTime = TotalTime;
 
   uint64_t AllTotalReadSize;
 #ifndef GENERICIO_NO_MPI
-  if(CollStats)
-    {
+  if (CollStats)
     MPI_Reduce(&TotalReadSize, &AllTotalReadSize, 1, MPI_UINT64_T, MPI_SUM, 0, Comm);
-    }
-#else
-  AllTotalReadSize = TotalReadSize;
+  else
 #endif
+  AllTotalReadSize = TotalReadSize;
 
   if (Rank == 0 && PrintStats) {
     double Rate = ((double) AllTotalReadSize) / MaxTotalTime / (1024.*1024.);
@@ -604,9 +972,97 @@ void GenericIO::getVariableInfo(vector<VariableInfo> &VI) {
       VName.resize(VNameNull);
 
     bool IsFloat = (bool) (VH->Flags & FloatValue),
-         IsSigned = (bool) (VH->Flags & SignedValue);
-    VI.push_back(VariableInfo(VName, (size_t) VH->Size, IsFloat, IsSigned));
+         IsSigned = (bool) (VH->Flags & SignedValue),
+         IsPhysCoordX = (bool) (VH->Flags & ValueIsPhysCoordX),
+         IsPhysCoordY = (bool) (VH->Flags & ValueIsPhysCoordY),
+         IsPhysCoordZ = (bool) (VH->Flags & ValueIsPhysCoordZ),
+         MaybePhysGhost = (bool) (VH->Flags & ValueMaybePhysGhost);
+    VI.push_back(VariableInfo(VName, (size_t) VH->Size, IsFloat, IsSigned,
+                              IsPhysCoordX, IsPhysCoordY, IsPhysCoordZ,
+                              MaybePhysGhost));
   }
 }
 
+void GenericIO::setNaturalDefaultPartition() {
+#ifdef __bgq__
+  Personality_t pers;
+  Kernel_GetPersonality(&pers, sizeof(pers));
+
+  // Nodes in an ION Partition
+  int SPLIT_A = 2;
+  int SPLIT_B = 2;
+  int SPLIT_C = 4;
+  int SPLIT_D = 4;
+  int SPLIT_E = 2;
+
+  int Anodes, Bnodes, Cnodes, Dnodes, Enodes;
+  int Acoord, Bcoord, Ccoord, Dcoord, Ecoord;
+  int A_color, B_color, C_color, D_color, E_color;
+  int A_blocks, B_blocks, C_blocks, D_blocks, E_blocks;
+  uint32_t id_on_node;
+  int ranks_per_node, color;
+
+  Anodes = pers.Network_Config.Anodes;
+  Acoord = pers.Network_Config.Acoord;
+
+  Bnodes = pers.Network_Config.Bnodes;
+  Bcoord = pers.Network_Config.Bcoord;
+
+  Cnodes = pers.Network_Config.Cnodes;
+  Ccoord = pers.Network_Config.Ccoord;
+
+  Dnodes = pers.Network_Config.Dnodes;
+  Dcoord = pers.Network_Config.Dcoord;
+
+  Enodes = pers.Network_Config.Enodes;
+  Ecoord = pers.Network_Config.Ecoord;
+
+  A_color  = Acoord /  SPLIT_A;
+  B_color  = Bcoord /  SPLIT_B;
+  C_color  = Ccoord /  SPLIT_C;
+  D_color  = Dcoord /  SPLIT_D;
+  E_color  = Ecoord /  SPLIT_E;
+
+  // Number of blocks
+  A_blocks = Anodes / SPLIT_A;
+  B_blocks = Bnodes / SPLIT_B;
+  C_blocks = Cnodes / SPLIT_C;
+  D_blocks = Dnodes / SPLIT_D;
+  E_blocks = Enodes / SPLIT_E;
+
+  color = (A_color * (B_blocks * C_blocks * D_blocks * E_blocks))
+    + (B_color * (C_blocks * D_blocks * E_blocks))
+    + (C_color * ( D_blocks * E_blocks))
+    + (D_color * ( E_blocks))
+    + E_color;
+
+  DefaultPartition = color;
+#else
+#ifndef GENERICIO_NO_MPI
+  // This is a heuristic to generate ~256 partitions based on the
+  // names of the nodes.
+  char Name[MPI_MAX_PROCESSOR_NAME];
+  int Len = 0;
+
+  MPI_Get_processor_name(Name, &Len);
+  unsigned char color = 0;
+  for (int i = 0; i < Len; ++i)
+    color += (unsigned char) Name[i];
+
+  DefaultPartition = color;
+
+  // This is for debugging.
+  const char *EnvStr = getenv("GENERICIO_RANK_PARTITIONS");
+  if (EnvStr) {
+    int Mod = atoi(EnvStr);
+    if (Mod > 0) {
+      int Rank;
+      MPI_Comm_rank(MPI_COMM_WORLD, &Rank);
+      DefaultPartition += Rank % Mod;
+    }
+  }
+#endif
+#endif
 }
+
+} /* END namespace cosmotk */
