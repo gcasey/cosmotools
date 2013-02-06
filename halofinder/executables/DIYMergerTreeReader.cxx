@@ -55,13 +55,14 @@ void ReadData();
 
 void* create_datatype(int did, int lid, int *hdr, DIY_Datatype *dtype)
 {
+  assert("pre: dtype is NULL!" && (dtype != NULL) );
   std::cerr << "Header: " << hdr[0] << " " << hdr[1] << std::endl;
   MTree.NumberOfNodes = hdr[0];
   MTree.NumberOfEdges = hdr[1];
   MTree.TreeNodes = new DIYTreeNodeType[MTree.NumberOfNodes];
   MTree.TreeEdges = new DIYTreeEdgeType[MTree.NumberOfEdges];
   cosmotk::DistributedHaloEvolutionTree::CreateDIYTreeType(&MTree,dtype);
-  return &MTree;
+  return(&MTree);
 }
 
 //==============================================================================
@@ -109,7 +110,7 @@ void ReadData()
    DIY_Read_open_all(0,const_cast<char *>(FileName.c_str()),swap,compress);
   PRINTLN("- Open output file...[DONE]");
 
-  void **pmblocks;
+  void **pmblocks;;
   int **hdrs = new int*[numblocks];
   for(int i=0; i < numblocks; ++i )
     {

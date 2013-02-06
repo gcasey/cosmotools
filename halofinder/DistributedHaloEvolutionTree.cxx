@@ -29,7 +29,7 @@ void* create_read_type(int did, int lid, int *hdr, DIY_Datatype *dtype)
   treePtr->TreeEdges = new DIYTreeEdgeType[treePtr->NumberOfEdges];
   cosmotk::DistributedHaloEvolutionTree::CreateDIYTreeType(treePtr,dtype);
   // TODO: We should delete treePtr here?
-  return dtype;
+  return treePtr;
 }
 
 //------------------------------------------------------------------------------
