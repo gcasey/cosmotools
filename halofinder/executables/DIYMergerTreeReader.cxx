@@ -53,7 +53,8 @@ std::string FileName = "MergerTree.dat";
 //==============================================================================
 void ReadData();
 
-void* create_datatype(int did, int lid, int *hdr, DIY_Datatype *dtype)
+void* create_datatype(int did, int lid, int *hdr, void **base_addr, DIY_Datatype *dtype)
+
 {
   assert("pre: dtype is NULL!" && (dtype != NULL) );
   std::cerr << "Header: " << hdr[0] << " " << hdr[1] << std::endl;
@@ -61,6 +62,7 @@ void* create_datatype(int did, int lid, int *hdr, DIY_Datatype *dtype)
   MTree.NumberOfEdges = hdr[1];
   MTree.TreeNodes = new DIYTreeNodeType[MTree.NumberOfNodes];
   MTree.TreeEdges = new DIYTreeEdgeType[MTree.NumberOfEdges];
+  *base_addr = DIY_BOTTOM;
   cosmotk::DistributedHaloEvolutionTree::CreateDIYTreeType(&MTree,dtype);
   return(&MTree);
 }

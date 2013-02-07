@@ -20,7 +20,7 @@ void* create_write_type(void* block, int did, int lid, DIY_Datatype *dtype)
   return DIY_BOTTOM;
 }
 
-void* create_read_type(int did, int lid, int *hdr, DIY_Datatype *dtype)
+void* create_read_type(int did, int lid, int *hdr, void **base_addr, DIY_Datatype *dtype)
 {
   DIYTree *treePtr       = new DIYTree();
   treePtr->NumberOfNodes = hdr[0];
@@ -28,7 +28,7 @@ void* create_read_type(int did, int lid, int *hdr, DIY_Datatype *dtype)
   treePtr->TreeNodes = new DIYTreeNodeType[treePtr->NumberOfNodes];
   treePtr->TreeEdges = new DIYTreeEdgeType[treePtr->NumberOfEdges];
   cosmotk::DistributedHaloEvolutionTree::CreateDIYTreeType(treePtr,dtype);
-  // TODO: We should delete treePtr here?
+  *base_addr = DIY_BOTTOM;
   return treePtr;
 }
 
