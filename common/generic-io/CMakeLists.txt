@@ -15,6 +15,7 @@ set(GENERIC_IO_SRC
     ${PROJECT_SOURCE_DIR}/generic-io/GenericIO.cxx
     ${PROJECT_SOURCE_DIR}/generic-io/GenericIOBase.cxx
     ${PROJECT_SOURCE_DIR}/generic-io/GenericIOReader.cxx
+    ${PROJECT_SOURCE_DIR}/generic-io/GenericIOUtilities.cxx
     )
 
 ## Append GenericIO sources to list of sources
