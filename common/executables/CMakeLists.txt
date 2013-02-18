@@ -2,6 +2,7 @@ include_directories(${PACKAGE_common_INCLUDE_DIRS})
 
 ## list of executables
 set(executables
+    FakeGenericIO.cxx
     GenericIO2Cosmo.cxx
     GenericIOInspector.cxx
     GenericIOPrint.cxx
