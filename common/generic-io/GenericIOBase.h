@@ -11,9 +11,6 @@
 #include <vector>
 #include <limits>
 
-// MPI include
-#include <mpi.h>
-
 namespace cosmotk
 {
 
@@ -59,7 +56,6 @@ public:
 
   // Get and Set macros
   GetNSetMacro(FileName,std::string);
-  GetNSetMacro(Comm,MPI_Comm);
 
   /**
    * @brief Adds a variable associated with given name and data array.
@@ -147,7 +143,6 @@ protected:
   unsigned IOStrategy;
   std::string FileName;
   std::vector<Variable> Vars;
-  MPI_Comm Comm;
 
 private:
   DISABLE_COPY_AND_ASSIGNMENT(GenericIOBase);

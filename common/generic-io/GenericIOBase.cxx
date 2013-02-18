@@ -6,7 +6,6 @@ namespace cosmotk
 GenericIOBase::GenericIOBase()
 {
   this->FileName   = "";
-  this->Comm       = MPI_COMM_NULL;
   this->IOStrategy = FileIOUndefined;
 }
 
