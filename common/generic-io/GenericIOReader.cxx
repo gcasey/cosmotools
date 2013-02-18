@@ -6,7 +6,7 @@ namespace cosmotk
 //------------------------------------------------------------------------------
 GenericIOReader::GenericIOReader()
 {
-  // TODO Auto-generated constructor stub
+  this->SwapEndian=false;
 }
 
 //------------------------------------------------------------------------------

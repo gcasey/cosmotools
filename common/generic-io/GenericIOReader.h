@@ -45,6 +45,9 @@ public:
    */
   virtual void Close() = 0;
 
+protected:
+  bool SwapEndian;
+
 private:
   DISABLE_COPY_AND_ASSIGNMENT(GenericIOReader);
 };
