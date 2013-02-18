@@ -15,10 +15,13 @@ namespace cosmotk
 {
 
 //------------------------------------------------------------------------------
-//                INTERNAL DATASTRUCTURES
+//                INTERNAL DATASTRUCTURES/GLOBALS
 //------------------------------------------------------------------------------
+static const size_t CRCSize = 8;
+static const size_t MagicSize = 8;
+static const char *MagicBE = "HACC01B";
+static const char *MagicLE = "HACC01L";
 static const size_t NameSize = 256;
-
 struct VariableHeader {
   char Name[NameSize];
   uint64_t Flags;
