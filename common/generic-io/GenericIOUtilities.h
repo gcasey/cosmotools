@@ -6,6 +6,7 @@
 #define GENERICIOUTILITIES_H_
 
 #include "CosmologyToolsMacros.h"
+#include "GenericIODefinitions.hpp"
 
 #include <vector>
 
@@ -41,6 +42,14 @@ public:
       std::vector<int> &assigned);
 
   /**
+   * @brief Checks if the endian of this machine matches the endian of the
+   * file encoded in the global header.
+   * @param GH pointer to the global header
+   * @return status true if the endian matches, else, false.
+   */
+  static bool DoesFileEndianMatch(GlobalHeader *GH);
+
+  /**
    * @brief Swaps the endian of the data pointed to by Addr.
    * @param Addr user-supplied address of the data to swap (in/out)
    * @param N the number of bytes of the data to swap (in)
@@ -51,6 +60,24 @@ public:
    * and de-allocating small memory for potentially a large number of times.
    */
   static void SwapEndian(void *Addr, const int N, char *buf=NULL);
+
+  /**
+   * @brief Swaps the endian of the given global header.
+   * @param GH pointer to the global header to swap.
+   */
+  static void SwapGlobalHeader(GlobalHeader *GH);
+
+  /**
+   * @brief Swaps the endian of the Variable header.
+   * @param VH pointer to the variable header to swap.
+   */
+  static void SwapVariableHeader(VariableHeader *VH);
+
+  /**
+   * @brief Swaps the endian of the rank header.
+   * @param RH pointer to the rank header to swap.
+   */
+  static void SwapRankHeader(RankHeader *RH);
 
 protected:
   GenericIOUtilities();
