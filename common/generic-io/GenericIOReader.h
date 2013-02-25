@@ -7,6 +7,10 @@
 #define GENERICIOREADER_H_
 
 #include "GenericIOBase.h" // Base class
+#include "GenericIODefinitions.hpp"
+
+#include <vector> // for STL vector
+#include <map>    // for STL map
 
 namespace cosmotk
 {
@@ -47,6 +51,24 @@ public:
 
 protected:
   bool SwapEndian;
+
+  GlobalHeader GH;
+  std::vector< VariableHeader > VH;
+  std::vector< RankHeader > RH;
+
+  std::map<std::string, int> VariableName2IndexMap;
+
+  // List of blocks that will be read by this process. Recall, the number of
+  // blocks in the file may not always match the number of ranks that this
+  // reader instance is running. Hence, each rank may be assigned more than
+  // one block in the file. The vector of AssignedBlocks holds the list of
+  // blocks for this process.
+  std::vector< int > AssignedBlocks;
+
+  /**
+   * @brief Builds an index based on variable name.
+   */
+  void IndexVariables();
 
 private:
   DISABLE_COPY_AND_ASSIGNMENT(GenericIOReader);
