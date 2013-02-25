@@ -6,6 +6,7 @@ set(executables
     GenericIOInspector.cxx
     GenericIOPrint.cxx
     GenericIOVerify.cxx
+    TestGenericIOReader.cxx
     )
 
 ## Setup required libraries
