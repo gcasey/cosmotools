@@ -22,6 +22,60 @@ public:
   virtual ~GenericIOReader();
 
   /**
+   * @brief Return the variable size of the ith variable
+   * @param i the index of the variable in query
+   * @return varsize the size of the variable, e.g., 8 if it's a double, etc.
+   */
+  uint64_t GetVariableSize(const int i)
+    {
+    assert("pre: variable index is out-of-bounds!" &&
+           (i >= 0) && (i < this->VH.size() ) );
+    return( this->VH[ i ].Size );
+    };
+
+  /**
+   * @brief Return the name of the ith variable
+   * @param i the index of the variable in query
+   * @return varname the variable name
+   */
+  std::string GetVariableName(const int i)
+    {
+    assert("pre: variable index is out-of-bounds!" &&
+            (i >= 0) && (i < this->VH.size() ) );
+    return( std::string( this->VH[ i ].Name ) );
+    };
+
+  /**
+   * @brief Return the number of variables in the file
+   * @return nvar the number of variables in the file
+   */
+  int GetNumberOfVariables()
+    {return this->VH.size();};
+
+  /**
+   * @brief Return the number of assigned blocks
+   * @return nassigned the number of assigned blocks to this process.
+   */
+  int GetNumberOfAssignedBlocks()
+    {return this->AssignedBlocks.size();};
+
+  /**
+   * @brief Return the total number of blocks in the file.
+   * @return nblocks the total number of blocks in the file.
+   * @note The number of blocks in the file is equivalent to
+   * the number of processes that wrote the file.
+   */
+  int GetTotalNumberOfBlocks()
+    {return this->GH.NRanks;};
+
+  /**
+   * @brief Return the total number of elements.
+   * @return N the total number of elements.
+   */
+  int GetTotalNumberOfElements()
+    {return this->GH.NElems;};
+
+  /**
    * @brief Opens and reads the header of the file and initializes internal
    * data-structures.
    * @pre !This->FileName.empty()
@@ -69,6 +123,31 @@ protected:
    * @brief Builds an index based on variable name.
    */
   void IndexVariables();
+
+  /**
+   * @brief Returns the number of elements at the given block.
+   * @param localBlkIdx the local block index of the block in query.
+   * @return N the number of elements stored in the requested block.
+   * @note Assumes that the rank header information has been read.
+   */
+  int GetNumberOfElementsForBlock(const int localBlkIdx);
+
+  /**
+   * @brief Return the index of the variable with the given name.
+   * @param name the name of the variable in query
+   * @return idx the corresponding index of the variable
+   * @post idx >= 0, idx == -1 iff a variable is not found.
+   */
+  int GetVariableIndex(const std::string name);
+
+  /**
+   * @brief Computes the variable offset within the given global block idx.
+   * @param vidx the variable index.
+   * @param localBlkIdx the local block index.
+   * @return offSet the variable offset.
+   * @note This method uses the information in the rank header
+   */
+  uint64_t GetVariableOffSet(int vidx, int localBlkIdx);
 
 private:
   DISABLE_COPY_AND_ASSIGNMENT(GenericIOReader);
