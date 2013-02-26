@@ -12,7 +12,7 @@
 #include <mpi.h>
 
 // CosmologyTools includes
-#include "GenericIO.h"
+#include "GenericIOMPIReader.h"
 
 //==============================================================================
 // Global variables
@@ -40,11 +40,6 @@ MPI_Comm comm = MPI_COMM_WORLD;
   MPI_Barrier(comm);       \
 }
 
-//==============================================================================
-// Function prototypes
-//==============================================================================
-void CartCommInit(MPI_Comm comm);
-
 /**
  * @brief Program main
  * @param argc argument counter
@@ -62,49 +57,30 @@ int main(int argc, char **argv)
   // STEP 1: Get file name to read
   std::string file=std::string(argv[1]);
 
-  // STEP 1: Make a cartesian communicator
-  CartCommInit(comm);
-  PRINTLN("- Initialize cartesian communicator...[DONE]");
-
   // STEP 2: Read and print vars
-  cosmotk::GenericIO reader(comm,file);
-  reader.openAndReadHeader(false);
+  cosmotk::GenericIOMPIReader reader;
+  reader.SetCommunicator(comm);
+  reader.SetFileName(file);
 
-  std::vector<cosmotk::GenericIO::VariableInfo> variables;
-  reader.getVariableInfo(variables);
+  reader.OpenAndReadHeader();
+
   if( rank == 0 )
     {
-    std::cout << "Number of variables: " << variables.size() << std::endl;
-    for(int i=0; i < variables.size(); ++i)
+    for(int i=0; i < reader.GetNumberOfVariables(); ++i)
       {
-      std::cout << variables[i].Name << " " << variables[i].Size << std::endl;
-      } // END for
+      std::cout << reader.GetVariableName( i ) << "\t";
+      std::cout.flush();
+      }
+    std::cout << std::endl;
+    std::cout.flush();
     } // END if
+  MPI_Barrier(comm);
 
-  reader.close();
-
+  reader.Close();
 
   // STEP 3: Finalize
   MPI_Finalize();
   return 0;
 }
 
-//------------------------------------------------------------------------------
-void CartCommInit(MPI_Comm mycomm)
-{
-  int periodic[] = { 1, 1, 1 };
-  int reorder = 0;
-  int dims[3] = { 0, 0, 0 };
-
-  // Get cartesian dimensions
-  MPI_Dims_create(size,3,dims);
-
-  // Create cartesian communicator
-  MPI_Comm cartComm;
-  MPI_Cart_create(mycomm,3,dims,periodic,reorder,&cartComm);
-
-  // Reset global variables for rank and comm
-  MPI_Comm_rank(cartComm,&rank);
-  comm=cartComm;
-}
 
