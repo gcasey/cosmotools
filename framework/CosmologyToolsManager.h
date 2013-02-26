@@ -91,7 +91,7 @@ public:
       INTEGER tstep, REAL redShift,
       POSVEL_T *px, POSVEL_T *py, POSVEL_T *pz,
       POSVEL_T *vx, POSVEL_T *vy, POSVEL_T *vz,
-      REAL *mass, POTENTIAL_T *potential,
+      POSVEL_T *mass, POTENTIAL_T *potential,
       ID_T *tags, MASK_T *mask, STATUS_T *status,
       ID_T N);
 
