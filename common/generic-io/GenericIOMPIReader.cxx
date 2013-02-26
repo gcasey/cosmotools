@@ -104,6 +104,11 @@ void GenericIOMPIReader::ReadData()
 
     // Get the variable index, used to calculate the offset in the file
     int vidx = this->GetVariableIndex( this->Vars[ varIdx ].Name );
+    if(vsize != this->VH[vidx].Size)
+      {
+      throw std::runtime_error(
+          "Variable size mismatch for " + this->Vars[ varIdx ].Name);
+      }
     assert("pre: cannot find variable index!" &&
             (vidx >= 0) && (vidx < this->VH.size()) );
 
