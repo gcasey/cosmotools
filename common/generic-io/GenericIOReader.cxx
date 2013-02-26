@@ -68,7 +68,7 @@ uint64_t GenericIOReader::GetVariableOffSet(int vidx, int localBlkIdx)
   uint64_t offSet = this->RH[ localBlkIdx ].Start;
   for(int i=0; i < vidx; ++i)
     {
-    offSet += N*this->VH[i].Size;
+    offSet += N*this->VH[i].Size + CRCSize;
     }
   return( offSet );
 }
