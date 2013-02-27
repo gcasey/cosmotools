@@ -21,6 +21,8 @@
 #include "CosmologyToolsMacros.h"
 #include "ForwardHaloTracker.h"
 #include "GenericIO.h"
+#include "GenericIOMPIReader.h"
+#include "GenericIOReader.h"
 #include "Halo.h"
 
 //==============================================================================
@@ -37,6 +39,11 @@ std::string DataPrefix = "";
 std::string TimeStepsFile = "";
 std::string InDatFile = "";
 int MergerTreeThreshold = -1;
+bool SkipFofProperties = false;
+bool Verify = false;
+bool Synthetic = false;
+
+std::ofstream statsFile;
 
 std::vector< int > timesteps;
 std::vector<cosmotk::Halo> Halos;
@@ -138,14 +145,17 @@ void ComputeRankNeighbors(int pos[3], int neighbor[26]);
 int GetRankByPosition(int i, int j, int k);
 void ParseArguments(int argc, char **argv);
 void ParseSimulationParameters();
-void RoundRobinAssignment(int numBlocks, std::vector<int> &assigned);
 void ReadInAnalysisTimeSteps();
 void ReadHalosAtTimeStep(int tstep);
 int GetHaloIndex(int tstep,int haloTag);
 REAL ComputeRedShift(const int tstep);
-void ReadBlock(int tstep, int blockIdx,
-                 cosmotk::GenericIO &fofReader,
-                 cosmotk::GenericIO &haloParticlesReader);
+void CreateSyntheticHalo(
+      const int tstep, const int haloIdx, ID_T start, ID_T end);
+void CreateHalosAtTimeStep(const int tstep);
+void WriteStatistics(
+    const int tstep, const int numHalos, const int numTreeNodes);
+
+
 
 //==============================================================================
 // Macros
@@ -216,6 +226,8 @@ int main(int argc, char **argv)
     ReadHalosAtTimeStep( timesteps[t] );
     PRINTLN("[DONE]");
 
+    PRINTLN("Number of halos=" << Halos.size() );
+
     PRINT("Track halos...");
     HaloTracker->TrackHalos(t,z,Halos);
     PRINTLN("[DONE]");
@@ -223,10 +235,12 @@ int main(int argc, char **argv)
     PRINTLN( "\t - Processed time-step " << t
              << "/" << timesteps.size()
              << " SIM TSTEP=" << timesteps[t] << "\n ");
+
+    Halos.clear();
     } // END for all time-step
 
-// STEP 7: Write the tree
-//  HaloTracker->WriteMergerTree("MergerTree.dat");
+  // STEP 7: Write the tree
+  HaloTracker->WriteMergerTree("MergerTree.dat");
 
   // STEP 8: Finalize
   delete HaloTracker;
@@ -236,6 +250,52 @@ int main(int argc, char **argv)
   PRINTLN("Finalize MPI...[DONE]");
   MPI_Finalize();
   return 0;
+}
+
+//------------------------------------------------------------------------------
+void CreateHalosAtTimeStep(const int tstep)
+{
+  switch( tstep )
+    {
+    case 0:
+      CreateSyntheticHalo(tstep,0,0,5);
+      CreateSyntheticHalo(tstep,1,6,10);
+      CreateSyntheticHalo(tstep,2,11,20);
+      break;
+    case 1:
+      CreateSyntheticHalo(tstep,0,0,10);
+      CreateSyntheticHalo(tstep,1,25,30);
+      break;
+    case 2:
+      CreateSyntheticHalo(tstep,0,0,10);
+      CreateSyntheticHalo(tstep,1,25,27);
+      CreateSyntheticHalo(tstep,2,28,30);
+      break;
+    default:
+      assert("pre: invalid tstep for synthetic data-set!" && false);
+    }
+}
+
+//------------------------------------------------------------------------------
+void CreateSyntheticHalo(
+      const int tstep, const int haloIdx, ID_T start, ID_T end)
+{
+  cosmotk::Halo halo;
+  halo.Tag      = haloIdx;
+  halo.TimeStep = tstep;
+  halo.Redshift = ComputeRedShift( tstep );
+  for(ID_T idx=start; idx <= end; ++idx)
+    {
+    halo.ParticleIds.insert( idx );
+    }
+  Halos.push_back( halo );
+}
+
+//------------------------------------------------------------------------------
+void WriteStatistics(
+    const int tstep, const int numHalos, const int numTreeNodes)
+{
+  // TODO: implement this
 }
 
 //------------------------------------------------------------------------------
@@ -259,6 +319,18 @@ void ParseArguments(int argc, char **argv)
       {
       MergerTreeThreshold = atoi(argv[++i]);
       }
+    else if(strcmp(argv[i],"--skip-fof")==0)
+      {
+      SkipFofProperties = true;
+      }
+    else if(strcmp(argv[i],"--synthetic")==0)
+      {
+      Synthetic = true;
+      }
+    else if(strcmp(argv[i],"--verify")==0)
+      {
+      Verify = true;
+      }
     else
       {
       std::cerr << "ERROR: invalid argument " << argv[i] << std::endl;
@@ -266,10 +338,14 @@ void ParseArguments(int argc, char **argv)
       }
     } // END for all arguments
 
-  assert("pre: specify [--prefix <prefix>] arg" && (DataPrefix != "") );
-  assert("pre: specify [--timesteps <timesteps.dat> arg" &&
-          (TimeStepsFile!="") );
-  assert("pre: specify [--indat <indat.dat>] arg" && (InDatFile != ""));
+  if( !Synthetic )
+    {
+    assert("pre: specify [--prefix <prefix>] arg" && (DataPrefix != "") );
+    assert("pre: specify [--timesteps <timesteps.dat> arg" &&
+            (TimeStepsFile!="") );
+    assert("pre: specify [--indat <indat.dat>] arg" && (InDatFile != ""));
+    }
+
   assert("pre: specify [--threshold <t>] arg (NOTE: t > 1)" &&
           (MergerTreeThreshold > 1) );
 
@@ -279,6 +355,11 @@ void ParseArguments(int argc, char **argv)
 //------------------------------------------------------------------------------
 void ParseSimulationParameters()
 {
+  if( Synthetic )
+    {
+    return;
+    }
+
   // STEP 0: Parse raw data at rank 0 and broadcast to all ranks
   int buffSize  = 0;
   char *buffer = NULL;
@@ -389,10 +470,19 @@ void ParseSimulationParameters()
 //------------------------------------------------------------------------------
 REAL ComputeRedShift(const int tstep)
 {
-  REAL base =
-      SimulationParameters.p_in+(tstep+1)*SimulationParameters.epsilon;
-  REAL power = (-1.0)/SimulationParameters.alpha;
-  REAL z = static_cast<REAL>( pow(base,power) ) - 1.0;
+  REAL z = 0.0;
+
+  if( Synthetic )
+    {
+    z = static_cast<REAL>( tstep );
+    }
+  else
+    {
+    REAL base =
+        SimulationParameters.p_in+(tstep+1)*SimulationParameters.epsilon;
+    REAL power = (-1.0)/SimulationParameters.alpha;
+    z = static_cast<REAL>( pow(base,power) ) - 1.0;
+    }
   return( z );
 }
 
@@ -408,6 +498,7 @@ int GetHaloIndex(int tstep,int haloTag)
     {
     cosmotk::Halo h;
     h.TimeStep = tstep;
+    h.Redshift = ComputeRedShift(tstep);
     h.Tag      = haloTag;
     Halos.push_back( h );
     return( Halos.size()-1 );
@@ -415,199 +506,154 @@ int GetHaloIndex(int tstep,int haloTag)
 }
 
 //------------------------------------------------------------------------------
-void ReadBlock(int tstep, int blockIdx,
-                 cosmotk::GenericIO &fofReader,
-                 cosmotk::GenericIO &haloParticlesReader)
-{
-  int size = fofReader.readNumElems( blockIdx );
-  //  Number of variables: 13
-  //  fof_halo_count 4
-  //  fof_halo_tag 4
-  //  fof_halo_mass 4
-  //  fof_halo_center_x 4
-  //  fof_halo_center_y 4
-  //  fof_halo_center_z 4
-  //  fof_halo_mean_x 4
-  //  fof_halo_mean_y 4
-  //  fof_halo_mean_z 4
-  //  fof_halo_mean_vx 4
-  //  fof_halo_mean_vy 4
-  //  fof_halo_mean_vz 4
-  //  fof_halo_vel_disp 4
-
-  // Do we need halo mass?
-  // Data files store both center x,y,z and mean x,y,z. It is not clear
-  // if we should choose one or the either, or both?
-  // Do we need halo velocity dispression?
-  int *haloTags = new int[size];
-  POSVEL_T *center_x = new POSVEL_T[size];
-  POSVEL_T *center_y = new POSVEL_T[size];
-  POSVEL_T *center_z = new POSVEL_T[size];
-  POSVEL_T *halo_vx  = new POSVEL_T[size];
-  POSVEL_T *halo_vy  = new POSVEL_T[size];
-  POSVEL_T *halo_vz  = new POSVEL_T[size];
-
-  fofReader.addVariable("fof_halo_tag", haloTags, true);
-  fofReader.addVariable("fof_halo_center_x", center_x, true);
-  fofReader.addVariable("fof_halo_center_y", center_y, true);
-  fofReader.addVariable("fof_halo_center_z", center_z, true);
-  fofReader.addVariable("fof_halo_mean_vx", halo_vx, true);
-  fofReader.addVariable("fof_halo_mean_vy", halo_vy, true);
-  fofReader.addVariable("fof_halo_mean_vz", halo_vz, true);
-
-  fofReader.readData(blockIdx,false,false);
-
-  for( int i=0; i < size; ++i )
-    {
-    int tag = haloTags[i];
-    int idx = GetHaloIndex(tstep,tag);
-    Halos[idx].Center[0] = center_x[i];
-    Halos[idx].Center[1] = center_y[i];
-    Halos[idx].Center[2] = center_z[i];
-    Halos[idx].AverageVelocity[0] = halo_vx[i];
-    Halos[idx].AverageVelocity[1] = halo_vy[i];
-    Halos[idx].AverageVelocity[2] = halo_vz[i];
-    }
-
-  delete [] haloTags;
-  delete [] center_x;
-  delete [] center_y;
-  delete [] center_z;
-  delete [] halo_vx;
-  delete [] halo_vy;
-  delete [] halo_vz;
-
-  //  $ cat particletags.dat.output
-  // - Initialize MPI...[DONE]
-  // - Initialize cartesian communicator...[DONE]
-  // Number of variables: 2
-  // id 8
-  // fof_halo_tag 8
-  size = haloParticlesReader.readNumElems( blockIdx );
-  ID_T *particleIds  = new ID_T[size];
-  ID_T *halo_tags    = new ID_T[size];
-
-  haloParticlesReader.addVariable("id",particleIds,true);
-  haloParticlesReader.addVariable("fof_halo_tag",halo_tags,true);
-
-  haloParticlesReader.readData(blockIdx,false,false);
-
-  for(int i=0; i < size; ++i )
-    {
-    int idx = GetHaloIndex(tstep,halo_tags[i]);
-    Halos[idx].ParticleIds.insert(particleIds[i]);
-    }
-
-  delete [] particleIds;
-  delete [] halo_tags;
-
-  fofReader.clearVariables();
-  haloParticlesReader.clearVariables();
-}
-
-//------------------------------------------------------------------------------
 void ReadHalosAtTimeStep(int tstep)
 {
-  // STEP 0: Construct file names
-  std::ostringstream oss;
-  oss.clear(); oss.str("");
+  assert("pre: halos at this tstep must be empty!" && (Halos.size()==0) );
 
-  oss << DataPrefix << "." << tstep << ".fofproperties";
-  std::string fofPropertiesFile = oss.str();
-
-  oss.clear(); oss.str("");
-  oss << DataPrefix << "." << tstep << ".haloparticletags";
-  std::string haloParticlesFile = oss.str();
-
-  // STEP 1: Open and read headers
-  cosmotk::GenericIO FofPropertiesReader(comm,fofPropertiesFile);
-  FofPropertiesReader.openAndReadHeader(false);
-
-  cosmotk::GenericIO HaloParticlesReader(comm,haloParticlesFile);
-  HaloParticlesReader.openAndReadHeader(false);
-  assert(
-   "pre: block mismatch between fof properties file and halo particles file" &&
-   FofPropertiesReader.readNRanks()==HaloParticlesReader.readNRanks());
-
-  // STEP 2: Round-robing assignment of blocks
-  int numBlocks = FofPropertiesReader.readNRanks();
-  std::vector<int> assignedBlocks;
-  RoundRobinAssignment(numBlocks,assignedBlocks);
-
-  // STEP 3: Loop through assigned blocks and read halos
-  for(unsigned int blk=0; blk < assignedBlocks.size(); ++blk)
+  if( Synthetic )
     {
-    int blockIdx = assignedBlocks[ blk ];
-    ReadBlock( tstep, blockIdx,FofPropertiesReader,HaloParticlesReader);
-    } // END for all blocks
+    CreateHalosAtTimeStep( tstep );
+    }
+  else
+    {
+    // STEP 0: Construct file names
+    std::ostringstream oss;
+    oss.clear(); oss.str("");
+
+    oss << DataPrefix << "." << tstep << ".fofproperties";
+    std::string fofPropertiesFile = oss.str();
+
+    oss.clear(); oss.str("");
+    oss << DataPrefix << "." << tstep << ".haloparticletags";
+    std::string haloParticlesFile = oss.str();
+
+    // STEP 1: Open and read FOF properties file
+    if( !SkipFofProperties )
+      {
+      cosmotk::GenericIOMPIReader FofPropertiesReader;
+      FofPropertiesReader.SetFileName(fofPropertiesFile);
+      FofPropertiesReader.SetCommunicator(comm);
+      FofPropertiesReader.OpenAndReadHeader();
+      int nfof = FofPropertiesReader.GetNumberOfElements();
+      int *haloTags      = new int[nfof];
+      POSVEL_T *center_x = new POSVEL_T[nfof];
+      POSVEL_T *center_y = new POSVEL_T[nfof];
+      POSVEL_T *center_z = new POSVEL_T[nfof];
+      POSVEL_T *halo_vx  = new POSVEL_T[nfof];
+      POSVEL_T *halo_vy  = new POSVEL_T[nfof];
+      POSVEL_T *halo_vz  = new POSVEL_T[nfof];
+
+      FofPropertiesReader.AddVariable("fof_halo_tag", haloTags);
+      FofPropertiesReader.AddVariable("fof_halo_center_x", center_x);
+      FofPropertiesReader.AddVariable("fof_halo_center_y", center_y);
+      FofPropertiesReader.AddVariable("fof_halo_center_z", center_z);
+      FofPropertiesReader.AddVariable("fof_halo_mean_vx", halo_vx);
+      FofPropertiesReader.AddVariable("fof_halo_mean_vy", halo_vy);
+      FofPropertiesReader.AddVariable("fof_halo_mean_vz", halo_vz);
+
+      FofPropertiesReader.ReadData();
+
+      for( int i=0; i < nfof; ++i )
+        {
+        int tag = haloTags[i];
+        int idx = GetHaloIndex(tstep,tag);
+        Halos[idx].Center[0] = center_x[i];
+        Halos[idx].Center[1] = center_y[i];
+        Halos[idx].Center[2] = center_z[i];
+        Halos[idx].AverageVelocity[0] = halo_vx[i];
+        Halos[idx].AverageVelocity[1] = halo_vy[i];
+        Halos[idx].AverageVelocity[2] = halo_vz[i];
+
+        Halos[idx].Print(std::cout);
+        }
+
+      delete [] haloTags;
+      delete [] center_x;
+      delete [] center_y;
+      delete [] center_z;
+      delete [] halo_vx;
+      delete [] halo_vy;
+      delete [] halo_vz;
+      FofPropertiesReader.Close();
+      } // END if skip FOF properties
+
+    // STEP 2: Open and read HaloParticle tags
+    cosmotk::GenericIOMPIReader HaloParticlesReader;
+    HaloParticlesReader.SetFileName(haloParticlesFile);
+    HaloParticlesReader.SetCommunicator(comm);
+    HaloParticlesReader.OpenAndReadHeader();
+    int npart = HaloParticlesReader.GetNumberOfElements();
+    ID_T *particleIds  = new ID_T[npart];
+    ID_T *halo_tags    = new ID_T[npart];
+
+    HaloParticlesReader.AddVariable("id",particleIds);
+    HaloParticlesReader.AddVariable("fof_halo_tag",halo_tags);
+
+    HaloParticlesReader.ReadData();
+
+    for(int i=0; i < npart; ++i)
+      {
+      int idx = GetHaloIndex(tstep,halo_tags[i]);
+      Halos[idx].ParticleIds.insert(particleIds[i]);
+      }
+
+    // STEP 3: Close files
+    HaloParticlesReader.Close();
+
+    // STEP 4: De-allocate memory
+    delete [] halo_tags;
+    delete [] particleIds;
+    }
 }
 
 //------------------------------------------------------------------------------
 void ReadInAnalysisTimeSteps()
 {
-  int numTimeSteps;
-  std::ifstream ifs;
-  switch(rank)
+  if( Synthetic )
     {
-    case 0:
-      ifs.open(TimeStepsFile.c_str());
-      if( !ifs.is_open() )
-        {
-        std::cerr << "Cannot open file " << TimeStepsFile << std::endl;
-        MPI_Abort(comm,-1);
-        }
+    timesteps.resize( 3 );
+    timesteps[ 0 ] = 0;
+    timesteps[ 1 ] = 1;
+    timesteps[ 2 ] = 2;
+    } // END if synthetic
+  else
+    {
+    int numTimeSteps;
+    std::ifstream ifs;
+    switch(rank)
+      {
+      case 0:
+        ifs.open(TimeStepsFile.c_str());
+        if( !ifs.is_open() )
+          {
+          std::cerr << "Cannot open file " << TimeStepsFile << std::endl;
+          MPI_Abort(comm,-1);
+          }
 
-      // Read in time-steps
-      for(int tstep; ifs >> tstep; timesteps.push_back(tstep) );
+        // Read in time-steps
+        for(int tstep; ifs >> tstep; timesteps.push_back(tstep) );
 
-      // Broadcast send total number of time-steps in the file
-      numTimeSteps = timesteps.size();
-      MPI_Bcast(&numTimeSteps,1,MPI_INTEGER,0,comm);
+        // Broadcast send total number of time-steps in the file
+        numTimeSteps = timesteps.size();
+        MPI_Bcast(&numTimeSteps,1,MPI_INTEGER,0,comm);
 
-      // Broadcast send the time-steps
-      MPI_Bcast(&timesteps[0],numTimeSteps,MPI_INTEGER,0,comm);
-      break;
-    default:
-      // Broad cast receive the total numer of time-steps
-      MPI_Bcast(&numTimeSteps,1,MPI_INTEGER,0,comm);
+        // Broadcast send the time-steps
+        MPI_Bcast(&timesteps[0],numTimeSteps,MPI_INTEGER,0,comm);
+        break;
+      default:
+        // Broad cast receive the total numer of time-steps
+        MPI_Bcast(&numTimeSteps,1,MPI_INTEGER,0,comm);
 
-      // Allocate time-steps vector
-      timesteps.resize(numTimeSteps);
+        // Allocate time-steps vector
+        timesteps.resize(numTimeSteps);
 
-      // Broad cast receive all the time-steps
-      MPI_Bcast(&timesteps[0],numTimeSteps,MPI_INTEGER,0,comm);
-    } // END switch
+        // Broad cast receive all the time-steps
+        MPI_Bcast(&timesteps[0],numTimeSteps,MPI_INTEGER,0,comm);
+      } // END switch
+    } // END else
 
   // Barrier synchronization
   MPI_Barrier(comm);
-}
-
-//------------------------------------------------------------------------------
-void RoundRobinAssignment(int numBlocks, std::vector<int> &assigned)
-{
-  if(size < numBlocks )
-    {
-    // round-robin assignment
-    for(int blkIdx=0; blkIdx < numBlocks; ++blkIdx)
-      {
-      if( (blkIdx%size) == rank )
-        {
-        assigned.push_back(blkIdx);
-        } // END if this process has this block
-      } // END for all blocks in the file
-    } // END if
-  else if(size > numBlocks )
-    {
-    if( rank < numBlocks )
-      {
-      assigned.push_back(rank);
-      }
-    } // END else-if
-  else
-    {
-    // one-to-one mapping
-    assigned.push_back(rank);
-    } // END else
 }
 
 //------------------------------------------------------------------------------

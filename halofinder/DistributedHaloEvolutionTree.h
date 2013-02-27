@@ -249,14 +249,6 @@ protected:
   void GetNodeRangeForProcess(ID_T range[2]);
 
   /**
-   * @brief Performs round-robin assignment of NBlocks to each process
-   * @param NBlocks the total number of blocks to be distributed
-   * @param assigned a vector consisting the blocks that are assigned at
-   * each process.
-   */
-  void RoundRobinAssignment(int NBlocks, std::vector<int> &assigned);
-
-  /**
    * @brief Reads data in DIY format
    */
   void ReadWithDIY();
@@ -282,9 +274,9 @@ protected:
    * particular block to handle the case where each process
    * reads more than one block.
    */
-  void ReadBlock(
-      int block, cosmotk::GenericIO *nodesReader,
-      cosmotk::GenericIO *edgesReader);
+//  void ReadBlock(
+//      int block, cosmotk::GenericIO *nodesReader,
+//      cosmotk::GenericIO *edgesReader);
 
   /**
    * @brief Writes data in GenericIO format

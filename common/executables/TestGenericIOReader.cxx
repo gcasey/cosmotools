@@ -26,24 +26,23 @@ int main(int argc, char **argv)
   std::cout.flush();
 
   int NumElements = myReader->GetNumberOfElements();
+  std::cout << "NumElements: " << NumElements << std::endl;
+  std::cout.flush();
 
-  int *idx = new int[ NumElements ];
-  myReader->AddVariable("ID",idx);
-
-  double *data = new double[ NumElements ];
-  myReader->AddVariable("DATA",data);
-
-  myReader->ReadData();
-
-  std::cout << "Read: " << NumElements << std::endl;
-  for( int i=0; i < NumElements; ++i)
+  for(int i=0; i < myReader->GetNumberOfVariables(); ++i )
     {
-    std::cout  << idx[i] << "\t" << data[i] << std::endl;
+    std::cout << myReader->GetVariableName( i ) << std::endl;
     std::cout.flush();
-    } // END for all elements
+    }
+//  myReader->ReadData();
 
-  delete [] data;
-  delete [] idx;
+//  std::cout << "Read: " << NumElements << std::endl;
+//  for( int i=0; i < NumElements; ++i)
+//    {
+//    std::cout  << idx[i] << "\t" << data[i] << std::endl;
+//    std::cout.flush();
+//    } // END for all elements
+
   myReader->Close();
   MPI_Finalize();
   return 0;

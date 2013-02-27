@@ -20,7 +20,8 @@ void* create_write_type(void* block, int did, int lid, DIY_Datatype *dtype)
   return DIY_BOTTOM;
 }
 
-void* create_read_type(int did, int lid, int *hdr, void **base_addr, DIY_Datatype *dtype)
+void* create_read_type(
+          int did, int lid, int *hdr, void **base_addr, DIY_Datatype *dtype)
 {
   DIYTree *treePtr       = new DIYTree();
   treePtr->NumberOfNodes = hdr[0];
@@ -445,196 +446,156 @@ void DistributedHaloEvolutionTree::GetFlatTreeEdgeArrays(
 //------------------------------------------------------------------------------
 void DistributedHaloEvolutionTree::ReadWithGenericIO()
 {
-  // STEP 0: Clear data
-  this->Clear();
-
-  // STEP 1: Initialize Nodes and Edge reader
-  std::ostringstream oss;
-  oss << this->FileName << ".nodes";
-  std::string nodesFile = oss.str();
-  cosmotk::GenericIO GIONodeReader(this->Communicator,nodesFile);
-
-  oss.clear(); oss.str("");
-  oss << this->FileName << ".edges";
-  std::string edgesFile = oss.str();
-  cosmotk::GenericIO GIOEdgesReader(this->Communicator,edgesFile);
-
-  // STEP 2: Read headers
-  GIONodeReader.openAndReadHeader(false);
-  GIOEdgesReader.openAndReadHeader(false);
-  assert( "pre: nodes file and edges file rank mismatch!" &&
-   GIONodeReader.readNRanks() == GIOEdgesReader.readNRanks() );
-
-  // STEP 3: Assign blocks to processes
-  int numBlocks = GIONodeReader.readNRanks();
-  std::vector<int> assignedBlocks;
-  this->RoundRobinAssignment(numBlocks,assignedBlocks);
-
-  // STEP 4: Read in the data for rank in file
-  for(unsigned int i=0; i < assignedBlocks.size(); ++i)
-    {
-    int block = assignedBlocks[i];
-    this->ReadBlock(block,&GIONodeReader,&GIOEdgesReader);
-    } // END for all ranks
-
-  GIONodeReader.close();
-  GIOEdgesReader.close();
+//  // STEP 0: Clear data
+//  this->Clear();
+//
+//  // STEP 1: Initialize Nodes and Edge reader
+//  std::ostringstream oss;
+//  oss << this->FileName << ".nodes";
+//  std::string nodesFile = oss.str();
+//  cosmotk::GenericIO GIONodeReader(this->Communicator,nodesFile);
+//
+//  oss.clear(); oss.str("");
+//  oss << this->FileName << ".edges";
+//  std::string edgesFile = oss.str();
+//  cosmotk::GenericIO GIOEdgesReader(this->Communicator,edgesFile);
+//
+//  // STEP 2: Read headers
+//  GIONodeReader.openAndReadHeader(false);
+//  GIOEdgesReader.openAndReadHeader(false);
+//  assert( "pre: nodes file and edges file rank mismatch!" &&
+//   GIONodeReader.readNRanks() == GIOEdgesReader.readNRanks() );
+//
+//  // STEP 3: Assign blocks to processes
+//  int numBlocks = GIONodeReader.readNRanks();
+//  std::vector<int> assignedBlocks;
+//  this->RoundRobinAssignment(numBlocks,assignedBlocks);
+//
+//  // STEP 4: Read in the data for rank in file
+//  for(unsigned int i=0; i < assignedBlocks.size(); ++i)
+//    {
+//    int block = assignedBlocks[i];
+//    this->ReadBlock(block,&GIONodeReader,&GIOEdgesReader);
+//    } // END for all ranks
+//
+//  GIONodeReader.close();
+//  GIOEdgesReader.close();
 }
 
 //------------------------------------------------------------------------------
-void DistributedHaloEvolutionTree::ReadBlock(
-        int block,
-        cosmotk::GenericIO *nodesReader,
-        cosmotk::GenericIO *edgesReader)
-{
-  assert("pre: Nodes reader is NULL!" && (nodesReader != NULL) );
-  assert("pre: Nodes reader is NULL!" && (edgesReader != NULL) );
-
-  // STEP 0: Get number of nodes
-  int numNodes = nodesReader->readNumElems(block);
-
-  // STEP 1: Allocate temporary arrays
-  // TODO: Should I allocate extra space here? Not sure how?
-  ID_T *nodeIdx      = new ID_T[numNodes];
-  ID_T *haloTags     = new ID_T[numNodes];
-  ID_T *tstep        = new ID_T[numNodes];
-  REAL *redShift     = new REAL[numNodes];
-  POSVEL_T *center_x = new POSVEL_T[numNodes];
-  POSVEL_T *center_y = new POSVEL_T[numNodes];
-  POSVEL_T *center_z = new POSVEL_T[numNodes];
-  POSVEL_T *vx = new POSVEL_T[numNodes];
-  POSVEL_T *vy = new POSVEL_T[numNodes];
-  POSVEL_T *vz = new POSVEL_T[numNodes];
-
-  // STEP 2: Add variables to be read
-  nodesReader->addVariable("UniqueIndex", nodeIdx, true);
-  nodesReader->addVariable("HaloTags", haloTags, true);
-  nodesReader->addVariable("TimeStep", tstep, true);
-  nodesReader->addVariable("Red-Shifts", redShift, true);
-  nodesReader->addVariable("Center-X", center_x, true);
-  nodesReader->addVariable("Center-Y", center_y, true);
-  nodesReader->addVariable("Center-Z", center_z, true);
-  nodesReader->addVariable("Velocity-X", vx, true);
-  nodesReader->addVariable("Velocity-Y", vy, true);
-  nodesReader->addVariable("Velocity-Z", vz, true);
-
-  // STEP 3: Do the I/O
-  nodesReader->readData(block,false,false);
-
-  // STEP 4: Unpack the nodes
-  std::map< ID_T, std::string > index2hashcode;
-  cosmotk::Halo h;
-  for( int idx=0; idx < numNodes; ++idx)
-    {
-    h.Tag = haloTags[ idx ];
-    h.TimeStep = tstep[ idx ];
-    h.Redshift = redShift[ idx ];
-    h.Center[0] = center_x[ idx ];
-    h.Center[1] = center_y[ idx ];
-    h.Center[2] = center_z[ idx ];
-    h.AverageVelocity[0] = vx[ idx ];
-    h.AverageVelocity[1] = vy[ idx ];
-    h.AverageVelocity[2] = vz[ idx ];
-    index2hashcode[ nodeIdx[idx] ] = h.GetHashCode();
-    this->Node2UniqueIdx[ h.GetHashCode() ] = nodeIdx[idx];
-    this->Nodes[ h.GetHashCode() ] = h;
-    } // END for all nodes
-
-  // STEP 5: Clean Up temporary flat arrays
-  delete [] nodeIdx;
-  delete [] haloTags;
-  delete [] tstep;
-  delete [] redShift;
-  delete [] center_x;
-  delete [] center_y;
-  delete [] center_z;
-  delete [] vx;
-  delete [] vy;
-  delete [] vz;
-
-  // STEP 6: Get number of edges
-  int numEdges = edgesReader->readNumElems(block);
-
-  // STEP 7: Allocate and acquire flat edge arrays
-  // TODO: Should I allocate extra space here? Not sure how?
-  ID_T *startNodeIdx = new ID_T[numEdges];
-  ID_T *endNodeIdx = new ID_T[numEdges];
-  int *edgeWeights = new int[numEdges];
-  int *edgeEvents  = new int[numEdges];
-
-
-  // STEP 8: Add variables to be read
-  edgesReader->addVariable("StartNode", startNodeIdx,true);
-  edgesReader->addVariable("EndNode", endNodeIdx,true);
-  edgesReader->addVariable("Weights", edgeWeights,true);
-  edgesReader->addVariable("Events", edgeEvents,true);
-
-  // STEP 9: Do the I/O
-  edgesReader->readData(block,false,false);
-
-  // STEP 10: UnPack
-  for(int idx=0; idx < numEdges; ++idx)
-    {
-    assert( "ERROR: cannot find hash-code for edge start index" &&
-      index2hashcode.find(startNodeIdx[idx]) != index2hashcode.end());
-    assert( "ERROR: cannot find hash-code for edge end index" &&
-      index2hashcode.find(endNodeIdx[idx]) != index2hashcode.end());
-    this->Edges.push_back(index2hashcode[startNodeIdx[idx]]);
-    this->Edges.push_back(index2hashcode[endNodeIdx[idx]]);
-    this->EdgeWeights.push_back( edgeWeights[idx] );
-    this->EdgeEvents.push_back( edgeEvents[idx] );
-    } // END for all edges
-
-  // STEP 11: Clean up temporary flat arrays
-  delete [] startNodeIdx;
-  delete [] endNodeIdx;
-  delete [] edgeWeights;
-  delete [] edgeEvents;
-
-  // STEP 12: Clear variables since the readers are called iteratively
-  nodesReader->clearVariables();
-  edgesReader->clearVariables();
-}
-
-//------------------------------------------------------------------------------
-void DistributedHaloEvolutionTree::RoundRobinAssignment(
-        int numBlocks, std::vector<int> &assigned)
-{
-  // TODO: Perhaps this RoundRobinAssignment can be implemented directly
-  // within the GenericIO infrastructure ???
-
-  assert("pre: NBLOCKS > 0" && (numBlocks > 0) );
-  assert("pre: NULL Communicator" && this->Communicator != MPI_COMM_NULL);
-
-  int myRank    = -1;
-  int numRanks  = -1;
-  MPI_Comm_rank(this->Communicator,&myRank);
-  MPI_Comm_size(this->Communicator,&numRanks);
-
-  if( numRanks < numBlocks )
-    {
-    // round-robin assignment
-    for(int blkIdx=0; blkIdx < numBlocks; ++blkIdx)
-      {
-      if( (blkIdx%numRanks) == myRank )
-        {
-        assigned.push_back(blkIdx);
-        } // END if this process has this block
-      } // END for all blocks in the file
-    } // END if
-  else if( numRanks > numBlocks )
-    {
-    if( myRank < numBlocks )
-      {
-      assigned.push_back(myRank);
-      }
-    } // END else-if
-  else
-    {
-    // one-to-one mapping
-    assigned.push_back(myRank);
-    } // END else
-}
+//void DistributedHaloEvolutionTree::ReadBlock(
+//        int block,
+//        cosmotk::GenericIO *nodesReader,
+//        cosmotk::GenericIO *edgesReader)
+//{
+//  assert("pre: Nodes reader is NULL!" && (nodesReader != NULL) );
+//  assert("pre: Nodes reader is NULL!" && (edgesReader != NULL) );
+//
+//  // STEP 0: Get number of nodes
+//  int numNodes = nodesReader->readNumElems(block);
+//
+//  // STEP 1: Allocate temporary arrays
+//  // TODO: Should I allocate extra space here? Not sure how?
+//  ID_T *nodeIdx      = new ID_T[numNodes];
+//  ID_T *haloTags     = new ID_T[numNodes];
+//  ID_T *tstep        = new ID_T[numNodes];
+//  REAL *redShift     = new REAL[numNodes];
+//  POSVEL_T *center_x = new POSVEL_T[numNodes];
+//  POSVEL_T *center_y = new POSVEL_T[numNodes];
+//  POSVEL_T *center_z = new POSVEL_T[numNodes];
+//  POSVEL_T *vx = new POSVEL_T[numNodes];
+//  POSVEL_T *vy = new POSVEL_T[numNodes];
+//  POSVEL_T *vz = new POSVEL_T[numNodes];
+//
+//  // STEP 2: Add variables to be read
+//  nodesReader->addVariable("UniqueIndex", nodeIdx, true);
+//  nodesReader->addVariable("HaloTags", haloTags, true);
+//  nodesReader->addVariable("TimeStep", tstep, true);
+//  nodesReader->addVariable("Red-Shifts", redShift, true);
+//  nodesReader->addVariable("Center-X", center_x, true);
+//  nodesReader->addVariable("Center-Y", center_y, true);
+//  nodesReader->addVariable("Center-Z", center_z, true);
+//  nodesReader->addVariable("Velocity-X", vx, true);
+//  nodesReader->addVariable("Velocity-Y", vy, true);
+//  nodesReader->addVariable("Velocity-Z", vz, true);
+//
+//  // STEP 3: Do the I/O
+//  nodesReader->readData(block,false,false);
+//
+//  // STEP 4: Unpack the nodes
+//  std::map< ID_T, std::string > index2hashcode;
+//  cosmotk::Halo h;
+//  for( int idx=0; idx < numNodes; ++idx)
+//    {
+//    h.Tag = haloTags[ idx ];
+//    h.TimeStep = tstep[ idx ];
+//    h.Redshift = redShift[ idx ];
+//    h.Center[0] = center_x[ idx ];
+//    h.Center[1] = center_y[ idx ];
+//    h.Center[2] = center_z[ idx ];
+//    h.AverageVelocity[0] = vx[ idx ];
+//    h.AverageVelocity[1] = vy[ idx ];
+//    h.AverageVelocity[2] = vz[ idx ];
+//    index2hashcode[ nodeIdx[idx] ] = h.GetHashCode();
+//    this->Node2UniqueIdx[ h.GetHashCode() ] = nodeIdx[idx];
+//    this->Nodes[ h.GetHashCode() ] = h;
+//    } // END for all nodes
+//
+//  // STEP 5: Clean Up temporary flat arrays
+//  delete [] nodeIdx;
+//  delete [] haloTags;
+//  delete [] tstep;
+//  delete [] redShift;
+//  delete [] center_x;
+//  delete [] center_y;
+//  delete [] center_z;
+//  delete [] vx;
+//  delete [] vy;
+//  delete [] vz;
+//
+//  // STEP 6: Get number of edges
+//  int numEdges = edgesReader->readNumElems(block);
+//
+//  // STEP 7: Allocate and acquire flat edge arrays
+//  // TODO: Should I allocate extra space here? Not sure how?
+//  ID_T *startNodeIdx = new ID_T[numEdges];
+//  ID_T *endNodeIdx = new ID_T[numEdges];
+//  int *edgeWeights = new int[numEdges];
+//  int *edgeEvents  = new int[numEdges];
+//
+//
+//  // STEP 8: Add variables to be read
+//  edgesReader->addVariable("StartNode", startNodeIdx,true);
+//  edgesReader->addVariable("EndNode", endNodeIdx,true);
+//  edgesReader->addVariable("Weights", edgeWeights,true);
+//  edgesReader->addVariable("Events", edgeEvents,true);
+//
+//  // STEP 9: Do the I/O
+//  edgesReader->readData(block,false,false);
+//
+//  // STEP 10: UnPack
+//  for(int idx=0; idx < numEdges; ++idx)
+//    {
+//    assert( "ERROR: cannot find hash-code for edge start index" &&
+//      index2hashcode.find(startNodeIdx[idx]) != index2hashcode.end());
+//    assert( "ERROR: cannot find hash-code for edge end index" &&
+//      index2hashcode.find(endNodeIdx[idx]) != index2hashcode.end());
+//    this->Edges.push_back(index2hashcode[startNodeIdx[idx]]);
+//    this->Edges.push_back(index2hashcode[endNodeIdx[idx]]);
+//    this->EdgeWeights.push_back( edgeWeights[idx] );
+//    this->EdgeEvents.push_back( edgeEvents[idx] );
+//    } // END for all edges
+//
+//  // STEP 11: Clean up temporary flat arrays
+//  delete [] startNodeIdx;
+//  delete [] endNodeIdx;
+//  delete [] edgeWeights;
+//  delete [] edgeEvents;
+//
+//  // STEP 12: Clear variables since the readers are called iteratively
+//  nodesReader->clearVariables();
+//  edgesReader->clearVariables();
+//}
 
 //------------------------------------------------------------------------------
 void DistributedHaloEvolutionTree::WriteWithGenericIO()
