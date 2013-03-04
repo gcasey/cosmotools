@@ -25,6 +25,8 @@ void ParallelHaloMergerTree::UpdateMergerTree(
   assert("pre: t1 < t2" && (t1 < t2) );
   assert("pre: halos is NULL" && (haloSet1 != NULL) );
   assert("pre: halos is NULL" && (haloSet2 != NULL) );
+  assert("pre: M > 0" && (M > 0) );
+  assert("pre: N > 0" && (N > 0) );
   assert("pre: halo evolution tree is NULL!" && (t != NULL) );
 
 
@@ -74,7 +76,7 @@ void ParallelHaloMergerTree::ExchangeHalos(
       std::vector<cosmotk::Halo>& globalHalos)
 {
   assert("pre: halos is NULL!" && (halos != NULL) );
-  assert("pre: N >= 0" && (N == 0) );
+  assert("pre: N >= 0" && (N >= 0) );
 
   HaloHashMap haloHash;
   this->ExchangeHaloInfo( halos, N, haloHash );
@@ -100,7 +102,7 @@ void ParallelHaloMergerTree::ExchangeHaloInfo(
         cosmotk::Halo *halos, const int N, HaloHashMap& haloHash)
 {
   assert("pre: halos is NULL!" && (halos != NULL) );
-  assert("pre: N >= 0" && (N == 0) );
+  assert("pre: N >= 0" && (N >= 0) );
   assert("pre: haloHash.empty()" && haloHash.empty() );
 
   // STEP 0: Enqueue halo information
