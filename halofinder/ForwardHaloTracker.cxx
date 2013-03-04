@@ -241,10 +241,12 @@ void ForwardHaloTracker::UpdateMergerTree()
   if( this->TemporalHaloData->IsComplete() )
     {
     HaloDataInformation* current  = this->TemporalHaloData->GetCurrent();
+    assert("pre: current halo data should not be NULL!" && (current!=NULL));
     HaloDataInformation* previous = this->TemporalHaloData->GetPrevious();
+    assert("pre: previous halo data should not be NULL!" && (previous!=NULL));
     this->HaloMergerTree->UpdateMergerTree(
-        current->TimeStep,&current->Halos[0],current->NumberOfHalos,
         previous->TimeStep,&previous->Halos[0],previous->NumberOfHalos,
+        current->TimeStep,&current->Halos[0],current->NumberOfHalos,
         this->HaloEvolutionTree);
     } // END if update merger-tree
 }
