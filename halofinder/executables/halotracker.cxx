@@ -43,11 +43,11 @@ bool SkipFofProperties = false;
 bool Verify = false;
 bool Synthetic = false;
 
-std::ofstream statsFile;
-
 std::vector< int > timesteps;
 std::vector<cosmotk::Halo> Halos;
 std::map<std::string,int> Halo2Idx;
+
+std::map<int,int> NumHalosAtTimeStep;
 
 // These parameters are parsed from indat file
 struct sim_parameters_t {
@@ -152,8 +152,7 @@ REAL ComputeRedShift(const int tstep);
 void CreateSyntheticHalo(
       const int tstep, const int haloIdx, ID_T start, ID_T end);
 void CreateHalosAtTimeStep(const int tstep);
-void WriteStatistics(
-    const int tstep, const int numHalos, const int numTreeNodes);
+void WriteStatistics();
 
 
 
@@ -227,6 +226,7 @@ int main(int argc, char **argv)
     PRINTLN("[DONE]");
 
     PRINTLN("Number of halos=" << Halos.size() );
+    NumHalosAtTimeStep[ timesteps[t] ] = Halos.size();
 
     PRINT("Track halos...");
     HaloTracker->TrackHalos(t,z,Halos);
@@ -240,7 +240,11 @@ int main(int argc, char **argv)
     } // END for all time-step
 
   // STEP 7: Write the tree
-  HaloTracker->WriteMergerTree("MergerTree.dat");
+  HaloTracker->WriteMergerTree("MergerTree");
+
+  // STEP 8: Write statistics
+  WriteStatistics();
+  MPI_Barrier(comm);
 
   // STEP 8: Finalize
   delete HaloTracker;
@@ -292,10 +296,42 @@ void CreateSyntheticHalo(
 }
 
 //------------------------------------------------------------------------------
-void WriteStatistics(
-    const int tstep, const int numHalos, const int numTreeNodes)
+void WriteStatistics()
 {
-  // TODO: implement this
+  if( !Verify )
+    {
+    return;
+    }
+
+  std::ofstream ofs;
+  if( rank == 0 )
+    {
+    ofs.open("HalosVsTreeNodes.dat");
+    }
+  MPI_Barrier(comm);
+
+  for(int t=0; t < timesteps.size(); ++t)
+    {
+    int tstep = timesteps[ t ];
+    int numHalos = NumHalosAtTimeStep[ tstep ];
+    int numNodes = HaloTracker->GetNumberOfMergerTreeNodes(tstep);
+
+    int totHalos = 0;
+    int totNodes = 0;
+    MPI_Reduce(&numHalos,&totHalos,1,MPI_INT,MPI_SUM,0,comm);
+    MPI_Reduce(&numNodes,&totNodes,1,MPI_INT,MPI_SUM,0,comm);
+
+    if( rank == 0 )
+      {
+      ofs << totHalos << ";" << totNodes << std::endl;
+      }
+    } // END for all timesteps
+
+  if( rank == 0 )
+    {
+    ofs.close();
+    }
+  MPI_Barrier(comm);
 }
 
 //------------------------------------------------------------------------------
