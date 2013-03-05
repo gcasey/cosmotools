@@ -9,6 +9,7 @@
 #include "CosmologyToolsMacros.h"
 
 #include <vector> // For STL vector
+#include <set>    // For STL set
 
 
 namespace cosmotk
@@ -28,6 +29,32 @@ public:
    * @brief Get/Set macro for the merger-tree. Default is 10.
    */
   GetNSetMacro(MergerTreeThreshold,int);
+
+  /**
+   * @brief Returns the number of dead halos found
+   * @return N the number of dead halos
+   * @note Dead halos are halos that existed in a previous
+   * timestep but, siezed to exist in the current timestep.
+   */
+  int GetNumberOfDeadHalos()
+    {return this->DeadHalos.size(); };
+
+  /**
+   * @brief Returns the number of split halos found
+   * @return N the number of halos that were split
+   * @note Split halos are halos that in the curr
+   */
+  int GetNumberOfSplitHalos()
+    {return this->SplitHalos.size(); };
+
+  /**
+   * @brief Returns the number of merger-halos.
+   * @return N the number of merger halos.
+   * @note Mergers are halos that have resulted from merging two or
+   * more halos from the previous timestep.
+   */
+  int GetNumberOfMergeHalos()
+    {return this->MergeHalos.size(); };
 
   /**
    * @brief Given two sets of halos at different time-steps, this method
@@ -57,9 +84,57 @@ protected:
   Halo *Halos1;     // The set of halos at time-step t1.
   Halo *Halos2;     // The set of halos at time-step t2.
 
+  std::set< int > DeadHalos; // index to the Halos1 array of halos that do
+                             // not exist in Halos2
+
+  std::set< int > SplitHalos; // index to the Halos1 array for each halo that
+                              // was split in two (or more) halos in the
+                              // current timestep.
+
+  std::set< int > MergeHalos; // index to the Halos2 array for each halo at the
+                              // current timestep that resulted from a merge
+                              // of two (or more) halos in the previous
+                              // timestep.
+
+  // The MatrixColumnSum stores the sum of each column in the similarity
+  // matrix. Based on this sum, we can infer, if a new halo is "born" or
+  // if we have a merge event.
+  std::vector< int > MatrixColumnSum;
+
+  // The similarity matrix stores the percent similarity of halo at a previous
+  // timestep, i.e., Halos1, and a halo at the current timestep, i.e., the
+  // array Halos2.
   std::vector< int > HaloSimilarityMatrix; // Flat 2-D matrix
+
+  // The user-supplied percent threshold, default is set to 50%
   int MergerTreeThreshold;
 
+  /**
+   * @brief Checks if the given ID corresponds to an index of a halo that has
+   * been designated as dead.
+   * @param idx the index of the halo in query.
+   * @return status true if the the corresponding halo has been designated as
+   * dead, else, false.
+   */
+  bool IsHaloDead(const int idx)
+    {return(this->DeadHalos.find(idx) != this->DeadHalos.end());};
+
+  /**
+   * @brief Checks if the halo corresponding to the given index is a merger
+   * @param idx the index of the halo in query.
+   * @return status true if the corresponding halo has been designated as
+   * merger, else, false.
+   */
+  bool IsHaloMerge(const int idx)
+    {return(this->MergeHalos.find(idx) != this->MergeHalos.end());};
+
+  /**
+   * @brief Checks if the halo correponding to the given index has been split
+   * @param idx the index of the halo in query.
+   * @return status true if the correponding halo is split, else false.
+   */
+  bool IsHaloSplit(const int idx)
+    {return(this->SplitHalos.find(idx) != this->SplitHalos.end());};
 
   /**
    * @brief Registers the halos at the given timesteps.
