@@ -77,6 +77,12 @@ protected:
    int PreviousIdx;
 
    /**
+    * @brief Prints the similarity matrix on this process.
+    * @note Used mostly for debugging.
+    */
+   void PrintMatrix();
+
+   /**
     * @brief Exchanges halos of this process with neighbor processes
     * @param halos the list of halos in this process
     * @param N the number of halos in this process
