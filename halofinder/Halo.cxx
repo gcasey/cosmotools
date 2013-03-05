@@ -148,9 +148,10 @@ int Halo::Intersect(Halo *h)
   overlapParticles.clear();
 
   int percentOverlap = static_cast<int>(
-      round( 100*( round(overlap/h->GetNumberOfParticles())) ) );
+      round( 100*( static_cast<double>(overlap)/
+                    static_cast<double>(this->GetNumberOfParticles())) ) );
 
-  return( overlap );
+  return( percentOverlap );
 }
 
 //-----------------------------------------------------------------------------
