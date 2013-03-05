@@ -122,6 +122,13 @@ public:
   bool IsEmpty();
 
   /**
+   * @brief Returns the number of nodes at the given timestep.
+   * @param tstep the timestep in query.
+   * @return N the number of nodes in the tree at the given timestep.
+   */
+  int GetNumberOfNodes(const int tstep);
+
+  /**
    * @brief Computes the number of nodes.
    * @return N the number of nodes.
    */
@@ -204,11 +211,18 @@ protected:
   std::vector< int > EdgeWeights;      // Weights associated with edges
   std::vector< int > EdgeEvents;       // edge events
 
+  std::map<int,int> NodeCounter; // Counts number of nodes at a given timestep
   std::string FileName;
 
   MPI_Comm Communicator;
 
   int IOFormat;
+
+  /**
+   * @brief Updates the node counter at the given timestep
+   * @param tstep the timestep to update.
+   */
+  void UpdateNodeCounter(const int tstep);
 
   /**
    * @brief Gets the variables associated with each tree edge in flat arrays.

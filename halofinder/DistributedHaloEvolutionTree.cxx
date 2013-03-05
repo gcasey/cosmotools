@@ -139,6 +139,11 @@ void DistributedHaloEvolutionTree::AppendNodes(
     {
     this->Nodes[ halos[ halo ].GetHashCode() ] = halos[ halo ];
 
+    if( halos[ halo ].HaloType == NORMALHALO )
+      {
+      this->UpdateNodeCounter( halos[ halo ].TimeStep );
+      }
+
     // Remove the particle Ids of the object
     this->Nodes[ halos[ halo ].GetHashCode() ].ParticleIds.clear();
     } // END for all halos
@@ -176,6 +181,21 @@ bool DistributedHaloEvolutionTree::IsEmpty()
 }
 
 //------------------------------------------------------------------------------
+int DistributedHaloEvolutionTree::GetNumberOfNodes(const int tstep)
+{
+  int N = 0;
+  if(this->NodeCounter.find(tstep) != this->NodeCounter.end() )
+    {
+    N = this->NodeCounter[ tstep ];
+    }
+  else
+    {
+    std::cerr << "WARNING: No tree nodes for requrested time-step!\n";
+    }
+  return( N );
+}
+
+//------------------------------------------------------------------------------
 int DistributedHaloEvolutionTree::GetNumberOfNodes()
 {
   return( this->Nodes.size() );
@@ -195,6 +215,19 @@ bool DistributedHaloEvolutionTree::HasNode(std::string hashCode)
     return false;
     }
   return true;
+}
+
+//------------------------------------------------------------------------------
+void DistributedHaloEvolutionTree::UpdateNodeCounter(const int tstep)
+{
+  if( this->NodeCounter.find(tstep) != this->NodeCounter.end() )
+    {
+    this->NodeCounter[tstep]++;
+    }
+  else
+    {
+    this->NodeCounter[tstep] = 1;
+    }
 }
 
 //------------------------------------------------------------------------------

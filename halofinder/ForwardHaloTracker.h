@@ -92,6 +92,13 @@ public:
       INTEGER tstep, REAL redshift, std::vector<cosmotk::Halo> &halos);
 
   /**
+   * @brief Returns the number of merger-tree nodes at the given time-step.
+   * @param tstep the time-step in query.
+   * @return N the number of nodes in the tree.
+   */
+  int GetNumberOfMergerTreeNodes(const int tstep);
+
+  /**
    * @brief Writes the merger-tree at the given file name.
    * @param fileName the file where the merger-tree will be written.
    */
