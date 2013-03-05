@@ -2,10 +2,11 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cmath>
+#include <cstddef>
+#include <cstdio>
 #include <sstream>
 #include <vector>
-#include <cstdio>
-#include <cstddef>
 
 namespace cosmotk
 {
@@ -145,6 +146,10 @@ int Halo::Intersect(Halo *h)
 
   overlap = overlapParticles.size();
   overlapParticles.clear();
+
+  int percentOverlap = static_cast<int>(
+      round( 100*( round(overlap/h->GetNumberOfParticles())) ) );
+
   return( overlap );
 }
 

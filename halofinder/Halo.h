@@ -96,8 +96,8 @@ public:
   /**
    * @brief Intersects this halo instance with another halo
    * @param h the halo to intersect with
-   * @return N the number of halos that intersect between this halo
-   * instance and the halo pointed to by h.
+   * @return N the percentage of particles of the given halo, h, that intersect
+   * with this halo instance.
    * @note iff N==0 this halo does not intersect with another halo.
    */
   int Intersect(Halo *h);
