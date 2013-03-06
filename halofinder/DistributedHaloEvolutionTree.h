@@ -95,6 +95,12 @@ public:
   GetNSetMacro(IOFormat,int);
 
   /**
+   * @brief Inserts the given halo as a node in the tree.
+   * @param halo the halo to add
+   */
+  void InsertNode(Halo &halo);
+
+  /**
    * @brief Adds the given halos as nodes to this instance of the tree
    * @param halos the set of halos to be added in the tree.
    * @note Each tree node is identified by the halo hash-code.

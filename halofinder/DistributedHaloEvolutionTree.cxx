@@ -132,6 +132,14 @@ void DistributedHaloEvolutionTree::GetDIYTree(DIYTree* tree)
 }
 
 //------------------------------------------------------------------------------
+void DistributedHaloEvolutionTree::InsertNode(Halo &halo)
+{
+  this->Nodes[ halo.GetHashCode() ] = halo;
+  this->Nodes[ halo.GetHashCode() ].ParticleIds.clear();
+  this->UpdateNodeCounter( halo.TimeStep );
+}
+
+//------------------------------------------------------------------------------
 void DistributedHaloEvolutionTree::AppendNodes(
       Halo *halos, const int N)
 {
@@ -139,7 +147,7 @@ void DistributedHaloEvolutionTree::AppendNodes(
     {
     this->Nodes[ halos[ halo ].GetHashCode() ] = halos[ halo ];
 
-    if( halos[ halo ].HaloType == NORMALHALO )
+    if( halos[ halo ].HaloType != GHOSTHALO )
       {
       this->UpdateNodeCounter( halos[ halo ].TimeStep );
       }
