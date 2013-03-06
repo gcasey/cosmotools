@@ -9,6 +9,9 @@
 #include "HaloMergerTreeKernel.h"
 
 #include "CosmologyToolsMacros.h"
+#include "DistributedHaloEvolutionTree.h"
+
+// MPI
 #include <mpi.h>
 
 // STL data-structures
@@ -114,6 +117,12 @@ protected:
     */
    void ExchangeHaloParticles(
        cosmotk::Halo* halos, const int N, HaloHashMap &haloHash);
+
+   /**
+    * @brief Updates halo evolution tree accordingly to treat death events.
+    * @param t pointer the DistributedHaloEvolutionTree.
+    */
+   void HandleDeathEvents(DistributedHaloEvolutionTree *t);
 
 
 private:

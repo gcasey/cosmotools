@@ -2,6 +2,9 @@
 
 #include "Halo.h"
 
+// DIY communication sub-strate
+#include "diy.h"
+
 #include <fstream>
 #include <sstream>
 
@@ -98,8 +101,46 @@ void ParallelHaloMergerTree::UpdateMergerTree(
   // STEP 3: Update the halo-evolution tree
   this->UpdateHaloEvolutionTree( t );
 
-  // STEP 4: Barrier synchronization
+  // STEP 4: Handle Death events
+  this->HandleDeathEvents( t );
+
+  // STEP 5: Barrier synchronization
   this->Barrier();
+}
+
+//------------------------------------------------------------------------------
+void ParallelHaloMergerTree::HandleDeathEvents(
+        DistributedHaloEvolutionTree *t)
+{
+  assert("pre: halo evolution tree is NULL!" && (t != NULL) );
+
+  std::set< int >::iterator iter = this->DeadHalos.begin();
+  for(;iter != this->DeadHalos.end(); ++iter)
+    {
+    int haloIdx = *iter;
+    assert("pre: Dead haloIdx is out-of-bounds" &&
+        (haloIdx >= 0) &&
+        (haloIdx < this->TemporalHalos[this->PreviousIdx].size()) );
+
+    // Copy the halo
+    this->TemporalHalos[this->CurrentIdx].push_back(
+          this->TemporalHalos[this->PreviousIdx][haloIdx]);
+    int zombieIdx = this->TemporalHalos[this->CurrentIdx].size()-1;
+
+    // Update its attributes
+    Halo *zombie  = &this->TemporalHalos[this->CurrentIdx][zombieIdx];
+    Halo *refHalo = &this->TemporalHalos[this->PreviousIdx][haloIdx];
+    zombie->TimeStep = refHalo->TimeStep;
+    zombie->Redshift = refHalo->Redshift;
+    zombie->HaloType = ZOMBIEHALO;
+
+    t->InsertNode( *zombie );
+    t->CreateEdge(
+         refHalo->GetHashCode(),
+         zombie->GetHashCode(),
+         100,
+         MergerTreeEvent::DEATH);
+    } // END for all dead halos
 }
 
 //------------------------------------------------------------------------------
