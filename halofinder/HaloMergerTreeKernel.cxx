@@ -88,7 +88,7 @@ void HaloMergerTreeKernel::ComputeMergerTree( )
       {
       int overlap = this->Halos1[row].Intersect(&this->Halos2[col]);
       this->HaloSimilarityMatrix[row*ncol+col] = overlap;
-      if( overlap > this->MergerTreeThreshold )
+      if( overlap >= this->MergerTreeThreshold )
         {
         this->MatrixColumnSum[ col ]++;
         ++rowCount;
