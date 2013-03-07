@@ -136,7 +136,10 @@ void DistributedHaloEvolutionTree::InsertNode(Halo &halo)
 {
   this->Nodes[ halo.GetHashCode() ] = halo;
   this->Nodes[ halo.GetHashCode() ].ParticleIds.clear();
-  this->UpdateNodeCounter( halo.TimeStep );
+  if( halo.HaloType != GHOSTHALO )
+    {
+    this->UpdateNodeCounter( halo.TimeStep );
+    }
 }
 
 //------------------------------------------------------------------------------
