@@ -128,15 +128,16 @@ void ParallelHaloMergerTree::HandleDeathEvents(
     int zombieIdx = this->TemporalHalos[this->CurrentIdx].size()-1;
 
     // Update its attributes
-    Halo *zombie  = &this->TemporalHalos[this->CurrentIdx][zombieIdx];
-    Halo *refHalo = &this->TemporalHalos[this->PreviousIdx][haloIdx];
+    Halo *zombie     = &this->TemporalHalos[this->CurrentIdx][zombieIdx];
+    Halo *sourceHalo = &this->TemporalHalos[this->PreviousIdx][haloIdx];
+    Halo *refHalo    = &this->TemporalHalos[this->CurrentIdx][0];
     zombie->TimeStep = refHalo->TimeStep;
     zombie->Redshift = refHalo->Redshift;
     zombie->HaloType = ZOMBIEHALO;
 
     t->InsertNode( *zombie );
     t->CreateEdge(
-         refHalo->GetHashCode(),
+         sourceHalo->GetHashCode(),
          zombie->GetHashCode(),
          100,
          MergerTreeEvent::DEATH);
