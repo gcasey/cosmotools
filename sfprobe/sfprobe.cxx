@@ -12,36 +12,68 @@
 #ifdef USEDAX
 #define DAX_DEVICE_ADAPTER DAX_DEVICE_ADAPTER_TBB
 #include "dax/cont/DeviceAdapter.h"
+#include "dax/cont/ArrayHandleConstantValue.h"
 #include "dax/Types.h"
 #include "dax/cont/Scheduler.h"
 #include "dax/cont/ArrayHandle.h"
+
 #include "dax/mapPointsToGrid.worklet"
+#include "dax/tetrahedralize.worklet"
 #endif
 
 int main( int argc, char **argv )
 {
-#ifdef USEDAX
-  int N = 10;
-  REAL *pnt = new REAL[ 3*N ];
-
-  dax::Vector3 origin(0.0);
-  dax::Vector3 spacing(0.5);
   dax::Extent3 extent;
   extent.Min = dax::Id3(0);
   extent.Max = dax::Id3(10);
 
+  dax::cont::UniformGrid<> LagrangianGrid;
+  LagrangianGrid.SetOrigin( dax::Vector3(0.0) );
+  LagrangianGrid.SetSpacing( dax::Vector3(0.5) );
+  LagrangianGrid.SetExtent(extent);
 
-  dax::cont::ArrayHandle<dax::Vector3> pntHandle =
-      dax::cont::make_ArrayHandle(reinterpret_cast<dax::Vector3*>(pnt),N);
+  dax::cont::UnstructuredGrid<dax::CellTagTetrahedron> EulerGrid;
 
-  dax::cont::ArrayHandle<dax::Id > output;
   dax::cont::Scheduler<> scheduler;
-  scheduler.Invoke(
-      dax::worklet::MapPointToGrid( ), pntHandle, origin, spacing, extent, output );
 
-  INTEGER *bins = new INTEGER[ N ];
-  output.CopyInto( bins );
-#endif
+//  typedef dax::cont::ArrayHandleConstantValue< dax::Id > HowManyTetsPerCellType;
+//
+//  HowManyTetsPerCellType numTets(5, LagrangianGrid.GetNumberOfCells());
+//
+//  typedef dax::cont::GenerateTopology< dax::worklet::Tetrahedralize,
+//                               DAX_DEFAULT_DEVICE_ADAPTER_TAG,
+//                               HowManyTetsPerCellType > GeneratorType;
+//  GeneratorType generateTets(numTets);
+//
+//  generateTets.SetRemoveDuplicatePoints(false);
+//  scheduler.Invoke( generateTets, LagrangianGrid, EulerGrid );
+//
+//  INTEGER *bins = new INTEGER[ EulerGrid.GetNumberOfCells() * 4 ];
+//  EulerGrid.GetCellConnections().CopyInto( bins );
+
+//#ifdef USEDAX
+// Here is how to run the mapPoints kernel
+//  int N = 10;
+//  REAL *pnt = new REAL[ 3*N ];
+//
+//  dax::Vector3 origin(0.0);
+//  dax::Vector3 spacing(0.5);
+//  dax::Extent3 extent;
+//  extent.Min = dax::Id3(0);
+//  extent.Max = dax::Id3(10);
+//
+//
+//  dax::cont::ArrayHandle<dax::Vector3> pntHandle =
+//      dax::cont::make_ArrayHandle(reinterpret_cast<dax::Vector3*>(pnt),N);
+//
+//  dax::cont::ArrayHandle<dax::Id > output;
+//  dax::cont::Scheduler<> scheduler;
+//  scheduler.Invoke(
+//      dax::worklet::MapPointToGrid( ), pntHandle, origin, spacing, extent, output );
+//
+//  INTEGER *bins = new INTEGER[ N ];
+//  output.CopyInto( bins );
+//#endif
 }
 
 // CosmologyTools includes

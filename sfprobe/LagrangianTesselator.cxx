@@ -21,7 +21,7 @@ struct FaceKey {
 
   /**
    * @brief Constructor of a face key
-   * @param face the triangular face
+   * @param face the triangular/ face
    */
   FaceKey( INTEGER face[3], INTEGER tetIdx, INTEGER faceIdx )
     {
@@ -105,8 +105,12 @@ void LagrangianTesselator::Initialize()
 //------------------------------------------------------------------------------
 void LagrangianTesselator::Tesselate()
 {
+//#ifdef USEDAX
+//  this->DAXBuildTesselation();
+//#else
   this->BuildTesselation();
-  this->BuildFaceAdjacency();
+//#endif
+//  this->BuildFaceAdjacency();
 }
 
 //------------------------------------------------------------------------------
@@ -275,6 +279,14 @@ void LagrangianTesselator::GetAdjacentTets(
     this->Connectivity[tetIdx*4+2 ]= V2;  \
     this->Connectivity[tetIdx*4+3 ]= V3;  \
     ++tetIdx;
+
+//-----------------------------------------------------------------------------
+//#ifdef USEDAX
+//void LagrangianTesselator::DAXBuildTesslation()
+//{
+// // TODO: call DAX Tesselation worklet
+//}
+//#endif
 
 //-----------------------------------------------------------------------------
 void LagrangianTesselator::BuildTesselation()
