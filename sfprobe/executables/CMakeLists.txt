@@ -27,8 +27,8 @@ endif()
 foreach(exeFile ${executables})
   get_filename_component(exe ${exeFile} NAME_WE)
   add_executable(${exe} ${exeFile})
-  SET_TARGET_PROPERTIES(
-    ${exe} PROPERTIES COMPILE_FLAGS "-fopenmp" LINK_FLAGS "-fopenmp")
+#  SET_TARGET_PROPERTIES(
+#    ${exe} PROPERTIES COMPILE_FLAGS "-fopenmp" LINK_FLAGS "-fopenmp")
   target_link_libraries(${exe} ${RequiredLibs})
 endforeach()
 
