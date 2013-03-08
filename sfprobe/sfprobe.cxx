@@ -38,6 +38,9 @@ int main( int argc, char **argv )
   dax::cont::Scheduler<> scheduler;
   scheduler.Invoke(
       dax::worklet::MapPointToGrid( ), pntHandle, origin, spacing, extent, output );
+
+  INTEGER *bins = new INTEGER[ N ];
+  output.CopyInto( bins );
 #endif
 }
 
