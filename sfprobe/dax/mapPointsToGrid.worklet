@@ -1,0 +1,48 @@
+//=============================================================================
+//
+//  Copyright (c) Kitware, Inc.
+//  All rights reserved.
+//  See LICENSE.txt for details.
+//
+//  This software is distributed WITHOUT ANY WARRANTY; without even
+//  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+//  PURPOSE.  See the above copyright notice for more information.
+//
+//  Copyright 2012 Sandia Corporation.
+//  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+//  the U.S. Government retains certain rights in this software.
+//
+//=============================================================================
+#ifndef __MapPointsToGrid_worklet_
+#define __MapPointsToGrid_worklet_
+
+#include <dax/exec/WorkletMapField.h>
+#include <dax/Extent.h>
+
+namespace dax {
+namespace worklet {
+
+class MapPointToGrid : public dax::exec::WorkletMapField
+{
+public:
+  //origin, spacing, dims
+  typedef void ControlSignature(Field(In), Field(In), Field(In), Field(In), Field(Out));
+  typedef _4 ExecutionSignature(_1, _2, _3, _4);
+
+  DAX_EXEC_EXPORT
+  dax::Id operator()(const& dax::Vector3 coordinate,
+                     const& dax::Vector3 origin,
+                     const& dax::Vector3 spacing,
+                     const& dax::Extent3 extents) const
+  {
+  //for each point determine which cell in the virtual grid it is inside.
+  dax::id3 ijk = static_cast<dax::Id>( (coordinate - origin) / spacing );
+  return dax::index3ToFlatIndexCell(ijk,extent);
+
+  }
+};
+
+}
+}
+
+#endif
