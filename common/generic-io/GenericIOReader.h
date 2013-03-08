@@ -9,8 +9,9 @@
 #include "GenericIOBase.h" // Base class
 #include "GenericIODefinitions.hpp"
 
-#include <vector> // for STL vector
 #include <map>    // for STL map
+#include <string> // for STL string
+#include <vector> // for STL vector
 
 namespace cosmotk
 {
@@ -80,7 +81,7 @@ public:
    * @param varName the variable name.
    * @return status true if the variable exists, else false.
    */
-  bool HasVariable(std::string &varName)
+  bool HasVariable(std::string varName)
     { return( (this->GetVariableIndex(varName)!=-1) ); };
 
   /**
@@ -134,6 +135,14 @@ protected:
    */
   bool IsSplitMode()
     { return( this->SplitMode ); };
+
+  /**
+   * @brief Based on the global & variable headers, this method determines if
+   * the file has been written in split mode or not.
+   * @pre The variables must have been indexed prior to calling this method,
+   * i.e., this method should be called after IndexVariables() has been called.
+   */
+  void DetermineFileType();
 
   /**
    * @brief Builds an index based on variable name.

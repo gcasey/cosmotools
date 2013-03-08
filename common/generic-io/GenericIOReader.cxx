@@ -9,12 +9,24 @@ namespace cosmotk
 GenericIOReader::GenericIOReader()
 {
   this->SwapEndian=false;
+  this->SplitMode=false;
 }
 
 //------------------------------------------------------------------------------
 GenericIOReader::~GenericIOReader()
 {
   // TODO Auto-generated destructor stub
+}
+
+//------------------------------------------------------------------------------
+void GenericIOReader::DetermineFileType()
+{
+  if( (this->GetTotalNumberOfBlocks()==1) &&
+       this->HasVariable("$rank")          &&
+       this->HasVariable("$partition"))
+    {
+    this->SplitMode = true;
+    }
 }
 
 //------------------------------------------------------------------------------
