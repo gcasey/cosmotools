@@ -105,6 +105,7 @@ public:
 
 protected:
   bool SwapEndian;
+  bool SplitMode;
 
   GlobalHeader GH;
   std::vector< VariableHeader > VH;
@@ -118,6 +119,13 @@ protected:
   // one block in the file. The vector of AssignedBlocks holds the list of
   // blocks for this process.
   std::vector< int > AssignedBlocks;
+
+  /**
+   * @brief Checks if the underlying files has been written in split mode
+   * @return status true, if the mode is split, else false.
+   */
+  bool IsSplitMode()
+    { return( this->SplitMode ); };
 
   /**
    * @brief Builds an index based on variable name.
