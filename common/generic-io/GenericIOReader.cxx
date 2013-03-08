@@ -8,8 +8,9 @@ namespace cosmotk
 //------------------------------------------------------------------------------
 GenericIOReader::GenericIOReader()
 {
-  this->SwapEndian=false;
-  this->SplitMode=false;
+  this->SwapEndian    = false;
+  this->SplitMode     = false;
+  this->NumberOfFiles = 1;
 }
 
 //------------------------------------------------------------------------------
@@ -21,8 +22,7 @@ GenericIOReader::~GenericIOReader()
 //------------------------------------------------------------------------------
 void GenericIOReader::DetermineFileType()
 {
-  if( (this->GetTotalNumberOfBlocks()==1) &&
-       this->HasVariable("$rank")          &&
+  if(  this->HasVariable("$rank")          &&
        this->HasVariable("$partition"))
     {
     this->SplitMode = true;
@@ -48,10 +48,6 @@ int GenericIOReader::GetVariableIndex(const std::string name)
        this->VariableName2IndexMap.end())
     {
     idx = this->VariableName2IndexMap[name];
-    }
-  else
-    {
-    std::cerr << "WARNING: No index for variable " << name << "!\n";
     }
   return( idx );
 }

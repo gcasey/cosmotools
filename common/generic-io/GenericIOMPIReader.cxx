@@ -61,6 +61,29 @@ void GenericIOMPIReader::OpenAndReadHeader()
   // STEP 3: Index the variables
   this->IndexVariables();
 
+  // STEP 4: Detect file type, i.e., if the data is written to separate files
+  switch( this->Rank )
+    {
+    case 0:
+      {
+      this->DetermineFileType();
+      if( this->SplitMode )
+        {
+        std::cout << "Data is split!!!!\n";
+        std::cout.flush();
+        }
+      int split = (this->SplitMode)? 1 : 0;
+      MPI_Bcast(&split,1,MPI_INTEGER,0,this->Communicator);
+      }
+      break;
+    default:
+      {
+      int split = -1;
+      MPI_Bcast(&split,1,MPI_INTEGER,0,this->Communicator);
+      this->SplitMode = (split==1)? true : false;
+      }
+    } // END switch
+
 
   // STEP 4: Round robin assignment
   GenericIOUtilities::RoundRobin(
