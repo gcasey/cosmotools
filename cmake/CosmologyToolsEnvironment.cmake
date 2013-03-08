@@ -68,6 +68,13 @@ if(${ENABLE_FRAMEWORK_STATISTICS})
   add_definitions(-DENABLESTATS)
 endif()
 
+option(ENABLE_DAX "Enable DAX Toolkit" OFF)
+if(${ENABLE_DAX})
+  add_definitions(-DUSEDAX)
+  find_package(Dax REQUIRED)
+  DaxConfigureTBB(REQUIRED)
+endif()
+
 option(ENABLE_THIRDPARTY_SQLITE "Enable SQlite" OFF)
 if(${ENABLE_THIRDPARTY_SQLITE})
  add_definitions(-DSQLITE)

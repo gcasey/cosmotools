@@ -4,8 +4,42 @@
 #include <fstream>
 #include <iostream>
 
+#include "CosmologyToolsMacros.h"
+
 // MPI includes
 #include <mpi.h>
+
+#ifdef USEDAX
+#define DAX_DEVICE_ADAPTER DAX_DEVICE_ADAPTER_TBB
+#include "dax/cont/DeviceAdapter.h"
+#include "dax/Types.h"
+#include "dax/cont/Scheduler.h"
+#include "dax/cont/ArrayHandle.h"
+#include "dax/mapPointsToGrid.worklet"
+#endif
+
+int main( int argc, char **argv )
+{
+#ifdef USEDAX
+  int N = 10;
+  REAL *pnt = new REAL[ 3*N ];
+
+  dax::Vector3 origin(0.0);
+  dax::Vector3 spacing(0.5);
+  dax::Extent3 extent;
+  extent.Min = dax::Id3(0);
+  extent.Max = dax::Id3(10);
+
+
+  dax::cont::ArrayHandle<dax::Vector3> pntHandle =
+      dax::cont::make_ArrayHandle(reinterpret_cast<dax::Vector3*>(pnt),N);
+
+  dax::cont::ArrayHandle<dax::Id > output;
+  dax::cont::Scheduler<> scheduler;
+  scheduler.Invoke(
+      dax::worklet::MapPointToGrid( ), pntHandle, origin, spacing, extent, output );
+#endif
+}
 
 // CosmologyTools includes
 //#include "CosmologyToolsMacros.h"
@@ -90,8 +124,8 @@
 //}
 
 //------------------------------------------------------------------------------
-int main(int argc, char **argv)
-{
+//int main(int argc, char **argv)
+//{
 //  int rank, size;
 //  MPI_Init(&argc, &argv);
 //  MPI_Comm_rank( MPI_COMM_WORLD, &rank );
@@ -136,8 +170,8 @@ int main(int argc, char **argv)
 //  delete [] particles;
 //  delete mySFProbe;
 //  MPI_Finalize();
-  return 0;
-}
+//  return 0;
+//}
 
 
 

@@ -42,4 +42,8 @@ else()
 endif()
 target_link_libraries(sfprobe ${MPI_C_LIBRARIES})
 
+
+add_executable(daxprobe sfprobe.cxx)
+target_link_libraries(daxprobe sfprobe)
+
 add_subdirectory(executables)
