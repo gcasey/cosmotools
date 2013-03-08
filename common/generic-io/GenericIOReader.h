@@ -76,6 +76,14 @@ public:
     {return this->GH.NElems;};
 
   /**
+   * @brief Checks if the given variable exists.
+   * @param varName the variable name.
+   * @return status true if the variable exists, else false.
+   */
+  bool HasVariable(std::string &varName)
+    { return( (this->GetVariableIndex(varName)!=-1) ); };
+
+  /**
    * @brief Opens and reads the header of the file and initializes internal
    * data-structures.
    * @pre !This->FileName.empty()
