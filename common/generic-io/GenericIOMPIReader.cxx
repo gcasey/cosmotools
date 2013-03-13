@@ -379,6 +379,8 @@ void GenericIOMPIReader::ReadSingleFileData()
     int vidx = this->GetVariableIndex( this->Vars[ varIdx ].Name );
     if(vsize != this->VH[vidx].Size)
       {
+      std::cerr << "Variable size mismatch for var: "
+                << this->Vars[ varIdx ].Name << std::endl;
       throw std::runtime_error(
           "Variable size mismatch for " + this->Vars[ varIdx ].Name);
       }
