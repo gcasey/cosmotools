@@ -303,6 +303,62 @@ void GenericIOMPIReader::ReadBlockToFileMap()
 //------------------------------------------------------------------------------
 void GenericIOMPIReader::ReadData()
 {
+  if( this->SplitMode && this->ProxyEnabled )
+    {
+    this->ReadSplitModeData();
+    }
+  else
+    {
+    this->ReadSingleFileData();
+    }
+}
+
+//------------------------------------------------------------------------------
+void GenericIOMPIReader::ReadSplitModeData()
+{
+  // STEP 0: Propagate variables to internal readers
+  for(int i=0; i < this->NumberOfFiles; ++i)
+    {
+    assert("pre: Internal reader should not be NULL!" &&
+             (this->InternalReaders[ i ] != NULL) );
+
+    this->InternalReaders[ i ]->ClearVariables();
+
+    // Determine offset in to variable array to write
+    int nskip = 0;
+    if( i > 0 )
+      {
+      nskip = this->InternalReaders[ i-1 ]->GetNumberOfElements();
+      }
+
+    for(unsigned int varIdx=0; varIdx < this->Vars.size(); ++varIdx)
+      {
+      // sanity check!
+      assert("pre: Data for variable is NULL!" &&
+          (this->Vars[varIdx].Data != NULL) );
+
+      // Get the variable size
+      size_t vsize = this->Vars[varIdx].Size;
+
+      // Get pointer where reader "i" will start filling in data for this
+      // variable
+      void *dataPtr =
+          static_cast<char*>(this->Vars[varIdx].Data)+(nskip*vsize);
+      assert("pre: dataPtr is NULL!" && (dataPtr != NULL) );
+
+      this->InternalReaders[ i ]->AddVariable(
+          this->GetVariableInfo(varIdx),dataPtr);
+
+      } // END for all variables
+
+    // Read all the data from this file
+    this->InternalReaders[ i ]->ReadData();
+    } // END for all files
+}
+
+//------------------------------------------------------------------------------
+void GenericIOMPIReader::ReadSingleFileData()
+{
   // STEP 0: Get the total number of elements in an array for this rank
   int N = this->GetNumberOfElements();
 
