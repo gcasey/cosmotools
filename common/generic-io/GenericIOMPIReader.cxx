@@ -131,6 +131,7 @@ void GenericIOMPIReader::ReadBlockToFileMap()
       this->ReadData();
       MPI_Bcast(rank,NumElements,MPI_INTEGER,0,this->Communicator);
       MPI_Bcast(part,NumElements,MPI_INTEGER,0,this->Communicator);
+      this->ClearVariables();
       break;
     default:
       MPI_Bcast(&NumElements,1,MPI_INTEGER,0,this->Communicator);
