@@ -122,10 +122,12 @@ protected:
 
   std::map<std::string, int> VariableName2IndexMap;
 
-  // Stores the mapping of data-blocks to a file ID.
+  // Stores the mapping of data-blocks to a file ID. Note, this is only
+  // applicable iff this->SplitMode==true.
   std::map<int,int> BlockToFileMap;
 
-  // The number of files the data has been split to.
+  // The number of files the data has been split to. Note, this is only
+  // applicable iff this->SplitMode==true.
   int NumberOfFiles;
 
   // List of blocks that will be read by this process. Recall, the number of
