@@ -5,6 +5,7 @@
 #include <cassert>
 #include <cstddef>
 #include <iostream>
+#include <set>
 #include <sstream>
 #include <stdexcept>
 
@@ -67,21 +68,24 @@ void GenericIOMPIReader::OpenAndReadHeader()
     case 0:
       {
       this->DetermineFileType();
-      if( this->SplitMode )
-        {
-        std::cout << "Data is split!!!!\n";
-        std::cout.flush();
-        }
       int split = (this->SplitMode)? 1 : 0;
       MPI_Bcast(&split,1,MPI_INTEGER,0,this->Communicator);
-      }
+      if( this->SplitMode )
+        {
+        this->ReadBlockToFileMap();
+        } // END if splitmode
+      } // END rank==0
       break;
     default:
       {
       int split = -1;
       MPI_Bcast(&split,1,MPI_INTEGER,0,this->Communicator);
       this->SplitMode = (split==1)? true : false;
-      }
+      if( this->SplitMode )
+        {
+        this->ReadBlockToFileMap();
+        } // END if splitmode
+      } // END default
     } // END switch
 
 
@@ -104,6 +108,58 @@ int GenericIOMPIReader::GetNumberOfElements()
     N += this->GetNumberOfElementsForBlock(blkIdx);
     } // END for all blocks
   return( N );
+}
+
+//------------------------------------------------------------------------------
+void GenericIOMPIReader::ReadBlockToFileMap()
+{
+  assert("pre: file must be in SplitMode" && this->SplitMode);
+
+  // STEP 0: Rank 0 reads block-to-file mapping and distributes it to all ranks
+  int NumElements=0;
+  int *rank = NULL;
+  int *part = NULL;
+  switch(this->Rank)
+    {
+    case 0:
+      NumElements = this->GetNumberOfElements();
+      MPI_Bcast(&NumElements,1,MPI_INTEGER,0,this->Communicator);
+      rank = new int[NumElements];
+      part = new int[NumElements];
+      this->AddVariable("$rank",rank);
+      this->AddVariable("$partition",part);
+      this->ReadData();
+      MPI_Bcast(rank,NumElements,MPI_INTEGER,0,this->Communicator);
+      MPI_Bcast(part,NumElements,MPI_INTEGER,0,this->Communicator);
+      break;
+    default:
+      MPI_Bcast(&NumElements,1,MPI_INTEGER,0,this->Communicator);
+      rank = new int[NumElements];
+      part = new int[NumElements];
+      MPI_Bcast(rank,NumElements,MPI_INTEGER,0,this->Communicator);
+      MPI_Bcast(part,NumElements,MPI_INTEGER,0,this->Communicator);
+    } // END switch
+
+  // STEP 1: All processes
+  std::set<int > parts;
+  for(int i=0; i < NumElements; ++i)
+    {
+    parts.insert(part[i]);
+    this->BlockToFileMap[ rank[i] ]=part[i];
+    }
+  this->NumberOfFiles = parts.size();
+
+  // STEP 2: Delete dynamically allocated data
+  parts.clear();
+  if( rank != NULL )
+    {
+    delete [] rank;
+    }
+  if( part != NULL )
+    {
+    delete [] part;
+    }
+
 }
 
 //------------------------------------------------------------------------------

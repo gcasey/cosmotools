@@ -61,6 +61,12 @@ protected:
   int NumRanks;
 
   /**
+   * @brief Reads in the BlockToFile mapping.
+   * @pre this->SplitMode==true.
+   */
+  void ReadBlockToFileMap();
+
+  /**
    * @brief Reads the header of the ith variable
    * @param vh the variable header where the dara will be read in.
    * @pre vh != NULL
