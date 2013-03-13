@@ -65,6 +65,16 @@ public:
     }
 
   /**
+   * @brief Constructs and returns a variable info object for variable
+   * corresponding to the given, user-supplied variable index.
+   * @param variableIdx the index of the variable in query.
+   * @return VI the variable info object
+   * @see VariableInfo in GenericIODefinitions.hpp
+   * @pre ( variableIdx >= 0 ) && ( variableIdx < this->Vars.size() )
+   */
+  VariableInfo GetVariableInfo(const int variableIdx);
+
+  /**
    * @brief Adds a variable associated with the given user-supplied
    * VariableInfo object and the data pointed by the void* pointer.
    * @param VI the user-supplied variable information object
