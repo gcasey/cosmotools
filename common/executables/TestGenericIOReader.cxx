@@ -2,14 +2,15 @@
  * @brief Simple code to test the GenericIOMPIReader
  */
 
+#include "CosmologyToolsMacros.h"
+#include "GenericIOMPIReader.h"
+
 // C/C++ includes
 #include <iostream>
 #include <map>
 #include <set>
 #include <sstream>
-
-
-#include "GenericIOMPIReader.h"
+#include <iomanip>
 
 int main(int argc, char **argv)
 {
@@ -34,77 +35,52 @@ int main(int argc, char **argv)
 
   std::cout << "Calling GetNumber of Elements....\n";
   std::cout.flush();
-
   int NumElements = myReader->GetNumberOfElements();
   std::cout << "NumElements: " << NumElements << std::endl;
   std::cout.flush();
   MPI_Barrier(MPI_COMM_WORLD);
 
-//  for(int i=0; i < myReader->GetNumberOfVariables(); ++i )
-//    {
-//    std::cout << myReader->GetVariableName( i ) << std::endl;
-//    std::cout.flush();
-//    }
-//
-//  int *rank = new int[ NumElements ];
-//  int *part = new int[ NumElements ];
-//  myReader->AddVariable("$rank",rank);
-//  myReader->AddVariable("$partition",part);
-//  myReader->ReadData();
-//
-//  std::map< int,int > fileMap;
-//  std::set< int > fileSuffix;
-//  std::cout << "Read: " << NumElements << std::endl;
-//  std::cout.flush();
-//  for( int i=0; i < NumElements; ++i)
-//    {
-//    fileMap[ rank[i] ] = part[i];
-//    fileSuffix.insert( part[i] );
-//    } // END for all elements
-//
-//  std::cout << "Num files: " << fileSuffix.size() << std::endl;
-//  std::cout.flush();
-//
-//  std::ostringstream oss;
-//  std::vector< cosmotk::GenericIOMPIReader*  > Readers;
-//  Readers.resize( fileSuffix.size() );
-//  for(int i=0; i < fileSuffix.size(); ++i)
-//    {
-//    oss.str(""); oss.clear();
-//    oss << fileName << "#" << i;
-//    std::cout << "========================\n";
-//    std::cout << "Reading file: " << oss.str() << std::endl;
-//    std::cout.flush();
-//
-//    Readers[ i ] = new cosmotk::GenericIOMPIReader();
-//    Readers[ i ]->SetCommunicator(MPI_COMM_WORLD);
-//    Readers[ i ]->SetFileName( oss.str() );
-//    Readers[ i ]->OpenAndReadHeader();
-//
-//    std::cout << "Total Number of Blocks: "
-//         << Readers[ i ]->GetTotalNumberOfBlocks() << std::endl;
-//    std::cout << "Assigned blocks: "
-//         << Readers[ i ]->GetNumberOfAssignedBlocks() << std::endl;
-//    std::cout << "Total Number of Elements: "
-//         << Readers[ i ]->GetTotalNumberOfElements() << std::endl;
-//    std::cout.flush();
-//
-//    int NumElements = Readers[ i ]->GetNumberOfElements();
-//    std::cout << "NumElements: " << NumElements << std::endl;
-//    std::cout.flush();
-//
-//    for(int j=0; j < Readers[ i ]->GetNumberOfVariables(); ++j )
-//      {
-//      std::cout << Readers[ i ]->GetVariableName( j ) << std::endl;
-//      std::cout.flush();
-//      }
-//
-//    Readers[ i ]->Close();
-//    delete Readers[ i ];
-//    } // END for all files
-//
-//  delete [] rank;
-//  delete [] part;
+  ID_T *haloID = new ID_T[NumElements];
+  POSVEL_T *center_x = new POSVEL_T[NumElements];
+  POSVEL_T *center_y = new POSVEL_T[NumElements];
+  POSVEL_T *center_z = new POSVEL_T[NumElements];
+  POSVEL_T *halo_vx  = new POSVEL_T[NumElements];
+  POSVEL_T *halo_vy  = new POSVEL_T[NumElements];
+  POSVEL_T *halo_vz  = new POSVEL_T[NumElements];
+  POSVEL_T *halomass = new POSVEL_T[NumElements];
+
+  myReader->AddVariable("fof_halo_tag",haloID);
+  myReader->AddVariable("fof_halo_center_x",center_x);
+  myReader->AddVariable("fof_halo_center_y",center_y);
+  myReader->AddVariable("fof_halo_center_z",center_z);
+  myReader->AddVariable("fof_halo_mean_vx",halo_vx);
+  myReader->AddVariable("fof_halo_mean_vy",halo_vy);
+  myReader->AddVariable("fof_halo_mean_vz",halo_vz);
+  myReader->AddVariable("fof_halo_mass",halomass);
+
+  myReader->ReadData();
+  MPI_Barrier(MPI_COMM_WORLD);
+
+  for( int i=0; i < NumElements; ++i )
+    {
+    std::cout << haloID[ i ] << "\t";
+    std::cout << std::scientific
+              << std::setprecision(std::numeric_limits<POSVEL_T>::digits10);
+    std::cout << center_x[i] << ", " << center_y[i] << ", " << center_z[i];
+    std::cout << "\t";
+    std::cout << halo_vx[i] << ", " << halo_vy[i] << ", " << halo_vz[i];
+    std::cout << "\t";
+    std::cout << halomass[i] << std::endl;
+    std::cout.flush();
+    } // END for all elements
+
+  delete [] haloID;
+  delete [] center_x;
+  delete [] center_y;
+  delete [] center_z;
+  delete [] halo_vx;
+  delete [] halo_vy;
+  delete [] halo_vz;
 
 
   myReader->Close();
