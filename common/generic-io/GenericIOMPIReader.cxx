@@ -221,8 +221,6 @@ void GenericIOMPIReader::ReadData()
       } // END if swap endian
 
     } // END for all variables
-
-  MPI_Barrier(this->Communicator);
 }
 
 //------------------------------------------------------------------------------
