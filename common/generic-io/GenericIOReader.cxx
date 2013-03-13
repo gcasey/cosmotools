@@ -53,6 +53,14 @@ int GenericIOReader::GetVariableIndex(const std::string name)
 }
 
 //------------------------------------------------------------------------------
+void GenericIOReader::AssignBlock(const int blkIdx)
+{
+  assert("pre: block index is out of bounds" &&
+          (blkIdx >= 0) && (blkIdx < this->GH.NRanks) );
+  this->AssignedBlocks.push_back( blkIdx );
+}
+
+//------------------------------------------------------------------------------
 int GenericIOReader::GetNumberOfElements()
 {
   int N = 0;

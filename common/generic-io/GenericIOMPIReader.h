@@ -30,7 +30,20 @@ public:
    * @pre !This->FileName.empty()
    * @pre this->Communicator != MPI_COMM_NULL
    */
-  virtual void OpenAndReadHeader();
+  virtual void OpenAndReadHeader( bool skipBlockHeaders=false );
+
+  /**
+   * @brief Read the headers of each assigned block.
+   * @see ReadBlockHeader
+   */
+  void ReadBlockHeaders();
+
+  /**
+   * @brief Overrides GetNumberOfElements to provide support for SplitMode
+   * @return N the number of elements to read.
+   * @see GenericIOReader::GetNumberOfElements()
+   */
+  virtual int GetNumberOfElements();
 
   /**
    * @brief Reads the data in to the user-supplied registered arrays.
@@ -95,12 +108,6 @@ protected:
    * @see ReadBlockHeaders
    */
   void ReadBlockHeader(const int blkIdx, RankHeader *blockHeader);
-
-  /**
-   * @brief Read the headers of each assigned block.
-   * @see ReadBlockHeader
-   */
-  void ReadBlockHeaders();
 
   /**
    * @brief If SplitMode is used, this method will attach a reader for each

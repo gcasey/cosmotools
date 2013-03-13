@@ -32,9 +32,13 @@ int main(int argc, char **argv)
        << myReader->GetTotalNumberOfElements() << std::endl;
   std::cout.flush();
 
+  std::cout << "Calling GetNumber of Elements....\n";
+  std::cout.flush();
+
   int NumElements = myReader->GetNumberOfElements();
   std::cout << "NumElements: " << NumElements << std::endl;
   std::cout.flush();
+  MPI_Barrier(MPI_COMM_WORLD);
 
 //  for(int i=0; i < myReader->GetNumberOfVariables(); ++i )
 //    {

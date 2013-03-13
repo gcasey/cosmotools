@@ -98,6 +98,19 @@ public:
   bool IsSplitMode() { return( this->SplitMode ); };
 
   /**
+   * @brief Assigns the given block to the reader instance running on this rank.
+   * @param blkIdx the global index of the block to reader
+   */
+  void AssignBlock(const int blkIdx);
+
+  /**
+   * @brief Clears all assigned blocks to this reader.
+   * @post this->GetNumberOfAssignedBlocks()==0
+   */
+  void ClearBlockAssignment()
+    {this->AssignedBlocks.clear();};
+
+  /**
    * @brief Returns the number of elements that will be read (by this process)
    * @note All variables have the same size.
    * @return N the number of elements to read
@@ -107,10 +120,12 @@ public:
 
   /**
    * @brief Opens and reads the header of the file and initializes internal
-   * data-structures.
+   * data-structures. Optionally, the caller can specify to skip reading the
+   * block headers of a file. By default, only the blocks that the reader
+   * is assigned to will be read.
    * @pre !This->FileName.empty()
    */
-  virtual void OpenAndReadHeader()  = 0;
+  virtual void OpenAndReadHeader( bool skipBlockHeaders=false )  = 0;
 
   /**
    * @brief Reads the data in to the user-supplied registered arrays.
@@ -138,6 +153,10 @@ protected:
   // Stores the mapping of data-blocks to a file ID. Note, this is only
   // applicable iff this->SplitMode==true.
   std::map<int,int> BlockToFileMap;
+
+  // Maps a global block ID, to the global idx within a given file. Note,
+  // this is only applicable iff this->SplitMode==true.
+  std::map<int,int> BlockToIdxWithinFile;
 
   // The number of files the data has been split to. Note, this is only
   // applicable iff this->SplitMode==true.
