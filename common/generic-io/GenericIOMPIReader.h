@@ -33,14 +33,6 @@ public:
   virtual void OpenAndReadHeader();
 
   /**
-   * @brief Returns the number of elements that will be read for each variable.
-   * @note All variables have the same size.
-   * @return N the number of elements to read
-   * @post N >= 0.
-   */
-  virtual int GetNumberOfElements();
-
-  /**
    * @brief Reads the data in to the user-supplied registered arrays.
    * @note The user should have registered the arrays to read via calls to
    * the AddVariable method.
@@ -59,6 +51,15 @@ protected:
   MPI_File FH;
   int Rank;
   int NumRanks;
+
+  // Flag that indicates that all data requests should be proxied to the
+  // internal readers.
+  bool ProxyEnabled;
+
+  /**
+   * @brief List of internal readers
+   */
+  GenericIOMPIReader** InternalReaders;
 
   /**
    * @brief Reads in the BlockToFile mapping.
@@ -100,6 +101,12 @@ protected:
    * @see ReadBlockHeader
    */
   void ReadBlockHeaders();
+
+  /**
+   * @brief If SplitMode is used, this method will attach a reader for each
+   * corresponding file.
+   */
+  void SetupInternalReaders();
 
   /**
    * @brief Reads data into the user-supplied buffer from the MPI file handle

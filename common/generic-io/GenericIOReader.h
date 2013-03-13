@@ -6,6 +6,8 @@
 #ifndef GENERICIOREADER_H_
 #define GENERICIOREADER_H_
 
+#include "CosmologyToolsMacros.h"
+
 #include "GenericIOBase.h" // Base class
 #include "GenericIODefinitions.hpp"
 
@@ -21,6 +23,11 @@ class GenericIOReader : public GenericIOBase
 public:
   GenericIOReader();
   virtual ~GenericIOReader();
+
+  /**
+   * @brief Get macro for number of files.
+   */
+  GetMacro(NumberOfFiles,int);
 
   /**
    * @brief Return the variable size of the ith variable
@@ -85,11 +92,10 @@ public:
     { return( (this->GetVariableIndex(varName)!=-1) ); };
 
   /**
-   * @brief Opens and reads the header of the file and initializes internal
-   * data-structures.
-   * @pre !This->FileName.empty()
+   * @brief Checks if the underlying files has been written in split mode
+   * @return status true, if the mode is split, else false.
    */
-  virtual void OpenAndReadHeader()  = 0;
+  bool IsSplitMode() { return( this->SplitMode ); };
 
   /**
    * @brief Returns the number of elements that will be read (by this process)
@@ -97,7 +103,14 @@ public:
    * @return N the number of elements to read
    * @post N >= 0.
    */
-  virtual int GetNumberOfElements() = 0;
+  virtual int GetNumberOfElements();
+
+  /**
+   * @brief Opens and reads the header of the file and initializes internal
+   * data-structures.
+   * @pre !This->FileName.empty()
+   */
+  virtual void OpenAndReadHeader()  = 0;
 
   /**
    * @brief Reads the data in to the user-supplied registered arrays.
@@ -136,13 +149,6 @@ protected:
   // one block in the file. The vector of AssignedBlocks holds the list of
   // blocks for this process.
   std::vector< int > AssignedBlocks;
-
-  /**
-   * @brief Checks if the underlying files has been written in split mode
-   * @return status true, if the mode is split, else false.
-   */
-  bool IsSplitMode()
-    { return( this->SplitMode ); };
 
   /**
    * @brief Based on the global & variable headers, this method determines if

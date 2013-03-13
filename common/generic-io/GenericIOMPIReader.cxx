@@ -4,6 +4,7 @@
 // C/C++ includes
 #include <cassert>
 #include <cstddef>
+#include <fstream>
 #include <iostream>
 #include <set>
 #include <sstream>
@@ -22,13 +23,25 @@ GenericIOMPIReader::GenericIOMPIReader()
   this->VH.resize( 0 );
   this->RH.resize( 0 );
   this->AssignedBlocks.resize( 0 );
-  this->IOStrategy  = FileIOMPI;
+  this->IOStrategy   = FileIOMPI;
+  this->ProxyEnabled = false;
+  this->InternalReaders = NULL;
 }
 
 //------------------------------------------------------------------------------
 GenericIOMPIReader::~GenericIOMPIReader()
 {
-  // TODO Auto-generated destructor stub
+  if( this->SplitMode )
+    {
+    for(int i=0; i < this->NumberOfFiles; ++i)
+      {
+      if( this->InternalReaders[i] != NULL)
+        {
+        delete this->InternalReaders[i];
+        }
+      }
+    delete [] this->InternalReaders;
+    } // END if split-mode
 }
 
 //------------------------------------------------------------------------------
@@ -56,7 +69,7 @@ void GenericIOMPIReader::OpenAndReadHeader()
     throw std::runtime_error( "Unable to open file: " + this->FileName );
     }
 
-  // STEP 2: Read Global &Variable header
+  // STEP 2: Read Global & Variable header
   this->ReadHeader();
 
   // STEP 3: Index the variables
@@ -72,7 +85,16 @@ void GenericIOMPIReader::OpenAndReadHeader()
       MPI_Bcast(&split,1,MPI_INTEGER,0,this->Communicator);
       if( this->SplitMode )
         {
+        // Setup to read metadata file in process 0
+        this->AssignedBlocks.push_back( 0 );
+        this->ReadBlockHeaders();
+
         this->ReadBlockToFileMap();
+
+        // Clear temporary data used for reading the block-to-file mapping
+        this->AssignedBlocks.clear();
+        this->RH.clear();
+        this->VH.clear();
         } // END if splitmode
       } // END rank==0
       break;
@@ -87,27 +109,46 @@ void GenericIOMPIReader::OpenAndReadHeader()
         } // END if splitmode
       } // END default
     } // END switch
+  MPI_Barrier(this->Communicator);
 
-
-  // STEP 4: Round robin assignment
+  // STEP 5: Round robin assignment
   GenericIOUtilities::RoundRobin(
       this->Rank,this->NumRanks,this->GH.NRanks,this->AssignedBlocks);
 
-  // STEP 5: Read block headers
-  this->ReadBlockHeaders();
+  // STEP 6: Setup internal readers, if split mode
+  this->SetupInternalReaders();
+  MPI_Barrier(this->Communicator);
+
+  // STEP 7: Read block headers
+  //this->ReadBlockHeaders();
   MPI_Barrier(this->Communicator);
 }
 
 //------------------------------------------------------------------------------
-int GenericIOMPIReader::GetNumberOfElements()
+void GenericIOMPIReader::SetupInternalReaders()
 {
-  int N = 0;
-  unsigned int blkIdx=0;
-  for(; blkIdx < this->AssignedBlocks.size(); ++blkIdx)
+  if( !this->SplitMode )
     {
-    N += this->GetNumberOfElementsForBlock(blkIdx);
-    } // END for all blocks
-  return( N );
+    return;
+    }
+
+  this->InternalReaders = new GenericIOMPIReader *[this->NumberOfFiles];
+
+  std::ostringstream oss;
+  for(int i=0; i < this->NumberOfFiles; ++i)
+    {
+    oss.clear(); oss.str("");
+    oss << this->FileName << "#" << i;
+    GenericIOMPIReader *iReader = new GenericIOMPIReader();
+    iReader->SetCommunicator( this->Communicator );
+    iReader->SetFileName(oss.str());
+    iReader->OpenAndReadHeader();
+    assert("internal reader should not be in SplitMode" &&
+           !iReader->IsSplitMode());
+    this->InternalReaders[ i ] = iReader;
+    }
+
+  this->ProxyEnabled = true;
 }
 
 //------------------------------------------------------------------------------
@@ -132,6 +173,9 @@ void GenericIOMPIReader::ReadBlockToFileMap()
       MPI_Bcast(rank,NumElements,MPI_INTEGER,0,this->Communicator);
       MPI_Bcast(part,NumElements,MPI_INTEGER,0,this->Communicator);
       this->ClearVariables();
+
+      // Correct the global header
+      this->GH.NRanks = NumElements;
       break;
     default:
       MPI_Bcast(&NumElements,1,MPI_INTEGER,0,this->Communicator);
@@ -139,6 +183,9 @@ void GenericIOMPIReader::ReadBlockToFileMap()
       part = new int[NumElements];
       MPI_Bcast(rank,NumElements,MPI_INTEGER,0,this->Communicator);
       MPI_Bcast(part,NumElements,MPI_INTEGER,0,this->Communicator);
+
+      // Correct the global header
+      this->GH.NRanks = NumElements;
     } // END switch
 
   // STEP 1: All processes
@@ -146,7 +193,7 @@ void GenericIOMPIReader::ReadBlockToFileMap()
   for(int i=0; i < NumElements; ++i)
     {
     parts.insert(part[i]);
-    this->BlockToFileMap[ rank[i] ]=part[i];
+    this->BlockToFileMap[rank[i]]=part[i];
     }
   this->NumberOfFiles = parts.size();
 

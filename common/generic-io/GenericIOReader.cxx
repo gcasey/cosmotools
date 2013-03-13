@@ -53,6 +53,18 @@ int GenericIOReader::GetVariableIndex(const std::string name)
 }
 
 //------------------------------------------------------------------------------
+int GenericIOReader::GetNumberOfElements()
+{
+  int N = 0;
+  unsigned int blkIdx=0;
+  for(; blkIdx < this->AssignedBlocks.size(); ++blkIdx)
+    {
+    N += this->GetNumberOfElementsForBlock(blkIdx);
+    } // END for all blocks
+  return( N );
+}
+
+//------------------------------------------------------------------------------
 int GenericIOReader::GetNumberOfElementsForBlock(const int blkidx)
 {
   assert("pre: blkIdx is out-of-bounds!" &&
