@@ -63,6 +63,8 @@ int main(int argc, char **argv)
   reader.SetFileName(file);
 
   reader.OpenAndReadHeader();
+  std::cout << "NumElements: " << reader.GetNumberOfElements() << std::endl;
+  std::cout.flush();
 
   if( rank == 0 )
     {
