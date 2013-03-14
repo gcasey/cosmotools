@@ -596,6 +596,9 @@ void ReadHalosAtTimeStep(int tstep)
       for( int i=0; i < nfof; ++i )
         {
         int tag = haloTags[i];
+        assert("pre: tag should not be negative!" &&
+                (tag >= 0) );
+
         int idx = GetHaloIndex(tstep,tag);
         Halos[idx].Center[0] = center_x[i];
         Halos[idx].Center[1] = center_y[i];

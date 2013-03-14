@@ -324,8 +324,8 @@ std::string DistributedHaloEvolutionTree::ToString()
   oss << std::endl;
   for(;NodeIter != this->Nodes.end(); ++NodeIter)
     {
-//    oss << std::scientific
-//        << std::setprecision(std::numeric_limits<POSVEL_T>::digits10);
+    oss << std::scientific
+        << std::setprecision(std::numeric_limits<POSVEL_T>::digits10);
     oss << this->GetNodeIndex(NodeIter->first) << "\t";
     oss << NodeIter->second.TimeStep  << "\t";
     oss << NodeIter->second.Tag       << "\t";
