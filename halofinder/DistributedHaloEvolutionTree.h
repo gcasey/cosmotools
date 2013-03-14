@@ -220,6 +220,8 @@ protected:
   std::map<int,int> NodeCounter; // Counts number of nodes at a given timestep
   std::string FileName;
 
+  std::map< std::string, std::vector<std::string> > NodeDescendants;
+
   MPI_Comm Communicator;
 
   int IOFormat;

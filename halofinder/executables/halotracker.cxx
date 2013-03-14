@@ -240,7 +240,11 @@ int main(int argc, char **argv)
     } // END for all time-step
 
   // STEP 7: Write the tree
-  HaloTracker->WriteMergerTree("MergerTree");
+  std::ofstream ofs;
+  ofs.open("mtree.ascii");
+  ofs << HaloTracker->GetHaloEvolutionTree()->ToString();
+  ofs.close();
+  //HaloTracker->WriteMergerTree("MergerTree");
 
   // STEP 8: Write statistics
   WriteStatistics();
@@ -571,7 +575,7 @@ void ReadHalosAtTimeStep(int tstep)
       FofPropertiesReader.SetCommunicator(comm);
       FofPropertiesReader.OpenAndReadHeader();
       int nfof = FofPropertiesReader.GetNumberOfElements();
-      int *haloTags      = new int[nfof];
+      ID_T *haloTags      = new ID_T[nfof];
       POSVEL_T *center_x = new POSVEL_T[nfof];
       POSVEL_T *center_y = new POSVEL_T[nfof];
       POSVEL_T *center_z = new POSVEL_T[nfof];

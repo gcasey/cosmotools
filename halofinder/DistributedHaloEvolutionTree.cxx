@@ -9,6 +9,7 @@
 #include <cstddef>
 #include <cstdio>
 #include <sstream>
+#include <iomanip>
 
 //------------------------------------------------------------------------------
 // DIY callback routines
@@ -173,6 +174,17 @@ void DistributedHaloEvolutionTree::CreateEdge(
   this->Edges.push_back( halo2 );
   this->EdgeWeights.push_back( w );
   this->EdgeEvents.push_back( e );
+
+  if( this->NodeDescendants.find(halo1) != this->NodeDescendants.end() )
+    {
+    this->NodeDescendants[ halo1 ].push_back( halo2 );
+    }
+  else
+    {
+    std::vector< std::string > descendants;
+    descendants.push_back( halo2 );
+    this->NodeDescendants[ halo1 ] = descendants;
+    }
 }
 
 //------------------------------------------------------------------------------
@@ -294,46 +306,55 @@ std::string DistributedHaloEvolutionTree::ToString()
   std::ostringstream oss;
   oss << "NUMNODES " << this->GetNumberOfNodes() << std::endl;
   std::map<std::string, Halo>::iterator NodeIter = this->Nodes.begin();
-  oss << "ID ";
-  oss << "TIMESTEP ";
-  oss << "TAG ";
-  oss << "REDSHIFT ";
-  oss << "CENTER_X ";
-  oss << "CENTER_Y ";
-  oss << "CENTER_Z ";
-  oss << "V_X ";
-  oss << "V_Y ";
-  oss << "V_Z ";
+  oss << "ID\t";
+  oss << "TIMESTEP\t";
+  oss << "TAG\t";
+  oss << "REDSHIFT\t";
+  oss << "CENTER_X\t";
+  oss << "CENTER_Y\t";
+  oss << "CENTER_Z\t";
+  oss << "V_X\t";
+  oss << "V_Y\t";
+  oss << "V_Z\t";
+  oss << "MASS\t";
+  oss << "DESCENDANTS";
   oss << std::endl;
   for(;NodeIter != this->Nodes.end(); ++NodeIter)
     {
-    oss << this->GetNodeIndex(NodeIter->first) << " ";
-    oss << NodeIter->second.TimeStep  << " ";
-    oss << NodeIter->second.Tag       << " ";
-    oss << NodeIter->second.Redshift  << " ";
-    oss << NodeIter->second.Center[0] << " ";
-    oss << NodeIter->second.Center[1] << " ";
-    oss << NodeIter->second.Center[2] << " ";
-    oss << NodeIter->second.AverageVelocity[0] << " ";
-    oss << NodeIter->second.AverageVelocity[1] << " ";
-    oss << NodeIter->second.AverageVelocity[2] << " ";
+    oss << std::scientific
+        << std::setprecision(std::numeric_limits<POSVEL_T>::digits10);
+    oss << this->GetNodeIndex(NodeIter->first) << "\t";
+    oss << NodeIter->second.TimeStep  << "\t";
+    oss << NodeIter->second.Tag       << "\t";
+    oss << NodeIter->second.Redshift  << "\t";
+    oss << NodeIter->second.Center[0] << "\t";
+    oss << NodeIter->second.Center[1] << "\t";
+    oss << NodeIter->second.Center[2] << "\t";
+    oss << NodeIter->second.AverageVelocity[0] << "\t";
+    oss << NodeIter->second.AverageVelocity[1] << "\t";
+    oss << NodeIter->second.AverageVelocity[2] << "\t";
+
+    if( this->NodeDescendants.find(NodeIter->first) !=
+        this->NodeDescendants.end())
+      {
+      for(int i=0; i < this->NodeDescendants[NodeIter->first].size(); ++i)
+        {
+        std::string hcode = this->NodeDescendants[NodeIter->first][i];
+        oss << this->GetNodeIndex(hcode) << " ";
+        } // END for all descendants
+      if( this->NodeDescendants[NodeIter->first].size() > 1)
+        {
+        oss << "(**SPLIT**)";
+        }
+      }
+    else
+      {
+      oss << "-1 (FINAL TIMESTEP)\n";
+      }
+
     oss << std::endl;
     } // END for all nodes
 
-  oss << "NUMEDGES " << this->GetNumberOfEdges() << std::endl;
-  oss << "START ";
-  oss << "END ";
-  oss << "WEIGHTS ";
-  oss << "EVENTS ";
-  oss << std::endl;
-  for(int edgeIdx=0; edgeIdx < this->GetNumberOfEdges(); ++edgeIdx)
-    {
-    oss << this->GetNodeIndex( this->Edges[edgeIdx*2] ) << " ";
-    oss << this->GetNodeIndex( this->Edges[edgeIdx*2+1] ) << " ";
-    oss << this->EdgeWeights[edgeIdx] << " ";
-    oss << this->EdgeEvents[edgeIdx] << " ";
-    oss << std::endl;
-    } // END for all edges
 
   return( oss.str() );
 }
