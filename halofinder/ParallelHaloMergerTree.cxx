@@ -96,7 +96,7 @@ void ParallelHaloMergerTree::UpdateMergerTree(
 
   // STEP 2: Compute merger-tree
   this->ComputeMergerTree();
-  this->PrintMatrix();
+  //this->PrintMatrix();
 
   // STEP 3: Update the halo-evolution tree
   this->UpdateHaloEvolutionTree( t );
