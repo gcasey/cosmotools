@@ -604,7 +604,7 @@ void ReadHalosAtTimeStep(int tstep)
         Halos[idx].AverageVelocity[1] = halo_vy[i];
         Halos[idx].AverageVelocity[2] = halo_vz[i];
 
-        Halos[idx].Print(std::cout);
+//        Halos[idx].Print(std::cout);
         }
 
       delete [] haloTags;
