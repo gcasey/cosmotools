@@ -323,8 +323,8 @@ std::string DistributedHaloEvolutionTree::ToString()
   oss << std::endl;
   for(;NodeIter != this->Nodes.end(); ++NodeIter)
     {
-    oss << std::scientific
-        << std::setprecision(std::numeric_limits<POSVEL_T>::digits10);
+//    oss << std::scientific
+//        << std::setprecision(std::numeric_limits<POSVEL_T>::digits10);
     oss << this->GetNodeIndex(NodeIter->first) << "\t";
     oss << NodeIter->second.TimeStep  << "\t";
     oss << NodeIter->second.Tag       << "\t";
@@ -339,11 +339,13 @@ std::string DistributedHaloEvolutionTree::ToString()
     if( this->NodeDescendants.find(NodeIter->first) !=
         this->NodeDescendants.end())
       {
+      oss << "[ ";
       for(int i=0; i < this->NodeDescendants[NodeIter->first].size(); ++i)
         {
         std::string hcode = this->NodeDescendants[NodeIter->first][i];
         oss << this->GetNodeIndex(hcode) << " ";
         } // END for all descendants
+      oss << "] ";
       if( this->NodeDescendants[NodeIter->first].size() > 1)
         {
         oss << "(**SPLIT**)";
@@ -351,9 +353,8 @@ std::string DistributedHaloEvolutionTree::ToString()
       }
     else
       {
-      oss << "-1 (FINAL TIMESTEP)\n";
+      oss << "-1 (FINAL TIMESTEP)";
       }
-
     oss << std::endl;
     } // END for all nodes
 
