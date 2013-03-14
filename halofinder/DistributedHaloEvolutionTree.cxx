@@ -336,6 +336,7 @@ std::string DistributedHaloEvolutionTree::ToString()
     oss << NodeIter->second.AverageVelocity[0] << "\t";
     oss << NodeIter->second.AverageVelocity[1] << "\t";
     oss << NodeIter->second.AverageVelocity[2] << "\t";
+    oss << NodeIter->second.HaloMass << "\t";
 
     if( this->NodeDescendants.find(NodeIter->first) !=
         this->NodeDescendants.end())
