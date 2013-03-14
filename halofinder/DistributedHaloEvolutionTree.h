@@ -17,6 +17,7 @@
 // C++ STL includes
 #include <vector> // For STL vector
 #include <map>    // For STL map
+#include <set>    // For STL set
 
 // MPI
 #include <mpi.h>
@@ -220,7 +221,7 @@ protected:
   std::map<int,int> NodeCounter; // Counts number of nodes at a given timestep
   std::string FileName;
 
-  std::map< std::string, std::vector<std::string> > NodeDescendants;
+  std::map< std::string, std::set<std::string> > NodeDescendants;
 
   MPI_Comm Communicator;
 

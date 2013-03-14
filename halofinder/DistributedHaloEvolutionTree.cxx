@@ -10,6 +10,7 @@
 #include <cstdio>
 #include <sstream>
 #include <iomanip>
+#include <set>
 
 //------------------------------------------------------------------------------
 // DIY callback routines
@@ -177,12 +178,12 @@ void DistributedHaloEvolutionTree::CreateEdge(
 
   if( this->NodeDescendants.find(halo1) != this->NodeDescendants.end() )
     {
-    this->NodeDescendants[ halo1 ].push_back( halo2 );
+    this->NodeDescendants[ halo1 ].insert( halo2 );
     }
   else
     {
-    std::vector< std::string > descendants;
-    descendants.push_back( halo2 );
+    std::set< std::string > descendants;
+    descendants.insert( halo2 );
     this->NodeDescendants[ halo1 ] = descendants;
     }
 }
@@ -339,10 +340,14 @@ std::string DistributedHaloEvolutionTree::ToString()
     if( this->NodeDescendants.find(NodeIter->first) !=
         this->NodeDescendants.end())
       {
+      std::set< std::string >::iterator descentIter =
+          this->NodeDescendants[NodeIter->first].begin();
+
       oss << "[ ";
-      for(int i=0; i < this->NodeDescendants[NodeIter->first].size(); ++i)
+      for(; descentIter != this->NodeDescendants[NodeIter->first].end();
+          ++descentIter)
         {
-        std::string hcode = this->NodeDescendants[NodeIter->first][i];
+        std::string hcode = *descentIter;
         oss << this->GetNodeIndex(hcode) << " ";
         } // END for all descendants
       oss << "] ";
