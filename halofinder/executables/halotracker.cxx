@@ -221,7 +221,7 @@ int main(int argc, char **argv)
     REAL z = ComputeRedShift(timesteps[t]);
     PRINTLN("t=" << timesteps[t] << " redshift=" << z);
 
-    PRINT("Read halos...");
+    PRINTLN("Read halos...");
     ReadHalosAtTimeStep( timesteps[t] );
     PRINTLN("[DONE]");
 
@@ -541,6 +541,7 @@ int GetHaloIndex(int tstep,int haloTag)
     h.Redshift = ComputeRedShift(tstep);
     h.Tag      = haloTag;
     Halos.push_back( h );
+    Halo2Idx[ hashCode ] = Halos.size()-1;
     return( Halos.size()-1 );
     }
 }
@@ -582,6 +583,7 @@ void ReadHalosAtTimeStep(int tstep)
       POSVEL_T *halo_vx  = new POSVEL_T[nfof];
       POSVEL_T *halo_vy  = new POSVEL_T[nfof];
       POSVEL_T *halo_vz  = new POSVEL_T[nfof];
+      POSVEL_T *halomass = new POSVEL_T[nfof];
 
       FofPropertiesReader.AddVariable("fof_halo_tag", haloTags);
       FofPropertiesReader.AddVariable("fof_halo_center_x", center_x);
@@ -590,6 +592,7 @@ void ReadHalosAtTimeStep(int tstep)
       FofPropertiesReader.AddVariable("fof_halo_mean_vx", halo_vx);
       FofPropertiesReader.AddVariable("fof_halo_mean_vy", halo_vy);
       FofPropertiesReader.AddVariable("fof_halo_mean_vz", halo_vz);
+      FofPropertiesReader.AddVariable("fof_halo_mass", halomass);
 
       FofPropertiesReader.ReadData();
 
@@ -599,6 +602,16 @@ void ReadHalosAtTimeStep(int tstep)
         assert("pre: tag should not be negative!" &&
                 (tag >= 0) );
 
+//        std::cout << tstep << "\t";
+//        std::cout << tag << "\t";
+//        std::cout << center_x[i] << ", "
+//                  << center_y[i] << ", "
+//                  << center_z[i] << "\t";
+//        std::cout << halo_vx[i] << ", ";
+//        std::cout << halo_vy[i] << ", ";
+//        std::cout << halo_vz[i] << std::endl;
+//        std::cout.flush();
+
         int idx = GetHaloIndex(tstep,tag);
         Halos[idx].Center[0] = center_x[i];
         Halos[idx].Center[1] = center_y[i];
@@ -606,8 +619,7 @@ void ReadHalosAtTimeStep(int tstep)
         Halos[idx].AverageVelocity[0] = halo_vx[i];
         Halos[idx].AverageVelocity[1] = halo_vy[i];
         Halos[idx].AverageVelocity[2] = halo_vz[i];
-
-//        Halos[idx].Print(std::cout);
+        Halos[idx].HaloMass = halomass[i];
         }
 
       delete [] haloTags;
@@ -617,6 +629,7 @@ void ReadHalosAtTimeStep(int tstep)
       delete [] halo_vx;
       delete [] halo_vy;
       delete [] halo_vz;
+      delete [] halomass;
       FofPropertiesReader.Close();
       } // END if skip FOF properties
 
@@ -636,6 +649,9 @@ void ReadHalosAtTimeStep(int tstep)
 
     for(int i=0; i < npart; ++i)
       {
+//      std::cout << "tstep=" << tstep << "\t";
+//      std::cout << "halo_tags: " << halo_tags[i] << std::endl;
+//      std::cout.flush();
       int idx = GetHaloIndex(tstep,halo_tags[i]);
       Halos[idx].ParticleIds.insert(particleIds[i]);
       }
