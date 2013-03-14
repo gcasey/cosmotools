@@ -72,6 +72,8 @@ public:
   GetNSetMacro(MergerTreeThreshold,int);
   GetNSetMacro(MergerTreeFileFormat,int);
 
+  GetMacro(HaloEvolutionTree,cosmotk::DistributedHaloEvolutionTree*);
+
   /**
    * @brief This method finds the halos at the given, registered particle
    * data set. Once the halos are found, the merger-tree is updated to track
