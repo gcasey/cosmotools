@@ -303,6 +303,8 @@ void DistributedHaloEvolutionTree::RelabelTreeNodes()
 //------------------------------------------------------------------------------
 std::string DistributedHaloEvolutionTree::ToString()
 {
+  this->RelabelTreeNodes();
+
   std::ostringstream oss;
   oss << "NUMNODES " << this->GetNumberOfNodes() << std::endl;
   std::map<std::string, Halo>::iterator NodeIter = this->Nodes.begin();
