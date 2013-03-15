@@ -12,7 +12,9 @@ set(PACKAGE_common_LIBRARIES
     common
     CACHE INTERNAL "package libraries")
 
-set(COMMON_SRC)
+set(COMMON_SRC
+    MPIUtilities.cxx
+    CACHE INTERNAL "package sources")
 
 ## Move header files to include directory in the build tree
 file(GLOB HEADERS *.h)
