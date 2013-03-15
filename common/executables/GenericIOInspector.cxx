@@ -12,6 +12,7 @@
 #include <mpi.h>
 
 // CosmologyTools includes
+#include "GenericIOUtilities.h"
 #include "GenericIOMPIReader.h"
 
 //==============================================================================
@@ -61,8 +62,8 @@ int main(int argc, char **argv)
   cosmotk::GenericIOMPIReader reader;
   reader.SetCommunicator(comm);
   reader.SetFileName(file);
-
   reader.OpenAndReadHeader();
+
   std::cout << "NumElements: " << reader.GetNumberOfElements() << std::endl;
   std::cout.flush();
 

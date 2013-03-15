@@ -79,6 +79,27 @@ public:
    */
   static void SwapRankHeader(RankHeader *RH);
 
+  /**
+   * @brief Given the variable information, it detects the corresponding
+   * underlying primitive type to represent the data associated with the
+   * variable.
+   * @param vinfo the variable information of the variable in query.
+   * @return t the primitive type.
+   * @see GenericIOPrimitiveTypes.
+   */
+  static int DetectVariablePrimitiveType(const VariableInfo &vinfo);
+
+  /**
+   * @brief Allocates and returns a pointer (void*) to a buffer wherein the
+   * data of the corresponding variable can be stored.
+   * @param vinfo the variable information of the variable in query.
+   * @param numElements the number of elements to allocate.
+   * @return bufPtr pointer to allocated buffer.
+   * @post bufPtr != NULL.
+   */
+  static void* AllocateVariableArray(
+            const VariableInfo &vinfo,const int numElements);
+
 protected:
   GenericIOUtilities();
   virtual ~GenericIOUtilities();

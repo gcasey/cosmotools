@@ -229,4 +229,156 @@ void GenericIOUtilities::SwapEndian(
     }
 }
 
+//------------------------------------------------------------------------------
+int GenericIOUtilities::DetectVariablePrimitiveType(
+      const VariableInfo &vinfo)
+{
+  int type = -1;
+  if( vinfo.IsFloat )
+    {
+    if( vinfo.Size == sizeof(double) )
+      {
+      type = GENERIC_IO_FLOAT_TYPE;
+      }
+    else if( vinfo.Size == sizeof(float) )
+      {
+      type = GENERIC_IO_DOUBLE_TYPE;
+      }
+    else
+      {
+      std::cerr << "WARNING: Cannot detect floating point variable type!\n";
+      }
+    } // END if variable is floating point
+  else
+    {
+    if( vinfo.IsSigned )
+      {
+      if( vinfo.Size == sizeof(short) )
+        {
+        type = GENERIC_IO_SHORT_TYPE;
+        }
+      else if( vinfo.Size == sizeof(long) )
+        {
+        type = GENERIC_IO_LONG_TYPE;
+        }
+      else if( vinfo.Size == sizeof(long long) )
+        {
+        type = GENERIC_IO_LONG_LONG_TYPE;
+        }
+      else if( vinfo.Size == sizeof(int32_t) )
+        {
+        type = GENERIC_IO_INT32_TYPE;
+        }
+      else if( vinfo.Size == sizeof(int64_t) )
+        {
+        type = GENERIC_IO_INT64_TYPE;
+        }
+      else if( vinfo.Size == sizeof(uint32_t) )
+        {
+        type = GENERIC_IO_UINT32_TYPE;
+        }
+      else if( vinfo.Size == sizeof(uint64_t) )
+        {
+        type = GENERIC_IO_UINT64_TYPE;
+        }
+      else if( vinfo.Size == sizeof(float) )
+        {
+        type = GENERIC_IO_FLOAT_TYPE;
+        }
+      else if( vinfo.Size == sizeof(double) )
+        {
+        type = GENERIC_IO_DOUBLE_TYPE;
+        }
+      else
+        {
+        std::cerr << "WARNING: Cannot detect signed integer type!";
+        }
+      } // END if variable is signed integer
+    else
+      {
+      if(vinfo.Size == sizeof(uint32_t) )
+        {
+        type = GENERIC_IO_UINT32_TYPE;
+        }
+      else if( vinfo.Size == sizeof(uint64_t) )
+        {
+        type = GENERIC_IO_UINT64_TYPE;
+        }
+      else
+        {
+        std::cerr << "WARNING: Cannot detect unsigned integer type!";
+        }
+      } // END if variable is unsigned inter
+    } // END if variable is integer type
+  return( type );
+}
+
+//------------------------------------------------------------------------------
+void* GenericIOUtilities::AllocateVariableArray(
+        const VariableInfo &vinfo, const int numElements )
+{
+  int  type = GenericIOUtilities::DetectVariablePrimitiveType( vinfo );
+  void *ptr = NULL;
+  switch( type )
+    {
+    case GENERIC_IO_SHORT_TYPE:
+      {
+      short *data = new short[ numElements ];
+      ptr = static_cast<void*>(data);
+      }
+      break;
+    case GENERIC_IO_LONG_TYPE:
+      {
+      long *data = new long[ numElements ];
+      ptr = static_cast<void*>(data);
+      }
+      break;
+    case GENERIC_IO_LONG_LONG_TYPE:
+      {
+      long long *data = new long long[ numElements];
+      ptr = static_cast<void*>(data);
+      }
+      break;
+    case GENERIC_IO_INT32_TYPE:
+      {
+      int32_t *data = new int32_t[ numElements ];
+      ptr = static_cast<void*>(data);
+      }
+      break;
+    case GENERIC_IO_INT64_TYPE:
+      {
+      int64_t *data = new int64_t[ numElements ];
+      ptr = static_cast<void*>(data);
+      }
+      break;
+    case GENERIC_IO_UINT32_TYPE:
+      {
+      uint32_t *data = new uint32_t[ numElements ];
+      ptr = static_cast<void*>(data);
+      }
+      break;
+    case GENERIC_IO_UINT64_TYPE:
+      {
+      uint64_t *data = new uint64_t[ numElements ];
+      ptr = static_cast<void*>(data);
+      }
+      break;
+    case GENERIC_IO_DOUBLE_TYPE:
+      {
+      double *data = new double[ numElements ];
+      ptr = static_cast<void*>(data);
+      }
+      break;
+    case GENERIC_IO_FLOAT_TYPE:
+      {
+      float *data = new float[ numElements ];
+      ptr = static_cast<void*>(data);
+      }
+      break;
+    default:
+      ptr = NULL;
+    }
+  return( ptr );
+}
+
 } /* namespace cosmotk */
