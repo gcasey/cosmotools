@@ -7,6 +7,38 @@
 
 namespace cosmotk {
 
+/**
+ * @brief An enum of supported primitive types of the generic-io infrastructure.
+ */
+enum GenericIOPrimitiveTypes {
+  GENERIC_IO_SHORT_TYPE,    //!< GENERIC_IO_SHORT_TYPE
+  GENERIC_IO_LONG_TYPE,     //!< GENERIC_IO_LONG_TYPE
+  GENERIC_IO_LONG_LONG_TYPE,//!< GENERIC_IO_LONG_LONG_TYPE
+  GENERIC_IO_INT32_TYPE,    //!< GENERIC_IO_INT32_TYPE
+  GENERIC_IO_INT64_TYPE,    //!< GENERIC_IO_INT64_TYPE
+  GENERIC_IO_UINT32_TYPE,   //!< GENERIC_IO_UINT32_TYPE
+  GENERIC_IO_UINT64_TYPE,   //!< GENERIC_IO_UINT64_TYPE
+  GENERIC_IO_DOUBLE_TYPE,   //!< GENERIC_IO_DOUBLE_TYPE
+  GENERIC_IO_FLOAT_TYPE,    //!< GENERIC_IO_FLOAT_TYPE
+  NUM_PRIMITIVE_TYPES       //!< NUM_PRIMITIVE_TYPES
+};
+
+/**
+ * @brief String representation of generic-io primitive types.
+ * @note Used mostly for debugging
+ */
+static const char* PRIMITIVE_NAME[] = {
+  "GENERIC_IO_SHORT_TYPE",
+  "GENERIC_IO_LONG_TYPE",
+  "GENERIC_IO_LONG_LONG_TYPE",
+  "GENERIC_IO_INT32_TYPE",
+  "GENERIC_IO_INT64_TYPE",
+  "GENERIC_IO_UINT32_TYPE",
+  "GENERIC_IO_UINT64_TYPE",
+  "GENERIC_IO_DOUBLE_TYPE",
+  "GENERIC_IO_FLOAT_TYPE"
+};
+
 static const size_t CRCSize   = 8;
 static const size_t MagicSize = 8;
 static const char *MagicBE    = "HACC01B";
