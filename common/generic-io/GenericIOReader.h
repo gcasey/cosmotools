@@ -30,6 +30,19 @@ public:
   GetMacro(NumberOfFiles,int);
 
   /**
+   * @brief Returns the variable header of the ith variable.
+   * @param i the index of the variable in query
+   * @return varHeader the variable header
+   * @see VariableHeader
+   */
+  VariableHeader GetVariableHeader(const int i)
+    {
+    assert("pre: variable index is out-of-bounds!" &&
+            (i >= 0) && (i < this->VH.size() ) );
+    return( this->VH[i] );
+    }
+
+  /**
    * @brief Return the variable size of the ith variable
    * @param i the index of the variable in query
    * @return varsize the size of the variable, e.g., 8 if it's a double, etc.
