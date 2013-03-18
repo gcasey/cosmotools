@@ -165,6 +165,9 @@ void GenericIOMPIReader::SetupInternalReaders()
     return;
     }
 
+  this->RH.clear();
+  this->VH.clear();
+
   // STEP 1: Construct all readers, based on number of separate files that
   // we have to read.
   this->InternalReaders = new GenericIOMPIReader *[this->NumberOfFiles];
@@ -223,6 +226,13 @@ void GenericIOMPIReader::SetupInternalReaders()
     {
     this->InternalReaders[ i ]->ReadBlockHeaders();
     }
+
+  // STEP 5: Proxy variable headers to proxy reader
+  for(int i=0;i < this->InternalReaders[0]->GetNumberOfVariablesInFile();++i)
+    {
+    this->VH.push_back(this->InternalReaders[0]->GetVariableHeader(i) );
+    } // END for all variables
+
 }
 
 //------------------------------------------------------------------------------

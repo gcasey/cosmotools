@@ -70,7 +70,7 @@ public:
    * @brief Return the number of variables in the file
    * @return nvar the number of variables in the file
    */
-  int GetNumberOfVariables()
+  int GetNumberOfVariablesInFile()
     {return this->VH.size();};
 
   /**
