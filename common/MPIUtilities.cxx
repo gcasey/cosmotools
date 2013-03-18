@@ -66,7 +66,7 @@ void MPIUtilities::SynchronizedPrintf(MPI_Comm comm,char *fmt,...)
     // STEP 1: Tell next process to print, if any
     if( numRanks > 1)
       {
-      MPI_Isend(NULL,0,MPI_INT,rank+1,MPI_ANY_TAG,comm,&nullRequest);
+      MPI_Isend(NULL,0,MPI_INT,rank+1,0,comm,&nullRequest);
       }
     }
   else if( rank == numRanks-1 )
@@ -98,7 +98,7 @@ void MPIUtilities::SynchronizedPrintf(MPI_Comm comm,char *fmt,...)
     va_end(argptr);
 
     // STEP 2: tell next process to print
-    MPI_Isend(NULL,0,MPI_INT,rank+1,MPI_ANY_TAG,comm,&nullRequest);
+    MPI_Isend(NULL,0,MPI_INT,rank+1,0,comm,&nullRequest);
     }
 }
 
