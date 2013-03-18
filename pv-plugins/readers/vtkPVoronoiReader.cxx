@@ -23,6 +23,10 @@
 #include <inttypes.h>
 using namespace std;
 
+#ifndef HDR_ELEMS
+#define HDR_ELEMS 7
+#endif
+
 #define VTK_CREATE(type, name) \
     vtkSmartPointer<type> name = vtkSmartPointer<type>::New()
 #define VTK_NEW(type, name) \
