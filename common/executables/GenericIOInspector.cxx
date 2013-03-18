@@ -14,6 +14,7 @@
 // CosmologyTools includes
 #include "GenericIOUtilities.h"
 #include "GenericIOMPIReader.h"
+#include "MPIUtilities.h"
 
 //==============================================================================
 // Global variables
@@ -22,24 +23,6 @@ int rank;
 int size;
 MPI_Comm comm = MPI_COMM_WORLD;
 
-//==============================================================================
-// Macros
-//==============================================================================
-#define PRINTLN( str ) {          \
-  if(rank==0) {                    \
-    std::cout << str << std::endl; \
-    std::cout.flush();             \
-  }                                \
-  MPI_Barrier(comm);               \
-}
-
-#define PRINT( str ) {    \
-  if(rank==0) {            \
-    std::cout << str;      \
-    std::cout.flush();     \
-  }                        \
-  MPI_Barrier(comm);       \
-}
 
 /**
  * @brief Program main
@@ -53,7 +36,7 @@ int main(int argc, char **argv)
   MPI_Init(&argc,&argv);
   MPI_Comm_rank(comm,&rank);
   MPI_Comm_size(comm,&size);
-  PRINTLN("- Initialize MPI...[DONE]");
+  cosmotk::MPIUtilities::Printf(comm,"- Initialize MPI...[DONE]\n");
 
   // STEP 1: Get file name to read
   std::string file=std::string(argv[1]);
@@ -64,20 +47,33 @@ int main(int argc, char **argv)
   reader.SetFileName(file);
   reader.OpenAndReadHeader();
 
-  std::cout << "NumElements: " << reader.GetNumberOfElements() << std::endl;
-  std::cout.flush();
+  cosmotk::MPIUtilities::SynchronizedPrintf(
+      comm,"NumElements: %d\n", reader.GetNumberOfElements() );
+  cosmotk::MPIUtilities::SynchronizedPrintf(
+      comm,"NumVariables: %d\n", reader.GetNumberOfVariablesInFile() );
 
-  if( rank == 0 )
+
+  for(int i=0; i < reader.GetNumberOfVariablesInFile(); ++i)
     {
-    for(int i=0; i < reader.GetNumberOfVariables(); ++i)
-      {
-      std::cout << reader.GetVariableName( i ) << "\t";
-      std::cout.flush();
-      }
-    std::cout << std::endl;
-    std::cout.flush();
-    } // END if
-  MPI_Barrier(comm);
+    cosmotk::MPIUtilities::Printf(
+        comm,"var[%d]=%s\n", i,
+        const_cast<char*>(reader.GetVariableName(i).c_str()) );
+
+
+    }
+
+  reader.ReadData();
+//  if( rank == 0 )
+//    {
+//    for(int i=0; i < reader.GetNumberOfVariables(); ++i)
+//      {
+//      std::cout << reader.GetVariableName( i ) << "\t";
+//      std::cout.flush();
+//      }
+//    std::cout << std::endl;
+//    std::cout.flush();
+//    } // END if
+//  MPI_Barrier(comm);
 
   reader.Close();
 
