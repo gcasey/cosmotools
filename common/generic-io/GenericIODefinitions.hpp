@@ -13,9 +13,9 @@ namespace cosmotk {
  * @brief An enum of supported primitive types of the generic-io infrastructure.
  */
 enum GenericIOPrimitiveTypes {
-  GENERIC_IO_SHORT_TYPE,    //!< GENERIC_IO_SHORT_TYPE
+/*  GENERIC_IO_SHORT_TYPE,    //!< GENERIC_IO_SHORT_TYPE
   GENERIC_IO_LONG_TYPE,     //!< GENERIC_IO_LONG_TYPE
-  GENERIC_IO_LONG_LONG_TYPE,//!< GENERIC_IO_LONG_LONG_TYPE
+  GENERIC_IO_LONG_LONG_TYPE,//!< GENERIC_IO_LONG_LONG_TYPE */
   GENERIC_IO_INT32_TYPE,    //!< GENERIC_IO_INT32_TYPE
   GENERIC_IO_INT64_TYPE,    //!< GENERIC_IO_INT64_TYPE
   GENERIC_IO_UINT32_TYPE,   //!< GENERIC_IO_UINT32_TYPE
@@ -30,9 +30,9 @@ enum GenericIOPrimitiveTypes {
  * @note Used mostly for debugging
  */
 static const char* PRIMITIVE_NAME[] = {
-  "GENERIC_IO_SHORT_TYPE",
+/*  "GENERIC_IO_SHORT_TYPE",
   "GENERIC_IO_LONG_TYPE",
-  "GENERIC_IO_LONG_LONG_TYPE",
+  "GENERIC_IO_LONG_LONG_TYPE", */
   "GENERIC_IO_INT32_TYPE",
   "GENERIC_IO_INT64_TYPE",
   "GENERIC_IO_UINT32_TYPE",

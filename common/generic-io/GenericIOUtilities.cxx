@@ -253,19 +253,20 @@ int GenericIOUtilities::DetectVariablePrimitiveType(
     {
     if( vinfo.IsSigned )
       {
-      if( vinfo.Size == sizeof(short) )
-        {
-        type = GENERIC_IO_SHORT_TYPE;
-        }
-      else if( vinfo.Size == sizeof(long) )
-        {
-        type = GENERIC_IO_LONG_TYPE;
-        }
-      else if( vinfo.Size == sizeof(long long) )
-        {
-        type = GENERIC_IO_LONG_LONG_TYPE;
-        }
-      else if( vinfo.Size == sizeof(int32_t) )
+//      if( vinfo.Size == sizeof(short) )
+//        {
+//        type = GENERIC_IO_SHORT_TYPE;
+//        }
+//      else if( vinfo.Size == sizeof(long) )
+//        {
+//        type = GENERIC_IO_LONG_TYPE;
+//        }
+//      else if( vinfo.Size == sizeof(long long) )
+//        {
+//        type = GENERIC_IO_LONG_LONG_TYPE;
+//        }
+//      else if( vinfo.Size == sizeof(int32_t) )
+      if( vinfo.Size == sizeof(int32_t) )
         {
         type = GENERIC_IO_INT32_TYPE;
         }
@@ -321,24 +322,24 @@ void* GenericIOUtilities::AllocateVariableArray(
   void *ptr = NULL;
   switch( type )
     {
-    case GENERIC_IO_SHORT_TYPE:
-      {
-      short *data = new short[ numElements ];
-      ptr = static_cast<void*>(data);
-      }
-      break;
-    case GENERIC_IO_LONG_TYPE:
-      {
-      long *data = new long[ numElements ];
-      ptr = static_cast<void*>(data);
-      }
-      break;
-    case GENERIC_IO_LONG_LONG_TYPE:
-      {
-      long long *data = new long long[ numElements];
-      ptr = static_cast<void*>(data);
-      }
-      break;
+//    case GENERIC_IO_SHORT_TYPE:
+//      {
+//      short *data = new short[ numElements ];
+//      ptr = static_cast<void*>(data);
+//      }
+//      break;
+//    case GENERIC_IO_LONG_TYPE:
+//      {
+//      long *data = new long[ numElements ];
+//      ptr = static_cast<void*>(data);
+//      }
+//      break;
+//    case GENERIC_IO_LONG_LONG_TYPE:
+//      {
+//      long long *data = new long long[ numElements];
+//      ptr = static_cast<void*>(data);
+//      }
+//      break;
     case GENERIC_IO_INT32_TYPE:
       {
       int32_t *data = new int32_t[ numElements ];

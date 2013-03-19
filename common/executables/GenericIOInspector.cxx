@@ -57,7 +57,6 @@ int main(int argc, char **argv)
   MPI_Init(&argc,&argv);
   MPI_Comm_rank(comm,&rank);
   MPI_Comm_size(comm,&size);
-//  cosmotk::MPIUtilities::Printf(comm,"- Initialize MPI...[DONE]\n");
 
   // STEP 1: Get file name to read
   std::string file=std::string(argv[1]);
@@ -68,22 +67,20 @@ int main(int argc, char **argv)
   reader.SetFileName(file);
   reader.OpenAndReadHeader();
 
-//  cosmotk::MPIUtilities::SynchronizedPrintf(
-//      comm,"NumElements: %d\n", reader.GetNumberOfElements() );
-//  cosmotk::MPIUtilities::SynchronizedPrintf(
-//      comm,"NumVariables: %d\n", reader.GetNumberOfVariablesInFile() );
-
-
   std::vector< DataInformation > DataVector;
   DataVector.resize( reader.GetNumberOfVariablesInFile() );
   int N = reader.GetNumberOfElements();
   for(int i=0; i < reader.GetNumberOfVariablesInFile(); ++i)
     {
-//    cosmotk::MPIUtilities::Printf(
-//        comm,"var[%d]=%s\n", i,
-//        const_cast<char*>(reader.GetVariableName(i).c_str()) );
-    std::cout << reader.GetVariableName(i) << ";";
+    std::cout << reader.GetVariableName(i) << " (";
     DataVector[ i ].VariableInformation = reader.GetFileVariableInfo( i );
+
+    int type = cosmotk::GenericIOUtilities::DetectVariablePrimitiveType(
+                              DataVector[ i ].VariableInformation);
+    assert( "pre: undefined data type!" &&
+            (type >= 0) && (type < cosmotk::NUM_PRIMITIVE_TYPES) );
+
+    std::cout << cosmotk::PRIMITIVE_NAME[type] << ");";
     DataVector[ i ].Data =
         cosmotk::GenericIOUtilities::AllocateVariableArray(
             DataVector[ i ].VariableInformation,N);
@@ -104,19 +101,20 @@ int main(int argc, char **argv)
             DataVector[ i ].VariableInformation );
 
 
-      if(type == cosmotk::GENERIC_IO_SHORT_TYPE)
-        {
-        PrintData<short>(DataVector[ i ].Data,j);
-        } // END if short
-      else if( type == cosmotk::GENERIC_IO_LONG_TYPE)
-        {
-        PrintData<long>(DataVector[ i ].Data,j);
-        } // END if long
-      else if( type == cosmotk::GENERIC_IO_LONG_LONG_TYPE)
-        {
-        PrintData<long long>(DataVector[ i ].Data,j);
-        } // END if long long
-      else if( type == cosmotk::GENERIC_IO_INT32_TYPE )
+//      if(type == cosmotk::GENERIC_IO_SHORT_TYPE)
+//        {
+//        PrintData<short>(DataVector[ i ].Data,j);
+//        } // END if short
+//      else if( type == cosmotk::GENERIC_IO_LONG_TYPE)
+//        {
+//        PrintData<long>(DataVector[ i ].Data,j);
+//        } // END if long
+//      else if( type == cosmotk::GENERIC_IO_LONG_LONG_TYPE)
+//        {
+//        PrintData<long long>(DataVector[ i ].Data,j);
+//        } // END if long long
+//      else if( type == cosmotk::GENERIC_IO_INT32_TYPE )
+      if( type == cosmotk::GENERIC_IO_INT32_TYPE )
         {
         PrintData<int32_t>(DataVector[ i ].Data,j);
         } // END if int32_t
