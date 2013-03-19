@@ -5,6 +5,8 @@
 #ifndef GENERICIODEFINITIONS_HPP_
 #define GENERICIODEFINITIONS_HPP_
 
+#include <stdint.h>
+
 namespace cosmotk {
 
 /**
@@ -76,6 +78,18 @@ struct GlobalHeader {
 
 struct VariableInfo
 {
+  VariableInfo()
+    {
+    this->Name = "";
+    this->Size = 0;
+    this->IsFloat = true;
+    this->IsFloat = true;
+    this->IsPhysCoordX = false;
+    this->IsPhysCoordY = false;
+    this->IsPhysCoordZ = false;
+    this->MaybePhysGhost = false;
+    }
+
   VariableInfo(const std::string &N, std::size_t S, bool IF, bool IS,
                bool PCX, bool PCY, bool PCZ, bool PG)
     : Name(N), Size(S), IsFloat(IF), IsSigned(IS),
