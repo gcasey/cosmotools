@@ -30,10 +30,22 @@ public:
   GetMacro(NumberOfFiles,int);
 
   /**
+   * @brief Returns the variable information object for the ith variable.
+   * @param i the index of the variable in query.
+   * @return varInfo the variable information object
+   * @note In contrast to GetVariableInfo() this method returns the information
+   * of the ith variable in the file.
+   * @pre (i >= 0) && (i < this->GetNumberOfVariablesInFile())
+   * @see VariableInfo in GenericIODefinitions.hpp
+   * @see GenericIOBase::GetVariableInfo()
+   */
+  VariableInfo GetFileVariableInfo(const int i);
+
+  /**
    * @brief Returns the variable header of the ith variable.
    * @param i the index of the variable in query
    * @return varHeader the variable header
-   * @see VariableHeader
+   * @see VariableHeader in GenericIODefinitions.hpp
    */
   VariableHeader GetVariableHeader(const int i)
     {

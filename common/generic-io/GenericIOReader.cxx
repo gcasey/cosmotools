@@ -61,6 +61,25 @@ void GenericIOReader::AssignBlock(const int blkIdx)
 }
 
 //------------------------------------------------------------------------------
+VariableInfo GenericIOReader::GetFileVariableInfo(const int i)
+{
+  assert("pre: variable index is out-of-bounds!" &&
+          (i >= 0) && (i < this->VH.size() ) );
+
+  VariableInfo VI(
+      std::string( this->VH[ i ].Name ),
+      this->VH[ i ].Size,
+      static_cast<bool>(this->VH[i].Flags & FloatValue),
+      static_cast<bool>(this->VH[i].Flags & SignedValue),
+      static_cast<bool>(this->VH[i].Flags & ValueIsPhysCoordX),
+      static_cast<bool>(this->VH[i].Flags & ValueIsPhysCoordY),
+      static_cast<bool>(this->VH[i].Flags & ValueIsPhysCoordZ),
+      static_cast<bool>(this->VH[i].Flags & ValueMaybePhysGhost)
+      );
+  return( VI );
+}
+
+//------------------------------------------------------------------------------
 int GenericIOReader::GetNumberOfElements()
 {
   int N = 0;
