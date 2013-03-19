@@ -20,11 +20,13 @@ class GenericIOBase
 public:
 
   enum VariableFlags {
-    VarHasExtraSpace =  (1 << 0),
-    VarIsPhysCoordX  =  (1 << 1),
-    VarIsPhysCoordY  =  (1 << 2),
-    VarIsPhysCoordZ  =  (1 << 3),
-    VarMaybePhysGhost = (1 << 4)
+    FloatValue          = (1 << 0),
+    SignedValue         = (1 << 1),
+    ValueIsPhysCoordX   = (1 << 2),
+    ValueIsPhysCoordY   = (1 << 3),
+    ValueIsPhysCoordZ   = (1 << 4),
+    ValueMaybePhysGhost = (1 << 5),
+    ValueHasExtraSpace  = (1 << 6)
   };
 
   enum FileIOStrategy {
@@ -70,6 +72,11 @@ public:
    * @param variableIdx the index of the variable in query.
    * @return VI the variable info object
    * @see VariableInfo in GenericIODefinitions.hpp
+   * @see GenericIOReader::GetFileVariableInfo()
+   * @note This returns the information of a variable that the user has
+   * registered via calls to AddVariable() -- To get the information of a
+   * variable in a given file, use the GetFileVariableInfo() method of
+   * a reader.
    * @pre ( variableIdx >= 0 ) && ( variableIdx < this->Vars.size() )
    */
   VariableInfo GetVariableInfo(const int variableIdx);
@@ -108,20 +115,20 @@ protected:
       : Name(N), Size(sizeof(T)),
         IsFloat(!std::numeric_limits<T>::is_integer),
         IsSigned(std::numeric_limits<T>::is_signed),
-        Data((void *) D), HasExtraSpace(Flags & VarHasExtraSpace),
-        IsPhysCoordX(Flags & VarIsPhysCoordX),
-        IsPhysCoordY(Flags & VarIsPhysCoordY),
-        IsPhysCoordZ(Flags & VarIsPhysCoordZ),
-        MaybePhysGhost(Flags & VarMaybePhysGhost) {}
+        Data((void *) D), HasExtraSpace(Flags & ValueHasExtraSpace),
+        IsPhysCoordX(Flags & ValueIsPhysCoordX),
+        IsPhysCoordY(Flags & ValueIsPhysCoordY),
+        IsPhysCoordZ(Flags & ValueIsPhysCoordZ),
+        MaybePhysGhost(Flags & ValueMaybePhysGhost) {}
 
     Variable(const VariableInfo &VI, void *D, unsigned Flags = 0)
       : Name(VI.Name), Size(VI.Size), IsFloat(VI.IsFloat),
         IsSigned(VI.IsSigned), Data(D),
-        HasExtraSpace(Flags & VarHasExtraSpace),
-        IsPhysCoordX((Flags & VarIsPhysCoordX) || VI.IsPhysCoordX),
-        IsPhysCoordY((Flags & VarIsPhysCoordY) || VI.IsPhysCoordY),
-        IsPhysCoordZ((Flags & VarIsPhysCoordZ) || VI.IsPhysCoordZ),
-        MaybePhysGhost((Flags & VarMaybePhysGhost) || VI.MaybePhysGhost) {}
+        HasExtraSpace(Flags & ValueHasExtraSpace),
+        IsPhysCoordX((Flags & ValueIsPhysCoordX) || VI.IsPhysCoordX),
+        IsPhysCoordY((Flags & ValueIsPhysCoordY) || VI.IsPhysCoordY),
+        IsPhysCoordZ((Flags & ValueIsPhysCoordZ) || VI.IsPhysCoordZ),
+        MaybePhysGhost((Flags & ValueMaybePhysGhost) || VI.MaybePhysGhost) {}
 
     std::string Name;
     std::size_t Size;
