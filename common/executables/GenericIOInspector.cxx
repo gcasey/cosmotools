@@ -7,6 +7,8 @@
 // C++ includes
 #include <iostream>
 #include <vector>
+#include <iomanip>
+#include <limits>
 
 // MPI include
 #include <mpi.h>
@@ -37,7 +39,9 @@ template<class T>
 void PrintData(void *dataPtr, const int idx)
 {
   T* castedPtr = static_cast< T* >( dataPtr );
-  std::cout << castedPtr[ idx ] << "\t";
+  std::cout << std::scientific
+            << std::setprecision( std::numeric_limits<T>::digits10 )
+            << castedPtr[ idx ] << ";";
   std::cout.flush();
 }
 
@@ -53,7 +57,7 @@ int main(int argc, char **argv)
   MPI_Init(&argc,&argv);
   MPI_Comm_rank(comm,&rank);
   MPI_Comm_size(comm,&size);
-  cosmotk::MPIUtilities::Printf(comm,"- Initialize MPI...[DONE]\n");
+//  cosmotk::MPIUtilities::Printf(comm,"- Initialize MPI...[DONE]\n");
 
   // STEP 1: Get file name to read
   std::string file=std::string(argv[1]);
@@ -64,10 +68,10 @@ int main(int argc, char **argv)
   reader.SetFileName(file);
   reader.OpenAndReadHeader();
 
-  cosmotk::MPIUtilities::SynchronizedPrintf(
-      comm,"NumElements: %d\n", reader.GetNumberOfElements() );
-  cosmotk::MPIUtilities::SynchronizedPrintf(
-      comm,"NumVariables: %d\n", reader.GetNumberOfVariablesInFile() );
+//  cosmotk::MPIUtilities::SynchronizedPrintf(
+//      comm,"NumElements: %d\n", reader.GetNumberOfElements() );
+//  cosmotk::MPIUtilities::SynchronizedPrintf(
+//      comm,"NumVariables: %d\n", reader.GetNumberOfVariablesInFile() );
 
 
   std::vector< DataInformation > DataVector;
@@ -78,7 +82,7 @@ int main(int argc, char **argv)
 //    cosmotk::MPIUtilities::Printf(
 //        comm,"var[%d]=%s\n", i,
 //        const_cast<char*>(reader.GetVariableName(i).c_str()) );
-    std::cout << reader.GetVariableName(i) << "\t";
+    std::cout << reader.GetVariableName(i) << ";";
     DataVector[ i ].VariableInformation = reader.GetFileVariableInfo( i );
     DataVector[ i ].Data =
         cosmotk::GenericIOUtilities::AllocateVariableArray(
@@ -90,7 +94,7 @@ int main(int argc, char **argv)
   reader.ReadData();
   reader.Close();
 
-  // STEP 3: Loop, print out data according to type and then delete
+  // STEP 3: Loop and print out data according to type
   for(int j=0; j < N; ++j )
     {
     for(unsigned int i=0; i < DataVector.size(); ++i)
@@ -144,7 +148,13 @@ int main(int argc, char **argv)
     std::cout << std::endl;
     } // END for all elements
 
-  // STEP 4: Finalize
+  // STEP 4: Delete all read data
+  for(unsigned int i=0; i < DataVector.size(); ++i )
+    {
+    delete [] static_cast<char*>(DataVector[i].Data);
+    }
+
+  // STEP 5: Finalize
   MPI_Finalize();
   return 0;
 }
