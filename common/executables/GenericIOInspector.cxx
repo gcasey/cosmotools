@@ -12,8 +12,9 @@
 #include <mpi.h>
 
 // CosmologyTools includes
-#include "GenericIOUtilities.h"
+#include "GenericIODefinitions.hpp"
 #include "GenericIOMPIReader.h"
+#include "GenericIOUtilities.h"
 #include "MPIUtilities.h"
 
 //==============================================================================
@@ -23,6 +24,22 @@ int rank;
 int size;
 MPI_Comm comm = MPI_COMM_WORLD;
 
+struct DataInformation
+{
+  cosmotk::VariableInfo VariableInformation;
+  void *Data;
+};
+
+//==============================================================================
+// Global Methods
+//==============================================================================
+template<class T>
+void PrintData(void *dataPtr, const int idx)
+{
+  T* castedPtr = static_cast< T* >( dataPtr );
+  std::cout << castedPtr[ idx ] << "\t";
+  std::cout.flush();
+}
 
 /**
  * @brief Program main
@@ -53,31 +70,81 @@ int main(int argc, char **argv)
       comm,"NumVariables: %d\n", reader.GetNumberOfVariablesInFile() );
 
 
+  std::vector< DataInformation > DataVector;
+  DataVector.resize( reader.GetNumberOfVariablesInFile() );
+  int N = reader.GetNumberOfElements();
   for(int i=0; i < reader.GetNumberOfVariablesInFile(); ++i)
     {
-    cosmotk::MPIUtilities::Printf(
-        comm,"var[%d]=%s\n", i,
-        const_cast<char*>(reader.GetVariableName(i).c_str()) );
-
-
+//    cosmotk::MPIUtilities::Printf(
+//        comm,"var[%d]=%s\n", i,
+//        const_cast<char*>(reader.GetVariableName(i).c_str()) );
+    std::cout << reader.GetVariableName(i) << "\t";
+    DataVector[ i ].VariableInformation = reader.GetFileVariableInfo( i );
+    DataVector[ i ].Data =
+        cosmotk::GenericIOUtilities::AllocateVariableArray(
+            DataVector[ i ].VariableInformation,N);
+    reader.AddVariable(
+        DataVector[ i ].VariableInformation,DataVector[ i ].Data);
     }
-
+  std::cout << std::endl;
   reader.ReadData();
-//  if( rank == 0 )
-//    {
-//    for(int i=0; i < reader.GetNumberOfVariables(); ++i)
-//      {
-//      std::cout << reader.GetVariableName( i ) << "\t";
-//      std::cout.flush();
-//      }
-//    std::cout << std::endl;
-//    std::cout.flush();
-//    } // END if
-//  MPI_Barrier(comm);
-
   reader.Close();
 
-  // STEP 3: Finalize
+  // STEP 3: Loop, print out data according to type and then delete
+  for(int j=0; j < N; ++j )
+    {
+    for(unsigned int i=0; i < DataVector.size(); ++i)
+      {
+      int type =
+        cosmotk::GenericIOUtilities::DetectVariablePrimitiveType(
+            DataVector[ i ].VariableInformation );
+
+
+      if(type == cosmotk::GENERIC_IO_SHORT_TYPE)
+        {
+        PrintData<short>(DataVector[ i ].Data,j);
+        } // END if short
+      else if( type == cosmotk::GENERIC_IO_LONG_TYPE)
+        {
+        PrintData<long>(DataVector[ i ].Data,j);
+        } // END if long
+      else if( type == cosmotk::GENERIC_IO_LONG_LONG_TYPE)
+        {
+        PrintData<long long>(DataVector[ i ].Data,j);
+        } // END if long long
+      else if( type == cosmotk::GENERIC_IO_INT32_TYPE )
+        {
+        PrintData<int32_t>(DataVector[ i ].Data,j);
+        } // END if int32_t
+      else if( type == cosmotk::GENERIC_IO_INT64_TYPE )
+        {
+        PrintData<int64_t>(DataVector[ i ].Data,j);
+        } // END if int64_t
+      else if( type == cosmotk::GENERIC_IO_UINT32_TYPE )
+        {
+        PrintData<uint32_t>(DataVector[ i ].Data,j);
+        } // END if uint32_t
+      else if( type == cosmotk::GENERIC_IO_UINT64_TYPE )
+        {
+        PrintData<uint64_t>(DataVector[ i ].Data,j);
+        } // END if uint64_t
+      else if( type == cosmotk::GENERIC_IO_DOUBLE_TYPE )
+        {
+        PrintData<double>(DataVector[ i ].Data,j);
+        } // END if double
+      else if( type == cosmotk::GENERIC_IO_FLOAT_TYPE )
+        {
+        PrintData<float>(DataVector[ i ].Data,j);
+        } // END if float
+      else
+        {
+        std::cerr << "ERROR: Undefined datatype!\n";
+        } // END else
+      } // END for all variables read
+    std::cout << std::endl;
+    } // END for all elements
+
+  // STEP 4: Finalize
   MPI_Finalize();
   return 0;
 }
