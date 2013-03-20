@@ -97,8 +97,19 @@ public:
    * @brief Returns the number of merger-tree nodes at the given time-step.
    * @param tstep the time-step in query.
    * @return N the number of nodes in the tree.
+   * @note This method is primarily used to get some preliminary statistics
+   * out of the merger-tree for validation.
    */
   int GetNumberOfMergerTreeNodes(const int tstep);
+
+  /**
+   * @brief Returns the number of zombie merger-tree nodes at the given tstep.
+   * @param tstep the time-step in query.
+   * @return N the number of zombie nodes in the tree at the given time-step.
+   * @note This method is primarily used to get some preliminary statistics
+   * out of the merger-tree for validation.
+   */
+  int GetNumberOfMergerTreeZombieNodes(const int tstep);
 
   /**
    * @brief Writes the merger-tree at the given file name.

@@ -310,7 +310,8 @@ void WriteStatistics()
   std::ofstream ofs;
   if( rank == 0 )
     {
-    ofs.open("HalosVsTreeNodes.dat");
+    ofs.open("HalosVsTreeNodes.txt");
+    ofs << "Halos;TreeNodes;Zombies\n";
     }
   MPI_Barrier(comm);
 
@@ -319,15 +320,18 @@ void WriteStatistics()
     int tstep = timesteps[ t ];
     int numHalos = NumHalosAtTimeStep[ tstep ];
     int numNodes = HaloTracker->GetNumberOfMergerTreeNodes(tstep);
+    int numZombies = HaloTracker->GetNumberOfMergerTreeZombieNodes(tstep);
 
     int totHalos = 0;
     int totNodes = 0;
+    int totZombies = 0;
     MPI_Reduce(&numHalos,&totHalos,1,MPI_INT,MPI_SUM,0,comm);
     MPI_Reduce(&numNodes,&totNodes,1,MPI_INT,MPI_SUM,0,comm);
+    MPI_Reduce(&numZombies,&totZombies,1,MPI_INT,MPI_SUM,0,comm);
 
     if( rank == 0 )
       {
-      ofs << totHalos << ";" << totNodes << std::endl;
+      ofs << totHalos << ";" << totNodes << ";" << totZombies << std::endl;
       }
     } // END for all timesteps
 

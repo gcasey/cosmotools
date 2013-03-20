@@ -142,6 +142,11 @@ void DistributedHaloEvolutionTree::InsertNode(Halo &halo)
     {
     this->UpdateNodeCounter( halo.TimeStep );
     }
+
+  if( halo.HaloType == ZOMBIEHALO )
+    {
+    this->UpdateZombieCounter( halo.TimeStep );
+    }
 }
 
 //------------------------------------------------------------------------------
@@ -155,6 +160,11 @@ void DistributedHaloEvolutionTree::AppendNodes(
     if( halos[ halo ].HaloType != GHOSTHALO )
       {
       this->UpdateNodeCounter( halos[ halo ].TimeStep );
+      }
+
+    if( halos[ halo ].HaloType == ZOMBIEHALO )
+      {
+      this->UpdateZombieCounter( halos[ halo ].TimeStep );
       }
 
     // Remove the particle Ids of the object
@@ -220,6 +230,18 @@ int DistributedHaloEvolutionTree::GetNumberOfNodes(const int tstep)
 }
 
 //------------------------------------------------------------------------------
+int DistributedHaloEvolutionTree::GetNumberOfZombieNodes(
+    const int tstep)
+{
+  int N = 0;
+  if( this->ZombieCounter.find(tstep) != this->ZombieCounter.end() )
+    {
+    N = this->ZombieCounter[ tstep ];
+    }
+  return( N );
+}
+
+//------------------------------------------------------------------------------
 int DistributedHaloEvolutionTree::GetNumberOfNodes()
 {
   return( this->Nodes.size() );
@@ -251,6 +273,19 @@ void DistributedHaloEvolutionTree::UpdateNodeCounter(const int tstep)
   else
     {
     this->NodeCounter[tstep] = 1;
+    }
+}
+
+//-----------------------------------------------------------------------------
+void DistributedHaloEvolutionTree::UpdateZombieCounter(const int tstep)
+{
+  if( this->ZombieCounter.find(tstep) != this->ZombieCounter.end() )
+    {
+    this->ZombieCounter[tstep]++;
+    }
+  else
+    {
+    this->ZombieCounter[tstep] = 1;
     }
 }
 

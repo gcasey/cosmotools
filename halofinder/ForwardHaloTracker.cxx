@@ -173,10 +173,19 @@ void ForwardHaloTracker::TrackHalos(
 }
 
 //------------------------------------------------------------------------------
-int ForwardHaloTracker::GetNumberOfMergerTreeNodes(const int tstep)
+int ForwardHaloTracker::GetNumberOfMergerTreeNodes(
+    const int tstep)
 {
   assert("pre: MergerTree is NULL" && (this->HaloMergerTree != NULL) );
   return(this->HaloEvolutionTree->GetNumberOfNodes(tstep));
+}
+
+//------------------------------------------------------------------------------
+int ForwardHaloTracker::GetNumberOfMergerTreeZombieNodes(
+    const int tstep)
+{
+  assert("pre: MergerTree is NULL" && (this->HaloMergerTree != NULL) );
+  return(this->HaloEvolutionTree->GetNumberOfZombieNodes(tstep));
 }
 
 //------------------------------------------------------------------------------

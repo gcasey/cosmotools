@@ -136,6 +136,13 @@ public:
   int GetNumberOfNodes(const int tstep);
 
   /**
+   * @brief Returns the number of zombie nodes at the given timestep
+   * @param tstep the timestep in query.
+   * @return N the number of zombie nodes in the tree at the given timestep.
+   */
+  int GetNumberOfZombieNodes(const int tstep);
+
+  /**
    * @brief Computes the number of nodes.
    * @return N the number of nodes.
    */
@@ -219,6 +226,7 @@ protected:
   std::vector< int > EdgeEvents;       // edge events
 
   std::map<int,int> NodeCounter; // Counts number of nodes at a given timestep
+  std::map<int,int> ZombieCounter; // Counts number of zombies at a given tstep
   std::string FileName;
 
   std::map< std::string, std::set<std::string> > NodeDescendants;
@@ -232,6 +240,12 @@ protected:
    * @param tstep the timestep to update.
    */
   void UpdateNodeCounter(const int tstep);
+
+  /**
+   * @brief Update the zombie counter at the given timestep.
+   * @param tstep the timestep to update.
+   */
+  void UpdateZombieCounter(const int tstep);
 
   /**
    * @brief Gets the variables associated with each tree edge in flat arrays.
