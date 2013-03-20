@@ -327,6 +327,7 @@ void GenericIOMPIReader::ReadData()
 void GenericIOMPIReader::ReadSplitModeData()
 {
   // STEP 0: Propagate variables to internal readers
+  int nskip = 0;
   for(int i=0; i < this->NumberOfFiles; ++i)
     {
     assert("pre: Internal reader should not be NULL!" &&
@@ -335,10 +336,9 @@ void GenericIOMPIReader::ReadSplitModeData()
     this->InternalReaders[ i ]->ClearVariables();
 
     // Determine offset in to variable array to write
-    int nskip = 0;
     if( i > 0 )
       {
-      nskip = this->InternalReaders[ i-1 ]->GetNumberOfElements();
+      nskip += this->InternalReaders[ i-1 ]->GetNumberOfElements();
       }
 
     for(unsigned int varIdx=0; varIdx < this->Vars.size(); ++varIdx)
