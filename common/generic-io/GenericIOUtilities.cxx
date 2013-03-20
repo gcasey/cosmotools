@@ -236,11 +236,11 @@ int GenericIOUtilities::DetectVariablePrimitiveType(
   int type = -1;
   if( vinfo.IsFloat )
     {
-    if( vinfo.Size == sizeof(double) )
+    if( vinfo.Size == sizeof(float) )
       {
       type = GENERIC_IO_FLOAT_TYPE;
       }
-    else if( vinfo.Size == sizeof(float) )
+    else if( vinfo.Size == sizeof(double) )
       {
       type = GENERIC_IO_DOUBLE_TYPE;
       }
