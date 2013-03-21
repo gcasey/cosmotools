@@ -56,10 +56,7 @@ void TemporalHaloInformation::Update(HaloDataInformation *haloInfo)
 //------------------------------------------------------------------------------
 bool TemporalHaloInformation::IsComplete()
 {
-  if( (this->Current != NULL)  &&
-      (this->Previous != NULL) &&
-      (this->Current->NumberOfHalos > 0) &&
-      (this->Previous->NumberOfHalos > 0) )
+  if( (this->Current != NULL)  && (this->Previous != NULL) )
       return true;
   return false;
 }
