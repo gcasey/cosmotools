@@ -140,8 +140,9 @@ enum NEIGHBOR
 //==============================================================================
 void CartCommInit(MPI_Comm comm);
 void MPICart2DIYDecomposition(MPI_Comm comm);
+int GetTotalNumberOfHalos();
 void GetBlockBounds(
-    int decompSize[3], int pos[3], float min[3], float dx[3]);
+    int decompSize[3],int pos[3],float min[3],float dx[3]);
 void ComputeRankNeighbors(int pos[3], int neighbor[26]);
 int GetRankByPosition(int i, int j, int k);
 void ParseArguments(int argc, char **argv);
@@ -213,11 +214,12 @@ int main(int argc, char **argv)
     ReadHalosAtTimeStep( timesteps[t] );
     cosmotk::MPIUtilities::Printf(comm,"[DONE]\n");
 
-    cosmotk::MPIUtilities::Printf(comm,"Number of halos=%d\n", Halos.size() );
-    NumHalosAtTimeStep[ timesteps[t] ] = Halos.size();
+    int numHalos = GetTotalNumberOfHalos();
+    cosmotk::MPIUtilities::Printf(comm,"Number of halos=%d\n", numHalos );
+    NumHalosAtTimeStep[ timesteps[t] ] = numHalos;
 
     cosmotk::MPIUtilities::Printf(comm,"Track halos...");
-    HaloTracker->TrackHalos(t,z,Halos);
+//    HaloTracker->TrackHalos(t,z,Halos);
     cosmotk::MPIUtilities::Printf(comm,"[DONE]\n");
 
     cosmotk::MPIUtilities::Printf(
@@ -227,10 +229,10 @@ int main(int argc, char **argv)
     } // END for all time-step
 
   // STEP 7: Write the tree
-  std::ofstream ofs;
-  ofs.open("mtree.ascii");
-  ofs << HaloTracker->GetHaloEvolutionTree()->ToString();
-  ofs.close();
+//  std::ofstream ofs;
+//  ofs.open("mtree.ascii");
+//  ofs << HaloTracker->GetHaloEvolutionTree()->ToString();
+//  ofs.close();
   //HaloTracker->WriteMergerTree("MergerTree");
 
   // STEP 8: Write statistics
@@ -284,6 +286,15 @@ void CreateSyntheticHalo(
     halo.ParticleIds.insert( idx );
     }
   Halos.push_back( halo );
+}
+
+//------------------------------------------------------------------------------
+int GetTotalNumberOfHalos()
+{
+  int totHalos = 0;
+  int localNumHalos = Halos.size();
+  MPI_Reduce(&localNumHalos,&totHalos,1,MPI_INT,MPI_SUM,0,comm);
+  return( totHalos );
 }
 
 //------------------------------------------------------------------------------
