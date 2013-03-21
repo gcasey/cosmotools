@@ -1,6 +1,8 @@
 #include "ParallelHaloMergerTree.h"
 
+// cosmotools includes
 #include "Halo.h"
+#include "MPIUtilities.h"
 
 // DIY communication sub-strate
 #include "diy.h"
@@ -57,10 +59,6 @@ void ParallelHaloMergerTree::UpdateMergerTree(
     DistributedHaloEvolutionTree *t)
 {
   assert("pre: t1 < t2" && (t1 < t2) );
-  assert("pre: halos is NULL" && (haloSet1 != NULL) );
-  assert("pre: halos is NULL" && (haloSet2 != NULL) );
-  assert("pre: M > 0" && (M > 0) );
-  assert("pre: N > 0" && (N > 0) );
   assert("pre: halo evolution tree is NULL!" && (t != NULL) );
 
 
@@ -72,8 +70,18 @@ void ParallelHaloMergerTree::UpdateMergerTree(
     this->TemporalHalos.resize(2);
     this->PreviousIdx = 0;
     this->CurrentIdx  = 1;
+
+    cosmotk::MPIUtilities::Printf(
+        this->Communicator,"Exchanging cached halos...");
     this->ExchangeHalos(haloSet1,M,this->TemporalHalos[this->PreviousIdx]);
+    cosmotk::MPIUtilities::Printf(
+        this->Communicator,"[DONE]\n");
+
+    cosmotk::MPIUtilities::Printf(
+            this->Communicator,"Exchanging halos at current timestep...");
     this->ExchangeHalos(haloSet2,N,this->TemporalHalos[this->CurrentIdx]);
+    cosmotk::MPIUtilities::Printf(
+            this->Communicator,"[DONE]\n");
     }
   else
     {
@@ -169,7 +177,6 @@ void ParallelHaloMergerTree::ExchangeHalos(
       cosmotk::Halo *halos, const int N,
       std::vector<cosmotk::Halo>& globalHalos)
 {
-  assert("pre: halos is NULL!" && (halos != NULL) );
   assert("pre: N >= 0" && (N >= 0) );
 
   HaloHashMap haloHash;
@@ -195,7 +202,6 @@ void ParallelHaloMergerTree::ExchangeHalos(
 void ParallelHaloMergerTree::ExchangeHaloInfo(
         cosmotk::Halo *halos, const int N, HaloHashMap& haloHash)
 {
-  assert("pre: halos is NULL!" && (halos != NULL) );
   assert("pre: N >= 0" && (N >= 0) );
   assert("pre: haloHash.empty()" && haloHash.empty() );
 
