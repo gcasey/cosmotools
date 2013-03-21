@@ -24,6 +24,7 @@
 #include "GenericIOMPIReader.h"
 #include "GenericIOReader.h"
 #include "Halo.h"
+#include "MPIUtilities.h"
 
 //==============================================================================
 // Global variables
@@ -154,27 +155,6 @@ void CreateSyntheticHalo(
 void CreateHalosAtTimeStep(const int tstep);
 void WriteStatistics();
 
-
-
-//==============================================================================
-// Macros
-//==============================================================================
-#define PRINTLN( str ) {          \
-  if(rank==0) {                    \
-    std::cout << str << std::endl; \
-    std::cout.flush();             \
-  }                                \
-  MPI_Barrier(comm);               \
-}
-
-#define PRINT( str ) {    \
-  if(rank==0) {            \
-    std::cout << str;      \
-    std::cout.flush();     \
-  }                        \
-  MPI_Barrier(comm);       \
-}
-
 //------------------------------------------------------------------------------
 
 /**
@@ -189,28 +169,35 @@ int main(int argc, char **argv)
   MPI_Init(&argc,&argv);
   MPI_Comm_rank(comm,&rank);
   MPI_Comm_size(comm,&size);
-  PRINTLN("- Initialize MPI...[DONE]");
+  cosmotk::MPIUtilities::Printf(comm,"- Initialize MPI...[DONE]\n");
+
 
   // STEP 1: Parse arguments
   ParseArguments(argc,argv);
 
   // STEP 2: Get cartesian communicator, needed for GenericIO
   CartCommInit(comm);
-  PRINTLN("- Initialize cartesian communicator...[DONE]");
+  cosmotk::MPIUtilities::Printf(
+      comm,"- Initialize cartesian communicator...[DONE]\n");
+
 
   // STEP 3: Initialize DIY
   DIY_Init(3, NULL, 1, comm);
-  PRINTLN("- Initialized DIY...[DONE]");
+  cosmotk::MPIUtilities::Printf(comm,"- Initialized DIY...[DONE]\n");
   MPICart2DIYDecomposition(comm);
-  PRINTLN("- Prescribed decomposition to DIY...[DONE]");
+  cosmotk::MPIUtilities::Printf(
+      comm,"- Prescribed decomposition to DIY...[DONE]\n");
 
   // STEP 4: Parse Simulation parameters
   ParseSimulationParameters();
-  PRINTLN("- Parse simulation parameters...[DONE]");
+  cosmotk::MPIUtilities::Printf(
+      comm,"- Parse simulation parameters...[DONE]\n");
+
 
   // STEP 5: Get time-steps
   ReadInAnalysisTimeSteps();
-  PRINTLN("- Read in analysis time-steps...[DONE]");
+  cosmotk::MPIUtilities::Printf(
+      comm,"- Read in analysis time-steps...[DONE]\n");
 
   // STEP 6: Loop through all time-steps and track halos
   HaloTracker = new cosmologytools::ForwardHaloTracker();
@@ -219,23 +206,23 @@ int main(int argc, char **argv)
   for(int t=0; t < timesteps.size(); ++t)
     {
     REAL z = ComputeRedShift(timesteps[t]);
-    PRINTLN("t=" << timesteps[t] << " redshift=" << z);
+    cosmotk::MPIUtilities::Printf(
+        comm,"t=%d, redshift=%f\n", timesteps[t], z);
 
-    PRINTLN("Read halos...");
+    cosmotk::MPIUtilities::Printf(comm,"Read halos...");
     ReadHalosAtTimeStep( timesteps[t] );
-    PRINTLN("[DONE]");
+    cosmotk::MPIUtilities::Printf(comm,"[DONE]\n");
 
-    PRINTLN("Number of halos=" << Halos.size() );
+    cosmotk::MPIUtilities::Printf(comm,"Number of halos=%d\n", Halos.size() );
     NumHalosAtTimeStep[ timesteps[t] ] = Halos.size();
 
-    PRINTLN("Track halos...");
-    HaloTracker->TrackHalos(timesteps[t],z,Halos);
-    PRINTLN("[DONE]");
+    cosmotk::MPIUtilities::Printf(comm,"Track halos...");
+    HaloTracker->TrackHalos(t,z,Halos);
+    cosmotk::MPIUtilities::Printf(comm,"[DONE]\n");
 
-    PRINTLN( "\t - Processed time-step " << t
-             << "/" << timesteps.size()
-             << " SIM TSTEP=" << timesteps[t] << "\n ");
-
+    cosmotk::MPIUtilities::Printf(
+        comm,"\t - Processed timestep %d/%d SIM TSTEP=%d\n",
+              t,timesteps.size(),timesteps[t]);
     Halos.clear();
     } // END for all time-step
 
@@ -254,8 +241,8 @@ int main(int argc, char **argv)
   delete HaloTracker;
 
   DIY_Finalize();
-  PRINTLN("Finalize DIY...[DONE]");
-  PRINTLN("Finalize MPI...[DONE]");
+  cosmotk::MPIUtilities::Printf(comm,"Finalize DIY...[DONE]\n");
+  cosmotk::MPIUtilities::Printf(comm,"Finalize MPI...[DONE]\n");
   MPI_Finalize();
   return 0;
 }
