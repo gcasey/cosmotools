@@ -19,7 +19,7 @@ MPIUtilities::~MPIUtilities()
 }
 
 //------------------------------------------------------------------------------
-void MPIUtilities::Printf(MPI_Comm comm, char *fmt,...)
+void MPIUtilities::Printf(MPI_Comm comm, const char *fmt,...)
 {
   // Sanity check
   assert("pre: MPI communicator should not be NULL!" && (comm != MPI_COMM_NULL) );
@@ -39,7 +39,7 @@ void MPIUtilities::Printf(MPI_Comm comm, char *fmt,...)
 }
 
 //------------------------------------------------------------------------------
-void MPIUtilities::SynchronizedPrintf(MPI_Comm comm,char *fmt,...)
+void MPIUtilities::SynchronizedPrintf(MPI_Comm comm, const char *fmt,...)
 {
   // Sanity check
   assert("pre: MPI communicator should not be NULL!" && (comm != MPI_COMM_NULL) );

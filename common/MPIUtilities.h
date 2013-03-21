@@ -23,7 +23,7 @@ public:
    * @pre comm != MPI_COMM_NULL
    * @pre fmt != NULL
    */
-  static void Printf(MPI_Comm comm, char *fmt,...);
+  static void Printf(MPI_Comm comm, const char *fmt,...);
 
   /**
    * @brief Each process prints the formatted message in stdout in rank order.
@@ -34,7 +34,7 @@ public:
    * @pre comm != MPI_COMM_NULL
    * @pre fmt != NULL
    */
-  static void SynchronizedPrintf(MPI_Comm comm, char *fmt,...);
+  static void SynchronizedPrintf(MPI_Comm comm, const char *fmt,...);
 
 protected:
   MPIUtilities();
