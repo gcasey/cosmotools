@@ -4,9 +4,10 @@
 #include "FOFHaloProperties.h"
 #include "HaloDataInformation.h"
 #include "HaloFinders.h"
+#include "MPIUtilities.h"
+#include "MergerTreeFileFormat.h"
 #include "Partition.h"
 #include "TemporalHaloInformation.h"
-#include "MergerTreeFileFormat.h"
 
 #include <cassert>
 #include <vector>
@@ -158,7 +159,9 @@ void ForwardHaloTracker::TrackHalos(
   currentHaloData->Halos         = halos;
 
   // STEP 2: Update halo-prefix sum
+  cosmotk::MPIUtilities::Printf(this->Communicator,"Update prefix sum...");
   this->UpdateHaloPrefixSum( currentHaloData->NumberOfHalos );
+  cosmotk::MPIUtilities::Printf(this->Communicator,"[DONE]\n");
 
   // STEP 3: Update temporal halo information
   this->TemporalHaloData->Update(currentHaloData);

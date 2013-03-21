@@ -219,7 +219,7 @@ int main(int argc, char **argv)
     NumHalosAtTimeStep[ timesteps[t] ] = numHalos;
 
     cosmotk::MPIUtilities::Printf(comm,"Track halos...");
-//    HaloTracker->TrackHalos(t,z,Halos);
+    HaloTracker->TrackHalos(t,z,Halos);
     cosmotk::MPIUtilities::Printf(comm,"[DONE]\n");
 
     cosmotk::MPIUtilities::Printf(
@@ -229,10 +229,10 @@ int main(int argc, char **argv)
     } // END for all time-step
 
   // STEP 7: Write the tree
-//  std::ofstream ofs;
-//  ofs.open("mtree.ascii");
-//  ofs << HaloTracker->GetHaloEvolutionTree()->ToString();
-//  ofs.close();
+  std::ofstream ofs;
+  ofs.open("mtree.ascii");
+  ofs << HaloTracker->GetHaloEvolutionTree()->ToString();
+  ofs.close();
   //HaloTracker->WriteMergerTree("MergerTree");
 
   // STEP 8: Write statistics
