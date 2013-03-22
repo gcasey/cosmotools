@@ -584,6 +584,9 @@ void ReadHalosAtTimeStep(int tstep)
       POSVEL_T *center_x = new POSVEL_T[nfof];
       POSVEL_T *center_y = new POSVEL_T[nfof];
       POSVEL_T *center_z = new POSVEL_T[nfof];
+      POSVEL_T *mcx      = new POSVEL_T[nfof];
+      POSVEL_T *mcy      = new POSVEL_T[nfof];
+      POSVEL_T *mcz      = new POSVEL_T[nfof];
       POSVEL_T *halo_vx  = new POSVEL_T[nfof];
       POSVEL_T *halo_vy  = new POSVEL_T[nfof];
       POSVEL_T *halo_vz  = new POSVEL_T[nfof];
@@ -593,6 +596,9 @@ void ReadHalosAtTimeStep(int tstep)
       FofPropertiesReader.AddVariable("fof_halo_center_x", center_x);
       FofPropertiesReader.AddVariable("fof_halo_center_y", center_y);
       FofPropertiesReader.AddVariable("fof_halo_center_z", center_z);
+      FofPropertiesReader.AddVariable("fof_halo_mean_x",mcx);
+      FofPropertiesReader.AddVariable("fof_halo_mean_y",mcy);
+      FofPropertiesReader.AddVariable("fof_halo_mean_z",mcz);
       FofPropertiesReader.AddVariable("fof_halo_mean_vx", halo_vx);
       FofPropertiesReader.AddVariable("fof_halo_mean_vy", halo_vy);
       FofPropertiesReader.AddVariable("fof_halo_mean_vz", halo_vz);
@@ -620,6 +626,9 @@ void ReadHalosAtTimeStep(int tstep)
         Halos[idx].Center[0] = center_x[i];
         Halos[idx].Center[1] = center_y[i];
         Halos[idx].Center[2] = center_z[i];
+        Halos[idx].MeanCenter[0] = mcx[i];
+        Halos[idx].MeanCenter[1] = mcy[i];
+        Halos[idx].MeanCenter[2] = mcz[i];
         Halos[idx].AverageVelocity[0] = halo_vx[i];
         Halos[idx].AverageVelocity[1] = halo_vy[i];
         Halos[idx].AverageVelocity[2] = halo_vz[i];
@@ -630,6 +639,9 @@ void ReadHalosAtTimeStep(int tstep)
       delete [] center_x;
       delete [] center_y;
       delete [] center_z;
+      delete [] mcx;
+      delete [] mcy;
+      delete [] mcz;
       delete [] halo_vx;
       delete [] halo_vy;
       delete [] halo_vz;

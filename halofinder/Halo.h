@@ -26,6 +26,7 @@ struct DIYHaloItem {
   REAL Redshift;
   REAL HaloMass;
   POSVEL_T Center[3];
+  POSVEL_T MeanCenter[3];
   POSVEL_T AverageVelocity[3];
   int DIYGlobalId;
 };
@@ -165,6 +166,7 @@ public:
   REAL Redshift;                // The corresponding red-shift of the halo
   REAL HaloMass;                // Mass of the halos
   POSVEL_T Center[3];           // The halo-center
+  POSVEL_T MeanCenter[3];       // Alternate halo-center definition
   POSVEL_T AverageVelocity[3];  // The average velocity of the halo
   std::set< ID_T > ParticleIds; // The global particle IDs of the halo
 

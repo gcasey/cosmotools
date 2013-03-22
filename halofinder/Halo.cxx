@@ -14,16 +14,17 @@ namespace cosmotk
 //-----------------------------------------------------------------------------
 void Halo::CreateDIYHaloType(DIY_Datatype *dtype)
 {
-  struct map_block_t halo_map[7] = {
+  struct map_block_t halo_map[8] = {
    {DIY_INT,     OFST, 1, offsetof(struct DIYHaloItem, Tag)},
    {DIY_INT,     OFST, 1, offsetof(struct DIYHaloItem, TimeStep)},
    {DIY_REAL_T,   OFST, 1, offsetof(struct DIYHaloItem, Redshift)},
    {DIY_REAL_T,   OFST, 1, offsetof(struct DIYHaloItem, HaloMass)},
    {DIY_POSVEL_T, OFST, 3, offsetof(struct DIYHaloItem, Center)},
+   {DIY_POSVEL_T, OFST, 3, offsetof(struct DIYHaloItem, MeanCenter)},
    {DIY_POSVEL_T, OFST, 3, offsetof(struct DIYHaloItem, AverageVelocity)},
    {DIY_INT,     OFST, 1, offsetof(struct DIYHaloItem, DIYGlobalId)},
   };
-  DIY_Create_struct_datatype(0, 7, halo_map, dtype);
+  DIY_Create_struct_datatype(0, 8, halo_map, dtype);
 }
 
 //-----------------------------------------------------------------------------
@@ -47,6 +48,7 @@ Halo::Halo()
   this->HaloMass = 0.;
   this->OwnerBlockId = DIY_Gid(0,0);
   this->Center[0] = this->Center[1] = this->Center[2] = 0.;
+  this->MeanCenter[0] = this->MeanCenter[1] = this->MeanCenter[2] = 0.;
   this->AverageVelocity[0] =
   this->AverageVelocity[1] =
   this->AverageVelocity[2] = 0.;
@@ -64,6 +66,12 @@ Halo::Halo( DIYHaloItem *halo )
         halo->AverageVelocity,
         NULL,
         0 );
+
+  for( int i=0; i < 3; ++i )
+    {
+    this->MeanCenter[i] = halo->MeanCenter[i];
+    }
+
   this->HaloMass     = halo->HaloMass;
   this->OwnerBlockId = halo->DIYGlobalId;
   if(this->OwnerBlockId != DIY_Gid(0,0))
@@ -205,6 +213,7 @@ void Halo::GetDIYHaloItem(DIYHaloItem *halo)
     {
     halo->Center[i]          = this->Center[i];
     halo->AverageVelocity[i] = this->AverageVelocity[i];
+    halo->MeanCenter[i]      = this->MeanCenter[i];
     }
   halo->DIYGlobalId = this->OwnerBlockId;
 }
