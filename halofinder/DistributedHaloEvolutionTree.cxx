@@ -397,6 +397,10 @@ std::string DistributedHaloEvolutionTree::ToString()
         {
         oss << "(**SPLIT**)";
         }
+      if(NodeIter->second.HaloType == ZOMBIEHALO)
+        {
+        oss << "(**ZOMBIE**)";
+        }
       }
     else
       {
