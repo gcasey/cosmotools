@@ -351,6 +351,9 @@ std::string DistributedHaloEvolutionTree::ToString()
   oss << "CENTER_X\t";
   oss << "CENTER_Y\t";
   oss << "CENTER_Z\t";
+  oss << "MEAN_CENTER_X\t";
+  oss << "MEAN_CENTER_Y\t";
+  oss << "MEAN_CENTER_Z\t";
   oss << "V_X\t";
   oss << "V_Y\t";
   oss << "V_Z\t";
@@ -368,6 +371,9 @@ std::string DistributedHaloEvolutionTree::ToString()
     oss << NodeIter->second.Center[0] << "\t";
     oss << NodeIter->second.Center[1] << "\t";
     oss << NodeIter->second.Center[2] << "\t";
+    oss << NodeIter->second.MeanCenter[0] << "\t";
+    oss << NodeIter->second.MeanCenter[1] << "\t";
+    oss << NodeIter->second.MeanCenter[2] << "\t";
     oss << NodeIter->second.AverageVelocity[0] << "\t";
     oss << NodeIter->second.AverageVelocity[1] << "\t";
     oss << NodeIter->second.AverageVelocity[2] << "\t";
