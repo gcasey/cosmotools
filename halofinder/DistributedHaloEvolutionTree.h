@@ -22,6 +22,10 @@
 // MPI
 #include <mpi.h>
 
+// Forward declarations
+struct HaloInfo;
+
+
 namespace cosmotk
 {
 
@@ -40,31 +44,10 @@ public:
   GetNSetMacro(Communicator,MPI_Comm);
 
   /**
-   * @brief Get/Set macro for FileName
-   * @note This is the filename where the merger will be written out.
-   */
-  GetNSetMacro(FileName,std::string);
-
-  /**
-   * @brief Get/Set macro for the MergerTree format
-   * @note Default is set to GENERIC_IO
-   * @see enum MergerTreeFormat
-   */
-  GetNSetMacro(IOFormat,int);
-
-  /**
    * @brief Inserts the given halo as a node in the tree.
    * @param halo the halo to add
    */
-  void InsertNode(Halo &halo);
-
-  /**
-   * @brief Adds the given halos as nodes to this instance of the tree
-   * @param halos the set of halos to be added in the tree.
-   * @note Each tree node is identified by the halo hash-code.
-   * @see Halo::GetHashCode()
-   */
-  void AppendNodes( Halo* halos, const int N );
+  void InsertNode(const HaloInfo &halo, const unsigned char mask);
 
   /**
    * @brief Creates an edge from the tree node corresponding to hashCode1
@@ -73,11 +56,9 @@ public:
    * @param hashCode2 the hashCode of the 2nd tree node.
    * @pre this->HasNode( hashCode1 ) && this->HasNode( hashCode2 ) is true.
    */
-  void CreateEdge(
+  void LinkHalos(
           std::string hashCode1,
-          std::string hashCode2,
-          int weight=1,
-          int event=MergerTreeEvent::UNDEFINED);
+          std::string hashCode2);
 
   /**
    * @brief Checks if the tree is empty.
@@ -137,11 +118,6 @@ public:
    */
   ID_T GetNodeIndex(std::string hashCode);
 
-  /**
-   * @brief Relabels s.t. all nodes are uniquely identified by an integer ID
-   * across all processes.
-   */
-  void RelabelTreeNodes();
 
   /**
    * @brief Creates an ASCII string representation of the given tree
@@ -151,22 +127,23 @@ public:
   std::string ToString();
 
 protected:
+  std::vector<HaloInfo> Nodes;
+  std::map< std::string, int > Node2Idx;
 
-  std::map< std::string, Halo > Nodes; // List of nodes in the halo
-  std::map< std::string, ID_T > Node2UniqueIdx; // Maps halo nodes to a idx
-  std::vector< std::string >    Edges; // List of edges (strided by 2)
-  std::vector< int > EdgeWeights;      // Weights associated with edges
-  std::vector< int > EdgeEvents;       // edge events
+//  std::map< std::string, Halo > Nodes; // List of nodes in the halo
+//  std::map< std::string, ID_T > Node2UniqueIdx; // Maps halo nodes to a idx
+//  std::vector< std::string >    Edges; // List of edges (strided by 2)
+//  std::vector< int > EdgeWeights;      // Weights associated with edges
+//  std::vector< int > EdgeEvents;       // edge events
 
   std::map<int,int> NodeCounter; // Counts number of nodes at a given timestep
   std::map<int,int> ZombieCounter; // Counts number of zombies at a given tstep
-  std::string FileName;
 
-  std::map< std::string, std::set<std::string> > NodeDescendants;
+  std::vector< std::vector<int> > Progenitors;
+  std::vector< std::vector<int> > Descendants;
+
 
   MPI_Comm Communicator;
-
-  int IOFormat;
 
   /**
    * @brief Updates the node counter at the given timestep
@@ -179,13 +156,6 @@ protected:
    * @param tstep the timestep to update.
    */
   void UpdateZombieCounter(const int tstep);
-
-  /**
-   * @brief Computes the range of IDs for this process via a prefix-sum
-   * @param range the range (out)
-   */
-  void GetNodeRangeForProcess(ID_T range[2]);
-
 
 private:
   DISABLE_COPY_AND_ASSIGNMENT(DistributedHaloEvolutionTree);

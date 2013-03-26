@@ -118,38 +118,49 @@ void ParallelHaloMergerTree::HandleDeathEvents(
   for(;iter != this->DeadHalos.end(); ++iter)
     {
     int haloIdx = *iter;
+
+    // Sanity checks
     assert("pre: Dead haloIdx is out-of-bounds" &&
         (haloIdx >= 0) &&
         (haloIdx < this->TemporalHalos[this->PreviousIdx].size()) );
+
+    unsigned char bitmask;
+    MergerTreeEvent::Reset(bitmask);
+    MergerTreeEvent::SetEvent(bitmask,MergerTreeEvent::DEATH);
 
     // Copy the halo
     this->TemporalHalos[this->CurrentIdx].push_back(
           this->TemporalHalos[this->PreviousIdx][haloIdx]);
     int zombieIdx = this->TemporalHalos[this->CurrentIdx].size()-1;
 
-    // Update its attributes
+    // Get pointers to the zombie halo at the current timestep and the
+    // source halo at the previous timestep, i.e., the halo that died.
     Halo *zombie     = &this->TemporalHalos[this->CurrentIdx][zombieIdx];
     Halo *sourceHalo = &this->TemporalHalos[this->PreviousIdx][haloIdx];
+
+    // Get a pointer to a reference halo at the current timestep so that we
+    // can update the timestep and red-shift information.
     Halo *refHalo    = &this->TemporalHalos[this->CurrentIdx][0];
     zombie->TimeStep = refHalo->TimeStep;
     zombie->Redshift = refHalo->Redshift;
     if( zombie->Count == 0 )
       {
+      // this halo just died for the first time
       zombie->HaloType = ZOMBIEHALO;
       zombie->Tag = (-1)*zombie->Tag;
       }
+
+    // More sanity checks
     assert("pre: Node not flagged as a zombie!" &&
            (zombie->HaloType==ZOMBIEHALO));
     assert("pre: zombies must have a negative tag!" && (zombie->Tag < 0));
     zombie->Count++;
 
-    t->InsertNode( *sourceHalo );
-    t->InsertNode( *zombie );
-    t->CreateEdge(
-         sourceHalo->GetHashCode(),
-         zombie->GetHashCode(),
-         100,
-         MergerTreeEvent::DEATH);
+    // Insert the zombie halo in to the tree
+    this->InsertHalo(zombie,bitmask,t);
+
+    // Create a link between the source halo and zombie halo
+    t->LinkHalos(sourceHalo->GetHashCode(),zombie->GetHashCode());
     } // END for all dead halos
 }
 
