@@ -25,51 +25,11 @@
 // DIY
 #include "diy.h" // For DIY_Datatype
 
-/**
- * @struct DIYTreeNodeType
- * @brief Used to store tree nodes.
- */
-struct DIYTreeNodeType {
-  ID_T UniqueNodeID;
-  ID_T HaloTag;
-  ID_T TimeStep;
-  REAL RedShift;
-  POSVEL_T HaloCenter[3];
-  POSVEL_T HaloVelocity[3];
-};
-
-/**
- * @struct DIYTreeEdgeType
- * @brief Used to store tree edges.
- */
-struct DIYTreeEdgeType {
-  ID_T EndNodes[2];
-  int EdgeWeight;
-  int EdgeEvent;
-};
-
-/**
- * @struct DIYTree
- * @brief Stores pointers to tree nodes and tree edges.
- */
-struct DIYTree {
-  DIYTreeNodeType* TreeNodes;
-
-  // NOTE: Metadata, these fields are skipped when creating a DIY data type,
-  // hence, they are injected in the middle of the struct, s.t. MPI will compute
-  // the extents of the datatype correctly.
-  int NumberOfNodes;
-  int NumberOfEdges;
-
-  DIYTreeEdgeType* TreeEdges;
-};
-
 namespace cosmotk
 {
 
 // Forward declarations
 class Halo;
-class GenericIO;
 
 class DistributedHaloEvolutionTree
 {
@@ -163,16 +123,6 @@ public:
   bool HasNode( std::string hashCode1 );
 
   /**
-   * @brief Relabels the tree and dumps it into a file.
-   */
-  void WriteTree();
-
-  /**
-   * @brief Reads the tree from a file.
-   */
-  void ReadTree();
-
-  /**
    * @brief Clears out all the data in this tree
    * @post this->IsEmpty()==true
    */
@@ -182,12 +132,6 @@ public:
    * @brief Barrier synchronization among all processes
    */
   void Barrier() { MPI_Barrier(this->Communicator); }
-
-  /**
-   * @brief Get DIYTree instance for the halo-evolution tree
-   * @param tree pointer to the DIYTree struct (in/out)
-   */
-  void GetDIYTree(DIYTree* tree);
 
   /**
    * @brief Returns the unique ID for a given node
@@ -208,15 +152,6 @@ public:
    * @note Used mainly for debugging.
    */
   std::string ToString();
-
-  /**
-   * @brief Registers a DIY data-type to represent a DIY tree.
-   * @param myTree pointer to a DIY tree instance (in)
-   * @param dtype pointer to the DIY data type (out)
-   * @note This DIY datatype should only be used in the context of
-   * DIY I/O since each type has variable sizes
-   */
-  static void CreateDIYTreeType(DIYTree *myTree, DIY_Datatype *dtype);
 
 protected:
   std::map< std::string, Halo > Nodes; // List of nodes in the halo
@@ -248,77 +183,11 @@ protected:
   void UpdateZombieCounter(const int tstep);
 
   /**
-   * @brief Gets the variables associated with each tree edge in flat arrays.
-   * @param startNodeIdx list of start node indices
-   * @param endNodeIdx list of end node indices
-   * @param weights list of edge weights
-   * @param eventType list of edge event types
-   */
-  void GetFlatTreeEdgeArrays(ID_T *startNodeIdx, ID_T *endNodeIdx);
-
-  /**
-   * @brief Gets the variables associated with each tree node in flat arrays.
-   * @param nodeIds the unique index (computed) of node (i.e.,halo) in the tree
-   * @param haloTags the original halo tag (computed from the halo-finder)
-   * @param redShift the red-shift of the associate halo
-   * @param center_x the x-coordinate of the halo center
-   * @param center_y the y-coordinate of the halo center
-   * @param center_z the z-coordinate of the halo center
-   * @param vx the x-coordinate of the halo velocity vector
-   * @param vy the y-coordinate of the halo velocity vector
-   * @param vz the z-coordinate of the halo velocity vector
-   * @pre All arrays that are passed in must be pre-allocated
-   * @note This method is used to create the flat arrays needed for the
-   * GenericIO
-   */
-  void GetFlatTreeNodeArrays(
-      ID_T *nodeIds,
-      ID_T *haloTags,
-      ID_T *timestep,
-      REAL *redShift,
-      POSVEL_T *center_x, POSVEL_T *center_y, POSVEL_T *center_z,
-      POSVEL_T *vx, POSVEL_T *vy, POSVEL_T *vz);
-
-  /**
    * @brief Computes the range of IDs for this process via a prefix-sum
    * @param range the range (out)
    */
   void GetNodeRangeForProcess(ID_T range[2]);
 
-  /**
-   * @brief Reads data in DIY format
-   */
-  void ReadWithDIY();
-
-  /**
-   * @brief Writes data in DIY format
-   */
-  void WriteWithDIY();
-
-  /**
-   * @brief Reads data in GenericIO format
-   */
-  void ReadWithGenericIO();
-
-  /**
-   * @brief Reads in the given block
-   * @param block the block to read
-   * @param nodesReader pointer to the nodes reader
-   * @param edgesReader pointer to the edges reader
-   * @pre nodesReader != NULL
-   * @pre edgesReader != NULL
-   * @note Called from ReadWithGenericIO to read in a
-   * particular block to handle the case where each process
-   * reads more than one block.
-   */
-//  void ReadBlock(
-//      int block, cosmotk::GenericIO *nodesReader,
-//      cosmotk::GenericIO *edgesReader);
-
-  /**
-   * @brief Writes data in GenericIO format
-   */
-  void WriteWithGenericIO();
 
 private:
   DISABLE_COPY_AND_ASSIGNMENT(DistributedHaloEvolutionTree);

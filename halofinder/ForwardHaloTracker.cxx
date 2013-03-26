@@ -194,10 +194,10 @@ void ForwardHaloTracker::WriteMergerTree(std::string fileName)
   assert("pre: HaloEvolutionTree is NULL!" &&
           (this->HaloEvolutionTree != NULL) );
 
-  this->HaloEvolutionTree->SetCommunicator(this->Communicator);
-  this->HaloEvolutionTree->SetFileName(fileName);
-  this->HaloEvolutionTree->SetIOFormat(this->MergerTreeFileFormat);
-  this->HaloEvolutionTree->WriteTree();
+//  this->HaloEvolutionTree->SetCommunicator(this->Communicator);
+//  this->HaloEvolutionTree->SetFileName(fileName);
+//  this->HaloEvolutionTree->SetIOFormat(this->MergerTreeFileFormat);
+//  this->HaloEvolutionTree->WriteTree();
 }
 
 //------------------------------------------------------------------------------
