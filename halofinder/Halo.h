@@ -158,6 +158,9 @@ public:
  static void CreateDIYHaloParticleType(DIY_Datatype *dtype);
 
 
+  int Count;                    // A count used for book-keeping the number of
+                                // times the halo is propagated as a zombie.
+
   int Tag;                      // The tag/ID of the halo
   int TimeStep;                 // The time-step of this halo
   int HaloType;                 // The type of the halo, see HaloTypeEnum

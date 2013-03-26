@@ -41,8 +41,9 @@ void Halo::CreateDIYHaloParticleType(DIY_Datatype *dtype)
 //-----------------------------------------------------------------------------
 Halo::Halo()
 {
-  this->Tag = -1;
+  this->Tag      = -1;
   this->TimeStep = 0;
+  this->Count    = 0;
   this->Redshift = 0.;
   this->HaloType = cosmotk::NORMALHALO;
   this->HaloMass = 0.;
