@@ -31,6 +31,11 @@ public:
   GetNSetMacro(MergerTreeThreshold,int);
 
   /**
+   * @brief Get/Set macro for the zombie cut-off. Default is 5.
+   */
+  GetNSetMacro(ZombieCutOff,int);
+
+  /**
    * @brief Returns the number of dead halos found
    * @return N the number of dead halos
    * @note Dead halos are halos that existed in a previous
@@ -105,6 +110,10 @@ protected:
   // timestep, i.e., Halos1, and a halo at the current timestep, i.e., the
   // array Halos2.
   std::vector< int > HaloSimilarityMatrix; // Flat 2-D matrix
+
+  int ZombieCutOff; // Parameter that indicates after how many times of
+                     // propagating a halo as a zombie, the halo should
+                     // be designated as a zombie and bypass any checks.
 
   // The user-supplied percent threshold, default is set to 50%
   int MergerTreeThreshold;

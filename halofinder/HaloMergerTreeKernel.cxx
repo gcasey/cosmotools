@@ -15,6 +15,7 @@ HaloMergerTreeKernel::HaloMergerTreeKernel()
   this->Halos1 = NULL;
   this->Halos2 = NULL;
   this->MergerTreeThreshold = 50;
+  this->ZombieCutOff = 5;
 }
 
 //------------------------------------------------------------------------------
@@ -77,7 +78,8 @@ void HaloMergerTreeKernel::ComputeMergerTree( )
     rowCount = 0;
 
     // STEP 1: Propagate zombies across timesteps without further checking
-    if(this->Halos1[row].HaloType == ZOMBIEHALO)
+    if( this->Halos1[row].HaloType == ZOMBIEHALO &&
+        this->Halos1[row].Count > this->ZombieCutOff )
       {
       this->DeadHalos.insert(row);
       continue;
@@ -103,8 +105,8 @@ void HaloMergerTreeKernel::ComputeMergerTree( )
          this->DeadHalos.insert( row );
          break;
        case 1:
-         // CONTINUATION or MERGE event to determine, the column sum matrix
-         // must be examined to determine which.
+         // CONTINUATION or MERGE event. The column sum matrix
+         // must be examined to determine which event it is.
          break;
        default:
          this->SplitHalos.insert( row );
