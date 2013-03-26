@@ -176,7 +176,7 @@ void HaloMergerTreeKernel::UpdateHaloEvolutionTree(
           if( this->Halos1[row].HaloType == ZOMBIEHALO )
             {
             event = MergerTreeEvent::REBIRTH;
-            this->Halos1[row].Count = 0;
+            this->Halos2[col].Count = 0;
             }
           else
             {
