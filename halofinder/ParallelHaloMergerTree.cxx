@@ -133,7 +133,15 @@ void ParallelHaloMergerTree::HandleDeathEvents(
     Halo *refHalo    = &this->TemporalHalos[this->CurrentIdx][0];
     zombie->TimeStep = refHalo->TimeStep;
     zombie->Redshift = refHalo->Redshift;
-    zombie->HaloType = ZOMBIEHALO;
+    if( zombie->Count == 0 )
+      {
+      zombie->HaloType = ZOMBIEHALO;
+      zombie->Tag = (-1)*zombie->Tag;
+      }
+    assert("pre: Node not flagged as a zombie!" &&
+           (zombie->HaloType==ZOMBIEHALO));
+    assert("pre: zombies must have a negative tag!" && (zombie->Tag < 0));
+    zombie->Count++;
 
     t->InsertNode( *zombie );
     t->CreateEdge(
