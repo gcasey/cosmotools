@@ -164,7 +164,7 @@ void HaloMergerTreeKernel::UpdateHaloEvolutionTree(
       {
 
       int overlap = this->HaloSimilarityMatrix[row*ncol+col];
-      if(overlap > this->MergerTreeThreshold)
+      if(overlap >= this->MergerTreeThreshold)
         {
         int event = MergerTreeEvent::UNDEFINED;
         if( this->IsHaloMerge(col) )
