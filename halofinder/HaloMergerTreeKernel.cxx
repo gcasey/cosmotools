@@ -194,8 +194,8 @@ void HaloMergerTreeKernel::UpdateHaloEvolutionTree(
         } // if the halos are similar
       else
         {
-        std::cout << "NOTE: Deal with nodes that fall below the threshold!\n";
-        std::cout.flush();
+//        std::cout << "NOTE: Deal with nodes that fall below the threshold!\n";
+//        std::cout.flush();
         }
 
       } // END for all columns
