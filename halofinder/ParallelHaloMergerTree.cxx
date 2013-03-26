@@ -143,6 +143,7 @@ void ParallelHaloMergerTree::HandleDeathEvents(
     assert("pre: zombies must have a negative tag!" && (zombie->Tag < 0));
     zombie->Count++;
 
+    t->InsertNode( *sourceHalo );
     t->InsertNode( *zombie );
     t->CreateEdge(
          sourceHalo->GetHashCode(),

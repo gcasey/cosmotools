@@ -138,17 +138,6 @@ void HaloMergerTreeKernel::UpdateHaloEvolutionTree(
 {
   assert("pre: halo evolution tree should not be NULL" && (t!=NULL) );
 
-  // STEP 0: Append nodes to the tree
-  if( t->IsEmpty() )
-    {
-    t->AppendNodes(this->Halos1,this->Sizes[0]);
-    t->AppendNodes(this->Halos2,this->Sizes[1]);
-    } // END if
-  else
-    {
-    t->AppendNodes(this->Halos2,this->Sizes[1]);
-    } // END else
-
   // STEP 1: Create Edges
   int nrows = this->Sizes[0];
   int ncol  = this->Sizes[1];
@@ -169,7 +158,14 @@ void HaloMergerTreeKernel::UpdateHaloEvolutionTree(
         int event = MergerTreeEvent::UNDEFINED;
         if( this->IsHaloMerge(col) )
           {
-          event = MergerTreeEvent::MERGE;
+          if( this->Halos1[row].HaloType == ZOMBIEHALO )
+            {
+            event = MergerTreeEvent::REBIRTH;
+            }
+          else
+            {
+            event = MergerTreeEvent::MERGE;
+            }
           }
         else if(this->IsHaloSplit(row))
           {
@@ -177,15 +173,30 @@ void HaloMergerTreeKernel::UpdateHaloEvolutionTree(
           }
         else
           {
-          event = MergerTreeEvent::CONTINUATION;
+          if( this->Halos1[row].HaloType == ZOMBIEHALO )
+            {
+            event = MergerTreeEvent::REBIRTH;
+            this->Halos1[row].Count = 0;
+            }
+          else
+            {
+            event = MergerTreeEvent::CONTINUATION;
+            }
           }
 
+        t->InsertNode(this->Halos1[row]);
+        t->InsertNode(this->Halos2[col]);
         t->CreateEdge(
             this->Halos1[row].GetHashCode(),
             this->Halos2[col].GetHashCode(),
             overlap,
             event);
         } // if the halos are similar
+      else
+        {
+        std::cout << "NOTE: Deal with nodes that fall below the threshold!\n";
+        std::cout.flush();
+        }
 
       } // END for all columns
 
