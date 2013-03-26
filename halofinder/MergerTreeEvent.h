@@ -13,6 +13,7 @@ public:
     CONTINUATION,
     BIRTH,
     DEATH,
+    REBIRTH,
     UNDEFINED
     };
 };
