@@ -16,11 +16,12 @@
 #include "diy.h" // For DIY_Datatype
 
 /**
- * @struct DIYHaloItem
+ * @struct HaloInfo
  * @brief Used to encapsulate static size halo information for communication
- * over DIY.
+ * over DIY. This is also the same data-structure that is stored in the
+ * merger-tree.
  */
-struct DIYHaloItem {
+struct HaloInfo {
   int Tag;
   int TimeStep;
   REAL Redshift;
@@ -75,11 +76,11 @@ public:
         ID_T *particleIds, int N);
 
   /**
-   * @brief Construct a halo instance from the given DIYHaloItem
-   * @param halo an instance of DIYHaloItem
+   * @brief Construct a halo instance from the given HaloInfo
+   * @param halo an instance of HaloInfo
    * @pre halo != NULL
    */
-  Halo( DIYHaloItem *halo);
+  Halo( HaloInfo *halo);
 
   /**
    * @brief Destructor.
@@ -132,11 +133,11 @@ public:
   void Print(std::ostream &os);
 
   /**
-   * @brief Populates a corresponding instance of DIYHaloItem
-   * @param halo the DIYHaloItem instance to populate
+   * @brief Populates a corresponding instance of HaloInfo
+   * @param halo the HaloInfo instance to populate
    * @pre halo != NULL
    */
-  void GetDIYHaloItem(DIYHaloItem *halo);
+  void GetHaloInfo(HaloInfo *halo);
 
   /**
    * @brief

@@ -22,9 +22,6 @@
 // MPI
 #include <mpi.h>
 
-// DIY
-#include "diy.h" // For DIY_Datatype
-
 namespace cosmotk
 {
 
@@ -154,6 +151,7 @@ public:
   std::string ToString();
 
 protected:
+
   std::map< std::string, Halo > Nodes; // List of nodes in the halo
   std::map< std::string, ID_T > Node2UniqueIdx; // Maps halo nodes to a idx
   std::vector< std::string >    Edges; // List of edges (strided by 2)

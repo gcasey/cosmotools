@@ -189,12 +189,12 @@ void ParallelHaloMergerTree::ExchangeHaloInfo(
   assert("pre: haloHash.empty()" && haloHash.empty() );
 
   // STEP 0: Enqueue halo information
-  DIYHaloItem haloInfo;
+  HaloInfo haloInfo;
   for( int hidx=0; hidx < N; ++hidx )
     {
-    halos[ hidx ].GetDIYHaloItem( &haloInfo );
+    halos[ hidx ].GetHaloInfo( &haloInfo );
     DIY_Enqueue_item_all(
-        0, 0, (void *)&haloInfo, NULL, sizeof(DIYHaloItem), NULL);
+        0, 0, (void *)&haloInfo, NULL, sizeof(HaloInfo), NULL);
     } // END for all halos
 
   // STEP 1: Neighbor exchange
@@ -206,12 +206,12 @@ void ParallelHaloMergerTree::ExchangeHaloInfo(
 
   // STEP 2: Unpack received halos and store them in the halo hash by
   // a halo hash code.
-  DIYHaloItem *rcvHaloItem = NULL;
+  HaloInfo *rcvHaloItem = NULL;
   for(int i=0; i < nblocks; ++i)
     {
     for( int j=0; j < numHalosReceived[i]; ++j )
       {
-      rcvHaloItem = (struct DIYHaloItem *)rcvHalos[i][j];
+      rcvHaloItem = (struct HaloInfo *)rcvHalos[i][j];
       cosmotk::Halo h(rcvHaloItem);
       haloHash[ h.GetHashCode() ] = h;
       } // END for all received halos of this block
