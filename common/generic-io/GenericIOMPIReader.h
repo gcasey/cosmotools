@@ -9,6 +9,9 @@
 #include "CosmologyToolsMacros.h"
 #include "GenericIOReader.h"
 
+// C/C++ includes
+#include <sys/types.h> // for off_t
+
 
 // MPI includes
 #include <mpi.h>
