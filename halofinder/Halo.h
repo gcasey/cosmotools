@@ -30,6 +30,7 @@ struct HaloInfo {
   POSVEL_T MeanCenter[3];
   POSVEL_T AverageVelocity[3];
   int DIYGlobalId;
+  int Count;
 };
 
 /**

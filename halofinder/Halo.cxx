@@ -23,6 +23,7 @@ void Halo::CreateDIYHaloType(DIY_Datatype *dtype)
    {DIY_POSVEL_T, OFST, 3, offsetof(struct HaloInfo, MeanCenter)},
    {DIY_POSVEL_T, OFST, 3, offsetof(struct HaloInfo, AverageVelocity)},
    {DIY_INT,     OFST, 1, offsetof(struct HaloInfo, DIYGlobalId)},
+   {DIY_INT,     OFST, 1, offsetof(struct HaloInfo, Count)},
   };
   DIY_Create_struct_datatype(0, 8, halo_map, dtype);
 }
@@ -73,6 +74,7 @@ Halo::Halo( HaloInfo *halo )
     this->MeanCenter[i] = halo->MeanCenter[i];
     }
 
+  this->Count        = halo->Count;
   this->HaloMass     = halo->HaloMass;
   this->OwnerBlockId = halo->DIYGlobalId;
   if(this->OwnerBlockId != DIY_Gid(0,0))
@@ -210,6 +212,7 @@ void Halo::GetHaloInfo(HaloInfo *halo)
   halo->TimeStep = this->TimeStep;
   halo->Redshift = this->Redshift;
   halo->HaloMass = this->HaloMass;
+  halo->Count    = this->Count;
   for( int i=0; i < 3; ++i )
     {
     halo->Center[i]          = this->Center[i];
