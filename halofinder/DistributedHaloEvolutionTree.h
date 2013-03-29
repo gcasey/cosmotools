@@ -43,28 +43,40 @@ public:
    */
   GetNSetMacro(Communicator,MPI_Comm);
 
+  // Get macros for some of the statistics
+  GetMacro(NumberOfMergers,int);
+  GetMacro(NumberOfRebirths,int);
+  GetMacro(NumberOfSplits,int);
+  GetMacro(NumberOfZombies,int);
+
   /**
    * @brief Inserts the given halo as a node in the tree.
    * @param halo the halo to add
    */
-  void InsertNode(const HaloInfo &halo, const unsigned char mask);
+  void InsertNode(const HaloInfo &halo, unsigned char mask);
 
   /**
-   * @brief Creates an edge from the tree node corresponding to hashCode1
-   * to the tree node corresponding to hashCode2.
-   * @param hashCode1 the hashCode of the 1st tree node.
-   * @param hashCode2 the hashCode of the 2nd tree node.
-   * @pre this->HasNode( hashCode1 ) && this->HasNode( hashCode2 ) is true.
+   * @brief Links the "oldHalo" from a previous timestep to the "newHalo"
+   * in the current timestep.
+   * @param oldHalo the hashcode corresponding to the old halo
+   * @param newHalo the hashcode corresponding to the halo at the current tstep
+   * @pre this->HasNode(oldHalo) && this->HasNode(newHalo)
    */
-  void LinkHalos(
-          std::string hashCode1,
-          std::string hashCode2);
+  void LinkHalos(std::string oldHalo, std::string newHalo);
 
   /**
    * @brief Checks if the tree is empty.
    * @return true iff the tree is empty, else, false.
    */
-  bool IsEmpty();
+  bool IsEmpty()
+    { return( this->Nodes.empty() ); };
+
+  /**
+    * @brief Returns the total number of nodes in the tree on this process.
+    * @return N the local number of nodes.
+    */
+   int GetNumberOfNodes()
+     {return this->Nodes.size();};
 
   /**
    * @brief Returns the number of nodes at the given timestep.
@@ -81,24 +93,12 @@ public:
   int GetNumberOfZombieNodes(const int tstep);
 
   /**
-   * @brief Computes the number of nodes.
-   * @return N the number of nodes.
-   */
-  int GetNumberOfNodes();
-
-  /**
-   * @brief Computes the number of edges.
-   * @return N the number of edges.
-   */
-  int GetNumberOfEdges();
-
-  /**
    * @brief Checks if the halo corresponding to the given hashCode exists
    * (in this process) on the tree.
    * @param hashCode the hash code corresponding to the halo in query.
    * @return true iff the halo exists in the tree, else false.
    */
-  bool HasNode( std::string hashCode1 );
+  bool HasNode( std::string hashCode );
 
   /**
    * @brief Clears out all the data in this tree
@@ -112,14 +112,6 @@ public:
   void Barrier() { MPI_Barrier(this->Communicator); }
 
   /**
-   * @brief Returns the unique ID for a given node
-   * @param hashCode the hashcode for the node
-   * @return idx the ID of the node
-   */
-  ID_T GetNodeIndex(std::string hashCode);
-
-
-  /**
    * @brief Creates an ASCII string representation of the given tree
    * @return a string representing the data in the tree
    * @note Used mainly for debugging.
@@ -127,23 +119,53 @@ public:
   std::string ToString();
 
 protected:
-  std::vector<HaloInfo> Nodes;
-  std::map< std::string, int > Node2Idx;
 
-//  std::map< std::string, Halo > Nodes; // List of nodes in the halo
-//  std::map< std::string, ID_T > Node2UniqueIdx; // Maps halo nodes to a idx
-//  std::vector< std::string >    Edges; // List of edges (strided by 2)
-//  std::vector< int > EdgeWeights;      // Weights associated with edges
-//  std::vector< int > EdgeEvents;       // edge events
+  // User-supplied MPI communicator
+  MPI_Comm Communicator;
 
-  std::map<int,int> NodeCounter; // Counts number of nodes at a given timestep
-  std::map<int,int> ZombieCounter; // Counts number of zombies at a given tstep
+  // List of tree nodes
+  std::vector<HaloInfo> Nodes; // Stores information for each tree node
 
+  // For each node, store a list of progenitors
   std::vector< std::vector<int> > Progenitors;
+
+  // For each node, store a list of descendants
   std::vector< std::vector<int> > Descendants;
 
+  // For each node, store the bitmask that encodes the various events.
+  std::vector<unsigned char> EventBitMask;
 
-  MPI_Comm Communicator;
+  // Mapping of halo hashcode to the index of the halo in the Nodes vector.
+  // Note, Halo hash codes are generated using Halo::GetHashCodeForHalo method.
+  // This data-structure is used to determine if a node is in the tree.
+  std::map< std::string, int > Node2Idx;
+
+  // VARIOUS STATISTICS
+  // Number of Nodes at each time-step
+  std::map<int,int> NodeCounter;
+
+  // Number of Zombies at each time-step
+  std::map<int,int> ZombieCounter; // Counts number of zombies at a given tstep
+
+
+  // Total counts
+  int NumberOfZombies;
+  int NumberOfMergers;
+  int NumberOfRebirths;
+  int NumberOfSplits;
+
+  /**
+   * @brief Ensures that the data arrays used internally are consistent.
+   * @return status true if consistent, else, false.
+   * @note Used mostly for sanity checking.
+   */
+  bool EnsureArraysAreConsistent()
+    {
+    int N = this->GetNumberOfNodes();
+    return( (N==this->Progenitors.size()) &&
+             (N==this->Descendants.size()) &&
+             (N==this->EventBitMask.size()));
+    }
 
   /**
    * @brief Updates the node counter at the given timestep

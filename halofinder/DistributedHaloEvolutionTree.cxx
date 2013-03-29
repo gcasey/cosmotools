@@ -2,6 +2,7 @@
 
 // CosmologyTools includes
 #include "Halo.h"
+#include "MergerTreeEvent.h"
 
 // STL includes
 #include <cassert>
@@ -20,7 +21,11 @@ namespace cosmotk
 //------------------------------------------------------------------------------
 DistributedHaloEvolutionTree::DistributedHaloEvolutionTree()
 {
-  this->Communicator = MPI_COMM_NULL;
+  this->Communicator     = MPI_COMM_NULL;
+  this->NumberOfMergers  = 0;
+  this->NumberOfRebirths = 0;
+  this->NumberOfSplits   = 0;
+  this->NumberOfZombies  = 0;
 }
 
 //------------------------------------------------------------------------------
@@ -31,115 +36,124 @@ DistributedHaloEvolutionTree::~DistributedHaloEvolutionTree()
 
 //------------------------------------------------------------------------------
 void DistributedHaloEvolutionTree::InsertNode(
-      const HaloInfo &halo, const unsigned char mask)
+      const HaloInfo &halo, unsigned char mask)
 {
-//  this->Nodes[ halo.GetHashCode() ] = halo;
-//  this->Nodes[ halo.GetHashCode() ].ParticleIds.clear();
-//  if( halo.HaloType != GHOSTHALO )
-//    {
-//    this->UpdateNodeCounter( halo.TimeStep );
-//    }
-//
-//  if( halo.HaloType == ZOMBIEHALO )
-//    {
-//    this->UpdateZombieCounter( halo.TimeStep );
-//    }
+  assert("pre: corrupted merger-tree" && this->EnsureArraysAreConsistent());
+
+  // STEP 0: Get hash code for node
+  std::string hashCode = Halo::GetHashCodeForHalo(halo.Tag,halo.TimeStep);
+  assert("pre: Encountered duplicate tree node!" && !this->HasNode(hashCode));
+
+  // STEP 1: Insert node to list and create node-to-index mapping
+  this->Nodes.push_back( halo );
+  this->Node2Idx[ hashCode ] = this->Nodes.size()-1;
+
+  // STEP 2: Initialize progenitor and descendant lists for the node
+  std::vector< int > myProgenitors;
+  myProgenitors.resize( 0 );
+  std::vector< int > myDescendants;
+  myDescendants.resize( 0 );
+  this->Progenitors.push_back( myProgenitors );
+  this->Descendants.push_back( myDescendants );
+
+  // STEP 3: Store node event bitmask
+  this->EventBitMask.push_back( mask );
+
+  // STEP 4: Update various statistics
+  this->UpdateNodeCounter(halo.TimeStep);
+
+  if( MergerTreeEvent::IsEvent(mask,MergerTreeEvent::DEATH) )
+    {
+    ++this->NumberOfZombies;
+    this->UpdateZombieCounter(halo.TimeStep);
+    }
+
+  if( MergerTreeEvent::IsEvent(mask,MergerTreeEvent::MERGE))
+    {
+    ++this->NumberOfMergers;
+    }
+
+  if( MergerTreeEvent::IsEvent(mask,MergerTreeEvent::REBIRTH) )
+    {
+    ++this->NumberOfRebirths;
+    }
+
+  if( MergerTreeEvent::IsEvent(mask,MergerTreeEvent::SPLIT) )
+    {
+    ++this->NumberOfSplits;
+    }
+
+  assert("post: corrupted merger-tree" && this->EnsureArraysAreConsistent());
 }
 
 //------------------------------------------------------------------------------
 void DistributedHaloEvolutionTree::LinkHalos(
-      const std::string halo1,
-      const std::string halo2)
+      const std::string oldHalo,const std::string newHalo)
 {
-//  assert("pre: node halo1 does not exist" && this->HasNode(halo1) );
-//  assert("pre: node halo2 does not exist" && this->HasNode(halo2) );
-//  this->Edges.push_back( halo1 );
-//  this->Edges.push_back( halo2 );
-//  this->EdgeWeights.push_back( w );
-//  this->EdgeEvents.push_back( e );
-//
-//  if( this->NodeDescendants.find(halo1) != this->NodeDescendants.end() )
-//    {
-//    this->NodeDescendants[ halo1 ].insert( halo2 );
-//    }
-//  else
-//    {
-//    std::set< std::string > descendants;
-//    descendants.insert( halo2 );
-//    this->NodeDescendants[ halo1 ] = descendants;
-//    }
+  assert("pre: corrupted merger-tree" && this->EnsureArraysAreConsistent());
+  assert("pre: old halo does not exist" && this->HasNode(oldHalo) );
+  assert("pre: new halo does not exist" && this->HasNode(newHalo) );
+
+  // STEP 0: Get indices for new & old halo
+  int oldIdx = this->Node2Idx[ oldHalo ];
+  int newIdx = this->Node2Idx[ newHalo ];
+
+  // STEP 1: Update descendants of oldHalo
+  this->Descendants[ oldIdx ].push_back( newIdx );
+
+  // STEP 2: Update progenitors of newHalo
+  this->Progenitors[ newIdx ].push_back( oldIdx );
+
+  assert("post: corrupted merger-tree" && this->EnsureArraysAreConsistent());
 }
 
 //------------------------------------------------------------------------------
 void DistributedHaloEvolutionTree::Clear()
 {
-//  this->Nodes.clear();
-//  this->Node2UniqueIdx.clear();
-//  this->Edges.clear();
-//  this->EdgeWeights.clear();
-//  this->EdgeEvents.clear();
-}
-
-//------------------------------------------------------------------------------
-bool DistributedHaloEvolutionTree::IsEmpty()
-{
-  // TODO: implement this
-  return false;
-//  return( this->Nodes.empty() );
+  this->Nodes.clear();
+  this->Progenitors.clear();
+  this->Descendants.clear();
+  this->EventBitMask.clear();
+  this->Node2Idx.clear();
+  this->NodeCounter.clear();
+  this->ZombieCounter.clear();
 }
 
 //------------------------------------------------------------------------------
 int DistributedHaloEvolutionTree::GetNumberOfNodes(const int tstep)
 {
-  return( -1 );
-//  int N = 0;
-//  if(this->NodeCounter.find(tstep) != this->NodeCounter.end() )
-//    {
-//    N = this->NodeCounter[ tstep ];
-//    }
-//  else
-//    {
-//    std::cerr << "WARNING: No tree nodes for requrested time-step!\n";
-//    }
-//  return( N );
+  int N = 0;
+  if(this->NodeCounter.find(tstep) != this->NodeCounter.end() )
+    {
+    N = this->NodeCounter[ tstep ];
+    }
+  else
+    {
+    std::cerr << "WARNING: No tree nodes for requrested time-step!\n";
+    }
+  return( N );
 }
 
 //------------------------------------------------------------------------------
 int DistributedHaloEvolutionTree::GetNumberOfZombieNodes(
     const int tstep)
 {
-  return( -1 );
-//  int N = 0;
-//  if( this->ZombieCounter.find(tstep) != this->ZombieCounter.end() )
-//    {
-//    N = this->ZombieCounter[ tstep ];
-//    }
-//  return( N );
-}
-
-//------------------------------------------------------------------------------
-int DistributedHaloEvolutionTree::GetNumberOfNodes()
-{
-  return( -1 );
-//  return( this->Nodes.size() );
-}
-
-//------------------------------------------------------------------------------
-int DistributedHaloEvolutionTree::GetNumberOfEdges()
-{
-  return( -1 );
-//  return( this->EdgeWeights.size() );
+  int N = 0;
+  if( this->ZombieCounter.find(tstep) != this->ZombieCounter.end() )
+    {
+    N = this->ZombieCounter[ tstep ];
+    }
+  return( N );
 }
 
 //------------------------------------------------------------------------------
 bool DistributedHaloEvolutionTree::HasNode(std::string hashCode)
 {
-  return false;
-//  if( this->Nodes.find(hashCode) == this->Nodes.end() )
-//    {
-//    return false;
-//    }
-//  return true;
+  if( this->Node2Idx.find(hashCode) == this->Node2Idx.end() )
+    {
+    return false;
+    }
+  return true;
 }
 
 //------------------------------------------------------------------------------
@@ -169,89 +183,70 @@ void DistributedHaloEvolutionTree::UpdateZombieCounter(const int tstep)
 }
 
 //------------------------------------------------------------------------------
-ID_T DistributedHaloEvolutionTree::GetNodeIndex(std::string hashCode)
-{
-  return( -1 );
-//  assert( "pre: Cannot find Unique index for node!" &&
-//      this->Node2UniqueIdx.find(hashCode)!=this->Node2UniqueIdx.end());
-//  return(this->Node2UniqueIdx[hashCode]);
-}
-
-//------------------------------------------------------------------------------
 std::string DistributedHaloEvolutionTree::ToString()
 {
-//  this->RelabelTreeNodes();
-//
-//  std::ostringstream oss;
-//  oss << "NUMNODES " << this->GetNumberOfNodes() << std::endl;
-//  std::map<std::string, Halo>::iterator NodeIter = this->Nodes.begin();
-//  oss << "ID\t";
-//  oss << "TIMESTEP\t";
-//  oss << "TAG\t";
-//  oss << "REDSHIFT\t";
-//  oss << "CENTER_X\t";
-//  oss << "CENTER_Y\t";
-//  oss << "CENTER_Z\t";
-//  oss << "MEAN_CENTER_X\t";
-//  oss << "MEAN_CENTER_Y\t";
-//  oss << "MEAN_CENTER_Z\t";
-//  oss << "V_X\t";
-//  oss << "V_Y\t";
-//  oss << "V_Z\t";
-//  oss << "MASS\t";
-//  oss << "DESCENDANTS";
-//  oss << std::endl;
-//  for(;NodeIter != this->Nodes.end(); ++NodeIter)
-//    {
-//    oss << std::scientific
-//        << std::setprecision(std::numeric_limits<POSVEL_T>::digits10);
-//    oss << this->GetNodeIndex(NodeIter->first) << "\t";
-//    oss << NodeIter->second.TimeStep  << "\t";
-//    oss << NodeIter->second.Tag       << "\t";
-//    oss << NodeIter->second.Redshift  << "\t";
-//    oss << NodeIter->second.Center[0] << "\t";
-//    oss << NodeIter->second.Center[1] << "\t";
-//    oss << NodeIter->second.Center[2] << "\t";
-//    oss << NodeIter->second.MeanCenter[0] << "\t";
-//    oss << NodeIter->second.MeanCenter[1] << "\t";
-//    oss << NodeIter->second.MeanCenter[2] << "\t";
-//    oss << NodeIter->second.AverageVelocity[0] << "\t";
-//    oss << NodeIter->second.AverageVelocity[1] << "\t";
-//    oss << NodeIter->second.AverageVelocity[2] << "\t";
-//    oss << NodeIter->second.HaloMass << "\t";
-//
-//    if( this->NodeDescendants.find(NodeIter->first) !=
-//        this->NodeDescendants.end())
-//      {
-//      std::set< std::string >::iterator descentIter =
-//          this->NodeDescendants[NodeIter->first].begin();
-//
-//      oss << "[ ";
-//      for(; descentIter != this->NodeDescendants[NodeIter->first].end();
-//          ++descentIter)
-//        {
-//        std::string hcode = *descentIter;
-//        oss << this->GetNodeIndex(hcode) << " ";
-//        } // END for all descendants
-//      oss << "] ";
-//      if( this->NodeDescendants[NodeIter->first].size() > 1)
-//        {
-//        oss << "(**SPLIT**)";
-//        }
-//      if(NodeIter->second.HaloType == ZOMBIEHALO)
-//        {
-//        oss << "(**ZOMBIE**)";
-//        }
-//      }
-//    else
-//      {
-//      oss << "-1 (FINAL TIMESTEP)";
-//      }
-//    oss << std::endl;
-//    } // END for all nodes
-//
-//
-//  return( oss.str() );
+  assert("pre: corrupted merger-tree" && this->EnsureArraysAreConsistent());
+
+  std::ostringstream oss;
+  oss << "NUMNODES " << this->GetNumberOfNodes() << std::endl;
+  oss << "ID\t";
+  oss << "TIMESTEP\t";
+  oss << "TAG\t";
+  oss << "REDSHIFT\t";
+  oss << "CENTER_X\t";
+  oss << "CENTER_Y\t";
+  oss << "CENTER_Z\t";
+  oss << "MEAN_CENTER_X\t";
+  oss << "MEAN_CENTER_Y\t";
+  oss << "MEAN_CENTER_Z\t";
+  oss << "V_X\t";
+  oss << "V_Y\t";
+  oss << "V_Z\t";
+  oss << "MASS\t";
+  oss << "DESCENDANTS\t";
+  oss << "PROGENITORS\t";
+  oss << "EVENT_TYPE\t";
+  oss << std::endl;
+
+  for(int i=0; i < this->GetNumberOfNodes(); ++i)
+    {
+    oss << std::scientific
+        << std::setprecision(std::numeric_limits<POSVEL_T>::digits10);
+    oss << i << "\t";
+    oss << this->Nodes[ i ].TimeStep  << "\t";
+    oss << this->Nodes[ i ].Tag       << "\t";
+    oss << this->Nodes[ i ].Redshift  << "\t";
+    oss << this->Nodes[ i ].Center[0] << "\t";
+    oss << this->Nodes[ i ].Center[1] << "\t";
+    oss << this->Nodes[ i ].Center[2] << "\t";
+    oss << this->Nodes[ i ].MeanCenter[ 0 ] << "\t";
+    oss << this->Nodes[ i ].MeanCenter[ 1 ] << "\t";
+    oss << this->Nodes[ i ].MeanCenter[ 2 ] << "\t";
+    oss << this->Nodes[ i ].AverageVelocity[ 0 ] << "\t";
+    oss << this->Nodes[ i ].AverageVelocity[ 1 ] << "\t";
+    oss << this->Nodes[ i ].AverageVelocity[ 2 ] << "\t";
+    oss << this->Nodes[ i ].HaloMass << "\t";
+
+    oss << "[ ";
+    for(int didx=0; didx < this->Descendants[i].size(); ++didx)
+      {
+      oss << this->Descendants[i][didx] << " ";
+      } // END for all descendants
+    oss << "]\t";
+
+    oss << "[ ";
+    for(int pidx=0; pidx < this->Progenitors[i].size(); ++pidx)
+      {
+      oss << this->Progenitors[i][pidx] << " ";
+      }
+    oss << "]\t";
+
+    unsigned char bitmask = this->EventBitMask[ i ];
+    oss << MergerTreeEvent::GetEventString(bitmask);
+    oss << std::endl;
+    } // END for all nodes
+
+  return( oss.str() );
 }
 
 
