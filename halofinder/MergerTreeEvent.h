@@ -3,6 +3,21 @@
 
 #include "CosmologyToolsMacros.h"
 
+#include <sstream>
+#include <string>
+
+/**
+ * @brief Corresponding strings to event names
+ */
+static const char *EventName[] = {
+  "(**SPLIT**)",
+  "(**MERGE**)",
+  "(**CONTINUATION**)",
+  "(**BIRTH**)",
+  "(**DEATH**)",
+  "(**REBIRTH**)"
+};
+
 namespace cosmotk {
 
 class MergerTreeEvent
@@ -11,16 +26,17 @@ public:
 
   enum
     {
-    SPLIT = 0,
+    UNDEFINED = -1,
+    SPLIT,
     MERGE,
     CONTINUATION,
     BIRTH,
     DEATH,
     REBIRTH,
-    UNDEFINED,
 
     NUMBER_OF_EVENTS
     } EventTypes;
+
 
   /**
    * @brief Sets the user-supplied event in the given bitmask
@@ -46,7 +62,7 @@ public:
   static void UnsetEvent(unsigned char &mask, const int event)
   {
     assert("pre: event is out-of-range!" &&
-           (event >= 0) && (event < MergerTreeEvent::NUMBER_OF_EVENTS) );
+           (event >= 0) && (event < 8) );
     assert("pre: insufficient number of bits to encode events!" &&
             (MergerTreeEvent::NUMBER_OF_EVENTS <= 8));
     mask &= ~(1 << event);
@@ -79,6 +95,25 @@ public:
       {
       MergerTreeEvent::UnsetEvent(mask,i);
       } // END for all bits of the mask
+  }
+
+  /**
+   * @brief Returns a string represenation of the events encoded in the given
+   * user-supplied event mask.
+   * @param eventmask the encoded event mask in question.
+   * @return s a string corresponding to the set of events that are encoded.
+   */
+  static std::string GetEventString(unsigned char eventmask)
+  {
+    std::ostringstream oss;
+    for(int i=0; i < MergerTreeEvent::NUMBER_OF_EVENTS; ++i)
+      {
+      if( MergerTreeEvent::IsEvent(eventmask,i))
+        {
+        oss << EventName[ i ];
+        } // END if event is set
+      } // END for all possible events
+    return( oss.str() );
   }
 
 protected:
