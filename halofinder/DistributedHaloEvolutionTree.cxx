@@ -243,6 +243,12 @@ std::string DistributedHaloEvolutionTree::ToString()
 
     unsigned char bitmask = this->EventBitMask[ i ];
     oss << MergerTreeEvent::GetEventString(bitmask);
+
+    if( this->Descendants[i].size()==0 )
+      {
+      oss << "(**FINAL TIMESTEP**)";
+      }
+
     oss << std::endl;
     } // END for all nodes
 
