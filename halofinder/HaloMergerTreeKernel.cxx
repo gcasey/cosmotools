@@ -92,8 +92,8 @@ void HaloMergerTreeKernel::ComputeMergerTree( )
   std::fill(this->MatrixRowSum.begin(),this->MatrixRowSum.end(),0);
   std::fill(this->MatrixColumnSum.begin(),this->MatrixColumnSum.end(),0);
 
-  PRINTVECTOR("RowSum", this->MatrixRowSum, nrows);
-  PRINTVECTOR("ColSum", this->MatrixColumnSum, ncol);
+//  PRINTVECTOR("RowSum", this->MatrixRowSum, nrows);
+//  PRINTVECTOR("ColSum", this->MatrixColumnSum, ncol);
 
   // STEP 2: Compute similarity matrix
   for( int row=0; row < nrows; ++row )
@@ -122,7 +122,7 @@ void HaloMergerTreeKernel::ComputeMergerTree( )
       } // END for all columns
     } // END for all rows
 
-  this->PrintMatrix();
+//  this->PrintMatrix();
 }
 
 //------------------------------------------------------------------------------
