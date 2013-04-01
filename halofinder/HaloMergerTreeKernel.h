@@ -258,6 +258,12 @@ protected:
       const int row, const int rowEvent,
       Halo *prevHalo, DistributedHaloEvolutionTree *t);
 
+  /**
+   * @brief Prints the current instance of the similarity matrix.
+   * @note Used primarily for debugging.
+   */
+  void PrintMatrix();
+
 private:
   DISABLE_COPY_AND_ASSIGNMENT(HaloMergerTreeKernel);
 

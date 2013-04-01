@@ -1,5 +1,7 @@
 #include "HaloMergerTreeKernel.h"
 
+#include <fstream>
+
 namespace cosmotk
 {
 
@@ -101,6 +103,8 @@ void HaloMergerTreeKernel::ComputeMergerTree( )
         } // END if
       } // END for all columns
     } // END for all rows
+
+  this->PrintMatrix();
 }
 
 //------------------------------------------------------------------------------
@@ -281,6 +285,29 @@ void HaloMergerTreeKernel::DetectEvent(
       } // END if majority rule passes
     } // END for all columns
 
+}
+
+//------------------------------------------------------------------------------
+void HaloMergerTreeKernel::PrintMatrix()
+{
+  std::ostringstream oss;
+  oss << "Matrix_" << this->Timesteps[0] << "-" << this->Timesteps[1];
+
+  std::ofstream ofs;
+  ofs.open( oss.str().c_str() );
+
+  int nrows = this->Sizes[0];
+  int ncol  = this->Sizes[1];
+  for(int row=0; row < nrows; ++row )
+    {
+    for(int col=0; col < ncol; ++col )
+      {
+      ofs << this->HaloSimilarityMatrix[row*ncol+col] << " ";
+      }
+    ofs << std::endl;
+    }
+
+  ofs.close();
 }
 
 } /* namespace cosmotk */
