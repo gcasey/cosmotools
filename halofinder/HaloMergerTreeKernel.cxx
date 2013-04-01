@@ -296,7 +296,11 @@ void HaloMergerTreeKernel::DetectEvent(
             MergerTreeEvent::SetEvent(bitmask,MergerTreeEvent::SPLIT);
             }
 
-          this->InsertHalo(currHalo,bitmask,mergerTree);
+          if( !mergerTree->HasNode(currHalo->GetHashCode()))
+            {
+            this->InsertHalo(currHalo,bitmask,mergerTree);
+            }
+
           mergerTree->LinkHalos(
               prevHalo->GetHashCode(),currHalo->GetHashCode());
         } // END switch
