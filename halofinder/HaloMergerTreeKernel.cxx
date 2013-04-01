@@ -71,7 +71,7 @@ void HaloMergerTreeKernel::ComputeMergerTree( )
 
   int nrows = this->Sizes[0];
   int ncol  = this->Sizes[1];
-  this->HaloSimilarityMatrix.resize( nrows*ncol );
+  this->HaloSimilarityMatrix.resize( nrows*ncol,0 );
   this->MatrixRowSum.resize(nrows,0);
   this->MatrixColumnSum.resize(ncol,0);
 
