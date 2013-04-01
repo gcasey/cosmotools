@@ -1,5 +1,6 @@
 #include "HaloMergerTreeKernel.h"
 
+#include <algorithm>
 #include <fstream>
 
 namespace cosmotk
@@ -57,6 +58,16 @@ void HaloMergerTreeKernel::RegisterHalos(
   this->Halos2 = haloSet2;
 }
 
+#define PRINTVECTOR(str,vec,n) {     \
+    std::cout << str << ": ";         \
+    for(int i=0; i < n; ++i)         \
+      {                               \
+      std::cout << vec[ i ] << " ";   \
+      }                               \
+    std::cout << std::endl;           \
+    std::cout.flush();                \
+}
+
 //------------------------------------------------------------------------------
 void HaloMergerTreeKernel::ComputeMergerTree( )
 {
@@ -77,10 +88,17 @@ void HaloMergerTreeKernel::ComputeMergerTree( )
   this->MatrixRowSum.resize(nrows,0);
   this->MatrixColumnSum.resize(ncol,0);
 
-  // STEP 1: Compute similarity matrix
+  // STEP 1: Initialize row-sum and column-sum
+  std::fill(this->MatrixRowSum.begin(),this->MatrixRowSum.end(),0);
+  std::fill(this->MatrixColumnSum.begin(),this->MatrixColumnSum.end(),0);
+
+  PRINTVECTOR("RowSum", this->MatrixRowSum, nrows);
+  PRINTVECTOR("ColSum", this->MatrixColumnSum, ncol);
+
+  // STEP 2: Compute similarity matrix
   for( int row=0; row < nrows; ++row )
     {
-    // STEP 1.0: Propagate zombies across timesteps without further checking
+    // STEP 2.0: Propagate zombies across timesteps without further checking
     // if the given cut-off criteria is met, i.e., if a zombie is persistently
     // a zombie for more that ZombieCutOff time-steps then, it is a zombie and
     // we don't bother checking it any more.
@@ -91,7 +109,7 @@ void HaloMergerTreeKernel::ComputeMergerTree( )
       continue;
       }
 
-    // STEP 1.1: Loop through all columns in this row
+    // STEP 2.1: Loop through all columns in this row
     for( int col=0; col < ncol; ++col )
       {
       int overlap = this->Halos1[row].Intersect(&this->Halos2[col]);
@@ -304,7 +322,15 @@ void HaloMergerTreeKernel::PrintMatrix()
       {
       ofs << this->HaloSimilarityMatrix[row*ncol+col] << " ";
       }
+
+    ofs << "|| " << this->MatrixRowSum[ row ];
     ofs << std::endl;
+    }
+
+  ofs << "===\n";
+  for(int col=0; col < ncol; ++col)
+    {
+    ofs << this->MatrixColumnSum[ col ] << " ";
     }
 
   ofs.close();
