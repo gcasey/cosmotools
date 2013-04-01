@@ -207,12 +207,12 @@ void WriteRcvHalos()
 //------------------------------------------------------------------------------
 void ExchangeHaloInfo(std::vector<cosmotk::Halo> &halos)
 {
-  DIYHaloItem haloInfo;
+  HaloInfo haloInfo;
   for( int hidx=0; hidx < halos.size(); ++hidx )
     {
-    halos[ hidx ].GetDIYHaloItem( &haloInfo );
+    halos[ hidx ].GetHaloInfo( &haloInfo );
     DIY_Enqueue_item_all(
-        0, 0, (void *)&haloInfo, NULL, sizeof(DIYHaloItem), NULL);
+        0, 0, (void *)&haloInfo, NULL, sizeof(HaloInfo), NULL);
     } // END for all halos
   PRINTLN("Enqueued halos!");
 
@@ -222,12 +222,12 @@ void ExchangeHaloInfo(std::vector<cosmotk::Halo> &halos)
   DIY_Exchange_neighbors(
       0, rcvHalos,numHalosReceived,1.0,&cosmotk::Halo::CreateDIYHaloType);
 
-  DIYHaloItem *rcvHaloItem = NULL;
+  HaloInfo *rcvHaloItem = NULL;
   for(int i=0; i < nblocks; ++i)
     {
     for( int j=0; j < numHalosReceived[i]; ++j)
       {
-      rcvHaloItem = (struct DIYHaloItem *)rcvHalos[i][j];
+      rcvHaloItem = (struct HaloInfo *)rcvHalos[i][j];
       cosmotk::Halo h(rcvHaloItem);
       RcvHalos[ h.GetHashCode() ] = h;
       } // END for all received halos of this block

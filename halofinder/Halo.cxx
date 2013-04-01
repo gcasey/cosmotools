@@ -14,17 +14,18 @@ namespace cosmotk
 //-----------------------------------------------------------------------------
 void Halo::CreateDIYHaloType(DIY_Datatype *dtype)
 {
-  struct map_block_t halo_map[8] = {
-   {DIY_INT,     OFST, 1, offsetof(struct DIYHaloItem, Tag)},
-   {DIY_INT,     OFST, 1, offsetof(struct DIYHaloItem, TimeStep)},
-   {DIY_REAL_T,   OFST, 1, offsetof(struct DIYHaloItem, Redshift)},
-   {DIY_REAL_T,   OFST, 1, offsetof(struct DIYHaloItem, HaloMass)},
-   {DIY_POSVEL_T, OFST, 3, offsetof(struct DIYHaloItem, Center)},
-   {DIY_POSVEL_T, OFST, 3, offsetof(struct DIYHaloItem, MeanCenter)},
-   {DIY_POSVEL_T, OFST, 3, offsetof(struct DIYHaloItem, AverageVelocity)},
-   {DIY_INT,     OFST, 1, offsetof(struct DIYHaloItem, DIYGlobalId)},
+  struct map_block_t halo_map[9] = {
+   {DIY_INT,     OFST, 1, offsetof(struct HaloInfo, Tag)},
+   {DIY_INT,     OFST, 1, offsetof(struct HaloInfo, TimeStep)},
+   {DIY_REAL_T,   OFST, 1, offsetof(struct HaloInfo, Redshift)},
+   {DIY_REAL_T,   OFST, 1, offsetof(struct HaloInfo, HaloMass)},
+   {DIY_POSVEL_T, OFST, 3, offsetof(struct HaloInfo, Center)},
+   {DIY_POSVEL_T, OFST, 3, offsetof(struct HaloInfo, MeanCenter)},
+   {DIY_POSVEL_T, OFST, 3, offsetof(struct HaloInfo, AverageVelocity)},
+   {DIY_INT,     OFST, 1, offsetof(struct HaloInfo, DIYGlobalId)},
+   {DIY_INT,     OFST, 1, offsetof(struct HaloInfo, Count)},
   };
-  DIY_Create_struct_datatype(0, 8, halo_map, dtype);
+  DIY_Create_struct_datatype(0, 9, halo_map, dtype);
 }
 
 //-----------------------------------------------------------------------------
@@ -41,8 +42,9 @@ void Halo::CreateDIYHaloParticleType(DIY_Datatype *dtype)
 //-----------------------------------------------------------------------------
 Halo::Halo()
 {
-  this->Tag = -1;
+  this->Tag      = -1;
   this->TimeStep = 0;
+  this->Count    = 0;
   this->Redshift = 0.;
   this->HaloType = cosmotk::NORMALHALO;
   this->HaloMass = 0.;
@@ -55,9 +57,9 @@ Halo::Halo()
 }
 
 //-----------------------------------------------------------------------------
-Halo::Halo( DIYHaloItem *halo )
+Halo::Halo( HaloInfo *halo )
 {
-  assert("pre: DIYHaloItem is NULL!" && (halo != NULL) );
+  assert("pre: HaloInfo is NULL!" && (halo != NULL) );
   this->InitHalo(
         halo->Tag,
         halo->TimeStep,
@@ -72,6 +74,7 @@ Halo::Halo( DIYHaloItem *halo )
     this->MeanCenter[i] = halo->MeanCenter[i];
     }
 
+  this->Count        = halo->Count;
   this->HaloMass     = halo->HaloMass;
   this->OwnerBlockId = halo->DIYGlobalId;
   if(this->OwnerBlockId != DIY_Gid(0,0))
@@ -201,14 +204,15 @@ void Halo::Print(std::ostream &os)
 }
 
 //-----------------------------------------------------------------------------
-void Halo::GetDIYHaloItem(DIYHaloItem *halo)
+void Halo::GetHaloInfo(HaloInfo *halo)
 {
-  assert("pre: DIYHaloItem instance is NULL" && (halo != NULL) );
+  assert("pre: HaloInfo instance is NULL" && (halo != NULL) );
 
   halo->Tag      = this->Tag;
   halo->TimeStep = this->TimeStep;
   halo->Redshift = this->Redshift;
   halo->HaloMass = this->HaloMass;
+  halo->Count    = this->Count;
   for( int i=0; i < 3; ++i )
     {
     halo->Center[i]          = this->Center[i];

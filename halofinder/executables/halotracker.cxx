@@ -228,8 +228,8 @@ int main(int argc, char **argv)
     PRINTLN("Number of halos=" << Halos.size() );
     NumHalosAtTimeStep[ timesteps[t] ] = Halos.size();
 
-    PRINT("Track halos...");
-    HaloTracker->TrackHalos(t,z,Halos);
+    PRINTLN("Track halos...");
+    HaloTracker->TrackHalos(timesteps[t],z,Halos);
     PRINTLN("[DONE]");
 
     PRINTLN( "\t - Processed time-step " << t

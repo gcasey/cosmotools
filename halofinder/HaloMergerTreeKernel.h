@@ -6,18 +6,19 @@
 #ifndef HALOMERGERTREEKERNEL_H_
 #define HALOMERGERTREEKERNEL_H_
 
+// CosmologyTools Macros
 #include "CosmologyToolsMacros.h"
+#include "DistributedHaloEvolutionTree.h" // For DistributedHaloEvolutionTree
+#include "Halo.h" // For Halo
 
-#include <vector> // For STL vector
-#include <set>    // For STL set
+// C/C++ includes
+#include <cassert> // For assert()
+#include <vector>  // For STL vector
+#include <set>     // For STL set
 
 
 namespace cosmotk
 {
-
-// Forward declarations
-class Halo;
-class DistributedHaloEvolutionTree;
 
 class HaloMergerTreeKernel
 {
@@ -26,9 +27,31 @@ public:
   virtual ~HaloMergerTreeKernel();
 
   /**
+   * @brief Get/Set to turn on/off verbosity. Default is true.
+   */
+  GetNSetMacro(Verbose,bool);
+
+  /**
    * @brief Get/Set macro for the merger-tree. Default is 10.
    */
   GetNSetMacro(MergerTreeThreshold,int);
+
+  /**
+   * @brief Get/Set macro for the zombie cut-off. Default is 5.
+   */
+  GetNSetMacro(ZombieCutOff,int);
+
+  /**
+   * @return Get number of births that occurred for the current set of halos
+   * spanning two timesteps.
+   */
+  GetMacro(NumberOfBirths,int);
+
+  /**
+   * @return Get number of re-births that occurred for the current set of halos
+   * spanning two timesteps.
+   */
+  GetMacro(NumberOfRebirths,int);
 
   /**
    * @brief Returns the number of dead halos found
@@ -96,22 +119,69 @@ protected:
                               // of two (or more) halos in the previous
                               // timestep.
 
+  int NumberOfBirths;         // Counts the number of births that occured.
+
+  int NumberOfRebirths;       // Counts the number of re-births.
+
+  // Container for columns in the similarity matrix that need no further
+  // processing. For example, when a birth is detected, this column no longer
+  // needs to be checked.
+  std::set< int > ProcessedColumns;
+
   // The MatrixColumnSum stores the sum of each column in the similarity
   // matrix. Based on this sum, we can infer, if a new halo is "born" or
   // if we have a merge event.
   std::vector< int > MatrixColumnSum;
+
+  // The MatrixRowSum stores the sum of each row. Based on this sum, we
+  // can infer, if a death occured, if we have a split.
+  std::vector< int > MatrixRowSum;
 
   // The similarity matrix stores the percent similarity of halo at a previous
   // timestep, i.e., Halos1, and a halo at the current timestep, i.e., the
   // array Halos2.
   std::vector< int > HaloSimilarityMatrix; // Flat 2-D matrix
 
+  bool Verbose;     // Parameter that indicate whether to print out debug
+                     // output and other information.
+
+  int ZombieCutOff; // Parameter that indicates after how many times of
+                     // propagating a halo as a zombie, the halo should
+                     // be designated as a zombie and bypass any checks.
+
   // The user-supplied percent threshold, default is set to 50%
   int MergerTreeThreshold;
 
   /**
-   * @brief Checks if the given ID corresponds to an index of a halo that has
-   * been designated as dead.
+   * @brief Inserts the halo into the merger-tree
+   * @param haloPtr pointer to the halo being inserted
+   * @param bitmask mask encoding event type
+   * @param t pointer to the merger-tree
+   * @pre haloPtr != NULL
+   * @pre t != NULL
+   * @pre !t->HasNode( haloPtr->GetHashCode() )
+   * @post t->HashNode( haloPtr->GetHashCode() )
+   */
+  void InsertHalo(
+      Halo *haloPtr, unsigned char bitmask,
+      DistributedHaloEvolutionTree *t)
+    {
+    assert("pre: NULL halo pointer!" && (haloPtr != NULL) );
+    assert("pre: NULL merger-tree pointer!" && (t != NULL) );
+    assert("pre: node already exists!" &&
+            (!t->HasNode(haloPtr->GetHashCode())));
+
+    HaloInfo hinfo;
+    haloPtr->GetHaloInfo( &hinfo);
+    t->InsertNode( hinfo, bitmask );
+
+    assert("post: inserted node, not found in the tree!" &&
+            (t->HasNode(haloPtr->GetHashCode())) );
+    };
+
+  /**
+   * @brief Checks if the given ID corresponds to an index in the similarity
+   * matrix, corresponding to a halo that has been designated as dead.
    * @param idx the index of the halo in query.
    * @return status true if the the corresponding halo has been designated as
    * dead, else, false.
@@ -137,6 +207,14 @@ protected:
     {return(this->SplitHalos.find(idx) != this->SplitHalos.end());};
 
   /**
+   * @brief Applies majority rule to determine if two halos should be linked.
+   * @param percentOverlap the percent of overlap w.r.t. the previous halo.
+   * @return status true if the halos match else false.
+   */
+  bool MajorityRuleCheck(const int percentOverlap)
+    {return(percentOverlap >= this->MergerTreeThreshold);};
+
+  /**
    * @brief Registers the halos at the given timesteps.
    * @param t1 the time-step of the first halo set.
    * @param haloSet1 array of halos at t1.
@@ -154,18 +232,37 @@ protected:
 
   /**
    * @brief Given two sets of halos at different time-steps, this method
-   * will compute the corresponding merger-tree. The merger-tree is defined
-   * in an MxN matrix, H, wherein H(i,j) > 0 indicates that halo_i \in t_1 is
-   * a parent of halo_j \in t_2.
+   * will compute the corresponding merger-tree matrix. The merger-tree is
+   * defined in an MxN matrix, H, wherein H(i,j) > MergerThreeThreshold
+   * indicates that halo_i \in t_1 is a parent of halo_j \in t_2.
    */
   void ComputeMergerTree();
 
   /**
-   * @brief Updates the halo-evolution tree, from the current similarity matrix.
-   * @param t the halo evolution tree instance to update.
+   * @brief Processes the similarity matrix and updates the merger-tree.
+   * @param t merger-tree being updated.
+   * @see DetectEvent
    */
-  void UpdateHaloEvolutionTree(
-          DistributedHaloEvolutionTree *t);
+  void UpdateHaloEvolutionTree(DistributedHaloEvolutionTree *t);
+
+  /**
+   * @brief Detects the event for a given halo in a previous timestep and
+   * updates the merger-tree accordingly.
+   * @param row the row-index in the similarity matrix corresponding to the
+   * halo from a previous timestep which is being processed.
+   * @param rowEvent the event that was detected based on
+   * @param prevHalo
+   * @param t
+   */
+  void DetectEvent(
+      const int row, const int rowEvent,
+      Halo *prevHalo, DistributedHaloEvolutionTree *t);
+
+  /**
+   * @brief Prints the current instance of the similarity matrix.
+   * @note Used primarily for debugging.
+   */
+  void PrintMatrix();
 
 private:
   DISABLE_COPY_AND_ASSIGNMENT(HaloMergerTreeKernel);

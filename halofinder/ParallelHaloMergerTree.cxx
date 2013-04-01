@@ -118,29 +118,49 @@ void ParallelHaloMergerTree::HandleDeathEvents(
   for(;iter != this->DeadHalos.end(); ++iter)
     {
     int haloIdx = *iter;
+
+    // Sanity checks
     assert("pre: Dead haloIdx is out-of-bounds" &&
         (haloIdx >= 0) &&
         (haloIdx < this->TemporalHalos[this->PreviousIdx].size()) );
+
+    unsigned char bitmask;
+    MergerTreeEvent::Reset(bitmask);
+    MergerTreeEvent::SetEvent(bitmask,MergerTreeEvent::DEATH);
 
     // Copy the halo
     this->TemporalHalos[this->CurrentIdx].push_back(
           this->TemporalHalos[this->PreviousIdx][haloIdx]);
     int zombieIdx = this->TemporalHalos[this->CurrentIdx].size()-1;
 
-    // Update its attributes
+    // Get pointers to the zombie halo at the current timestep and the
+    // source halo at the previous timestep, i.e., the halo that died.
     Halo *zombie     = &this->TemporalHalos[this->CurrentIdx][zombieIdx];
     Halo *sourceHalo = &this->TemporalHalos[this->PreviousIdx][haloIdx];
+
+    // Get a pointer to a reference halo at the current timestep so that we
+    // can update the timestep and red-shift information.
     Halo *refHalo    = &this->TemporalHalos[this->CurrentIdx][0];
     zombie->TimeStep = refHalo->TimeStep;
     zombie->Redshift = refHalo->Redshift;
-    zombie->HaloType = ZOMBIEHALO;
+    if( zombie->Count == 0 )
+      {
+      // this halo just died for the first time
+      zombie->HaloType = ZOMBIEHALO;
+      zombie->Tag = (-1)*zombie->Tag;
+      }
 
-    t->InsertNode( *zombie );
-    t->CreateEdge(
-         sourceHalo->GetHashCode(),
-         zombie->GetHashCode(),
-         100,
-         MergerTreeEvent::DEATH);
+    // More sanity checks
+    assert("pre: Node not flagged as a zombie!" &&
+           (zombie->HaloType==ZOMBIEHALO));
+    assert("pre: zombies must have a negative tag!" && (zombie->Tag < 0));
+    zombie->Count++;
+
+    // Insert the zombie halo in to the tree
+    this->InsertHalo(zombie,bitmask,t);
+
+    // Create a link between the source halo and zombie halo
+    t->LinkHalos(sourceHalo->GetHashCode(),zombie->GetHashCode());
     } // END for all dead halos
 }
 
@@ -180,12 +200,12 @@ void ParallelHaloMergerTree::ExchangeHaloInfo(
   assert("pre: haloHash.empty()" && haloHash.empty() );
 
   // STEP 0: Enqueue halo information
-  DIYHaloItem haloInfo;
+  HaloInfo haloInfo;
   for( int hidx=0; hidx < N; ++hidx )
     {
-    halos[ hidx ].GetDIYHaloItem( &haloInfo );
+    halos[ hidx ].GetHaloInfo( &haloInfo );
     DIY_Enqueue_item_all(
-        0, 0, (void *)&haloInfo, NULL, sizeof(DIYHaloItem), NULL);
+        0, 0, (void *)&haloInfo, NULL, sizeof(HaloInfo), NULL);
     } // END for all halos
 
   // STEP 1: Neighbor exchange
@@ -197,12 +217,12 @@ void ParallelHaloMergerTree::ExchangeHaloInfo(
 
   // STEP 2: Unpack received halos and store them in the halo hash by
   // a halo hash code.
-  DIYHaloItem *rcvHaloItem = NULL;
+  HaloInfo *rcvHaloItem = NULL;
   for(int i=0; i < nblocks; ++i)
     {
     for( int j=0; j < numHalosReceived[i]; ++j )
       {
-      rcvHaloItem = (struct DIYHaloItem *)rcvHalos[i][j];
+      rcvHaloItem = (struct HaloInfo *)rcvHalos[i][j];
       cosmotk::Halo h(rcvHaloItem);
       haloHash[ h.GetHashCode() ] = h;
       } // END for all received halos of this block
