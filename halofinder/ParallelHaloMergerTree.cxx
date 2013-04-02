@@ -145,6 +145,51 @@ void ParallelHaloMergerTree::HandleDeathEvents(
 }
 
 //------------------------------------------------------------------------------
+int ParallelHaloMergerTree::GetTotalNumberOfBirths()
+{
+  int total = 0;
+  MPI_Allreduce(
+      &this->NumberOfBirths,&total,1,MPI_INT,MPI_SUM,this->Communicator);
+  return( total );
+}
+
+//------------------------------------------------------------------------------
+int ParallelHaloMergerTree::GetTotalNumberOfRebirths()
+{
+  int total = 0;
+  MPI_Allreduce(
+      &this->NumberOfRebirths,&total,1,MPI_INT,MPI_SUM,this->Communicator);
+  return( total );
+}
+
+//------------------------------------------------------------------------------
+int ParallelHaloMergerTree::GetTotalNumberOfMerges()
+{
+  int total = 0;
+  int local = this->MergeHalos.size();
+  MPI_Allreduce(&local,&total,1,MPI_INT,MPI_SUM,this->Communicator);
+  return( total );
+}
+
+//------------------------------------------------------------------------------
+int ParallelHaloMergerTree::GetTotalNumberOfSplits()
+{
+  int total = 0;
+  int local = this->SplitHalos.size();
+  MPI_Allreduce(&local,&total,1,MPI_INT,MPI_SUM,this->Communicator);
+  return( total );
+}
+
+//------------------------------------------------------------------------------
+int ParallelHaloMergerTree::GetTotalNumberOfDeaths()
+{
+  int total = 0;
+  int local = this->DeadHalos.size();
+  MPI_Allreduce(&local,&total,1,MPI_INT,MPI_SUM,this->Communicator);
+  return( total );
+}
+
+//------------------------------------------------------------------------------
 void ParallelHaloMergerTree::ExchangeHalos(
       cosmotk::Halo *halos, const int N,
       std::vector<cosmotk::Halo>& globalHalos)

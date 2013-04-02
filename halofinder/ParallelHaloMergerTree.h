@@ -59,11 +59,45 @@ public:
        const int t2, Halo *haloSet2, const int N,
        DistributedHaloEvolutionTree *t);
 
+  /**
+   * @brief Computes the global number of birth events detected.
+   * @return N the total number of births.
+   * @note This method is collective, all ranks must call it.
+   */
+  int GetTotalNumberOfBirths();
 
-   /**
-    * @brief Barrier synchronization among all processes
-    */
-   void Barrier() { MPI_Barrier(this->Communicator); };
+  /**
+   * @brief Computes the global number of re-birth events detected.
+   * @return N the total number of re-births.
+   * @note This method is collective, all ranks must call it.
+   */
+  int GetTotalNumberOfRebirths();
+
+  /**
+   * @brief Computes the global number of merge events detected.
+   * @return N the total number of merges.
+   * @note This method is collective, all ranks must call it.
+   */
+  int GetTotalNumberOfMerges();
+
+  /**
+   * @brief Computes the global number of split events detected.
+   * @return N the total number of splits.
+   * @note This method is collective, all ranks must call it.
+   */
+  int GetTotalNumberOfSplits();
+
+  /**
+   * @brief Computes the global number of death events detected.
+   * @return N the total number of deaths.
+   * @note This method is collective, all ranks must call it.
+   */
+  int GetTotalNumberOfDeaths();
+
+  /**
+   * @brief Barrier synchronization among all processes
+   */
+  void Barrier() { MPI_Barrier(this->Communicator); };
 
 protected:
    MPI_Comm Communicator;
