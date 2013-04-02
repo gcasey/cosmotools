@@ -219,12 +219,12 @@ int main(int argc, char **argv)
     NumHalosAtTimeStep[ timesteps[t] ] = numHalos;
 
     cosmotk::MPIUtilities::Printf(comm,"Track halos...");
-    HaloTracker->TrackHalos(t,z,Halos);
+    HaloTracker->TrackHalos(timesteps[t],z,Halos);
     cosmotk::MPIUtilities::Printf(comm,"[DONE]\n");
 
     cosmotk::MPIUtilities::Printf(
         comm,"\t - Processed timestep %d/%d SIM TSTEP=%d\n",
-              t,timesteps.size(),timesteps[t]);
+              t+1,timesteps.size(),timesteps[t]);
     Halos.clear();
     } // END for all time-step
 
