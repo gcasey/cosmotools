@@ -242,18 +242,18 @@ void ExchangeHaloInfo(std::vector<cosmotk::Halo> &halos)
 //------------------------------------------------------------------------------
 void ExchangeHaloParticles(std::vector<cosmotk::Halo> &halos)
 {
-  std::vector<DIYHaloParticleItem> haloParticles;
+  std::vector<HaloParticle> haloParticles;
   for(int hidx=0; hidx < halos.size(); ++hidx)
     {
     haloParticles.resize(0);
-    halos[hidx].GetDIYHaloParticleItemsVector(haloParticles);
+    halos[hidx].GetHaloParticlesVector(haloParticles);
     for( int pIdx=0; pIdx < haloParticles.size(); ++pIdx )
       {
       DIY_Enqueue_item_all(
           0,0,
           (void *)&haloParticles[pIdx],
           NULL,
-          sizeof(DIYHaloParticleItem),
+          sizeof(HaloParticle),
           NULL);
       } // END for all particles within the halo
     } // END for all halos
@@ -264,12 +264,12 @@ void ExchangeHaloParticles(std::vector<cosmotk::Halo> &halos)
   DIY_Exchange_neighbors(
       0,rcvHalos,numHalosReceived,1.0,&cosmotk::Halo::CreateDIYHaloParticleType);
 
-  DIYHaloParticleItem *haloParticle = NULL;
+  HaloParticle *haloParticle = NULL;
   for(int i=0; i < nblocks; ++i)
     {
     for(int j=0; j < numHalosReceived[i]; ++j)
       {
-      haloParticle = (struct DIYHaloParticleItem*)rcvHalos[i][j];
+      haloParticle = (struct HaloParticle*)rcvHalos[i][j];
       std::string hashCode =
           cosmotk::Halo::GetHashCodeForHalo(
               haloParticle->Tag,haloParticle->TimeStep);

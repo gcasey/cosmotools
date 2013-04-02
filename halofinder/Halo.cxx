@@ -32,9 +32,9 @@ void Halo::CreateDIYHaloType(DIY_Datatype *dtype)
 void Halo::CreateDIYHaloParticleType(DIY_Datatype *dtype)
 {
   struct map_block_t halo_part_map[3] = {
-   {DIY_INT,  OFST, 1, offsetof(struct DIYHaloParticleItem, Tag)},
-   {DIY_INT,  OFST, 1, offsetof(struct DIYHaloParticleItem, TimeStep)},
-   {DIY_ID_T,  OFST, 1, offsetof(struct DIYHaloParticleItem, HaloParticleID)},
+   {DIY_INT,  OFST, 1, offsetof(struct HaloParticle, Tag)},
+   {DIY_INT,  OFST, 1, offsetof(struct HaloParticle, TimeStep)},
+   {DIY_ID_T,  OFST, 1, offsetof(struct HaloParticle, HaloParticleID)},
   };
   DIY_Create_struct_datatype(0, 3, halo_part_map, dtype);
 }
@@ -223,8 +223,8 @@ void Halo::GetHaloInfo(HaloInfo *halo)
 }
 
 //-----------------------------------------------------------------------------
-void Halo::GetDIYHaloParticleItemsVector(
-          std::vector<DIYHaloParticleItem> &haloParticles)
+void Halo::GetHaloParticlesVector(
+          std::vector<HaloParticle> &haloParticles)
 {
   haloParticles.resize(this->ParticleIds.size());
   std::set< ID_T >::iterator iter = this->ParticleIds.begin();

@@ -34,11 +34,11 @@ struct HaloInfo {
 };
 
 /**
- * @struct DIYHaloParticleItem
+ * @struct HaloParticle
  * @brief Used to encapsulate a *single* halo particle ID for communication
  * over DIY.
  */
-struct DIYHaloParticleItem {
+struct HaloParticle {
   int Tag;
   int TimeStep;
   ID_T HaloParticleID;
@@ -134,18 +134,27 @@ public:
   void Print(std::ostream &os);
 
   /**
-   * @brief Populates a corresponding instance of HaloInfo
-   * @param halo the HaloInfo instance to populate
+   * @brief Populates a corresponding instance of HaloInfo for this instance.
+   * @param halo the HaloInfo instance to populate.
    * @pre halo != NULL
+   * @see HaloInfo
    */
   void GetHaloInfo(HaloInfo *halo);
 
   /**
-   * @brief
-   * @param haloParticles
+   * @brief Populates a user-supplied vector with HaloParticle instances
+   * corresponding to the particles of this halos.
+   * @param haloParticles vector of particles to populate.
+   * @post haloParticles.size() == this->GetNumberOfParticles()
+   * @post haloParticles[ i ].Tag == this->Tag \f$ \forall i \f$
+   * @post haloParticles[ i ].TimeStep == this->TimeStep \f$ \forall i \f$
+   * @post haloParticles[ i ].HaloParticleID == *(this->ParticleIds.begin()+i)
+   * \f$ \forall i \f$ i.e., each HaloParticle in the output vector corresponds
+   * to a particle in the ParticleIds list associated with this instance.
+   * @see HaloParticle
    */
-  void GetDIYHaloParticleItemsVector(
-          std::vector<DIYHaloParticleItem> &haloParticles);
+  void GetHaloParticlesVector(
+          std::vector<HaloParticle> &haloParticles);
 
   /**
    * @brief Registers a DIY data-type to represent static halo data.

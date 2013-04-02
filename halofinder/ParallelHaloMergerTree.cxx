@@ -263,17 +263,17 @@ void ParallelHaloMergerTree::ExchangeHaloParticles(
       cosmotk::Halo *halos, const int N, HaloHashMap& haloHash)
 {
   // STEP 0: For each halo, enqueue its halo particle IDs
-  std::vector<DIYHaloParticleItem> haloParticles;
+  std::vector<HaloParticle> haloParticles;
   for( int hidx=0; hidx < N; ++hidx )
     {
-    halos[hidx].GetDIYHaloParticleItemsVector(haloParticles);
+    halos[hidx].GetHaloParticlesVector(haloParticles);
     for( int pidx=0; pidx < haloParticles.size(); ++pidx )
       {
       DIY_Enqueue_item_all(
           0,0,
           (void*)&haloParticles[pidx],
           NULL,
-          sizeof(DIYHaloParticleItem),
+          sizeof(HaloParticle),
           NULL);
       } // END for all halo particles
     } // END for all halos
@@ -286,12 +286,12 @@ void ParallelHaloMergerTree::ExchangeHaloParticles(
       0,rcvHalos,numHalosReceived,1.0,&cosmotk::Halo::CreateDIYHaloParticleType);
 
   // STEP 2: Unpack data to neighbor halos in the haloHash
-  DIYHaloParticleItem *haloParticle = NULL;
+  HaloParticle *haloParticle = NULL;
   for( int i=0; i < nblocks; ++i )
     {
     for( int j=0; j < numHalosReceived[i]; ++j )
       {
-      haloParticle = (struct DIYHaloParticleItem*)rcvHalos[i][j];
+      haloParticle = (struct HaloParticle*)rcvHalos[i][j];
       std::string hashCode =
           cosmotk::Halo::GetHashCodeForHalo(
               haloParticle->Tag,haloParticle->TimeStep);
