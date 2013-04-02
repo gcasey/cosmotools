@@ -220,7 +220,7 @@ void ExchangeHaloInfo(std::vector<cosmotk::Halo> &halos)
   void ***rcvHalos      = new void**[nblocks];
   int *numHalosReceived = new int[nblocks];
   DIY_Exchange_neighbors(
-      0, rcvHalos,numHalosReceived,1.0,&cosmotk::Halo::CreateDIYHaloType);
+      0, rcvHalos,numHalosReceived,1.0,&cosmotk::Halo::CreateDIYHaloInfoType);
 
   HaloInfo *rcvHaloItem = NULL;
   for(int i=0; i < nblocks; ++i)
@@ -235,7 +235,7 @@ void ExchangeHaloInfo(std::vector<cosmotk::Halo> &halos)
 
   // clean up
   DIY_Flush_neighbors(
-      0, rcvHalos,numHalosReceived,&cosmotk::Halo::CreateDIYHaloType);
+      0, rcvHalos,numHalosReceived,&cosmotk::Halo::CreateDIYHaloInfoType);
   delete [] numHalosReceived;
 }
 
@@ -262,7 +262,8 @@ void ExchangeHaloParticles(std::vector<cosmotk::Halo> &halos)
   void ***rcvHalos = new void**[nblocks];
   int *numHalosReceived = new int[nblocks];
   DIY_Exchange_neighbors(
-      0,rcvHalos,numHalosReceived,1.0,&cosmotk::Halo::CreateDIYHaloParticleType);
+      0,rcvHalos,numHalosReceived,1.0,
+      &cosmotk::Halo::CreateDIYHaloParticleType);
 
   HaloParticle *haloParticle = NULL;
   for(int i=0; i < nblocks; ++i)

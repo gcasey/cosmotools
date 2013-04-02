@@ -157,10 +157,10 @@ public:
           std::vector<HaloParticle> &haloParticles);
 
   /**
-   * @brief Registers a DIY data-type to represent static halo data.
+   * @brief Registers a DIY data-type to represent a HaloInfo type.
    * @param dtype pointer to the DIY data type
    */
- static void CreateDIYHaloType(DIY_Datatype *dtype);
+ static void CreateDIYHaloInfoType(DIY_Datatype *dtype);
 
  /**
   * @brief Registers a DIY data-type to represent halo particles.

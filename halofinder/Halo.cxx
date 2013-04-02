@@ -12,7 +12,7 @@ namespace cosmotk
 {
 
 //-----------------------------------------------------------------------------
-void Halo::CreateDIYHaloType(DIY_Datatype *dtype)
+void Halo::CreateDIYHaloInfoType(DIY_Datatype *dtype)
 {
   struct map_block_t halo_map[9] = {
    {DIY_INT,     OFST, 1, offsetof(struct HaloInfo, Tag)},

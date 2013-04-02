@@ -236,7 +236,7 @@ void ParallelHaloMergerTree::ExchangeHaloInfo(
   void ***rcvHalos     = new void**[nblocks];
   int *numHalosReceived = new int[nblocks];
   DIY_Exchange_neighbors(
-      0,rcvHalos,numHalosReceived,1.0,&cosmotk::Halo::CreateDIYHaloType);
+      0,rcvHalos,numHalosReceived,1.0,&cosmotk::Halo::CreateDIYHaloInfoType);
 
   // STEP 2: Unpack received halos and store them in the halo hash by
   // a halo hash code.
@@ -253,7 +253,7 @@ void ParallelHaloMergerTree::ExchangeHaloInfo(
 
   // STEP 3: Clean up
   DIY_Flush_neighbors(
-      0,rcvHalos,numHalosReceived,&cosmotk::Halo::CreateDIYHaloType);
+      0,rcvHalos,numHalosReceived,&cosmotk::Halo::CreateDIYHaloInfoType);
   delete [] numHalosReceived;
 
 }
@@ -283,7 +283,8 @@ void ParallelHaloMergerTree::ExchangeHaloParticles(
   void ***rcvHalos = new void**[nblocks];
   int *numHalosReceived = new int[nblocks];
   DIY_Exchange_neighbors(
-      0,rcvHalos,numHalosReceived,1.0,&cosmotk::Halo::CreateDIYHaloParticleType);
+      0,rcvHalos,numHalosReceived,1.0,
+      &cosmotk::Halo::CreateDIYHaloParticleType);
 
   // STEP 2: Unpack data to neighbor halos in the haloHash
   HaloParticle *haloParticle = NULL;
@@ -302,7 +303,7 @@ void ParallelHaloMergerTree::ExchangeHaloParticles(
 
   // STEP 3: Clean up
   DIY_Flush_neighbors(
-      0,rcvHalos,numHalosReceived,&cosmotk::Halo::CreateDIYHaloParticleType);
+    0,rcvHalos,numHalosReceived,&cosmotk::Halo::CreateDIYHaloParticleType);
   delete [] numHalosReceived;
 }
 
