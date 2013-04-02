@@ -25,34 +25,6 @@ ParallelHaloMergerTree::~ParallelHaloMergerTree()
 }
 
 //------------------------------------------------------------------------------
-void ParallelHaloMergerTree::PrintMatrix()
-{
-  int rank;
-  MPI_Comm_rank(this->Communicator,&rank);
-
-  std::ostringstream oss;
-  oss << "HaloSimilarityMatrix_P" << rank
-      << "_" << this->Timesteps[0] << "-" << this->Timesteps[1] << ".dat";
-
-  std::ofstream ofs;
-  ofs.open( oss.str().c_str() );
-  assert( ofs.is_open() );
-
-  int nrows = this->Sizes[0];
-  int ncol  = this->Sizes[1];
-  for(int row=0; row < nrows; ++row)
-    {
-    for(int col=0; col < ncol; ++col)
-      {
-      ofs << this->HaloSimilarityMatrix[row*ncol+col] << " ";
-      } // END for all columns
-    ofs << std::endl;
-    } // END for all rows
-
-  ofs.close();
-}
-
-//------------------------------------------------------------------------------
 void ParallelHaloMergerTree::UpdateMergerTree(
     const int t1, Halo *haloSet1, const int M,
     const int t2, Halo *haloSet2, const int N,
