@@ -229,8 +229,10 @@ int main(int argc, char **argv)
     } // END for all time-step
 
   // STEP 7: Write the tree
+  std::ostringstream oss;
+  oss << "mtree-" << rank << ".ascii";
   std::ofstream ofs;
-  ofs.open("mtree.ascii");
+  ofs.open(oss.str().c_str());
   ofs << HaloTracker->GetHaloEvolutionTree()->ToString();
   ofs.close();
   //HaloTracker->WriteMergerTree("MergerTree");
