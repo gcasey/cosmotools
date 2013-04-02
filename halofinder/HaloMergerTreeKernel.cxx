@@ -188,16 +188,6 @@ void HaloMergerTreeKernel::UpdateHaloEvolutionTree(
     // current timestep.
     this->DetectEvent(row,rowEvent,prevHalo,mergerTree);
     } // END for all rows
-
-  if( this->Verbose )
-    {
-    std::cout << "NUMBER OF DEATHS: " << this->DeadHalos.size()  << std::endl;
-    std::cout << "NUMBER OF SPLITS: " << this->SplitHalos.size() << std::endl;
-    std::cout << "NUMBER OF MERGES: " << this->MergeHalos.size() << std::endl;
-    std::cout << "NUMBER OF BIRTHS: " << this->NumberOfBirths << std::endl;
-    std::cout << "=========\n";
-    std::cout.flush();
-    }
 }
 
 //------------------------------------------------------------------------------

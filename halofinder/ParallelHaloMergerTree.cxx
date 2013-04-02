@@ -81,10 +81,36 @@ void ParallelHaloMergerTree::UpdateMergerTree(
   // STEP 3: Update the halo-evolution tree
   this->UpdateHaloEvolutionTree( t );
 
-  // STEP 4: Handle Death events
+  // STEP 4: Print diagnostics for this interval
+  if( this->Verbose )
+    {
+    MPIUtilities::Printf(
+     this->Communicator,"=============================\n");
+    MPIUtilities::Printf(
+     this->Communicator,"TIMESTEP INTERVAL [%d,%d]\n",t1,t2);
+    MPIUtilities::Printf(
+     this->Communicator,"TOTAL NUMBER OF BIRTHS: %d\n",
+     this->GetTotalNumberOfBirths());
+    MPIUtilities::Printf(
+     this->Communicator,"TOTAL NUMBER OF RE-BIRTHS: %d\n",
+     this->GetTotalNumberOfRebirths());
+    MPIUtilities::Printf(
+     this->Communicator,"TOTAL NUMBER OF MERGERS: %d\n",
+     this->GetTotalNumberOfMerges());
+    MPIUtilities::Printf(
+     this->Communicator,"TOTAL NUMBER OF SPLITS: %d\n",
+     this->GetTotalNumberOfSplits());
+    MPIUtilities::Printf(
+     this->Communicator,"TOTAL NUMBER OF DEATHS: %d\n",
+     this->GetTotalNumberOfDeaths());
+    MPIUtilities::Printf(
+     this->Communicator,"=============================\n");
+    }
+
+  // STEP 5: Handle Death events
   this->HandleDeathEvents( t );
 
-  // STEP 5: Barrier synchronization
+  // STEP 6: Barrier synchronization
   this->Barrier();
 }
 
