@@ -23,6 +23,7 @@ namespace cosmotk
 
 // Forward declarations
 class Halo;
+class HaloNeighborExchange;
 
 // Data-structure to store halos based on hash-code
 typedef std::map<std::string,Halo> HaloHashMap;
@@ -113,38 +114,7 @@ protected:
    int CurrentIdx;
    int PreviousIdx;
 
-   /**
-    * @brief Exchanges halos of this process with neighbor processes
-    * @param halos the list of halos in this process
-    * @param N the number of halos in this process
-    * @param gloabalHalos global halo list consisting of both local and
-    * remote halos.
-    */
-   void ExchangeHalos(
-       cosmotk::Halo* halos, const int N,
-       std::vector<cosmotk::Halo>& gloabalHalos);
-
-   /**
-    * @brief Exchange halo static information, e.g., center, velocity, etc.
-    * @param halos list of local halos in this process to send
-    * @param N the number of local halos
-    * @param haloHash hash to store neighbor halos by halo hash code.
-    * @see ExchangeHalos
-    */
-   void ExchangeHaloInfo(
-      cosmotk::Halo* halos, const int N, HaloHashMap &haloHash);
-
-   /**
-    * @brief Exchange halo particle IDs for each halo
-    * @param halos list of local halos
-    * @param N the number of local halos
-    * @param haloHash hash of neighbor halos
-    * @pre haloHash should not be empty, for each neighboring halo, the hash
-    * must consist of the static halo information
-    * @see ExchangeHaloInfo, ExchangeHalos
-    */
-   void ExchangeHaloParticles(
-       cosmotk::Halo* halos, const int N, HaloHashMap &haloHash);
+   HaloNeighborExchange *NeighborExchange;
 
    /**
     * @brief Updates halo evolution tree accordingly to treat death events.

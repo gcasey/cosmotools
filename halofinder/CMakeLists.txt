@@ -33,6 +33,7 @@ set(HALOTRACKER_SRC
     Halo.cxx
     HaloDataInformation.cxx
     HaloMergerTreeKernel.cxx
+    HaloNeighborExchange.cxx
     ParallelHaloMergerTree.cxx
     TemporalHaloInformation.cxx
     )
