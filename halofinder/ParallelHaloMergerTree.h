@@ -39,25 +39,25 @@ public:
   GetNSetMacro(Communicator,MPI_Comm);
 
   /**
-    * @brief Given two sets of halos at different time-steps, this method
-    * updates the merger-tree, represented by a user-supplied halo evolution
-    * tree instance.
-    * @param t1 the time-step of the first set of halos (in).
-    * @param haloSet1 array of halos at t1 (in).
-    * @param M the number of halos at t1 (in).
-    * @param t2 the time-step of the 2nd set of halos (in).
-    * @param haloSet2 array of halos at t2 (in).
-    * @param N the number of halos at t2 (in).
-    * @param t the halo evolution tree (out).
-    * @pre (t1 < t2).
-    * @pre (M >= 1) && (N >= 1).
-    * @pre (haloSet1 != NULL) && (haloSet2 != NULL).
-    * @pre (t != NULL).
-    */
-   virtual void UpdateMergerTree(
-         const int t1, Halo *haloSet1, const int M,
-         const int t2, Halo *haloSet2, const int N,
-         DistributedHaloEvolutionTree *t);
+   * @brief Given two sets of halos at different time-steps, this method
+   * updates the merger-tree, represented by a user-supplied halo evolution
+   * tree instance.
+   * @param t1 the time-step of the first set of halos (in).
+   * @param haloSet1 array of halos at t1 (in).
+   * @param M the number of halos at t1 (in).
+   * @param t2 the time-step of the 2nd set of halos (in).
+   * @param haloSet2 array of halos at t2 (in).
+   * @param N the number of halos at t2 (in).
+   * @param t the halo evolution tree (out).
+   * @pre (t1 < t2).
+   * @pre (M >= 1) && (N >= 1).
+   * @pre (haloSet1 != NULL) && (haloSet2 != NULL).
+   * @pre (t != NULL).
+   */
+  virtual void UpdateMergerTree(
+       const int t1, Halo *haloSet1, const int M,
+       const int t2, Halo *haloSet2, const int N,
+       DistributedHaloEvolutionTree *t);
 
 
    /**
