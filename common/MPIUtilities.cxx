@@ -3,26 +3,15 @@
 #include <cstdio>
 #include <cstdarg>
 
-namespace cosmotk
-{
-
-MPIUtilities::MPIUtilities()
-{
-  // TODO Auto-generated constructor stub
-
-}
+namespace cosmotk {
+  namespace MPIUtilities {
 
 //------------------------------------------------------------------------------
-MPIUtilities::~MPIUtilities()
-{
-  // TODO Auto-generated destructor stub
-}
-
-//------------------------------------------------------------------------------
-void MPIUtilities::Printf(MPI_Comm comm, const char *fmt,...)
+void Printf(MPI_Comm comm, const char *fmt,...)
 {
   // Sanity check
-  assert("pre: MPI communicator should not be NULL!" && (comm != MPI_COMM_NULL) );
+  assert("pre: MPI communicator should not be NULL!" &&
+          (comm != MPI_COMM_NULL) );
   assert("pre: NULL formatted message!" && (fmt != NULL) );
 
   int rank = -1;
@@ -39,10 +28,11 @@ void MPIUtilities::Printf(MPI_Comm comm, const char *fmt,...)
 }
 
 //------------------------------------------------------------------------------
-void MPIUtilities::SynchronizedPrintf(MPI_Comm comm, const char *fmt,...)
+void SynchronizedPrintf(MPI_Comm comm, const char *fmt,...)
 {
   // Sanity check
-  assert("pre: MPI communicator should not be NULL!" && (comm != MPI_COMM_NULL) );
+  assert("pre: MPI communicator should not be NULL!" &&
+          (comm != MPI_COMM_NULL) );
   assert("pre: NULL formatted message!" && (fmt != NULL) );
 
   int rank     = -1;
@@ -102,4 +92,5 @@ void MPIUtilities::SynchronizedPrintf(MPI_Comm comm, const char *fmt,...)
     }
 }
 
+  } /*namespace MPIUtilities */
 } /* namespace cosmotk */
