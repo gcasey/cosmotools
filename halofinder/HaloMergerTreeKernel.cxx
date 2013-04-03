@@ -1,6 +1,11 @@
 #include "HaloMergerTreeKernel.h"
 
+// CosmologyTools includes
+#include "HaloType.h"
+
+// C/C++ includes
 #include <algorithm>
+#include <cassert>
 #include <fstream>
 
 namespace cosmotk
@@ -102,7 +107,7 @@ void HaloMergerTreeKernel::ComputeMergerTree( )
     // if the given cut-off criteria is met, i.e., if a zombie is persistently
     // a zombie for more that ZombieCutOff time-steps then, it is a zombie and
     // we don't bother checking it any more.
-    if( this->Halos1[row].HaloType == ZOMBIEHALO &&
+    if( HaloType::IsType(this->Halos1[row].HaloTypeMask,HaloType::ZOMBIE) &&
         this->Halos1[row].Count > this->ZombieCutOff )
       {
       this->DeadHalos.insert(row);
@@ -219,7 +224,7 @@ void HaloMergerTreeKernel::DetectEvent(
     Halo* currHalo = &this->Halos2[col];
     assert("pre: current halo is NULL!" && (currHalo != NULL) );
     assert("pre: halo at current timestep cannot be a zombie" &&
-           (currHalo->HaloType != ZOMBIEHALO));
+           !HaloType::IsType(currHalo->HaloTypeMask,HaloType::ZOMBIE) );
     int overlap = this->HaloSimilarityMatrix[row*ncol+col];
 
     // STEP 2: Check if this is a new halo
@@ -251,7 +256,7 @@ void HaloMergerTreeKernel::DetectEvent(
           {
           MergerTreeEvent::SetEvent(bitmask,MergerTreeEvent::CONTINUATION);
 
-          if( prevHalo->HaloType==ZOMBIEHALO )
+          if( HaloType::IsType(prevHalo->HaloTypeMask,HaloType::ZOMBIE) )
             {
             MergerTreeEvent::SetEvent(bitmask,MergerTreeEvent::REBIRTH);
             ++this->NumberOfRebirths;
@@ -276,7 +281,7 @@ void HaloMergerTreeKernel::DetectEvent(
 
           MergerTreeEvent::SetEvent(bitmask,MergerTreeEvent::MERGE);
 
-          if( prevHalo->HaloType==ZOMBIEHALO )
+          if( HaloType::IsType(prevHalo->HaloTypeMask,HaloType::ZOMBIE) )
             {
             MergerTreeEvent::SetEvent(bitmask,MergerTreeEvent::REBIRTH);
             }

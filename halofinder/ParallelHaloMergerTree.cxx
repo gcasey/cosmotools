@@ -3,6 +3,7 @@
 // cosmotools includes
 #include "Halo.h"
 #include "HaloNeighborExchange.h"
+#include "HaloType.h"
 #include "MPIUtilities.h"
 
 // DIY communication sub-strate
@@ -159,13 +160,13 @@ void ParallelHaloMergerTree::HandleDeathEvents(
     if( zombie->Count == 0 )
       {
       // this halo just died for the first time
-      zombie->HaloType = ZOMBIEHALO;
+      HaloType::SetType(zombie->HaloTypeMask,HaloType::ZOMBIE);
       zombie->Tag = (-1)*zombie->Tag;
       }
 
     // More sanity checks
     assert("pre: Node not flagged as a zombie!" &&
-           (zombie->HaloType==ZOMBIEHALO));
+           (HaloType::IsType(zombie->HaloTypeMask,HaloType::ZOMBIE)));
     assert("pre: zombies must have a negative tag!" && (zombie->Tag < 0));
     zombie->Count++;
 

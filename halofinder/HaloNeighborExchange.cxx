@@ -2,6 +2,7 @@
 
 // CosmologyTools includes
 #include "Halo.h"
+#include "HaloType.h"
 #include "MPIUtilities.h"
 
 // DIY
@@ -53,7 +54,8 @@ void HaloNeighborExchange::ExchangeHalos(
     {
     exchangedHalos[ haloIdx ] = iter->second;
     assert("pre: neighbor halo should be marked as a ghost!" &&
-           (exchangedHalos[ haloIdx ].HaloType == GHOSTHALO) );
+        (HaloType::IsType(exchangedHalos[haloIdx].HaloTypeMask,
+                          HaloType::GHOST)) );
     } // END for all neighboring halos
 
   // STEP 4: Clean up

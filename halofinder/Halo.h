@@ -47,12 +47,6 @@ struct HaloParticle {
 namespace cosmotk
 {
 
-enum HaloTypeEnum {
-  NORMALHALO, // normal halos are halos that are owned by the given process
-  GHOSTHALO,  // Ghost halos are halos that exist on other processes
-  ZOMBIEHALO  // Zombie halos, are halos that existed in some previous time-step
-              // and then seized to exist
-};
 class Halo
 {
 public:
@@ -174,7 +168,7 @@ public:
 
   int Tag;                      // The tag/ID of the halo
   int TimeStep;                 // The time-step of this halo
-  int HaloType;                 // The type of the halo, see HaloTypeEnum
+  unsigned char HaloTypeMask; // The type of the halo, see HaloTypeEnum
   int OwnerBlockId;             // The (DIY) global block ID that owns this
                                 // halo
   REAL Redshift;                // The corresponding red-shift of the halo

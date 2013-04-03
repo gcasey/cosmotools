@@ -1,5 +1,9 @@
 #include "Halo.h"
 
+// CosmologyTools includes
+#include "HaloType.h"
+
+// C/C++ includes
 #include <algorithm>
 #include <cassert>
 #include <cmath>
@@ -46,7 +50,9 @@ Halo::Halo()
   this->TimeStep = 0;
   this->Count    = 0;
   this->Redshift = 0.;
-  this->HaloType = cosmotk::NORMALHALO;
+
+  HaloType::Reset(this->HaloTypeMask);
+
   this->HaloMass = 0.;
   this->OwnerBlockId = DIY_Gid(0,0);
   this->Center[0] = this->Center[1] = this->Center[2] = 0.;
@@ -79,7 +85,7 @@ Halo::Halo( HaloInfo *halo )
   this->OwnerBlockId = halo->DIYGlobalId;
   if(this->OwnerBlockId != DIY_Gid(0,0))
     {
-    this->HaloType = cosmotk::GHOSTHALO;
+    HaloType::SetType(this->HaloTypeMask,HaloType::GHOST);
     }
 }
 
@@ -109,7 +115,9 @@ void Halo::InitHalo(
   this->Tag      = Tag;
   this->TimeStep = TimeStep;
   this->Redshift = redShift;
-  this->HaloType = cosmotk::NORMALHALO;
+
+  HaloType::Reset(this->HaloTypeMask);
+
   for( int i=0; i < 3; ++i )
     {
     this->Center[i]          = cntr[i];
