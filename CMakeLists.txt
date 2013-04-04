@@ -59,6 +59,9 @@ if(${BUILD_VTK_PROGRAMS})
  include_directories(SYSTEM ${VTK_INCLUDE_DIRS})
 endif()
 
+if(${ENABLE_THIRDPARTY_SQLITE})
+    add_subdirectory(thirdparty/sqlite)
+endif()
 
 ## Loop through all packages
 set(emptyList)
