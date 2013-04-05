@@ -12,11 +12,11 @@ endforeach()
 
 ## GenericIO source files
 set(GENERIC_IO_SRC
-    ${PROJECT_SOURCE_DIR}/generic-io/GenericIO.cxx
-    ${PROJECT_SOURCE_DIR}/generic-io/GenericIOBase.cxx
-    ${PROJECT_SOURCE_DIR}/generic-io/GenericIOReader.cxx
-    ${PROJECT_SOURCE_DIR}/generic-io/GenericIOUtilities.cxx
-    ${PROJECT_SOURCE_DIR}/generic-io/GenericIOMPIReader.cxx
+    generic-io/GenericIO.cxx
+    generic-io/GenericIOBase.cxx
+    generic-io/GenericIOReader.cxx
+    generic-io/GenericIOUtilities.cxx
+    generic-io/GenericIOMPIReader.cxx
     )
 
 ## Append GenericIO sources to list of sources
@@ -25,5 +25,3 @@ set(COMMON_SRC
     ${GENERIC_IO_SRC}
     CACHE INTERNAL ""
     )
-
-GetPackageSources(common ${PROJECT_SOURCE_DIR}/generic-io "${SOURCES}")

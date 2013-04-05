@@ -28,8 +28,11 @@ configure_file(
     ${PROJECT_SOURCE_DIR}/CosmologyToolsDefinitions.h.in
     ${HEADER_INCLUDES_DIRECTORY}/CosmologyToolsDefinitions.h)
 
+
 ## Add generic-io
 add_subdirectory(generic-io)
+
+GetPackageSources(common ${PROJECT_SOURCE_DIR} "${COMMON_SRC}")
 
 if(BUILD_SHARED_LIBS)
  add_library(common SHARED ${COMMON_SRC})
