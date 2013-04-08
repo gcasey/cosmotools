@@ -22,6 +22,7 @@
  * merger-tree.
  */
 struct HaloInfo {
+  ID_T GlobalID;
   int Tag;
   int TimeStep;
   REAL Redshift;
@@ -166,17 +167,25 @@ public:
   int Count;                    // A count used for book-keeping the number of
                                 // times the halo is propagated as a zombie.
 
-  int Tag;                      // The tag/ID of the halo
+  ID_T GlobalID;                // Global halo ID associated with a halo, i.e.
+                                // an ID that is unique for all time-steps.
+
+  int Tag;                      // The tag/ID of the halo. This is the local
+                                // ID, i.e., the ID assigned by the halo-finder
+                                // and is unique only within a given time-step.
+
   int TimeStep;                 // The time-step of this halo
-  unsigned char HaloTypeMask; // The type of the halo, see HaloTypeEnum
+  unsigned char HaloTypeMask;  // The type of the halo, see HaloTypeEnum
+
   int OwnerBlockId;             // The (DIY) global block ID that owns this
-                                // halo
-  REAL Redshift;                // The corresponding red-shift of the halo
-  REAL HaloMass;                // Mass of the halos
-  POSVEL_T Center[3];           // The halo-center
-  POSVEL_T MeanCenter[3];       // Alternate halo-center definition
-  POSVEL_T AverageVelocity[3];  // The average velocity of the halo
-  std::set< ID_T > ParticleIds; // The global particle IDs of the halo
+                                // halo in the given process.
+
+  REAL Redshift;                 // The corresponding red-shift of the halo
+  REAL HaloMass;                 // Mass of the halos
+  POSVEL_T Center[3];            // The halo-center
+  POSVEL_T MeanCenter[3];        // Alternate halo-center definition
+  POSVEL_T AverageVelocity[3];   // The average velocity of the halo
+  std::set< ID_T > ParticleIds;  // The global particle IDs of the halo
 
 
 private:

@@ -18,18 +18,19 @@ namespace cosmotk
 //-----------------------------------------------------------------------------
 void Halo::CreateDIYHaloInfoType(DIY_Datatype *dtype)
 {
-  struct map_block_t halo_map[9] = {
-   {DIY_INT,     OFST, 1, offsetof(struct HaloInfo, Tag)},
-   {DIY_INT,     OFST, 1, offsetof(struct HaloInfo, TimeStep)},
+  struct map_block_t halo_map[10] = {
+   {DIY_ID_T,     OFST, 1, offsetof(struct HaloInfo,GlobalID)},
+   {DIY_INT,      OFST, 1, offsetof(struct HaloInfo, Tag)},
+   {DIY_INT,      OFST, 1, offsetof(struct HaloInfo, TimeStep)},
    {DIY_REAL_T,   OFST, 1, offsetof(struct HaloInfo, Redshift)},
    {DIY_REAL_T,   OFST, 1, offsetof(struct HaloInfo, HaloMass)},
    {DIY_POSVEL_T, OFST, 3, offsetof(struct HaloInfo, Center)},
    {DIY_POSVEL_T, OFST, 3, offsetof(struct HaloInfo, MeanCenter)},
    {DIY_POSVEL_T, OFST, 3, offsetof(struct HaloInfo, AverageVelocity)},
-   {DIY_INT,     OFST, 1, offsetof(struct HaloInfo, DIYGlobalId)},
-   {DIY_INT,     OFST, 1, offsetof(struct HaloInfo, Count)},
+   {DIY_INT,      OFST, 1, offsetof(struct HaloInfo, DIYGlobalId)},
+   {DIY_INT,      OFST, 1, offsetof(struct HaloInfo, Count)},
   };
-  DIY_Create_struct_datatype(0, 9, halo_map, dtype);
+  DIY_Create_struct_datatype(0, 10, halo_map, dtype);
 }
 
 //-----------------------------------------------------------------------------
@@ -53,10 +54,18 @@ Halo::Halo()
 
   HaloType::Reset(this->HaloTypeMask);
 
+  this->GlobalID = -1;
   this->HaloMass = 0.;
   this->OwnerBlockId = DIY_Gid(0,0);
-  this->Center[0] = this->Center[1] = this->Center[2] = 0.;
-  this->MeanCenter[0] = this->MeanCenter[1] = this->MeanCenter[2] = 0.;
+
+  this->Center[0] =
+  this->Center[1] =
+  this->Center[2] = 0.;
+
+  this->MeanCenter[0] =
+  this->MeanCenter[1] =
+  this->MeanCenter[2] = 0.;
+
   this->AverageVelocity[0] =
   this->AverageVelocity[1] =
   this->AverageVelocity[2] = 0.;
@@ -74,6 +83,8 @@ Halo::Halo( HaloInfo *halo )
         halo->AverageVelocity,
         NULL,
         0 );
+
+  this->GlobalID = halo->GlobalID;
 
   for( int i=0; i < 3; ++i )
     {
@@ -216,6 +227,7 @@ void Halo::GetHaloInfo(HaloInfo *halo)
 {
   assert("pre: HaloInfo instance is NULL" && (halo != NULL) );
 
+  halo->GlobalID = this->GlobalID;
   halo->Tag      = this->Tag;
   halo->TimeStep = this->TimeStep;
   halo->Redshift = this->Redshift;
