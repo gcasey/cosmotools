@@ -103,6 +103,10 @@ public:
 protected:
    MPI_Comm Communicator;
 
+   // Keeps an incremental count of the number of nodes, i.e., halos per
+   // time-step including zombies. Used for calculation of Global IDs.
+   ID_T NumberOfNodes;
+
    // TemporalHalos data-structure is a vector of size 2
    // TemporalHalos[0] holds the list of halos at the previous time-step
    // TemporalHalos[1] holds the list of halos at the current time-step
@@ -115,6 +119,13 @@ protected:
    int PreviousIdx;
 
    HaloNeighborExchange *NeighborExchange;
+
+   /**
+    * @brief Assigns a global ID to the given halos.
+    * @param halos pointer to the list of halos.
+    * @param NumHalos number of halos.
+    */
+   void AssignGlobalIds(Halo* halos, const int NumHalos);
 
    /**
     * @brief Updates halo evolution tree accordingly to treat death events.

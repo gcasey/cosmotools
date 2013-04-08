@@ -19,6 +19,7 @@ ParallelHaloMergerTree::ParallelHaloMergerTree()
 {
   this->Communicator     = MPI_COMM_NULL;
   this->CurrentIdx       = this->PreviousIdx = -1;
+  this->NumberOfNodes    = 0;
   this->NeighborExchange = new HaloNeighborExchange();
 }
 
@@ -55,9 +56,11 @@ void ParallelHaloMergerTree::UpdateMergerTree(
     this->PreviousIdx = 0;
     this->CurrentIdx  = 1;
 
+    this->AssignGlobalIds(haloSet1,M);
     this->NeighborExchange->ExchangeHalos(
         haloSet1,M,this->TemporalHalos[this->PreviousIdx]);
 
+    this->AssignGlobalIds(haloSet2,N);
     this->NeighborExchange->ExchangeHalos(
         haloSet2,N,this->TemporalHalos[this->CurrentIdx]);
     }
@@ -70,7 +73,7 @@ void ParallelHaloMergerTree::UpdateMergerTree(
 
     // Exchange halos at the current time-step. Note!!!! halos at the
     // previous time-step were exchanged at the previous time-step.
-
+    this->AssignGlobalIds(haloSet2,N);
     this->NeighborExchange->ExchangeHalos(
         haloSet2,N,this->TemporalHalos[this->CurrentIdx]);
     }
@@ -117,6 +120,7 @@ void ParallelHaloMergerTree::UpdateMergerTree(
 
   // STEP 5: Handle Death events
   this->HandleDeathEvents( t );
+  this->Barrier();
 
   // STEP 6: Barrier synchronization
   this->Barrier();
@@ -126,6 +130,10 @@ void ParallelHaloMergerTree::UpdateMergerTree(
 void ParallelHaloMergerTree::HandleDeathEvents(
         DistributedHaloEvolutionTree *t)
 {
+  //
+  // TODO: Handle Assignment of GlobalIDs to zombie halos...
+  //
+
   assert("pre: halo evolution tree is NULL!" && (t != NULL) );
 
   std::set< int >::iterator iter = this->DeadHalos.begin();
@@ -176,6 +184,32 @@ void ParallelHaloMergerTree::HandleDeathEvents(
     // Create a link between the source halo and zombie halo
     t->LinkHalos(sourceHalo->GetHashCode(),zombie->GetHashCode());
     } // END for all dead halos
+}
+
+//------------------------------------------------------------------------------
+void ParallelHaloMergerTree::AssignGlobalIds(
+            Halo* halos, const int numHalos)
+{
+  // STEP 0: Get unique range in this process
+  ID_T range[2];
+  MPIUtilities::GetProcessRange(this->Communicator,numHalos,range);
+
+  // STEP 1: Compute global IDs for each halo, across all time-steps
+  ID_T globalIdx = range[0];
+  for(int i=0; i < numHalos; ++i, ++globalIdx )
+    {
+    halos[ i ].GlobalID = globalIdx+this->NumberOfNodes;
+    }
+  assert("ERROR: globalIdx > range[1] detected!" && (globalIdx <= range[1]) );
+
+  // STEP 2: Compute the last global Index assigned to a halo
+  ID_T lastGlobalIdx = -1;
+  MPI_Allreduce(
+      &globalIdx,&lastGlobalIdx,1,MPI_ID_T,MPI_MAX,this->Communicator);
+
+  // STEP 3: Update the total number of nodes
+  this->NumberOfNodes = lastGlobalIdx+1;
+
 }
 
 //------------------------------------------------------------------------------
