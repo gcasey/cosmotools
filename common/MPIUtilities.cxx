@@ -6,6 +6,27 @@
 namespace cosmotk {
   namespace MPIUtilities {
 
+
+//------------------------------------------------------------------------------
+void GetProcessRange(
+      MPI_Comm comm, ID_T numItems, ID_T range[2])
+{
+  // Sanity check
+  assert( "pre: MPI communicator should not be NULL!" &&
+          (comm != MPI_COMM_NULL) );
+
+  // STEP 0: Initialize
+  range[0] = range[1] = 0;
+
+  // STEP 1: Compute prefix sum
+  ID_T prefixSum = -1;
+  MPI_Scan(&numItems,&prefixSum,1,MPI_ID_T,MPI_SUM,comm);
+
+  // STEP 2: Get the range in this process
+  range[0] = (prefixSum-1)-numItems+1;
+  range[1] = prefixSum-1;
+}
+
 //------------------------------------------------------------------------------
 void Printf(MPI_Comm comm, const char *fmt,...)
 {

@@ -11,6 +11,17 @@
 namespace cosmotk {
   namespace MPIUtilities {
 
+/**
+ * @brief Given a distributed set of items, wherein each process, P_i, has
+ * a variable number of items, numItems, this method computes a range for
+ * each process that corresponds to a global identifier for each item.
+ * @param comm the underlying MPI communicator to use (in).
+ * @param numItems the number of items owned by this process (in).
+ * @param range the range assigned to this process (in/out).
+ * @pre comm != MPI_COMM_NULL
+ */
+void GetProcessRange(
+        MPI_Comm comm, ID_T numItems, ID_T range[2]);
 
 /**
  * @brief Rank 0 prints the formatted message to stdout
