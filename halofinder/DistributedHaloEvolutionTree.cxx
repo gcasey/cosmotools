@@ -232,12 +232,25 @@ std::string DistributedHaloEvolutionTree::ToString()
       {
       oss << this->Descendants[i][didx] << " ";
       } // END for all descendants
+
+    // Put a -1 if there are no descendants. Note, this
+    // should only happen at the very final time-step.
+    if( this->Descendants[i].size() == 0 )
+      {
+      oss << "-1 ";
+      }
     oss << "]\t";
 
     oss << "[ ";
     for(int pidx=0; pidx < this->Progenitors[i].size(); ++pidx)
       {
       oss << this->Progenitors[i][pidx] << " ";
+      }
+
+    // Put -999 here to indicate an empty progenitor list.
+    if( this->Progenitors[i].size() == 0 )
+      {
+      oss << "-999 ";
       }
     oss << "]\t";
 
