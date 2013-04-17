@@ -121,6 +121,15 @@ protected:
    HaloNeighborExchange *NeighborExchange;
 
    /**
+    * @brief Assigns global IDs to the zombie nodes corresponding to the
+    * IDs of halos in the current
+    * @param zombieIds list of
+    * @param N
+    */
+   void AssignGlobalIdsToZombieNodes(
+         int *zombieIds, const int N);
+
+   /**
     * @brief Assigns a global ID to the given halos.
     * @param halos pointer to the list of halos.
     * @param NumHalos number of halos.
