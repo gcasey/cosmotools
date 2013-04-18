@@ -23,6 +23,7 @@
 
 int main( int argc, char **argv )
 {
+#ifdef USEDAX
   dax::Extent3 extent;
   extent.Min = dax::Id3(0);
   extent.Max = dax::Id3(10);
@@ -35,6 +36,7 @@ int main( int argc, char **argv )
   dax::cont::UnstructuredGrid<dax::CellTagTetrahedron> EulerGrid;
 
   dax::cont::Scheduler<> scheduler;
+#endif
 
 //  typedef dax::cont::ArrayHandleConstantValue< dax::Id > HowManyTetsPerCellType;
 //
