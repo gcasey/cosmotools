@@ -325,8 +325,7 @@ void LagrangianTesselator::DAXBuildTesselation()
   //we want to use our Connectivity array as the dax unstructured grids
   //connectivity array. This way dax will directly write into our allocated
   //memory and we won't have to copy anything
-  dax::cont::ArrayHandle< dax::Id > connHandle =
-          dax::cont::make_ArrayHandle( this->Connectivity, 4 * this->NumTets );
+  dax::cont::ArrayHandle< dax::Id > connHandle;
 
   dax::cont::UnstructuredGrid< dax::CellTagTetrahedron > outGrid;
   outGrid.SetCellConnections(connHandle);
@@ -335,7 +334,7 @@ void LagrangianTesselator::DAXBuildTesselation()
 
   //this will copy the memory back to the host if we are using cuda, and
   //for OpenMP and TBB it is a no op
-  connHandle.GetPortalConstControl();
+  connHandle.CopyInto(this->Connectivity);
 
 
 }
