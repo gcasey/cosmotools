@@ -30,15 +30,18 @@
 //------------------------------------------------------------------------------
 //  GLOBAL DEFINITIONS
 //------------------------------------------------------------------------------
-int NSTEPS = 5;
-
+int NSTEPS = 1;
 std::string files[]= {
- "initial.z20.cosmo",
- "initial.z10.cosmo",
- "initial.z5.cosmo",
- "initial.z2.cosmo",
- "initial.z0.cosmo"
+ "initial.z20.cosmo"
 };
+
+//std::string files[]= {
+// "initial.z20.cosmo",
+// "initial.z10.cosmo",
+// "initial.z5.cosmo",
+// "initial.z2.cosmo",
+// "initial.z0.cosmo"
+//};
 
 /**
  * @brief A simple object to store program parameters
