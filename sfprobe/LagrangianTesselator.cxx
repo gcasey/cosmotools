@@ -12,13 +12,20 @@
 
 #ifdef USEDAX
 #define DAX_DEVICE_ADAPTER DAX_DEVICE_ADAPTER_TBB
-#include "dax/cont/DeviceAdapter.h"
-#include "dax/cont/ArrayHandleConstantValue.h"
-#include "dax/Types.h"
-#include "dax/cont/Scheduler.h"
-#include "dax/cont/ArrayHandle.h"
+#include <dax/cont/DeviceAdapter.h>
 
-#include "dax/worklet/Tetrahedralize.h"
+#include <dax/CellTag.h>
+#include <dax/TypeTraits.h>
+#include <dax/Extent.h>
+
+#include <dax/cont/ArrayHandle.h>
+#include <dax/cont/ArrayHandleConstantValue.h>
+#include <dax/cont/GenerateTopology.h>
+#include <dax/cont/Scheduler.h>
+#include <dax/cont/UniformGrid.h>
+#include <dax/cont/UnstructuredGrid.h>
+
+#include <dax/worklet/Tetrahedralize.h>
 #endif
 
 namespace cosmologytools
@@ -288,9 +295,49 @@ void LagrangianTesselator::GetAdjacentTets(
 void LagrangianTesselator::DAXBuildTesselation()
 {
 	// STEP 0: Setup  dax Uniform Grid
-	dax::Extent3 extent;
+  const dax::Id3 minE(IMIN(this->Extent), JMIN(this->Extent), KMIN(this->Extent));
+  const dax::Id3 maxE(IMAX(this->Extent), JMAX(this->Extent), KMAX(this->Extent));
 
-	dax::worklet::Tetrahedralize tetWorklet;
+  dax::cont::UniformGrid<> inputGrid;
+  inputGrid.SetExtent(minE,maxE);
+  inputGrid.SetOrigin( dax::make_Vector3(this->Origin[0],
+                                         this->Origin[1], this->Origin[2]));
+  inputGrid.SetSpacing( dax::make_Vector3(this->Spacing[0],
+                                          this->Spacing[1], this->Spacing[2]));
+
+  typedef dax::cont::GenerateTopology<dax::worklet::Tetrahedralize,
+                                      dax::cont::ArrayHandleConstantValue<dax::Id>
+                                      > GenerateT;
+  typedef GenerateT::ClassifyResultType  ClassifyResultType;
+
+  dax::cont::Scheduler<> scheduler;
+
+  //for every input cell generate 5 output cells, using a constant
+  //value array handle
+  ClassifyResultType classification(5,inputGrid.GetNumberOfCells());
+
+  dax::worklet::Tetrahedralize tetWorklet;
+  GenerateT generateTets(classification,tetWorklet);
+
+  //don't remove duplicate points.
+  generateTets.SetRemoveDuplicatePoints(false);
+
+  //we want to use our Connectivity array as the dax unstructured grids
+  //connectivity array. This way dax will directly write into our allocated
+  //memory and we won't have to copy anything
+  dax::cont::ArrayHandle< dax::Id > connHandle =
+          dax::cont::make_ArrayHandle( this->Connectivity, 4 * this->NumTets );
+
+  dax::cont::UnstructuredGrid< dax::CellTagTetrahedron > outGrid;
+  outGrid.SetCellConnections(connHandle);
+
+  scheduler.Invoke(generateTets,inputGrid,outGrid);
+
+  //this will copy the memory back to the host if we are using cuda, and
+  //for OpenMP and TBB it is a no op
+  connHandle.GetPortalConstControl();
+
+
 }
 #endif
 
