@@ -30,9 +30,6 @@ foreach(header ${HEADERS})
 endforeach()
 
 ## Specify global sources for this project
-#set(PACKAGE_sfprobe_SOURCES
-#    ${SOURCES}
-#   CACHE INTERNAL "package sources")
 GetPackageSources(sfprobe ${PROJECT_SOURCE_DIR} "${SOURCES}")
 
 if(BUILD_SHARED_LIBS)
@@ -41,9 +38,5 @@ else()
  add_library(sfprobe STATIC ${SOURCES})
 endif()
 target_link_libraries(sfprobe ${MPI_C_LIBRARIES})
-
-
-add_executable(daxprobe sfprobe.cxx)
-target_link_libraries(daxprobe sfprobe)
 
 add_subdirectory(executables)

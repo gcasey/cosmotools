@@ -9,34 +9,34 @@
 // MPI includes
 #include <mpi.h>
 
-#ifdef USEDAX
-#define DAX_DEVICE_ADAPTER DAX_DEVICE_ADAPTER_TBB
-#include "dax/cont/DeviceAdapter.h"
-#include "dax/cont/ArrayHandleConstantValue.h"
-#include "dax/Types.h"
-#include "dax/cont/Scheduler.h"
-#include "dax/cont/ArrayHandle.h"
-
-#include "dax/mapPointsToGrid.worklet"
-#include "dax/tetrahedralize.worklet"
-#endif
+//#ifdef USEDAX
+//#define DAX_DEVICE_ADAPTER DAX_DEVICE_ADAPTER_TBB
+//#include "dax/cont/DeviceAdapter.h"
+//#include "dax/cont/ArrayHandleConstantValue.h"
+//#include "dax/Types.h"
+//#include "dax/cont/Scheduler.h"
+//#include "dax/cont/ArrayHandle.h"
+//
+//#include "dax/mapPointsToGrid.worklet"
+//#include "dax/tetrahedralize.worklet"
+//#endif
 
 int main( int argc, char **argv )
 {
-#ifdef USEDAX
-  dax::Extent3 extent;
-  extent.Min = dax::Id3(0);
-  extent.Max = dax::Id3(10);
-
-  dax::cont::UniformGrid<> LagrangianGrid;
-  LagrangianGrid.SetOrigin( dax::Vector3(0.0) );
-  LagrangianGrid.SetSpacing( dax::Vector3(0.5) );
-  LagrangianGrid.SetExtent(extent);
-
-  dax::cont::UnstructuredGrid<dax::CellTagTetrahedron> EulerGrid;
-
-  dax::cont::Scheduler<> scheduler;
-#endif
+//#ifdef USEDAX
+//  dax::Extent3 extent;
+//  extent.Min = dax::Id3(0);
+//  extent.Max = dax::Id3(10);
+//
+//  dax::cont::UniformGrid<> LagrangianGrid;
+//  LagrangianGrid.SetOrigin( dax::Vector3(0.0) );
+//  LagrangianGrid.SetSpacing( dax::Vector3(0.5) );
+//  LagrangianGrid.SetExtent(extent);
+//
+//  dax::cont::UnstructuredGrid<dax::CellTagTetrahedron> EulerGrid;
+//
+//  dax::cont::Scheduler<> scheduler;
+//#endif
 
 //  typedef dax::cont::ArrayHandleConstantValue< dax::Id > HowManyTetsPerCellType;
 //
