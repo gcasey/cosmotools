@@ -10,6 +10,17 @@
 #include <set>     // For STL set
 #include <sstream> // For string streams
 
+#ifdef USEDAX
+#define DAX_DEVICE_ADAPTER DAX_DEVICE_ADAPTER_TBB
+#include "dax/cont/DeviceAdapter.h"
+#include "dax/cont/ArrayHandleConstantValue.h"
+#include "dax/Types.h"
+#include "dax/cont/Scheduler.h"
+#include "dax/cont/ArrayHandle.h"
+
+#include "dax/worklet/Tetrahedralize.h"
+#endif
+
 namespace cosmologytools
 {
 
@@ -105,12 +116,12 @@ void LagrangianTesselator::Initialize()
 //------------------------------------------------------------------------------
 void LagrangianTesselator::Tesselate()
 {
-//#ifdef USEDAX
-//  this->DAXBuildTesselation();
-//#else
+#ifdef USEDAX
+  this->DAXBuildTesselation();
+#else
   this->BuildTesselation();
-//#endif
-//  this->BuildFaceAdjacency();
+#endif
+  this->BuildFaceAdjacency();
 }
 
 //------------------------------------------------------------------------------
@@ -272,6 +283,17 @@ void LagrangianTesselator::GetAdjacentTets(
          ((tets.size()==1) || (tets.size()==2)) );
 }
 
+//-----------------------------------------------------------------------------
+#ifdef USEDAX
+void LagrangianTesselator::DAXBuildTesselation()
+{
+	// STEP 0: Setup  dax Uniform Grid
+	dax::Extent3 extent;
+
+	dax::worklet::Tetrahedralize tetWorklet;
+}
+#endif
+
 //------------------------------------------------------------------------------
 #define ADDTET(tetIdx, V0, V1, V2, V3 )   \
     this->Connectivity[tetIdx*4]   = V0;  \
@@ -280,13 +302,6 @@ void LagrangianTesselator::GetAdjacentTets(
     this->Connectivity[tetIdx*4+3 ]= V3;  \
     ++tetIdx;
 
-//-----------------------------------------------------------------------------
-//#ifdef USEDAX
-//void LagrangianTesselator::DAXBuildTesslation()
-//{
-// // TODO: call DAX Tesselation worklet
-//}
-//#endif
 
 //-----------------------------------------------------------------------------
 void LagrangianTesselator::BuildTesselation()

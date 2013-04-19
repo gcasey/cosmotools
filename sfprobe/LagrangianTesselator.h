@@ -127,6 +127,10 @@ protected:
    */
   void BuildTesselation();
 
+#ifdef USEDAX
+  void DAXBuildTesselation();
+#endif
+
   /**
    * @brief Constructs the face adjacency information.
    */
