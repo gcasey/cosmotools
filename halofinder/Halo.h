@@ -84,6 +84,12 @@ public:
   virtual ~Halo();
 
   /**
+   * @brief Checks if a GlobalID has been assigned to this halo instance.
+   * @return status true if a global ID is assigned, else false.
+   */
+  bool HasGlobalID( ) { return( (this->GlobalID > -1) ); };
+
+  /**
    * @brief Sets the halo particles of this instance.
    * @param particleIds pointer to an array of particle IDs
    * @param N the number of particles.
