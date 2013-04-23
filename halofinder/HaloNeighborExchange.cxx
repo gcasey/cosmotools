@@ -9,6 +9,12 @@
 #include "diy.h"
 
 
+static void PeriodicTransform(char *item, unsigned char direction)
+{
+  // Do nothing here. No need to transform halos when they are mapped
+  // along a period direction.
+}
+
 namespace cosmotk
 {
 
@@ -74,7 +80,7 @@ void HaloNeighborExchange::ExchangeHaloInformation(
     {
     localHalos[ hidx ].GetHaloInfo( &hinfo );
     DIY_Enqueue_item_all(
-       0, 0, (void*)&hinfo, NULL, sizeof(HaloInfo), NULL);
+       0, 0, (void*)&hinfo, NULL, sizeof(HaloInfo), &PeriodicTransform);
     } // END for all local halos
 
   // STEP 1: Allocate receive buffer and exchange data with neighbors
