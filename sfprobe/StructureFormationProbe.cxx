@@ -279,35 +279,6 @@ void StructureFormationProbe::BuildVirtualGrid()
 }
 
 //------------------------------------------------------------------------------
-void StructureFormationProbe::ProbePoints(
-    REAL* pnts,
-    INTEGER* nStreams,
-    REAL* rho,
-    INTEGER num_pnts )
-{
-#ifdef USEDAX
-  this->DaxProbePoints(pnts,num_pnts,nStreams,rho);
-#else
-  for(INTEGER i=0; i < num_pnts; ++i)
-    {
-    this->ProbePoint( pnts[i*3], nStreams[i], rho[i] );
-    }
-#endif
-}
-
-#ifdef USEDAX
-//------------------------------------------------------------------------------
-void StructureFormationProbe::DaxProbePoints(
-    REAL* pnts,
-    INTEGER* nStreams,
-    REAL* rho,
-    INTEGER num_pnts )
-{
-
-}
-#endif
-
-//------------------------------------------------------------------------------
 void StructureFormationProbe::ProbePoint(
     REAL pnt[3], INTEGER &nStreams, REAL &rho)
 {

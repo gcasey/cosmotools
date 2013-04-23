@@ -11,7 +11,6 @@
 #include <sstream> // For string streams
 
 #ifdef USEDAX
-#define DAX_DEVICE_ADAPTER DAX_DEVICE_ADAPTER_TBB
 #include <dax/cont/DeviceAdapter.h>
 
 #include <dax/CellTag.h>

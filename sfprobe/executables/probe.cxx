@@ -26,6 +26,20 @@
 #include "vtkUnstructuredGridWriter.h"
 #include "vtkXMLImageDataWriter.h"
 
+#ifdef USEDAX
+ // Dax includes
+#  define DAX_DEVICE_ADAPTER DAX_DEVICE_ADAPTER_TBB
+#  include <dax/CellTag.h>
+#  include <dax/cont/arg/ExecutionObject.h>
+#  include <dax/cont/DeviceAdapter.h>
+#  include <dax/cont/Scheduler.h>
+#  include <dax/cont/Timer.h>
+#  include <dax/Extent.h>
+#  include "dax/MapTetsToPoints.h"
+#  include "dax/TetStructure.h"
+
+#endif
+
 
 //------------------------------------------------------------------------------
 //  GLOBAL DEFINITIONS
@@ -353,6 +367,9 @@ void WriteUniformGrid(vtkUniformGrid *ug, std::string file)
  * @param p the structure formation probe data structure
  * @param i the given time-step
  */
+
+#ifndef USEDAX
+
 void WriteProbedGridData(
     cosmologytools::StructureFormationProbe *p, const int i)
 {
@@ -423,6 +440,95 @@ void WriteProbedGridData(
   WriteUniformGrid( probeGrid, oss.str() );
   probeGrid->Delete();
 }
+
+#else
+
+/**
+ * @brief Probes points on user-supplied grid (via parameters) and writes the
+ * output for visualization.
+ * @param p the structure formation probe data structure
+ * @param i the given time-step
+ */
+void WriteProbedGridData(
+    cosmologytools::StructureFormationProbe *p, const int timestep)
+{
+  assert("pre: structure formation probe is NULL" && (p != NULL) );
+
+  std::ostringstream oss;
+  oss.clear(); oss.str("");
+  oss << "probed_grid" << timestep << ".vtk";
+
+  dax::Vector3 origin;
+  dax::Vector3 spacing;
+  dax::Extent3 ext;
+
+  REAL bounds[6];
+  p->GetLagrangeTesselator()->GetBounds(bounds);
+
+  for(int i=0; i < 3; ++i)
+    {
+    origin[i]  = bounds[i*2];
+    dax::Scalar dx    = bounds[i*2+1]-bounds[i*2];
+    spacing[i] = static_cast<double>(dx/Parameters.GDIM);
+    ext.Min[i]   = 0;
+    ext.Max[i] = Parameters.GDIM;
+    }
+
+  //build the dax uniform grid from the lagrange tesselator
+  dax::cont::UniformGrid<> grid;
+  grid.SetOrigin(origin);
+  grid.SetSpacing(spacing);
+  grid.SetExtent(ext);
+
+  std::cout << "number of points in grid: " << grid.GetNumberOfPoints() << std::endl;
+  std::cout << "spacing is:  " << spacing[0] << ", " << spacing[1] << ", " << spacing[2] << std::endl;
+  std::cout << "ext Min is:  " << ext.Min[0] << ", " << ext.Min[1] << ", " << ext.Min[2] << std::endl;
+  std::cout << "ext Max is:  " << ext.Max[0] << ", " << ext.Max[1] << ", " << ext.Max[2] << std::endl;
+
+  //build the dax unstructured grid from the eulermesh
+  //these will be the tets we will search
+  std::vector<dax::Scalar> nodes;
+  std::vector<dax::Id> tetConn;
+  std::vector<dax::Scalar> volumes;
+  p->GetEulerMesh(nodes,tetConn,volumes);
+
+  //to convert nodes to vec3 we need to some pointer conversion
+  //this works since the memory layout of vector3 is equal to a flat
+  //scalars layed out like a.x,a.y,a.z,b.x,b.y,b.z...
+  dax::Vector3* startOfCoords = reinterpret_cast<dax::Vector3*>(&nodes[0]);
+  dax::Id numCoordinates = nodes.size() / 3;
+
+  typedef dax::cont::UnstructuredGrid< dax::CellTagTetrahedron > DaxTetGrid;
+  DaxTetGrid tetGrid( dax::cont::make_ArrayHandle(tetConn),
+                      dax::cont::make_ArrayHandle(startOfCoords ,numCoordinates ) );
+  dax::cont::ArrayHandle<dax::Scalar> volumeHandle =
+    dax::cont::make_ArrayHandle(volumes);
+
+  std::cout << "EulerMesh size: " << tetGrid.GetNumberOfCells() << std::endl;
+
+
+  dax::exec::TetStructure tetStructure(tetGrid,volumeHandle);
+
+  //setup handles to the output data
+  dax::cont::ArrayHandle<dax::Id> streamsHandle;
+  dax::cont::ArrayHandle<dax::Scalar> rhoHandle;
+
+  dax::cont::Scheduler<> scheduler;
+
+  dax::cont::Timer<> timer;
+  scheduler.Invoke(dax::worklet::MapTetsToPoints(),
+                   grid.GetPointCoordinates(),
+                   tetStructure,
+                   streamsHandle,
+                   rhoHandle);
+
+ std::cout << "Time to process one point: " << timer.GetElapsedTime() << std::endl;
+
+//todo implement writing from dax
+// WriteUniformGrid( grid, streamsHandle, rhoHandle, oss.str() );
+}
+
+#endif
 
 //=============================================================================
 
