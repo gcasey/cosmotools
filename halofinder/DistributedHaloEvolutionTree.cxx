@@ -46,7 +46,7 @@ void DistributedHaloEvolutionTree::InsertNode(
 
   // STEP 1: Insert node to list and create node-to-index mapping
   this->Nodes.push_back( halo );
-  this->Node2Idx[ hashCode ] = this->Nodes.size()-1;
+  this->Node2Idx[ hashCode ] = halo.GlobalID;
 
   // STEP 2: Initialize progenitor and descendant lists for the node
   std::vector< int > myProgenitors;
