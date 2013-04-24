@@ -56,13 +56,14 @@ public:
   void InsertNode(const HaloInfo &halo, unsigned char mask);
 
   /**
-   * @brief Links the "oldHalo" from a previous timestep to the "newHalo"
-   * in the current timestep.
-   * @param oldHalo the hashcode corresponding to the old halo
-   * @param newHalo the hashcode corresponding to the halo at the current tstep
-   * @pre this->HasNode(oldHalo) && this->HasNode(newHalo)
+   * @brief Links the progenitor from a previous timestep to the descendant
+   * halo in the current timestep.
+   * @param progenitor pointer to the progenitor.
+   * @param descendant pointer to the descendant.
+   * @pre progenitor != NULL.
+   * @pre descendant != NULL.
    */
-  void LinkHalos(std::string oldHalo, std::string newHalo);
+  void LinkHalos(Halo* progenitor, Halo* descendant);
 
   /**
    * @brief Checks if the tree is empty.

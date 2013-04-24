@@ -224,9 +224,7 @@ void ParallelHaloMergerTree::HandleDeathEvents(
     MergerTreeEvent::SetEvent(bitmask,MergerTreeEvent::DEATH);
 
     this->InsertHalo(zombie,bitmask,t);
-    t->LinkHalos(
-        sourceHalo->GetHashCode(),
-        zombie->GetHashCode());
+    t->LinkHalos(sourceHalo,zombie);
     } // END for all zombies
 }
 

@@ -46,7 +46,7 @@ void DistributedHaloEvolutionTree::InsertNode(
 
   // STEP 1: Insert node to list and create node-to-index mapping
   this->Nodes.push_back( halo );
-  this->Node2Idx[ hashCode ] = halo.GlobalID;
+  this->Node2Idx[ hashCode ] = this->Nodes.size()-1;
 
   // STEP 2: Initialize progenitor and descendant lists for the node
   std::vector< int > myProgenitors;
@@ -88,21 +88,30 @@ void DistributedHaloEvolutionTree::InsertNode(
 
 //------------------------------------------------------------------------------
 void DistributedHaloEvolutionTree::LinkHalos(
-      const std::string oldHalo,const std::string newHalo)
+      Halo* progenitor, Halo* descendant)
 {
+  // Sanity Checks
   assert("pre: corrupted merger-tree" && this->EnsureArraysAreConsistent());
-  assert("pre: old halo does not exist" && this->HasNode(oldHalo) );
-  assert("pre: new halo does not exist" && this->HasNode(newHalo) );
+  assert("pre: progenitor is NULL!" && (progenitor != NULL) );
+  assert("pre: descendant is NULL!" && (descendant != NULL) );
+  assert("pre: timesteps are out-of-synch!" &&
+         (progenitor->TimeStep < descendant->TimeStep) );
 
-  // STEP 0: Get indices for new & old halo
-  int oldIdx = this->Node2Idx[ oldHalo ];
-  int newIdx = this->Node2Idx[ newHalo ];
+  // STEP 0: If the progenitor is local, i.e., exists in this rank, update
+  // its descendant list.
+  if(this->HasNode(progenitor->GetHashCode()))
+    {
+    int idx = this->Node2Idx[ progenitor->GetHashCode() ];
+    this->Descendants[ idx ].push_back( descendant->GlobalID );
+    }
 
-  // STEP 1: Update descendants of oldHalo
-  this->Descendants[ oldIdx ].push_back( newIdx );
-
-  // STEP 2: Update progenitors of newHalo
-  this->Progenitors[ newIdx ].push_back( oldIdx );
+  // STEP 1: If the descendant is local, i.e., exists in this rank, update
+  // its progenitor list.
+  if(this->HasNode(descendant->GetHashCode()))
+    {
+    int idx = this->Node2Idx[ descendant->GetHashCode() ];
+    this->Progenitors[ idx ].push_back( progenitor->GlobalID );
+    }
 
   assert("post: corrupted merger-tree" && this->EnsureArraysAreConsistent());
 }
@@ -212,16 +221,16 @@ std::string DistributedHaloEvolutionTree::ToString()
     {
     oss << std::scientific
         << std::setprecision(std::numeric_limits<POSVEL_T>::digits10);
-    oss << i << "\t";
-    oss << this->Nodes[ i ].TimeStep  << "\t";
-    oss << this->Nodes[ i ].Tag       << "\t";
-    oss << this->Nodes[ i ].Redshift  << "\t";
-    oss << this->Nodes[ i ].Center[0] << "\t";
-    oss << this->Nodes[ i ].Center[1] << "\t";
-    oss << this->Nodes[ i ].Center[2] << "\t";
-    oss << this->Nodes[ i ].MeanCenter[ 0 ] << "\t";
-    oss << this->Nodes[ i ].MeanCenter[ 1 ] << "\t";
-    oss << this->Nodes[ i ].MeanCenter[ 2 ] << "\t";
+    oss << this->Nodes[ i ].GlobalID             << "\t";
+    oss << this->Nodes[ i ].TimeStep             << "\t";
+    oss << this->Nodes[ i ].Tag                  << "\t";
+    oss << this->Nodes[ i ].Redshift             << "\t";
+    oss << this->Nodes[ i ].Center[0]            << "\t";
+    oss << this->Nodes[ i ].Center[1]            << "\t";
+    oss << this->Nodes[ i ].Center[2]            << "\t";
+    oss << this->Nodes[ i ].MeanCenter[ 0 ]      << "\t";
+    oss << this->Nodes[ i ].MeanCenter[ 1 ]      << "\t";
+    oss << this->Nodes[ i ].MeanCenter[ 2 ]      << "\t";
     oss << this->Nodes[ i ].AverageVelocity[ 0 ] << "\t";
     oss << this->Nodes[ i ].AverageVelocity[ 1 ] << "\t";
     oss << this->Nodes[ i ].AverageVelocity[ 2 ] << "\t";

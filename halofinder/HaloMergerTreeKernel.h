@@ -10,6 +10,7 @@
 #include "CosmologyToolsMacros.h"
 #include "DistributedHaloEvolutionTree.h" // For DistributedHaloEvolutionTree
 #include "Halo.h" // For Halo
+#include "HaloType.h" // For HaloType enum and methods
 
 // C/C++ includes
 #include <cassert> // For assert()
@@ -170,6 +171,13 @@ protected:
     assert("pre: NULL merger-tree pointer!" && (t != NULL) );
     assert("pre: node already exists!" &&
             (!t->HasNode(haloPtr->GetHashCode())));
+
+    // Do not insert ghost halos. Ghost halos are only inserted on the
+    // merger-tree instance of the process that owns them.
+    if(HaloType::IsType(haloPtr->HaloTypeMask,HaloType::GHOST))
+      {
+      return;
+      }
 
     HaloInfo hinfo;
     haloPtr->GetHaloInfo( &hinfo);

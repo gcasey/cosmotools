@@ -117,7 +117,7 @@ void HaloMergerTreeKernel::ComputeMergerTree( )
     // STEP 2.1: Loop through all columns in this row
     for( int col=0; col < ncol; ++col )
       {
-      int overlap = 0;
+      int overlap = -1;
       if(!HaloType::IsType(this->Halos1[row].HaloTypeMask,HaloType::GHOST) ||
          !HaloType::IsType(this->Halos2[col].HaloTypeMask,HaloType::GHOST))
         {
@@ -275,8 +275,7 @@ void HaloMergerTreeKernel::DetectEvent(
             }
 
           this->InsertHalo(currHalo,bitmask,mergerTree);
-          mergerTree->LinkHalos(
-              prevHalo->GetHashCode(),currHalo->GetHashCode());
+          mergerTree->LinkHalos(prevHalo,currHalo);
           this->ProcessedColumns.insert( col );
           }
           break;
@@ -303,8 +302,7 @@ void HaloMergerTreeKernel::DetectEvent(
             this->InsertHalo(currHalo,bitmask,mergerTree);
             }
 
-          mergerTree->LinkHalos(
-              prevHalo->GetHashCode(),currHalo->GetHashCode());
+          mergerTree->LinkHalos(prevHalo,currHalo);
         } // END switch
       } // END if majority rule passes
     } // END for all columns
