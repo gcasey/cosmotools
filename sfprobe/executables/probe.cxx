@@ -494,14 +494,14 @@ void WriteProbedGridData(
 
   REAL vgrid_spacing[3];
   INTEGER vgrid_dims[3];
-  INTEGER scaleFactor = 5; //vgrid cells will roughly equal 5 probe cells in each dim
+  INTEGER scaleFactor = 1; // no scaling increase to make finer grid, which is bettter
   p->GetLagrangeTesselator()->GetBounds(bounds);
   for(int i=0; i < 3; ++i)
     { dax::Scalar dx = bounds[i*2+1]-bounds[i*2];
     probe_origin[i] = bounds[i*2];
-    vgrid_spacing[i] = static_cast<double>(dx / (Parameters.GDIM / scaleFactor) );
+    vgrid_spacing[i] = static_cast<double>(dx / (Parameters.GDIM * scaleFactor) );
     probe_spacing[i] = static_cast<double>(dx / (Parameters.GDIM) );
-    vgrid_dims[i]= (Parameters.GDIM / scaleFactor);
+    vgrid_dims[i]= (Parameters.GDIM * scaleFactor);
     probe_dims[i]= (Parameters.GDIM);
     }
 
