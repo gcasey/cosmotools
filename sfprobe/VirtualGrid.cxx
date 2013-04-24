@@ -86,6 +86,52 @@ void VirtualGrid::RegisterMesh(SimpleMesh &M)
 }
 
 //-----------------------------------------------------------------------------
+void VirtualGrid::RegisterMesh(SimpleMesh &M, REAL spacing[3], REAL bounds[6])
+{
+  if( M.Empty() )
+    {
+    return;
+    }
+
+  // STEP 0: set bounds
+  for(int i=0; i < 6; ++i)
+    {this->Bounds[i] = bounds[i];}
+
+  // STEP 1:Set virtual grid spacing
+  for( int i=0; i < 3; ++i )
+    {
+    this->Spacing[i] = spacing[i];
+    } // END for all dimensions
+
+ // std::cout << "VIRTUAL GRID PARAMETERS:";
+ // std::cout << "\nX-BOUNDS: " << this->Bounds[0] << " - " << this->Bounds[1];
+ // std::cout << "\nY-BOUNDS: " << this->Bounds[2] << " - " << this->Bounds[3];
+ // std::cout << "\nZ-BOUNDS: " << this->Bounds[4] << " - " << this->Bounds[5];
+ // std::cout << "\nX-SPACING:" << this->Spacing[0];
+ // std::cout << "\nY-SPACING: " << this->Spacing[1];
+ // std::cout << "\nZ-SPACING: " << this->Spacing[2];
+ // std::cout << "\nDIMS:" << this->Dimensions[0] << " ";
+ // std::cout << this->Dimensions[1] << " " << this->Dimensions[2];
+ // std::cout << std::endl;
+ // std::cout.flush();
+
+  // STEP 2: Allocate buckets
+  INTEGER ext[6];
+  this->GetExtent( ext );
+  this->Buckets.resize(ExtentUtilities::ComputeNumberOfCells(ext));
+
+  // STEP 3: Inject tets to bucket
+  std::vector<INTEGER> cellIds;
+  for(INTEGER cellIdx=0; cellIdx < M.GetNumberOfCells(); ++cellIdx)
+    {
+    if( !this->InjectCell(cellIdx, M) )
+      {
+      std::cerr << "WARNING: cell outside of VirtualGrid bounds!\n";
+      }
+    } // END for all cells
+}
+
+//-----------------------------------------------------------------------------
 #define PROCESSNODE(V,min,max) {                          \
   INTEGER nodeijk[3];                                      \
   if( this->FindBucket(V,nodeijk)) {                      \

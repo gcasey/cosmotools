@@ -40,6 +40,11 @@ public:
   GetMacro(NumTetsChecked,int);
 
   /**
+   * @brief Get macro for the EulerMesh
+   */
+  SimpleMesh& GetEulerMesh() { return EulerMesh; }
+
+  /**
    * @brief Sets the particle (positions) and corresponding global Ids.
    * @param particles the particles position vector strided by 3.
    * @param GlobalIds list of the global Ids corresponding to each particle.

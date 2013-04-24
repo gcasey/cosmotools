@@ -27,16 +27,20 @@
 #include "vtkXMLImageDataWriter.h"
 
 #ifdef USEDAX
+# include "VirtualGrid.h"
  // Dax includes
 #  define DAX_DEVICE_ADAPTER DAX_DEVICE_ADAPTER_TBB
+#  include "dax/ConstArray.h"
+#  include "dax/MapPointsToGrid.h"
+#  include "dax/MapTetsToPoints.h"
+#  include "dax/TetStructure.h"
 #  include <dax/CellTag.h>
 #  include <dax/cont/arg/ExecutionObject.h>
 #  include <dax/cont/DeviceAdapter.h>
 #  include <dax/cont/Scheduler.h>
 #  include <dax/cont/Timer.h>
 #  include <dax/Extent.h>
-#  include "dax/MapTetsToPoints.h"
-#  include "dax/TetStructure.h"
+#  include <dax/math/Compare.h>
 
 #endif
 
@@ -437,7 +441,7 @@ void WriteProbedGridData(
   probeGrid->GetPointData()->AddArray( rho );
   rho->Delete();
 
-  WriteUniformGrid( probeGrid, oss.str() );
+  // WriteUniformGrid( probeGrid, oss.str() );
   probeGrid->Delete();
 }
 
@@ -458,33 +462,6 @@ void WriteProbedGridData(
   oss.clear(); oss.str("");
   oss << "probed_grid" << timestep << ".vtk";
 
-  dax::Vector3 origin;
-  dax::Vector3 spacing;
-  dax::Extent3 ext;
-
-  REAL bounds[6];
-  p->GetLagrangeTesselator()->GetBounds(bounds);
-
-  for(int i=0; i < 3; ++i)
-    {
-    origin[i]  = bounds[i*2];
-    dax::Scalar dx    = bounds[i*2+1]-bounds[i*2];
-    spacing[i] = static_cast<double>(dx/Parameters.GDIM);
-    ext.Min[i]   = 0;
-    ext.Max[i] = Parameters.GDIM;
-    }
-
-  //build the dax uniform grid from the lagrange tesselator
-  dax::cont::UniformGrid<> grid;
-  grid.SetOrigin(origin);
-  grid.SetSpacing(spacing);
-  grid.SetExtent(ext);
-
-  std::cout << "number of points in grid: " << grid.GetNumberOfPoints() << std::endl;
-  std::cout << "spacing is:  " << spacing[0] << ", " << spacing[1] << ", " << spacing[2] << std::endl;
-  std::cout << "ext Min is:  " << ext.Min[0] << ", " << ext.Min[1] << ", " << ext.Min[2] << std::endl;
-  std::cout << "ext Max is:  " << ext.Max[0] << ", " << ext.Max[1] << ", " << ext.Max[2] << std::endl;
-
   //build the dax unstructured grid from the eulermesh
   //these will be the tets we will search
   std::vector<dax::Scalar> nodes;
@@ -504,25 +481,109 @@ void WriteProbedGridData(
   dax::cont::ArrayHandle<dax::Scalar> volumeHandle =
     dax::cont::make_ArrayHandle(volumes);
 
-  std::cout << "EulerMesh size: " << tetGrid.GetNumberOfCells() << std::endl;
-
-
   dax::exec::TetStructure tetStructure(tetGrid,volumeHandle);
 
-  //setup handles to the output data
-  dax::cont::ArrayHandle<dax::Id> streamsHandle;
-  dax::cont::ArrayHandle<dax::Scalar> rhoHandle;
+  //next step is to build a control side virtual grid that will decompose the
+  //search space, and lets us only search for each point a subset of all points
+  //We need to  set the virtual grids spacing and bounds so that they
+  //line up with the probe points, currently it is not working
+  REAL bounds[6];
+  dax::Vector3 probe_origin;
+  dax::Vector3 probe_spacing;
+  dax::Id3 probe_dims;
+
+  REAL vgrid_spacing[3];
+  INTEGER vgrid_dims[3];
+  INTEGER scaleFactor = 5; //vgrid cells will roughly equal 5 probe cells in each dim
+  p->GetLagrangeTesselator()->GetBounds(bounds);
+  for(int i=0; i < 3; ++i)
+    { dax::Scalar dx = bounds[i*2+1]-bounds[i*2];
+    probe_origin[i] = bounds[i*2];
+    vgrid_spacing[i] = static_cast<double>(dx / (Parameters.GDIM / scaleFactor) );
+    probe_spacing[i] = static_cast<double>(dx / (Parameters.GDIM) );
+    vgrid_dims[i]= (Parameters.GDIM / scaleFactor);
+    probe_dims[i]= (Parameters.GDIM);
+    }
+
+  cosmologytools::VirtualGrid vgrid;
+  vgrid.SetDimensions(vgrid_dims);
+  vgrid.RegisterMesh( p->GetEulerMesh(),
+                      vgrid_spacing,
+                      bounds);
+
+  const dax::Extent3 probe_ext(dax::make_Id3(0,0,0), probe_dims);
+
+  //in point ext, need to switch to cell
+  const dax::Extent3 vgrid_ext(dax::make_Id3(0,0,0),
+                     dax::make_Id3(vgrid_dims[0]-1,vgrid_dims[1]-1,vgrid_dims[2]-1));
 
   dax::cont::Scheduler<> scheduler;
-
   dax::cont::Timer<> timer;
-  scheduler.Invoke(dax::worklet::MapTetsToPoints(),
-                   grid.GetPointCoordinates(),
-                   tetStructure,
-                   streamsHandle,
-                   rhoHandle);
 
- std::cout << "Time to process one point: " << timer.GetElapsedTime() << std::endl;
+  //map each point in the probe set to the virtual grid
+  dax::cont::UniformGrid<> probeGrid;
+  probeGrid.SetOrigin(probe_origin);
+  probeGrid.SetSpacing(probe_spacing);
+  probeGrid.SetExtent(probe_ext);
+
+  std::cout << "Probing with " << probeGrid.GetNumberOfPoints() << " points " << std::endl;
+
+  dax::cont::ArrayHandle< dax::Tuple<dax::Id, 2> > vgridCellId;
+  scheduler.Invoke( dax::worklet::MapPointsToGrid(),
+                    probeGrid.GetPointCoordinates(),
+                    probe_origin,
+                    dax::make_Vector3(vgrid_spacing[0],vgrid_spacing[1],vgrid_spacing[2]),
+                    vgrid_ext,
+                    vgridCellId);
+  //manually sort
+  dax::math::SortLess comparisonFunctor;
+  dax::cont::internal::DeviceAdapterAlgorithm<DAX_DEFAULT_DEVICE_ADAPTER_TAG>::Sort(vgridCellId, comparisonFunctor);
+
+  //pull down the mapping
+  typedef dax::cont::ArrayHandle< dax::Tuple<dax::Id,2 > >::PortalConstExecution Portal;
+  Portal values = vgridCellId.GetPortalConstControl();
+
+  const dax::Id numPoints = values.GetNumberOfValues();
+
+  std::vector< dax::Vector3 > subCoords;
+  for(dax::Id i=0; i < numPoints -1; ++i)
+    {
+    //store all coordiantes that fall inside the same virtual grid bucket
+    while( i < numPoints && values.Get(i)[0] == values.Get(i+1)[0])
+      {
+      subCoords.push_back( probeGrid.ComputePointCoordinates( values.Get(i)[1] ) );
+      ++i;
+      }
+
+    //get all the tets in the bucket
+    const std::set< INTEGER >& tetSet = vgrid.GetTetsInBucket( values.Get(i)[0] );
+    std::vector< INTEGER> tetIds( tetSet.begin(), tetSet.end() );
+    if(tetIds.size() > 0)
+      {
+      //wrap coords in an array handle
+      dax::cont::ArrayHandle< dax::Vector3 > subCoordsHandle =
+          dax::cont::make_ArrayHandle( subCoords );
+
+      //wrap the tetIds in the bucket in a exec object
+      dax::cont::ArrayHandle< dax::Id > tetIdHandle =
+          dax::cont::make_ArrayHandle( tetIds );
+      dax::exec::ConstArray<dax::Id> tetIdsToSearch(tetIdHandle);
+
+      //setup handles to the output data
+      dax::cont::ArrayHandle<dax::Id> streamsHandle;
+      dax::cont::ArrayHandle<dax::Scalar> rhoHandle;
+
+      scheduler.Invoke(dax::worklet::MapTetsToPoints(),
+          subCoordsHandle,
+          tetStructure,
+          tetIdsToSearch,
+          streamsHandle,
+          rhoHandle);
+      subCoords.clear();
+      }
+    }
+
+  std::cout << "Time to MapTetsToPoints: " << timer.GetElapsedTime() << std::endl;
 
 //todo implement writing from dax
 // WriteUniformGrid( grid, streamsHandle, rhoHandle, oss.str() );
@@ -641,7 +702,7 @@ int main(int argc, char **argv)
     std::cout << "NumTets checked=" << Probe->GetNumTetsChecked();
     std::cout << std::endl;
     std::cout << "Avg. NumTets per point=";
-    std::cout << Probe->GetNumTetsChecked()/Probe->GetNumPointsProbed();
+    // std::cout << Probe->GetNumTetsChecked()/Probe->GetNumPointsProbed();
     std::cout << std::endl;
     }
 

@@ -28,11 +28,21 @@ public:
 
   SetVector3Macro(Dimensions,INTEGER);
 
+  int GetNumberOfBuckets() const { return Buckets.size(); }
+
   /**
    * @brief Registers the mesh
    * @param M the user-supplied mesh
    */
   void RegisterMesh(SimpleMesh &M);
+
+  /**
+   * @brief Registers the mesh
+   * @param M the user-supplied mesh
+   * @param spacing user-supplied grid spacing
+   * @param bounds user-supplied grid bounds
+   */
+  void RegisterMesh(SimpleMesh &M, REAL spacing[3], REAL bounds[6]);
 
   /**
    * @brief Return the candiate cells for the given query point
@@ -43,10 +53,19 @@ public:
         REAL pnt[3],std::vector<INTEGER> &cells);
 
   /**
+   * @brief Return tets ids that exist in a bucket
+   * @param id the query bucket
+   * @param cells the list of candidate cells that contain the point.
+   */
+  const std::set<INTEGER>& GetTetsInBucket( int id ) const
+    { return Buckets[id]; }
+
+  /**
    * @brief Returns this virtual grid as a legacy VTK grid.
    * @return s a string representation of this instance of virtual grid.
    */
   std::string ToLegacyVtkString();
+
 
 protected:
   INTEGER Dimensions[3];
