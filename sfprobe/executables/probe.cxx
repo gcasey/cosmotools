@@ -27,6 +27,7 @@
 #include "vtkXMLImageDataWriter.h"
 
 #ifdef USEDAX
+# include "vtkNew.h"
 # include "VirtualGrid.h"
  // Dax includes
 #  define DAX_DEVICE_ADAPTER DAX_DEVICE_ADAPTER_TBB
@@ -445,12 +446,12 @@ void WriteProbedGridData(
   probeGrid->Delete();
 
   //Statistics:
-  std::cout << "NumPoints probed=" << Probe->GetNumPointsProbed();
+  std::cout << "NumPoints probed=" << p->GetNumPointsProbed();
   std::cout << std::endl;
-  std::cout << "NumTets checked=" << Probe->GetNumTetsChecked();
+  std::cout << "NumTets checked=" << p->GetNumTetsChecked();
   std::cout << std::endl;
   std::cout << "Avg. NumTets per point=";
-  std::cout << Probe->GetNumTetsChecked()/Probe->GetNumPointsProbed();
+  std::cout << p->GetNumTetsChecked()/p->GetNumPointsProbed();
   std::cout << std::endl;
 }
 
@@ -563,8 +564,15 @@ void WriteProbedGridData(
   const dax::Id numPoints = values.GetNumberOfValues();
 
   //setup the streams and rho memory that we are going to write to
-  std::vector< dax::Id > streams(numPoints);
-  std::vector< dax::Scalar > rhos(numPoints);
+  vtkNew<vtkIntArray> numberOfStreams;
+  numberOfStreams->SetName("NumberOfStreams");
+  numberOfStreams->SetNumberOfTuples( numPoints );
+  int *nstreamPtr = numberOfStreams->GetPointer(0);
+
+  vtkNew<vtkDoubleArray> rho;
+  rho->SetName("rho");
+  rho->SetNumberOfTuples( numPoints );
+  double *rhoPtr = rho->GetPointer(0);
 
   //skip all ids that are negative or larger than the max bucket number
   //this happens when the virtual grid covers a space smaller than
@@ -572,8 +580,10 @@ void WriteProbedGridData(
   const int maxBucketNum = vgrid.GetNumberOfBuckets();
   dax::Id min_valid_id=0;
   dax::Id max_valid_id=numPoints-1;
-  while( values.Get(min_valid_id++)[0] < 0 );
-  while( values.Get(max_valid_id--)[0] >= maxBucketNum);
+  while( values.Get(min_valid_id)[0] < 0 )
+    { nstreamPtr[min_valid_id]=0; rhoPtr[min_valid_id]=0; ++min_valid_id; }
+  while( values.Get(max_valid_id)[0] >= maxBucketNum)
+    { nstreamPtr[max_valid_id]=0; rhoPtr[max_valid_id]=0; --max_valid_id; }
 
   for(dax::Id i=min_valid_id; i < max_valid_id; ++i)
     {
@@ -613,14 +623,23 @@ void WriteProbedGridData(
           rhoHandle);
 
       //move the results back into the host vectors
-      streamsHandle.CopyInto(streams.begin() + startId);
-      rhoHandle.CopyInto(rhos.begin() + startId);
+      streamsHandle.CopyInto(nstreamPtr + startId);
+      rhoHandle.CopyInto(rhoPtr + startId);
       }
     }
 
   std::cout << "Time to MapTetsToPoints: " << timer.GetElapsedTime() << std::endl;
 
-// WriteUniformGrid( grid, streamsHandle, rhoHandle, oss.str() );
+  vtkNew<vtkUniformGrid> gridToWrite;
+  gridToWrite->SetOrigin(probe_origin[0],probe_origin[1],probe_origin[2]);
+  gridToWrite->SetSpacing(probe_spacing[0],probe_spacing[1],probe_spacing[2]);
+  gridToWrite->SetExtent(probe_ext.Min[0],probe_ext.Max[0],
+                         probe_ext.Min[1],probe_ext.Max[1],
+                         probe_ext.Min[2],probe_ext.Max[2]);
+
+  gridToWrite->GetPointData()->AddArray( numberOfStreams.GetPointer() );
+  gridToWrite->GetPointData()->AddArray( rho.GetPointer() );
+  WriteUniformGrid( gridToWrite.GetPointer(), oss.str() );
 }
 
 #endif
