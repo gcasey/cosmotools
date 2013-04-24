@@ -27,6 +27,9 @@ public:
   virtual ~VirtualGrid();
 
   SetVector3Macro(Dimensions,INTEGER);
+  GetMacro(Dimensions,const INTEGER*)
+  GetMacro(Spacing,const REAL*);
+  GetMacro(Bounds, const REAL*);
 
   int GetNumberOfBuckets() const { return Buckets.size(); }
 
@@ -35,14 +38,6 @@ public:
    * @param M the user-supplied mesh
    */
   void RegisterMesh(SimpleMesh &M);
-
-  /**
-   * @brief Registers the mesh
-   * @param M the user-supplied mesh
-   * @param spacing user-supplied grid spacing
-   * @param bounds user-supplied grid bounds
-   */
-  void RegisterMesh(SimpleMesh &M, REAL spacing[3], REAL bounds[6]);
 
   /**
    * @brief Return the candiate cells for the given query point
