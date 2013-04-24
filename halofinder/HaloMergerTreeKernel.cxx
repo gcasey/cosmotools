@@ -117,13 +117,20 @@ void HaloMergerTreeKernel::ComputeMergerTree( )
     // STEP 2.1: Loop through all columns in this row
     for( int col=0; col < ncol; ++col )
       {
-      int overlap = this->Halos1[row].Intersect(&this->Halos2[col]);
+      int overlap = 0;
+      if(!HaloType::IsType(this->Halos1[row].HaloTypeMask,HaloType::GHOST) ||
+         !HaloType::IsType(this->Halos2[col].HaloTypeMask,HaloType::GHOST))
+        {
+        overlap = this->Halos1[row].Intersect(&this->Halos2[col]);
+        }
+
       this->HaloSimilarityMatrix[row*ncol+col] = overlap;
       if( this->MajorityRuleCheck(overlap) )
         {
         this->MatrixColumnSum[ col ]++;
         this->MatrixRowSum[ row ]++;
         } // END if
+
       } // END for all columns
     } // END for all rows
 
