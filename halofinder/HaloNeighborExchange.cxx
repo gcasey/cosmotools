@@ -45,6 +45,8 @@ void HaloNeighborExchange::ExchangeHalos(
       &this->EnqueuedHalos[0],
       this->EnqueuedHalos.size(),exchangedHalos,
       inclusive);
+
+  this->EnqueuedHalos.clear();
 }
 
 //------------------------------------------------------------------------------
