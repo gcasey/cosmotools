@@ -32,6 +32,16 @@ public:
   GetNSetMacro(Communicator,MPI_Comm);
 
   /**
+   * @brief Enqueues a halo to send to neighboring processes
+   * @param halo pointer to the halo to send
+   * @pre halo != NULL
+   * @note No communication is done at this point. Typically, once
+   * the application enqueues the halos to send, ExchangeHalos is
+   * called to carry out the communication task.
+   */
+  void EnqueueHalo(Halo *halo);
+
+  /**
    * @brief Exchanges the halos with the neighboring processes.
    * @param localHalos array consisting of the halos in this process.
    * @param N the number of local halos in this process.
@@ -43,8 +53,16 @@ public:
       Halo *localHalos, const int N,
       std::vector<Halo>& exchangedHalos);
 
+  /**
+   * @brief Exchanges pre-enqueued halos in this process with all neighbors.
+   * @param exchangedHalos output vector of halos
+   */
+  void ExchangeHalos(std::vector<Halo>& exchangedHalos);
+
 protected:
   MPI_Comm Communicator;
+
+  std::vector< Halo  > EnqueuedHalos;
 
   /**
    * @brief Exchanges the HaloInformation object of each halo.

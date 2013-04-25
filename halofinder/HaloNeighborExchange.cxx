@@ -27,7 +27,22 @@ HaloNeighborExchange::HaloNeighborExchange()
 //------------------------------------------------------------------------------
 HaloNeighborExchange::~HaloNeighborExchange()
 {
-  // TODO Auto-generated destructor stub
+  this->EnqueuedHalos.clear();
+}
+
+//------------------------------------------------------------------------------
+void HaloNeighborExchange::EnqueueHalo(Halo* h)
+{
+  assert("pre: input halo is NULL!" && (h != NULL) );
+  this->EnqueuedHalos.push_back( *h );
+}
+
+//------------------------------------------------------------------------------
+void HaloNeighborExchange::ExchangeHalos(
+    std::vector<Halo>& exchangedHalos)
+{
+  this->ExchangeHalos(
+      &this->EnqueuedHalos[0],this->EnqueuedHalos.size(),exchangedHalos);
 }
 
 //------------------------------------------------------------------------------
