@@ -125,7 +125,8 @@ void HaloNeighborExchange::ExchangeHaloParticles(
     for(int pidx=0; pidx < hparticles.size(); ++pidx )
       {
       DIY_Enqueue_item_all(
-         0, 0, (void*)&hparticles[pidx], NULL, sizeof(HaloParticle), NULL);
+         0, 0, (void*)&hparticles[pidx], NULL, sizeof(HaloParticle),
+         &PeriodicTransform);
       } // END for all halo particles
     } // END for all halos
 
