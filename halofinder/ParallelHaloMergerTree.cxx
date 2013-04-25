@@ -253,7 +253,7 @@ void ParallelHaloMergerTree::AssignGlobalIdsToZombieNodes(
   assert("ERROR: globalIdx > range[1] detected!" && (globalIdx == range[1]+1) );
 
   // STEP 2: Compute the last global index assigned to a halo
-  ID_T localGlobalIdx = globalIdx+this->NumberOfNodes;
+  ID_T localGlobalIdx = range[1]+this->NumberOfNodes;
   ID_T lastGlobalIdx = -1;
   MPI_Allreduce(
       &localGlobalIdx,&lastGlobalIdx,1,MPI_ID_T,MPI_MAX,this->Communicator);
@@ -282,7 +282,7 @@ void ParallelHaloMergerTree::AssignGlobalIds(
   assert("ERROR: globalIdx > range[1] detected!" && (globalIdx == range[1]+1));
 
   // STEP 2: Compute the last global Index assigned to a halo
-  ID_T localGlobalIdx = globalIdx+this->NumberOfNodes;
+  ID_T localGlobalIdx = range[1]+this->NumberOfNodes;
   ID_T lastGlobalIdx = -1;
   MPI_Allreduce(
       &localGlobalIdx,&lastGlobalIdx,1,MPI_ID_T,MPI_MAX,this->Communicator);
