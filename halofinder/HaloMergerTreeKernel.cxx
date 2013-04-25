@@ -251,9 +251,6 @@ void HaloMergerTreeKernel::DetectEvent(
     // from the previous time-step.
     else if(this->MajorityRuleCheck(overlap))
       {
-      assert("pre: previous halo not in tree!" &&
-              mergerTree->HasNode(prevHalo->GetHashCode()));
-
       unsigned char bitmask;
       MergerTreeEvent::Reset(bitmask);
 
