@@ -89,6 +89,7 @@ public:
 
 private:
 
+  DAX_EXEC_EXPORT
   int InBoundingBox(CellCoords& coords, dax::Vector3 point) const
   {
     //compute bounds
@@ -119,6 +120,7 @@ private:
   }
 
   //Determines if a point is inside a the cell
+  DAX_EXEC_EXPORT
   int InCell(CellCoords& coords, dax::Vector3 point) const
   {
     dax::Scalar first = dax::utilities::Determinant(

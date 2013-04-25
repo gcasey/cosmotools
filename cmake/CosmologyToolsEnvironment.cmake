@@ -73,6 +73,7 @@ if(${ENABLE_DAX})
   add_definitions(-DUSEDAX)
   find_package(Dax REQUIRED)
   DaxConfigureTBB(REQUIRED)
+  DaxConfigureCuda()
 endif()
 
 option(ENABLE_THIRDPARTY_SQLITE "Enable SQlite" OFF)

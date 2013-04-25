@@ -30,7 +30,8 @@
 # include "vtkNew.h"
 # include "VirtualGrid.h"
  // Dax includes
-#  define DAX_DEVICE_ADAPTER DAX_DEVICE_ADAPTER_TBB
+#  define DAX_DEVICE_ADAPTER DAX_DEVICE_ADAPTER_CUDA
+#  define BOOST_SP_DISABLE_THREADS
 #  include "dax/ConstArray.h"
 #  include "dax/MapPointsToGrid.h"
 #  include "dax/MapTetsToPoints.h"
@@ -509,7 +510,7 @@ void WriteProbedGridData(
     probe_spacing[i] = static_cast<double>(dx / Parameters.GDIM);
     probe_ext.Min[i]= 0;
     probe_ext.Max[i]= Parameters.GDIM;
-    vgrid_dims[i] = 8;
+    vgrid_dims[i] = 16;
     }
 
   dax::cont::Scheduler<> scheduler;
@@ -652,6 +653,8 @@ void WriteProbedGridData(
       }
     }
 
+  std::cout << "Time to MapTetsToPoints: " << timer.GetElapsedTime() << std::endl;
+
   vtkNew<vtkUniformGrid> gridToWrite;
   gridToWrite->SetOrigin(probe_origin[0],probe_origin[1],probe_origin[2]);
   gridToWrite->SetSpacing(probe_spacing[0],probe_spacing[1],probe_spacing[2]);
@@ -661,9 +664,6 @@ void WriteProbedGridData(
 
   gridToWrite->GetPointData()->AddArray( numberOfStreams.GetPointer() );
   gridToWrite->GetPointData()->AddArray( rho.GetPointer() );
-
-
-  std::cout << "Time to MapTetsToPoints: " << timer.GetElapsedTime() << std::endl;
   WriteUniformGrid( gridToWrite.GetPointer(), oss.str() );
 }
 

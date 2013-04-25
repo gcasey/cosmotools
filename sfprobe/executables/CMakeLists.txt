@@ -30,3 +30,7 @@ foreach(exeFile ${executables})
   target_link_libraries(${exe} ${RequiredLibs})
 endforeach()
 
+if(Dax_Cuda_FOUND)
+  cuda_add_executable(cuda_probe probe.cu)
+  target_link_libraries(cuda_probe ${RequiredLibs})
+endif()
