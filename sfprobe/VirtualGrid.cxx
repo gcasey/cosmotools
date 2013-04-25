@@ -196,6 +196,7 @@ void VirtualGrid::GetCandidateCellsForPoint(
   INTEGER ext[6];
   this->GetCellExtent(ext);
   INTEGER idx = ExtentUtilities::GetLinearIndex(ijk,ext);
+
   assert("pre: bucket index is out-of-bounds!" &&
        (idx >= 0) && (idx < static_cast<INTEGER>(this->Buckets.size())));
 

@@ -33,6 +33,8 @@ public:
 
   int GetNumberOfBuckets() const { return Buckets.size(); }
 
+  std::set<INTEGER> const& GetBucket( int i) { return Buckets[i]; }
+
   /**
    * @brief Registers the mesh
    * @param M the user-supplied mesh
@@ -46,14 +48,6 @@ public:
    */
   void GetCandidateCellsForPoint(
         REAL pnt[3],std::vector<INTEGER> &cells);
-
-  /**
-   * @brief Return tets ids that exist in a bucket
-   * @param id the query bucket
-   * @param cells the list of candidate cells that contain the point.
-   */
-  const std::set<INTEGER>& GetTetsInBucket( int id ) const
-    { return Buckets[id]; }
 
   /**
    * @brief Returns this virtual grid as a legacy VTK grid.

@@ -83,7 +83,7 @@ public:
     valid = valid && this->InCell(coords,point);
 
     totalVolume += ( valid * this->Volumes.Get(index) );
-    return valid * index;
+    return valid;
 
     }
 
@@ -121,7 +121,6 @@ private:
   //Determines if a point is inside a the cell
   int InCell(CellCoords& coords, dax::Vector3 point) const
   {
-    int valid = 1;
     dax::Scalar first = dax::utilities::Determinant(
                   coords[0], coords[1],
                   coords[2], coords[3]);
@@ -145,7 +144,7 @@ private:
                   coords[2], point) );
 
     //we care if all the results have the same sign bit
-    valid = dax::math::SignBit(first) == dax::math::SignBit(second);
+    int valid = dax::math::SignBit(first) == dax::math::SignBit(second);
     return dax::math::Min(valid,1); //make sure we don't have a large valid flag
   }
 };

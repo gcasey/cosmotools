@@ -1,6 +1,6 @@
 ## Set the build type
 set(CMAKE_BUILD_TYPE Debug CACHE STRING
-  "one of: Release, Debug, RelWithDebInfo or MinSizeRel" FORCE)
+  "one of: Release, Debug, RelWithDebInfo or MinSizeRel")
 
 ## Set the path where all the header will be stored
 set(HEADER_INCLUDES_DIRECTORY

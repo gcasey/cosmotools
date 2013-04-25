@@ -501,15 +501,15 @@ void WriteProbedGridData(
   dax::Vector3 probe_origin;
   dax::Vector3 probe_spacing;
   dax::Extent3 probe_ext;
-  INTEGER probe_dims[3];
+  INTEGER vgrid_dims[3];
   for(int i=0; i < 3; ++i)
     {
     dax::Scalar dx = bounds[i*2+1]-bounds[i*2];
     probe_origin[i] = bounds[i*2];
-    probe_spacing[i] = static_cast<double>(dx /Parameters.GDIM);
+    probe_spacing[i] = static_cast<double>(dx / Parameters.GDIM);
     probe_ext.Min[i]= 0;
     probe_ext.Max[i]= Parameters.GDIM;
-    probe_dims[i] = Parameters.GDIM;
+    vgrid_dims[i] = 8;
     }
 
   dax::cont::Scheduler<> scheduler;
@@ -518,7 +518,7 @@ void WriteProbedGridData(
   //construct the virtual grid, which will classify each tet to a virtual
   //grid based on an id
   cosmologytools::VirtualGrid vgrid;
-  vgrid.SetDimensions(probe_dims);
+  vgrid.SetDimensions(vgrid_dims);
   vgrid.RegisterMesh( p->GetEulerMesh() );
 
   //extract out the spacing, origin, and extents of virtual grid
@@ -528,21 +528,15 @@ void WriteProbedGridData(
   const REAL* vgrid_bounds = vgrid.GetBounds();
   dax::Vector3 vgrid_origin( vgrid_bounds[0], vgrid_bounds[2], vgrid_bounds[4] );
   dax::Extent3 vgrid_ext( dax::make_Id3(0,0,0),
-                          dax::Id3(vgrid.GetDimensions()[0] + 1,
-                                   vgrid.GetDimensions()[1] + 1,
-                                   vgrid.GetDimensions()[2] + 1) );
-
-  std::cout << "vgrid_spacing: " << vgrid_spacing[0] << ", " << vgrid_spacing[1] << ", " << vgrid_spacing[2] << std::endl;
-  std::cout << "vgrid_origin: " << vgrid_origin[0] << ", "  << vgrid_origin[1] << ", " << vgrid_origin[2] << std::endl;
-  std::cout << "vgrid_spacing: " << vgrid_ext.Max[0] << ", " <<  vgrid_ext.Max[1] << ", " << vgrid_ext.Max[2] << std::endl;
+                          dax::Id3(vgrid.GetDimensions()[0] - 1,
+                                   vgrid.GetDimensions()[1] - 1,
+                                   vgrid.GetDimensions()[2] - 1) );
 
   //map each point in the probe set to the virtual grid
   dax::cont::UniformGrid<> probeGrid;
   probeGrid.SetOrigin(probe_origin);
   probeGrid.SetSpacing(probe_spacing);
   probeGrid.SetExtent(probe_ext);
-
-  std::cout << "Probing with " << probeGrid.GetNumberOfPoints() << " points " << std::endl;
 
   dax::cont::ArrayHandle< dax::Tuple<dax::Id, 2> > vgridCellId;
   scheduler.Invoke( dax::worklet::MapPointsToGrid(),
@@ -551,6 +545,7 @@ void WriteProbedGridData(
                     vgrid_spacing,
                     vgrid_ext,
                     vgridCellId);
+
   //manually sort
   dax::math::SortLess comparisonFunctor;
   dax::cont::internal::DeviceAdapterAlgorithm<DAX_DEFAULT_DEVICE_ADAPTER_TAG>::Sort(vgridCellId, comparisonFunctor);
@@ -558,7 +553,6 @@ void WriteProbedGridData(
   //pull down the mapping
   typedef dax::cont::ArrayHandle< dax::Tuple<dax::Id,2 > >::PortalConstExecution Portal;
   Portal values = vgridCellId.GetPortalConstControl();
-
 
   //get the number of points we probed with
   const dax::Id numPoints = values.GetNumberOfValues();
@@ -574,34 +568,56 @@ void WriteProbedGridData(
   rho->SetNumberOfTuples( numPoints );
   double *rhoPtr = rho->GetPointer(0);
 
+  //zero everything
+  std::fill(nstreamPtr,nstreamPtr+numPoints,0);
+  std::fill(rhoPtr,rhoPtr+numPoints,0);
+
   //skip all ids that are negative or larger than the max bucket number
   //this happens when the virtual grid covers a space smaller than
   //probe point bounding box
   const int maxBucketNum = vgrid.GetNumberOfBuckets();
   dax::Id min_valid_id=0;
-  dax::Id max_valid_id=numPoints-1;
-  while( values.Get(min_valid_id)[0] < 0 )
-    { nstreamPtr[min_valid_id]=0; rhoPtr[min_valid_id]=0; ++min_valid_id; }
-  while( values.Get(max_valid_id)[0] >= maxBucketNum)
-    { nstreamPtr[max_valid_id]=0; rhoPtr[max_valid_id]=0; --max_valid_id; }
+  while( values.Get(min_valid_id++)[0] < 0 );
 
-  for(dax::Id i=min_valid_id; i < max_valid_id; ++i)
+  for(dax::Id i=min_valid_id; i < numPoints-1; ++i)
     {
     std::vector< dax::Vector3 > subCoords;
-    dax::Id startId = i;
+    std::vector< dax::Id > writeIndices;
+    subCoords.reserve(128); //random guess
+    writeIndices.reserve(128); //random guess
+
 
     //store all coordinates that fall inside the same virtual grid bucket
-    subCoords.push_back( probeGrid.ComputePointCoordinates( values.Get(i)[1] ) );
-    while( i < numPoints && values.Get(i)[0] == values.Get(i+1)[0])
+    const dax::Id cellIndex = values.Get(i)[0];
+    const dax::Id pointIndex = values.Get(i)[1];
+    subCoords.push_back( probeGrid.ComputePointCoordinates( pointIndex  ) );
+    writeIndices.push_back( pointIndex );
+    while( i < numPoints-1 && cellIndex == values.Get(i+1)[0])
       {
+      const dax::Id nextPointIndex = values.Get(i+1)[1];
+      subCoords.push_back( probeGrid.ComputePointCoordinates(nextPointIndex) );
+      writeIndices.push_back( nextPointIndex );
       ++i;
-      subCoords.push_back( probeGrid.ComputePointCoordinates( values.Get(i)[1] ) );
       }
-    //get all the tets in the bucket, bucket id will always be valid
-    const std::set< INTEGER >& tetSet = vgrid.GetTetsInBucket( values.Get(startId)[0] );
-    std::vector< INTEGER> tetIds( tetSet.begin(), tetSet.end() );
-    if(tetIds.size() > 0)
+
+    //if we only have a single point just use the serial code
+    if(subCoords.size() == 1)
       {
+      REAL rpnt[3] = { subCoords[0][0], subCoords[0][1], subCoords[0][2] };
+      INTEGER nStream = 0;
+      REAL lrho = 0.0;
+      p->ProbePoint(rpnt,nStream,lrho);
+
+      nstreamPtr[ writeIndices[0] ] = static_cast<int>(nStream);
+      rhoPtr[ writeIndices[0] ]     = static_cast<double>(lrho);
+      } // END for all points
+    else
+      {
+      //get all the tets in the bucket, bucket id will always be valid
+      REAL xyz[3] = {subCoords[0][0],subCoords[0][1],subCoords[0][2]};
+      std::set<dax::Id> const& tetSet =  vgrid.GetBucket( cellIndex );
+      std::vector<dax::Id> tetIds(tetSet.begin(),tetSet.end());
+
       //wrap coords in an array handle
       dax::cont::ArrayHandle< dax::Vector3 > subCoordsHandle =
           dax::cont::make_ArrayHandle( subCoords );
@@ -623,12 +639,18 @@ void WriteProbedGridData(
           rhoHandle);
 
       //move the results back into the host vectors
-      streamsHandle.CopyInto(nstreamPtr + startId);
-      rhoHandle.CopyInto(rhoPtr + startId);
+      typedef std::vector<dax::Id>::const_iterator iterator;
+      const dax::Id* streamIt = streamsHandle.GetPortalConstControl().GetIteratorBegin();
+      const dax::Scalar* rhoIt = rhoHandle.GetPortalConstControl().GetIteratorBegin();
+      for(iterator j = writeIndices.begin(); j != writeIndices.end(); ++j )
+        {
+        nstreamPtr[*j] = *streamIt;
+        rhoPtr[*j] = static_cast<double>(*rhoIt);
+        ++streamIt;
+        ++rhoIt;
+        }
       }
     }
-
-  std::cout << "Time to MapTetsToPoints: " << timer.GetElapsedTime() << std::endl;
 
   vtkNew<vtkUniformGrid> gridToWrite;
   gridToWrite->SetOrigin(probe_origin[0],probe_origin[1],probe_origin[2]);
@@ -639,6 +661,9 @@ void WriteProbedGridData(
 
   gridToWrite->GetPointData()->AddArray( numberOfStreams.GetPointer() );
   gridToWrite->GetPointData()->AddArray( rho.GetPointer() );
+
+
+  std::cout << "Time to MapTetsToPoints: " << timer.GetElapsedTime() << std::endl;
   WriteUniformGrid( gridToWrite.GetPointer(), oss.str() );
 }
 
@@ -753,4 +778,5 @@ int main(int argc, char **argv)
   delete Probe;
   return 0;
 }
+
 

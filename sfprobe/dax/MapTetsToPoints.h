@@ -54,8 +54,10 @@ public:
 
   //write back to memory
   stream = numValidCells;
-  rho = ( volumeSum / dax::math::Max(1.0f,
-                              static_cast<dax::Scalar>(numValidCells)) );
+  if(numValidCells > 0)
+    {
+    rho = ( volumeSum / static_cast<dax::Scalar>(numValidCells) );
+    }
   }
 };
 
