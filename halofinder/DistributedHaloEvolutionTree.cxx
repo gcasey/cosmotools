@@ -136,10 +136,6 @@ int DistributedHaloEvolutionTree::GetNumberOfNodes(const int tstep)
     {
     N = this->NodeCounter[ tstep ];
     }
-  else
-    {
-    std::cerr << "WARNING: No tree nodes for requrested time-step!\n";
-    }
   return( N );
 }
 
