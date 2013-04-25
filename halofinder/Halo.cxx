@@ -94,9 +94,15 @@ Halo::Halo( HaloInfo *halo )
   this->Count        = halo->Count;
   this->HaloMass     = halo->HaloMass;
   this->OwnerBlockId = halo->DIYGlobalId;
+
   if(this->OwnerBlockId != DIY_Gid(0,0))
     {
     HaloType::SetType(this->HaloTypeMask,HaloType::GHOST);
+    }
+
+  if(this->Count > 0)
+    {
+    HaloType::SetType(this->HaloTypeMask,HaloType::ZOMBIE);
     }
 }
 
