@@ -120,7 +120,6 @@ void ParallelHaloMergerTree::UpdateMergerTree(
 
   // STEP 5: Handle Death events
   this->HandleDeathEvents( t );
-  this->Barrier();
 
   // STEP 6: Barrier synchronization
   this->Barrier();
@@ -226,6 +225,28 @@ void ParallelHaloMergerTree::HandleDeathEvents(
     this->InsertHalo(zombie,bitmask,t);
     t->LinkHalos(sourceHalo,zombie);
     } // END for all zombies
+
+  // STEP 3: Enqueue zombie halos to exchange
+  for(unsigned int idx=0; idx < zombieidx.size(); ++idx)
+    {
+    Halo* zombie = &this->TemporalHalos[this->CurrentIdx][idx];
+    this->NeighborExchange->EnqueueHalo( zombie );
+    }
+
+  // STEP 4: Exchanged zombies
+  std::vector< Halo > neiZombies;
+  this->NeighborExchange->ExchangeHalos(neiZombies,false);
+
+  // STEP 5: Inject the neighboring zombies to the temporal data-structure
+  for(unsigned int z=0; z < neiZombies.size(); ++z)
+    {
+    assert( "pre: not marked as zombie!" &&
+       HaloType::IsType(neiZombies[z].HaloTypeMask,HaloType::ZOMBIE));
+    assert( "pre: not marked as ghost!" &&
+       HaloType::IsType(neiZombies[z].HaloTypeMask,HaloType::GHOST));
+
+    this->TemporalHalos[this->CurrentIdx].push_back(neiZombies[z]);
+    } // END for all zombies of neighboring processes
 }
 
 //------------------------------------------------------------------------------
@@ -269,9 +290,6 @@ void ParallelHaloMergerTree::AssignGlobalIds(
   // STEP 0: Get unique range in this process
   ID_T range[2];
   MPIUtilities::GetProcessRange(this->Communicator,numHalos,range);
-
-  MPIUtilities::SynchronizedPrintf(
-      this->Communicator,"range=[%d,%d]\n",range[0],range[1]);
 
   // STEP 1: Compute global IDs for each halo, across all time-steps
   ID_T globalIdx = range[0];
