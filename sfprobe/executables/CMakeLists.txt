@@ -11,17 +11,25 @@ set(RequiredLibs
 
 ## Add VTK executables
 if(${BUILD_VTK_PROGRAMS})
- set(executables
-     ${executables}
-     probe.cxx
-     )
 
- set(RequiredLibs
-     ${RequiredLibs}
-     vtkCommonDataModel
-     vtkFiltersCosmo
-     vtkIOXML
-     )
+  set(headers
+      probe.h
+      )
+  set(executables
+      ${executables}
+      probe.cxx
+      )
+
+  set(cuda_executables
+      cudaProbe.cu
+      )
+
+  set(RequiredLibs
+      ${RequiredLibs}
+      vtkCommonDataModel
+      vtkFiltersCosmo
+      vtkIOXML
+      )
 endif()
 
 foreach(exeFile ${executables})
@@ -31,6 +39,9 @@ foreach(exeFile ${executables})
 endforeach()
 
 if(Dax_Cuda_FOUND)
-  cuda_add_executable(cuda_probe probe.cu)
-  target_link_libraries(cuda_probe ${RequiredLibs})
+  foreach(exeFile ${cuda_executables})
+    get_filename_component(exe ${exeFile} NAME_WE)
+    cuda_add_executable(${exe} ${exeFile})
+    target_link_libraries(${exe} ${RequiredLibs})
+  endforeach()
 endif()

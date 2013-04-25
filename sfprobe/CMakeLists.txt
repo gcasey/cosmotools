@@ -19,6 +19,7 @@ set(SOURCES
     SimpleMesh.cxx
     StructureFormationProbe.cxx
     TetrahedronUtilities.cxx
+    UniformProber.cxx
     VirtualGrid.cxx
     )
 
