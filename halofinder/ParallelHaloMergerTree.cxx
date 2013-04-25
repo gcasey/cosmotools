@@ -250,7 +250,7 @@ void ParallelHaloMergerTree::AssignGlobalIdsToZombieNodes(
 
     zombie->GlobalID = globalIdx+this->NumberOfNodes;
     } // END for all zombies
-  assert("ERROR: globalIdx > range[1] detected!" && (globalIdx <= range[1]) );
+  assert("ERROR: globalIdx > range[1] detected!" && (globalIdx == range[1]+1) );
 
   // STEP 2: Compute the last global index assigned to a halo
   ID_T localGlobalIdx = globalIdx+this->NumberOfNodes;
@@ -270,13 +270,16 @@ void ParallelHaloMergerTree::AssignGlobalIds(
   ID_T range[2];
   MPIUtilities::GetProcessRange(this->Communicator,numHalos,range);
 
+  MPIUtilities::SynchronizedPrintf(
+      this->Communicator,"range=[%d,%d]\n",range[0],range[1]);
+
   // STEP 1: Compute global IDs for each halo, across all time-steps
   ID_T globalIdx = range[0];
   for(int i=0; i < numHalos; ++i, ++globalIdx )
     {
     halos[ i ].GlobalID = globalIdx+this->NumberOfNodes;
     }
-  assert("ERROR: globalIdx > range[1] detected!" && (globalIdx <= range[1]) );
+  assert("ERROR: globalIdx > range[1] detected!" && (globalIdx == range[1]+1));
 
   // STEP 2: Compute the last global Index assigned to a halo
   ID_T localGlobalIdx = globalIdx+this->NumberOfNodes;
