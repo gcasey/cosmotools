@@ -45,19 +45,26 @@ public:
    * @brief Exchanges the halos with the neighboring processes.
    * @param localHalos array consisting of the halos in this process.
    * @param N the number of local halos in this process.
-   * @param exchangedHalos output vector consisting of both local and
-   * neighboring halos.
+   * @param exchangedHalos output vector of halos
+   * @param inclusive if true the output vector will consist of both local
+   * and neighboring halos. If not specified, default is set to true.
    * @note This method is collective, all ranks must call it.
    */
   void ExchangeHalos(
       Halo *localHalos, const int N,
-      std::vector<Halo>& exchangedHalos);
+      std::vector<Halo>& exchangedHalos,
+      bool inclusive=true);
 
   /**
    * @brief Exchanges pre-enqueued halos in this process with all neighbors.
-   * @param exchangedHalos output vector of halos
+   * @param exchangedHalos output vector of halos.
+   * @param inclusive if true the output vector will consist of both local
+   * and neighboring halos. If not specified, default is set to true.
+   * @note This method is collective, all ranks must call it.
    */
-  void ExchangeHalos(std::vector<Halo>& exchangedHalos);
+  void ExchangeHalos(
+      std::vector<Halo>& exchangedHalos,
+      bool inclusive=true);
 
 protected:
   MPI_Comm Communicator;

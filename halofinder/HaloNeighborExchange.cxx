@@ -39,16 +39,18 @@ void HaloNeighborExchange::EnqueueHalo(Halo* h)
 
 //------------------------------------------------------------------------------
 void HaloNeighborExchange::ExchangeHalos(
-    std::vector<Halo>& exchangedHalos)
+    std::vector<Halo>& exchangedHalos,bool inclusive)
 {
   this->ExchangeHalos(
-      &this->EnqueuedHalos[0],this->EnqueuedHalos.size(),exchangedHalos);
+      &this->EnqueuedHalos[0],
+      this->EnqueuedHalos.size(),exchangedHalos,
+      inclusive);
 }
 
 //------------------------------------------------------------------------------
 void HaloNeighborExchange::ExchangeHalos(
     Halo *localHalos, const int N,
-    std::vector<Halo>& exchangedHalos)
+    std::vector<Halo>& exchangedHalos, bool inclusive)
 {
   // STEP 0: Get halos from neighbors. This is done in two steps. First, the
   // halo information of each halo is exchanged. This step also initializes the
@@ -62,12 +64,16 @@ void HaloNeighborExchange::ExchangeHalos(
   // halos.
   exchangedHalos.resize(N+neighborHalos.size());
 
-  // STEP 2: Put local halos in the output vector
+  // STEP 2: Put local halos in the output vector iff inclusive
   int haloIdx = 0;
-  for(; haloIdx < N; ++haloIdx )
+
+  if( inclusive )
     {
-    exchangedHalos[ haloIdx ]= localHalos[ haloIdx ];
-    } // END for all local halos
+    for(; haloIdx < N; ++haloIdx )
+      {
+      exchangedHalos[ haloIdx ]= localHalos[ haloIdx ];
+      } // END for all local halos
+    } // END if inclusive
 
   // STEP 3: Put neighboring halos in the output vector
   HaloHashMap::iterator iter = neighborHalos.begin();
