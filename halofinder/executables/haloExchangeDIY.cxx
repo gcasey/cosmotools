@@ -18,6 +18,7 @@
 // Cosmotools include
 #include "CosmologyToolsMacros.h"
 #include "Halo.h"
+#include "HaloNeighborExchange.h"
 
 //==============================================================================
 // Global variables
@@ -29,7 +30,7 @@ int rank;
 int size;
 MPI_Comm comm;
 
-std::map<std::string,cosmotk::Halo> RcvHalos;
+std::vector< cosmotk::Halo > RcvHalos;
 
 unsigned char neigh_dirs[] = {
   DIY_X0,                   DIY_X1,
@@ -132,8 +133,6 @@ int GetRankByPosition(int i, int j, int k);
 void GetProcessHalos(std::vector<cosmotk::Halo> &halos);
 
 void ExchangeHalos(std::vector<cosmotk::Halo> &halos);
-void ExchangeHaloInfo(std::vector<cosmotk::Halo> &halos);
-void ExchangeHaloParticles(std::vector<cosmotk::Halo> &halos);
 
 void WriteRcvHalos();
 
@@ -194,107 +193,28 @@ void WriteRcvHalos()
 
   std::ofstream ofs;
   ofs.open(oss.str().c_str());
-  std::map<std::string,cosmotk::Halo>::iterator haloIter = RcvHalos.begin();
+  std::vector<cosmotk::Halo>::iterator haloIter = RcvHalos.begin();
   for(; haloIter != RcvHalos.end(); ++haloIter )
     {
     ofs << "==============================\n";
-    haloIter->second.Print(ofs);
+    haloIter->Print(ofs);
     ofs << "\n";
     } // END for all halos
   ofs.close();
 }
 
 //------------------------------------------------------------------------------
-void ExchangeHaloInfo(std::vector<cosmotk::Halo> &halos)
-{
-  HaloInfo haloInfo;
-  for( int hidx=0; hidx < halos.size(); ++hidx )
-    {
-    halos[ hidx ].GetHaloInfo( &haloInfo );
-    DIY_Enqueue_item_all(
-        0, 0, (void *)&haloInfo, NULL, sizeof(HaloInfo), NULL);
-    } // END for all halos
-  PRINTLN("Enqueued halos!");
-
-  int nblocks = 1;
-  void ***rcvHalos      = new void**[nblocks];
-  int *numHalosReceived = new int[nblocks];
-  DIY_Exchange_neighbors(
-      0, rcvHalos,numHalosReceived,1.0,&cosmotk::Halo::CreateDIYHaloInfoType);
-
-  HaloInfo *rcvHaloItem = NULL;
-  for(int i=0; i < nblocks; ++i)
-    {
-    for( int j=0; j < numHalosReceived[i]; ++j)
-      {
-      rcvHaloItem = (struct HaloInfo *)rcvHalos[i][j];
-      cosmotk::Halo h(rcvHaloItem);
-      RcvHalos[ h.GetHashCode() ] = h;
-      } // END for all received halos of this block
-    } // END for all blocks
-
-  // clean up
-  DIY_Flush_neighbors(
-      0, rcvHalos,numHalosReceived,&cosmotk::Halo::CreateDIYHaloInfoType);
-  delete [] numHalosReceived;
-}
-
-//------------------------------------------------------------------------------
-void ExchangeHaloParticles(std::vector<cosmotk::Halo> &halos)
-{
-  std::vector<HaloParticle> haloParticles;
-  for(int hidx=0; hidx < halos.size(); ++hidx)
-    {
-    haloParticles.resize(0);
-    halos[hidx].GetHaloParticlesVector(haloParticles);
-    for( int pIdx=0; pIdx < haloParticles.size(); ++pIdx )
-      {
-      DIY_Enqueue_item_all(
-          0,0,
-          (void *)&haloParticles[pIdx],
-          NULL,
-          sizeof(HaloParticle),
-          NULL);
-      } // END for all particles within the halo
-    } // END for all halos
-
-  int nblocks = 1;
-  void ***rcvHalos = new void**[nblocks];
-  int *numHalosReceived = new int[nblocks];
-  DIY_Exchange_neighbors(
-      0,rcvHalos,numHalosReceived,1.0,
-      &cosmotk::Halo::CreateDIYHaloParticleType);
-
-  HaloParticle *haloParticle = NULL;
-  for(int i=0; i < nblocks; ++i)
-    {
-    for(int j=0; j < numHalosReceived[i]; ++j)
-      {
-      haloParticle = (struct HaloParticle*)rcvHalos[i][j];
-      std::string hashCode =
-          cosmotk::Halo::GetHashCodeForHalo(
-              haloParticle->Tag,haloParticle->TimeStep);
-      assert(RcvHalos.find(hashCode)!=RcvHalos.end());
-      RcvHalos[hashCode].ParticleIds.insert(haloParticle->HaloParticleID);
-      } // END for all received halos of this block
-    } // END for all blocks
-
-  // clean up
-  DIY_Flush_neighbors(
-      0,rcvHalos,numHalosReceived,&cosmotk::Halo::CreateDIYHaloParticleType);
-  delete [] numHalosReceived;
-}
-
-//------------------------------------------------------------------------------
 void ExchangeHalos(std::vector< cosmotk::Halo > &halos )
 {
-  PRINT("- Exchange halo information...");
-  ExchangeHaloInfo( halos );
-  PRINTLN("[DONE]");
+  cosmotk::HaloNeighborExchange *HaloExchanger =
+      new cosmotk::HaloNeighborExchange();
 
-  PRINT("- Exchange halo particles...");
-  ExchangeHaloParticles( halos );
-  PRINTLN("[DONE]");
+  HaloExchanger->SetCommunicator(comm);
+
+  std::vector< cosmotk::Halo > exchangedHalos;
+  HaloExchanger->ExchangeHalos( &halos[0],halos.size(),RcvHalos);
+
+  delete HaloExchanger;
 }
 
 //------------------------------------------------------------------------------
