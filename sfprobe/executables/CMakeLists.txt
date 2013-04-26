@@ -20,9 +20,15 @@ if(${BUILD_VTK_PROGRAMS})
       probe.cxx
       )
 
-  set(cuda_executables
-      cudaProbe.cu
-      )
+  if(${ENABLE_DAX})
+    set(executables
+        ${executables}
+        tbbProbe.cxx
+        )
+    set(cuda_executables
+        cudaProbe.cu
+        )
+  endif()
 
   set(RequiredLibs
       ${RequiredLibs}
