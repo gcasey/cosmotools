@@ -229,7 +229,10 @@ void ParallelHaloMergerTree::HandleDeathEvents(
   // STEP 3: Enqueue zombie halos to exchange
   for(unsigned int idx=0; idx < zombieidx.size(); ++idx)
     {
-    Halo* zombie = &this->TemporalHalos[this->CurrentIdx][idx];
+    Halo* zombie = &this->TemporalHalos[this->CurrentIdx][zombieidx[idx]];
+    assert("pre: not marked as zombie!" &&
+           HaloType::IsType(zombie->HaloTypeMask,HaloType::ZOMBIE));
+    assert("pre: zombie count >= 1" && (zombie->Count >= 1) );
     this->NeighborExchange->EnqueueHalo( zombie );
     }
 
