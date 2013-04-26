@@ -25,7 +25,6 @@ set(cosmopackages
     sfprobe
     halofinder
     tess
-    mergertree
     )
 
 ## Sets whether or not the simulation interface will be built
