@@ -4,6 +4,10 @@
 #include "StructureFormationProbe.h"
 #include "VirtualGrid.h"
 
+#ifndef __APPLE__
+  #include <sys/time.h>
+#endif
+
 #ifdef USEDAX
 
 // we need to work around a bug that we can't determine if we are using cuda
