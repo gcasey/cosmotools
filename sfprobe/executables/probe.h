@@ -335,7 +335,6 @@ void WriteCaustics(
 void WriteUniformProbeData(
     cosmologytools::UniformProber &up, const int timestep)
 {
-  assert("pre: uniform grid should not be NULL" && (ug != NULL) );
 
   double origin[3]= {up.GetOrigin()[0],up.GetOrigin()[1],up.GetOrigin()[2]};
   double spacing[3]= {up.GetSpacing()[0],up.GetSpacing()[1],up.GetSpacing()[2]};
