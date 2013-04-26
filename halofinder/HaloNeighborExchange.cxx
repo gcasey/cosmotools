@@ -35,6 +35,7 @@ void HaloNeighborExchange::EnqueueHalo(Halo* h)
 {
   assert("pre: input halo is NULL!" && (h != NULL) );
   this->EnqueuedHalos.push_back( *h );
+
 }
 
 //------------------------------------------------------------------------------
@@ -64,7 +65,8 @@ void HaloNeighborExchange::ExchangeHalos(
 
   // STEP 1: Allocate output vector size to store both local and neighboring
   // halos.
-  exchangedHalos.resize(N+neighborHalos.size());
+  int size = (inclusive)? N+neighborHalos.size() : neighborHalos.size();
+  exchangedHalos.resize(size);
 
   // STEP 2: Put local halos in the output vector iff inclusive
   int haloIdx = 0;
