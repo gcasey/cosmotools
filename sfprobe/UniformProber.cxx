@@ -62,6 +62,7 @@ void InvokeMapPointsToGrid(
 #endif
 
 namespace cosmologytools {
+
 UniformProber::UniformProber( REAL origin[3], REAL spacing[3], INTEGER ext[6] )
 {
   this->Origin[0] = origin[0];
@@ -83,7 +84,25 @@ UniformProber::UniformProber( REAL origin[3], REAL spacing[3], INTEGER ext[6] )
   this->NumberOfPoints =
     cosmologytools::ExtentUtilities::ComputeNumberOfNodes(ext);
 
+  this->NumberOfStreams = new INTEGER[this->NumberOfPoints];
+  this->Rho = new REAL[this->NumberOfPoints];
 }
+
+UniformProber::~UniformProber()
+{
+  if(this->NumberOfStreams)
+    {
+    delete[] this->NumberOfStreams;
+    this->NumberOfStreams  = NULL;
+    }
+
+  if(this->Rho)
+    {
+    delete[] this->Rho;
+    this->Rho = NULL;
+    }
+}
+
 void UniformProber::ComputePoint(INTEGER index, REAL xyz[3] )
 {
   INTEGER ijk[3];
@@ -284,7 +303,7 @@ void UniformProber::RunDaxProber( cosmologytools::StructureFormationProbe * prob
           streamsHandle,
           rhoHandle);
 
-      //STEP 8 C:
+      //STEP 8 D:
       //Write the resulting rho and num streams back to the host vectors
       typedef std::vector<dax::Id>::const_iterator iterator;
       const dax::Id* streamIt = streamsHandle.GetPortalConstControl().GetIteratorBegin();

@@ -333,31 +333,33 @@ void WriteCaustics(
  * @brief Writes the uniform probe data to a file
  */
 void WriteUniformProbeData(
-    cosmologytools::UniformProber &up, const int timestep)
+    cosmologytools::UniformProber *up, const int timestep)
 {
-
-  double origin[3]= {up.GetOrigin()[0],up.GetOrigin()[1],up.GetOrigin()[2]};
-  double spacing[3]= {up.GetSpacing()[0],up.GetSpacing()[1],up.GetSpacing()[2]};
-  // int ext[6]= {up.GetExtents()[0],up.GetExtents()[1],up.GetExtents()[2],
-  //              up.GetExtents()[3],up.GetExtents()[4],up.GetExtents()[5]};
+  assert("pre: uniform prober should not be NULL" && (up != NULL) );
+  double origin[3]= {up->GetOrigin()[0],
+                     up->GetOrigin()[1],
+                     up->GetOrigin()[2]};
+  double spacing[3]= {up->GetSpacing()[0],
+                      up->GetSpacing()[1],
+                      up->GetSpacing()[2]};
 
   vtkNew<vtkUniformGrid> grid;
   grid->SetOrigin(origin);
   grid->SetSpacing(spacing);
-  grid->SetExtent(up.GetExtents());
+  grid->SetExtent(up->GetExtents());
 
   vtkNew<vtkIntArray> numberOfStreams;
   numberOfStreams->SetName("NumberOfStreams");
   numberOfStreams->SetNumberOfComponents( 1 );
-  numberOfStreams->SetArray(up.GetNumberOfStreams(),
-                            up.GetNumberOfPoints(),
+  numberOfStreams->SetArray(up->GetNumberOfStreams(),
+                            up->GetNumberOfPoints(),
                             1);
 
   vtkNew<vtkFloatArray> rho;
   rho->SetName("rho");
   rho->SetNumberOfComponents( 1 );
-  rho->SetArray(up.GetRho(),
-                up.GetNumberOfPoints(),
+  rho->SetArray(up->GetRho(),
+                up->GetNumberOfPoints(),
                 1);
 
   grid->GetPointData()->AddArray( numberOfStreams.GetPointer() );
@@ -403,7 +405,8 @@ void WriteProbedGridData(
     }
 
   cosmologytools::UniformProber uniformProber(origin,spacing,ext);
-  WriteUniformProbeData(uniformProber, timestep);
+  uniformProber.RunProber(p);
+  WriteUniformProbeData(&uniformProber, timestep);
 }
 
 //=============================================================================
@@ -419,6 +422,7 @@ int probe(int argc, char **argv)
   if( argc != 6)
     {
     std::cerr << "USAGE: ./probe <basedir> <rL> <ndim> <ndim2> <fringe>\n";
+    return 1;
     }
 
   Parameters.BaseDir = std::string(argv[1]);

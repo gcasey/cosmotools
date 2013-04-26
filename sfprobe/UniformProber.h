@@ -20,6 +20,8 @@ public:
   //probe the structure formation with the given uniform grid information
   UniformProber( REAL origin[3], REAL spacing[3], INTEGER ext[6] );
 
+  virtual ~UniformProber();
+
   /**
    * @brief Executes the probing on the structureFormationProbe
       using the all the points in the uniform grid
@@ -29,12 +31,12 @@ public:
   /**
    * @brief Get macro for Number of Streams
    */
-  GetMacro(NumberOfStreams,INTEGER*);
+  virtual INTEGER* GetNumberOfStreams(){ return this->NumberOfStreams; }
 
   /**
    * @brief Get macro for Rho values
    */
-  GetMacro(Rho,REAL*);
+  virtual REAL* GetRho(){ return this->Rho; }
 
   /**
    * @brief Get the number of points that the uniform prober has
