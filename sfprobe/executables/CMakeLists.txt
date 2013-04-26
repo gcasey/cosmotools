@@ -12,7 +12,7 @@ set(RequiredLibs
 ## Add VTK executables
 if(${BUILD_VTK_PROGRAMS})
 
-  set(headers
+  set(shared_srcs
       probe.h
       )
   set(executables
@@ -25,8 +25,9 @@ if(${BUILD_VTK_PROGRAMS})
         ${executables}
         tbbProbe.cxx
         )
+
     set(cuda_executables
-        cudaProbe.cu
+        cudaProbe.cxx
         )
   endif()
 
@@ -40,14 +41,15 @@ endif()
 
 foreach(exeFile ${executables})
   get_filename_component(exe ${exeFile} NAME_WE)
-  add_executable(${exe} ${exeFile})
+  add_executable(${exe} ${exeFile} ${shared_srcs})
   target_link_libraries(${exe} ${RequiredLibs})
 endforeach()
 
 if(Dax_Cuda_FOUND)
   foreach(exeFile ${cuda_executables})
     get_filename_component(exe ${exeFile} NAME_WE)
-    cuda_add_executable(${exe} ${exeFile})
-    target_link_libraries(${exe} ${RequiredLibs})
+    add_executable(${exe} ${exeFile} ${shared_srcs})
+    set_target_properties(${exe} PROPERTIES COMPILE_FLAGS -DDAX_CUDA)
+    target_link_libraries(${exe} cuda_sfprobe ${MPI_C_LIBRARIES} ${RequiredLibs})
   endforeach()
 endif()

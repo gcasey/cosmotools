@@ -3,8 +3,8 @@
 #ifdef USEDAX
 # undef USEDAX
 #endif
-#include "probe.h"
 
+#include "probe.h"
 
 int main(int argc, char **argv)
 {

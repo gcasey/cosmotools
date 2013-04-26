@@ -19,9 +19,24 @@ set(SOURCES
     SimpleMesh.cxx
     StructureFormationProbe.cxx
     TetrahedronUtilities.cxx
-    UniformProber.cxx
     VirtualGrid.cxx
+    UniformProber.cxx
     )
+
+if(ENABLE_DAX AND Dax_Cuda_FOUND)
+    set(CUDA_SOURCES
+        ExtentPartitioner.cxx
+        ExtentUtilities.cxx
+        LagrangianTesselator.cxx
+        ParallelStructureFormationProbe.cxx
+        SimpleMesh.cxx
+        StructureFormationProbe.cxx
+        TetrahedronUtilities.cxx
+        VirtualGrid.cxx
+        UniformProber.cu
+        )
+    cuda_add_library(cuda_sfprobe ${CUDA_SOURCES})
+endif()
 
 ## Move header files to include directory in the build tree
 file(GLOB HEADERS *.h)
@@ -32,12 +47,12 @@ endforeach()
 
 ## Specify global sources for this project
 GetPackageSources(sfprobe ${PROJECT_SOURCE_DIR} "${SOURCES}")
-
 if(BUILD_SHARED_LIBS)
  add_library(sfprobe SHARED ${SOURCES})
 else()
  add_library(sfprobe STATIC ${SOURCES})
 endif()
+
 target_link_libraries(sfprobe ${MPI_C_LIBRARIES})
 
 add_subdirectory(executables)

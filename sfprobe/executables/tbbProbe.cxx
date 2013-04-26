@@ -1,9 +1,4 @@
 
-//all we have to do is define the adapter here
-#ifdef USEDAX
-#  define DAX_DEVICE_ADAPTER DAX_DEVICE_ADAPTER_TBB
-#endif
-
 //needed to force the number of tbb threads to a give number
 #include <tbb/task_scheduler_init.h>
 

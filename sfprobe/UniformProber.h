@@ -22,11 +22,12 @@ public:
 
   virtual ~UniformProber();
 
-  /**
+/**
    * @brief Executes the probing on the structureFormationProbe
       using the all the points in the uniform grid
    */
-  void RunProber( cosmologytools::StructureFormationProbe * probe );
+  void RunProber(cosmologytools::StructureFormationProbe * probe,
+                       int timestep);
 
   /**
    * @brief Get macro for Number of Streams
@@ -59,8 +60,10 @@ protected:
 private:
   void ComputePoint(INTEGER index, REAL xyz[3]);
 
-  void RunSerialProber(cosmologytools::StructureFormationProbe * probe);
-  void RunDaxProber(cosmologytools::StructureFormationProbe * probe);
+  void RunSerialProber(cosmologytools::StructureFormationProbe * probe,
+                       int timestep);
+  void RunDaxProber(cosmologytools::StructureFormationProbe * probe,
+                    int timestep);
 
   DISABLE_COPY_AND_ASSIGNMENT(UniformProber);
 };

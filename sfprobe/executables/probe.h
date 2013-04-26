@@ -32,18 +32,14 @@
 //------------------------------------------------------------------------------
 //  GLOBAL DEFINITIONS
 //------------------------------------------------------------------------------
-int NSTEPS = 1;
+int NSTEPS = 5;
 std::string files[]= {
- "initial.z20.cosmo"
+"initial.z20.cosmo",
+"initial.z10.cosmo",
+"initial.z5.cosmo",
+"initial.z2.cosmo",
+"initial.z0.cosmo"
 };
-
-//std::string files[]= {
-// "initial.z20.cosmo",
-// "initial.z10.cosmo",
-// "initial.z5.cosmo",
-// "initial.z2.cosmo",
-// "initial.z0.cosmo"
-//};
 
 /**
  * @brief A simple object to store program parameters
@@ -405,7 +401,8 @@ void WriteProbedGridData(
     }
 
   cosmologytools::UniformProber uniformProber(origin,spacing,ext);
-  uniformProber.RunProber(p);
+  uniformProber.RunProber(p,timestep);
+
   WriteUniformProbeData(&uniformProber, timestep);
 }
 

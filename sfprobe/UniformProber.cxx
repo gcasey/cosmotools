@@ -5,7 +5,16 @@
 #include "VirtualGrid.h"
 
 #ifdef USEDAX
- // Dax includes
+
+// we need to work around a bug that we can't determine if we are using cuda
+// or tbb define since that is set as a define in the tbbprobe or cuda probe
+// but since each is their own executable we are going to check to see if
+// CUDA or tbb have been enabled to pick the correct device adapter
+#  ifndef DAX_DEVICE_ADAPTER
+#    define DAX_DEVICE_ADAPTER DAX_DEVICE_ADAPTER_TBB
+#  endif
+
+// Dax includes
 #  include "dax/ConstArray.h"
 #  include "dax/MapPointsToGrid.h"
 #  include "dax/MapTetsToPoints.h"
@@ -114,17 +123,24 @@ void UniformProber::ComputePoint(INTEGER index, REAL xyz[3] )
   xyz[0] = this->Origin[2] + this->Spacing[2]* ijk[2];
 }
 
-void UniformProber::RunProber( cosmologytools::StructureFormationProbe * probe )
+void UniformProber::RunProber( cosmologytools::StructureFormationProbe * probe,
+                               int timestep )
 {
-#ifndef USEDAX
-  this->RunSerialProber(probe);
+#ifdef USEDAX
+  this->RunDaxProber(probe,timestep);
 #else
-  this->RunDaxProber(probe);
+  this->RunSerialProber(probe,timestep);
 #endif
 }
 
-void UniformProber::RunSerialProber( cosmologytools::StructureFormationProbe * probe )
+void UniformProber::RunSerialProber( cosmologytools::StructureFormationProbe * probe,
+                                     int timestep  )
 {
+  timeval startTime;
+  timeval endTime;
+
+  gettimeofday(&startTime, NULL);
+
   #pragma omp parallel for
   for(int pntIdx=0; pntIdx < this->NumberOfPoints; ++pntIdx )
     {
@@ -139,17 +155,27 @@ void UniformProber::RunSerialProber( cosmologytools::StructureFormationProbe * p
     this->Rho[ pntIdx ] = lrho;
     } // END for all points
 
-  //Statistics:
-  std::cout << "NumPoints probed=" << probe->GetNumPointsProbed();
-  std::cout << std::endl;
-  std::cout << "NumTets checked=" << probe->GetNumTetsChecked();
-  std::cout << std::endl;
-  std::cout << "Avg. NumTets per point=";
-  std::cout << probe->GetNumTetsChecked()/probe->GetNumPointsProbed();
-  std::cout << std::endl;
+  gettimeofday(&endTime, NULL);
+
+  REAL elapsedTime;
+  elapsedTime = endTime.tv_sec - startTime.tv_sec;
+  elapsedTime += ((endTime.tv_usec - startTime.tv_usec)/REAL(1000000));
+
+  //write out the timing results
+  std::cout << std::endl << "Serial Probe Time: " << elapsedTime << ", " << timestep  << std::endl;
+
+  // //Statistics:
+  // std::cout << "NumPoints probed=" << probe->GetNumPointsProbed();
+  // std::cout << std::endl;
+  // std::cout << "NumTets checked=" << probe->GetNumTetsChecked();
+  // std::cout << std::endl;
+  // std::cout << "Avg. NumTets per point=";
+  // std::cout << probe->GetNumTetsChecked()/probe->GetNumPointsProbed();
+  // std::cout << std::endl;
 }
 
-void UniformProber::RunDaxProber( cosmologytools::StructureFormationProbe * probe )
+void UniformProber::RunDaxProber( cosmologytools::StructureFormationProbe * probe,
+                                  int timestep )
 {
 #ifdef USEDAX
   dax::cont::Scheduler<> scheduler;
@@ -317,6 +343,10 @@ void UniformProber::RunDaxProber( cosmologytools::StructureFormationProbe * prob
         }
       }
     }
+
+  //write out the timing results
+  std::cout << std::endl << "Dax Probe Time: " << timer.GetElapsedTime() << ", " << timestep << std::endl;
+
 #endif
 }
 
