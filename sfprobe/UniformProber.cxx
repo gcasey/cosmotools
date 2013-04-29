@@ -127,16 +127,6 @@ void UniformProber::ComputePoint(INTEGER index, REAL xyz[3] )
   xyz[0] = this->Origin[2] + this->Spacing[2]* ijk[2];
 }
 
-void UniformProber::RunProber( cosmologytools::StructureFormationProbe * probe,
-                               int timestep )
-{
-#ifdef USEDAX
-  this->RunDaxProber(probe,timestep);
-#else
-  this->RunSerialProber(probe,timestep);
-#endif
-}
-
 void UniformProber::RunSerialProber( cosmologytools::StructureFormationProbe * probe,
                                      int timestep  )
 {
