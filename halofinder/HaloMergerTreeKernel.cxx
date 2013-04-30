@@ -88,6 +88,8 @@ void HaloMergerTreeKernel::ComputeMergerTree( )
   this->MatrixColumnSum.resize(ncol,0);
 
   // STEP 1: Initialize row-sum and column-sum
+  std::fill(
+      this->HaloSimilarityMatrix.begin(),this->HaloSimilarityMatrix.end(),0);
   std::fill(this->MatrixRowSum.begin(),this->MatrixRowSum.end(),0);
   std::fill(this->MatrixColumnSum.begin(),this->MatrixColumnSum.end(),0);
 
