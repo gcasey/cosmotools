@@ -84,11 +84,11 @@ void ParallelHaloMergerTree::UpdateMergerTree(
           this->TemporalHalos[this->PreviousIdx].size(),
       t2,&this->TemporalHalos[this->CurrentIdx][0],
           this->TemporalHalos[this->CurrentIdx].size());
-  this->PrintTemporalHalos();
+  //this->PrintTemporalHalos();
 
   // STEP 2: Compute merger-tree
   this->ComputeMergerTree();
-  this->PrintMatrix( this->GetRank() );
+  //this->PrintMatrix( this->GetRank() );
 
   // STEP 3: Update the halo-evolution tree
   this->UpdateHaloEvolutionTree( t );
