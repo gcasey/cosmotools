@@ -4,7 +4,7 @@
 #include "StructureFormationProbe.h"
 #include "VirtualGrid.h"
 
-#ifndef __APPLE__
+#ifndef __WIN32
   #include <sys/time.h>
 #endif
 
