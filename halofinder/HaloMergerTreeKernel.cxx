@@ -232,7 +232,8 @@ void HaloMergerTreeKernel::DetectEvent(
     int overlap = this->HaloSimilarityMatrix[row*ncol+col];
 
     // STEP 2: Check if this is a new halo
-    if( this->MatrixColumnSum[col] == 0)
+    if( !HaloType::IsType(currHalo->HaloTypeMask,HaloType::GHOST) &&
+         (this->MatrixColumnSum[col]==0) )
       {
       // This is a birth of a new halo that is not related to any halos from
       // the previous time-step
