@@ -97,9 +97,6 @@ void HaloMergerTreeKernel::ComputeMergerTree( )
   std::fill(this->MatrixRowSum.begin(),this->MatrixRowSum.end(),0);
   std::fill(this->MatrixColumnSum.begin(),this->MatrixColumnSum.end(),0);
 
-//  PRINTVECTOR("RowSum", this->MatrixRowSum, nrows);
-//  PRINTVECTOR("ColSum", this->MatrixColumnSum, ncol);
-
   // STEP 2: Compute similarity matrix
   for( int row=0; row < nrows; ++row )
     {
@@ -307,10 +304,11 @@ void HaloMergerTreeKernel::DetectEvent(
 }
 
 //------------------------------------------------------------------------------
-void HaloMergerTreeKernel::PrintMatrix()
+void HaloMergerTreeKernel::PrintMatrix(int rank)
 {
   std::ostringstream oss;
-  oss << "Matrix_" << this->Timesteps[0] << "-" << this->Timesteps[1];
+  oss << "Rank-"   << rank
+      << "Matrix_" << this->Timesteps[0] << "-" << this->Timesteps[1];
 
   std::ofstream ofs;
   ofs.open( oss.str().c_str() );

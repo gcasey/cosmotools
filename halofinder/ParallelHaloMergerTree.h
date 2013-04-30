@@ -40,6 +40,17 @@ public:
   GetNSetMacro(Communicator,MPI_Comm);
 
   /**
+   * @brief Returns rank of this process.
+   * @return r the rank of this process.
+   */
+  int GetRank()
+    {
+    int rank;
+    MPI_Comm_rank(this->Communicator,&rank);
+    return( rank );
+    };
+
+  /**
    * @brief Given two sets of halos at different time-steps, this method
    * updates the merger-tree, represented by a user-supplied halo evolution
    * tree instance.

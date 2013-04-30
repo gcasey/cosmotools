@@ -268,9 +268,10 @@ protected:
 
   /**
    * @brief Prints the current instance of the similarity matrix.
+   * @param rank optional parameter used to
    * @note Used primarily for debugging.
    */
-  void PrintMatrix();
+  void PrintMatrix(int rank=0);
 
 private:
   DISABLE_COPY_AND_ASSIGNMENT(HaloMergerTreeKernel);
