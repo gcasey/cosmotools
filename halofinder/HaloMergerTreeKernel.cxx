@@ -161,11 +161,14 @@ void HaloMergerTreeKernel::UpdateHaloEvolutionTree(
     if(!mergerTree->HasNode(prevHalo->GetHashCode()))
       {
       rowEvent = MergerTreeEvent::BIRTH;
-      ++this->NumberOfBirths;
-      unsigned char bitmask;
-      MergerTreeEvent::Reset(bitmask);
-      MergerTreeEvent::SetEvent(bitmask,MergerTreeEvent::BIRTH);
-      this->InsertHalo(prevHalo,bitmask,mergerTree);
+      if( !this->IsHaloGhost(prevHalo) )
+        {
+        ++this->NumberOfBirths;
+        unsigned char bitmask;
+        MergerTreeEvent::Reset(bitmask);
+        MergerTreeEvent::SetEvent(bitmask,MergerTreeEvent::BIRTH);
+        this->InsertHalo(prevHalo,bitmask,mergerTree);
+        }
       }
 
     // STEP 2: Check if the halo in the previous time-step died in the next
@@ -173,27 +176,37 @@ void HaloMergerTreeKernel::UpdateHaloEvolutionTree(
     if(this->MatrixRowSum[row] == 0)
       {
       rowEvent = MergerTreeEvent::DEATH;
-      this->DeadHalos.insert(row);
-      continue;
+      if( !this->IsHaloGhost(prevHalo) )
+        {
+        this->DeadHalos.insert(row);
+        continue;
+        }
+
       }
+
     // STEP 3: Check if this is a continuation or rebirth
     else if( this->MatrixRowSum[row] == 1)
       {
       // Do nothing here, fall through to detect event in the next time-step
       rowEvent = MergerTreeEvent::CONTINUATION;
       }
-    // STEP 3: Check if the halo is split in the next time-step
+
+    // STEP 4: Check if the halo is split in the next time-step
     else if(this->MatrixRowSum[row]  > 1)
       {
       rowEvent = MergerTreeEvent::SPLIT;
-      this->SplitHalos.insert(row);
-      }
-    else
-      {
-      assert("ERROR: Code should not reach here!" && false);
+      if( !this->IsHaloGhost(prevHalo) )
+        {
+        this->SplitHalos.insert(row);
+        }
       }
 
-    // STEP 4: Detect event for the halo of the previous time-step, to the
+    else
+      {
+      assert( "ERROR: Code should not reach here!" && false);
+      }
+
+    // STEP 5: Detect event for the halo of the previous time-step, to the
     // current timestep.
     this->DetectEvent(row,rowEvent,prevHalo,mergerTree);
     } // END for all rows
@@ -232,8 +245,7 @@ void HaloMergerTreeKernel::DetectEvent(
     int overlap = this->HaloSimilarityMatrix[row*ncol+col];
 
     // STEP 2: Check if this is a new halo
-    if( !HaloType::IsType(currHalo->HaloTypeMask,HaloType::GHOST) &&
-         (this->MatrixColumnSum[col]==0) )
+    if( !this->IsHaloGhost(currHalo) && (this->MatrixColumnSum[col]==0) )
       {
       // This is a birth of a new halo that is not related to any halos from
       // the previous time-step
@@ -244,6 +256,7 @@ void HaloMergerTreeKernel::DetectEvent(
       this->InsertHalo(currHalo,bitmask,mergerTree);
       ProcessedColumns.insert(col);
       }
+
     // STEP 3: Check if the majority rule passes. If it passes, detect the
     // event type and insert the node to the tree, linking it to the halo
     // from the previous time-step.
@@ -261,7 +274,10 @@ void HaloMergerTreeKernel::DetectEvent(
           if( HaloType::IsType(prevHalo->HaloTypeMask,HaloType::ZOMBIE) )
             {
             MergerTreeEvent::SetEvent(bitmask,MergerTreeEvent::REBIRTH);
-            ++this->NumberOfRebirths;
+            if(!this->IsHaloGhost(currHalo))
+              {
+              ++this->NumberOfRebirths;
+              }
             }
 
           if( rowEvent == MergerTreeEvent::SPLIT )
@@ -269,7 +285,11 @@ void HaloMergerTreeKernel::DetectEvent(
             MergerTreeEvent::SetEvent(bitmask,MergerTreeEvent::SPLIT);
             }
 
-          this->InsertHalo(currHalo,bitmask,mergerTree);
+          if( !this->IsHaloGhost(currHalo) )
+            {
+            this->InsertHalo(currHalo,bitmask,mergerTree);
+            }
+
           mergerTree->LinkHalos(prevHalo,currHalo);
           this->ProcessedColumns.insert( col );
           }
@@ -292,7 +312,8 @@ void HaloMergerTreeKernel::DetectEvent(
             MergerTreeEvent::SetEvent(bitmask,MergerTreeEvent::SPLIT);
             }
 
-          if( !mergerTree->HasNode(currHalo->GetHashCode()))
+          if( !this->IsHaloGhost(currHalo) &&
+              !mergerTree->HasNode(currHalo->GetHashCode()))
             {
             this->InsertHalo(currHalo,bitmask,mergerTree);
             }

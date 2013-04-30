@@ -188,6 +188,21 @@ protected:
     };
 
   /**
+   * @brief Checks if the given halo is a ghost halo.
+   * @param haloPtr pointer to the halo in query.
+   * @return status true if the halo is a ghost, else, false.
+   */
+  bool IsHaloGhost(Halo *haloPtr)
+    {
+    assert("pre: input halo is NULL!" && (haloPtr != NULL) );
+    if(HaloType::IsType(haloPtr->HaloTypeMask,HaloType::GHOST))
+      {
+      return true;
+      }
+    return false;
+    };
+
+  /**
    * @brief Checks if the given ID corresponds to an index in the similarity
    * matrix, corresponding to a halo that has been designated as dead.
    * @param idx the index of the halo in query.
