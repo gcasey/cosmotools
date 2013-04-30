@@ -152,6 +152,11 @@ protected:
     */
    void HandleDeathEvents(DistributedHaloEvolutionTree *t);
 
+   /**
+    * @brief Prints the temporal halos stored in each process.
+    * @note Used for debugging.
+    */
+   void PrintTemporalHalos();
 
 private:
    DISABLE_COPY_AND_ASSIGNMENT(ParallelHaloMergerTree);

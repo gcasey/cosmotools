@@ -84,6 +84,7 @@ void ParallelHaloMergerTree::UpdateMergerTree(
           this->TemporalHalos[this->PreviousIdx].size(),
       t2,&this->TemporalHalos[this->CurrentIdx][0],
           this->TemporalHalos[this->CurrentIdx].size());
+  this->PrintTemporalHalos();
 
   // STEP 2: Compute merger-tree
   this->ComputeMergerTree();
@@ -311,6 +312,48 @@ void ParallelHaloMergerTree::AssignGlobalIds(
   // STEP 3: Update the total number of nodes
   this->NumberOfNodes = lastGlobalIdx+1;
 
+}
+
+//------------------------------------------------------------------------------
+void ParallelHaloMergerTree::PrintTemporalHalos()
+{
+  std::ostringstream oss;
+
+  oss << "# " << this->Timesteps[0] << " "
+      << this->TemporalHalos[0].size() << std::endl;
+  for(unsigned int idx=0; idx < this->TemporalHalos[0].size(); ++idx)
+    {
+    oss << this->TemporalHalos[0][idx].GlobalID;
+    if( HaloType::IsType(
+        this->TemporalHalos[0][idx].HaloTypeMask,HaloType::GHOST))
+      {
+      oss << "(G)";
+      }
+    oss << "\t";
+    } // END for
+  oss << std::endl;
+
+  oss << "# " << this->Timesteps[1] << " "
+      << this->TemporalHalos[1].size() << std::endl;
+  for(unsigned int idx=0; idx < this->TemporalHalos[1].size(); ++idx)
+    {
+    oss << this->TemporalHalos[1][idx].GlobalID;
+    if( HaloType::IsType(
+        this->TemporalHalos[1][idx].HaloTypeMask,HaloType::GHOST))
+      {
+      oss << "(G)";
+      }
+    oss << "\t";
+    } // END for
+  oss << std::endl;
+
+  std::ostringstream fileStream;
+  fileStream << "Rank-" << this->GetRank() << "-TemporalHalos.dat";
+
+  std::ofstream ofs;
+  ofs.open(fileStream.str().c_str());
+  ofs << oss.str();
+  ofs.close();
 }
 
 //------------------------------------------------------------------------------
