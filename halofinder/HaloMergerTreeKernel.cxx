@@ -50,10 +50,7 @@ void HaloMergerTreeKernel::RegisterHalos(
     const int t2, Halo *haloSet2, const int N)
 {
   assert("pre: t1 < t2" && (t1 < t2) );
-  assert("pre: halo set 1 should not be empty" && (M >= 1) );
-  assert("pre: halo set 2 should not be empty" && (N >= 1) );
-  assert("pre: null haloset!" && (haloSet1 != NULL) );
-  assert("pre: null haloset!" && (haloSet2 != NULL) );
+
 
   this->Timesteps[0] = t1;
   this->Timesteps[1] = t2;
@@ -76,9 +73,6 @@ void HaloMergerTreeKernel::RegisterHalos(
 //------------------------------------------------------------------------------
 void HaloMergerTreeKernel::ComputeMergerTree( )
 {
-  assert("pre: halos != NULL" && (this->Halos1 != NULL) );
-  assert("pre: halos != NULL" && (this->Halos2 != NULL) );
-
   // STEP 0: Initialize data-structures
   this->DeadHalos.clear();
   this->SplitHalos.clear();
