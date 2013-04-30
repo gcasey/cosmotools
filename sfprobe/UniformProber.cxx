@@ -4,7 +4,7 @@
 #include "StructureFormationProbe.h"
 #include "VirtualGrid.h"
 
-#ifndef __APPLE__
+#ifndef __WIN32
   #include <sys/time.h>
 #endif
 
@@ -125,16 +125,6 @@ void UniformProber::ComputePoint(INTEGER index, REAL xyz[3] )
   xyz[0] = this->Origin[0] + this->Spacing[0]* ijk[0];
   xyz[0] = this->Origin[1] + this->Spacing[1]* ijk[1];
   xyz[0] = this->Origin[2] + this->Spacing[2]* ijk[2];
-}
-
-void UniformProber::RunProber( cosmologytools::StructureFormationProbe * probe,
-                               int timestep )
-{
-#ifdef USEDAX
-  this->RunDaxProber(probe,timestep);
-#else
-  this->RunSerialProber(probe,timestep);
-#endif
 }
 
 void UniformProber::RunSerialProber( cosmologytools::StructureFormationProbe * probe,

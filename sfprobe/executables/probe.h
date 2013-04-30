@@ -401,7 +401,12 @@ void WriteProbedGridData(
     }
 
   cosmologytools::UniformProber uniformProber(origin,spacing,ext);
-  uniformProber.RunProber(p,timestep);
+
+#ifdef USEDAX
+  uniformProber.RunDaxProber(p,timestep);
+#else
+  uniformProber.RunSerialProber(p,timestep);
+#endif
 
   WriteUniformProbeData(&uniformProber, timestep);
 }
