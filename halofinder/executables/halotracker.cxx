@@ -25,6 +25,7 @@
 #include "GenericIOReader.h"
 #include "Halo.h"
 #include "MPIUtilities.h"
+#include "TaskTimer.h"
 
 //==============================================================================
 // Global variables
@@ -200,7 +201,14 @@ int main(int argc, char **argv)
   cosmotk::MPIUtilities::Printf(
       comm,"- Read in analysis time-steps...[DONE]\n");
 
-  // STEP 6: Loop through all time-steps and track halos
+  // STEP 6: Initialize timers, and the timers vector.
+  // For each timestep, we measure the time to read the halos and the time
+  // to track them.
+  cosmotk::TaskTimer IOTimer,MergerTreeTimer;
+  std::vector<double> timers;
+  timers.resize(timesteps.size()*2,0.0);
+
+  // STEP 7: Loop through all time-steps and track halos
   HaloTracker = new cosmologytools::ForwardHaloTracker();
   HaloTracker->SetCommunicator( comm );
   HaloTracker->SetMergerTreeThreshold( MergerTreeThreshold );
@@ -211,7 +219,10 @@ int main(int argc, char **argv)
         comm,"t=%d, redshift=%f\n", timesteps[t], z);
 
     cosmotk::MPIUtilities::Printf(comm,"Read halos...");
+    IOTimer.StartTimer();
     ReadHalosAtTimeStep( timesteps[t] );
+    IOTimer.StopTimer();
+    timers[ t*2 ] = IOTimer.GetEllapsedTime();
     cosmotk::MPIUtilities::Printf(comm,"[DONE]\n");
 
     int numHalos = GetTotalNumberOfHalos();
@@ -219,7 +230,10 @@ int main(int argc, char **argv)
     NumHalosAtTimeStep[ timesteps[t] ] = numHalos;
 
     cosmotk::MPIUtilities::Printf(comm,"Track halos...");
+    MergerTreeTimer.StartTimer();
     HaloTracker->TrackHalos(timesteps[t],z,Halos);
+    MergerTreeTimer.StopTimer();
+    timers[ t*2+1 ] = MergerTreeTimer.GetEllapsedTime();
     cosmotk::MPIUtilities::Printf(comm,"[DONE]\n");
 
     cosmotk::MPIUtilities::Printf(
@@ -228,7 +242,7 @@ int main(int argc, char **argv)
     Halos.clear();
     } // END for all time-step
 
-  // STEP 7: Write the tree
+  // STEP 8: Write the tree
   std::ostringstream oss;
   oss << "mtree-" << rank << ".ascii";
   std::ofstream ofs;
@@ -237,7 +251,19 @@ int main(int argc, char **argv)
   ofs.close();
   //HaloTracker->WriteMergerTree("MergerTree");
 
-  // STEP 8: Write statistics
+  // STEP 9: Write timer statistics
+  oss.str("");
+  oss.clear();
+  oss << "Timing-" << rank << ".dat";
+  ofs.open(oss.str().c_str());
+  ofs << "I/O;MergerTree\n";
+  for(int t=0; t < timesteps.size(); ++t)
+    {
+	ofs << timers[t*2] << ";" << timers[t*2+1] << std::endl;
+    }
+  ofs.close();
+
+  // STEP 10: Write statistics
   WriteStatistics();
   MPI_Barrier(comm);
 
