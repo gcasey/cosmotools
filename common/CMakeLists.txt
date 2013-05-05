@@ -14,6 +14,7 @@ set(PACKAGE_common_LIBRARIES
 
 set(COMMON_SRC
     MPIUtilities.cxx
+    TaskTimer.cxx
     CACHE INTERNAL "package sources")
 
 ## Move header files to include directory in the build tree
