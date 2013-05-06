@@ -359,8 +359,12 @@ void ParallelHaloMergerTree::PrintTemporalHalos()
 //------------------------------------------------------------------------------
 int ParallelHaloMergerTree::GetTotalNumberOfHalos()
 {
-  int nHalos = this->TemporalHalos[ 0 ].size();
-  nHalos += this->TemporalHalos[ 1 ].size();
+  int nHalos = 0;
+  if( this->TemporalHalos.size()==2 )
+    {
+    nHalos += this->TemporalHalos[ 0 ].size();
+    nHalos += this->TemporalHalos[ 1 ].size();
+    }
 
   int nTotal = 0;
   MPI_Allreduce(&nHalos,&nTotal,1,MPI_INT,MPI_SUM,this->Communicator);
@@ -372,14 +376,16 @@ int ParallelHaloMergerTree::GetTotalNumberOfHalos()
 int ParallelHaloMergerTree::GetTotalNumberOfHaloParticles()
 {
  int nHaloParticles = 0;
-
- for(int t=0; t < 2; ++t )
+ if( this->TemporalHalos.size()==2)
    {
-   for(unsigned int hidx=0; hidx < this->TemporalHalos[t].size(); ++hidx)
+   for(int t=0; t < 2; ++t )
      {
-     nHaloParticles += this->TemporalHalos[t][hidx].ParticleIds.size();
-     } // END for all previous halos
-   } // END for all timesteps
+     for(unsigned int hidx=0; hidx < this->TemporalHalos[t].size(); ++hidx)
+       {
+       nHaloParticles += this->TemporalHalos[t][hidx].ParticleIds.size();
+       } // END for all previous halos
+     } // END for all timesteps
+   } // END if
 
  int nTotalHaloParticles = 0;
  MPI_Allreduce(
