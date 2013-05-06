@@ -105,7 +105,7 @@ void HaloNeighborExchange::ExchangeHaloInformation(
     {
     localHalos[ hidx ].GetHaloInfo( &hinfo );
     DIY_Enqueue_item_all(
-       0, 0, (void*)&hinfo, NULL, sizeof(HaloInfo), &PeriodicTransform);
+       0, 0, (void*)&hinfo, NULL, sizeof(HaloInfo), NULL);
     } // END for all local halos
 
   // STEP 1: Allocate receive buffer and exchange data with neighbors
@@ -151,7 +151,7 @@ void HaloNeighborExchange::ExchangeHaloParticles(
       {
       DIY_Enqueue_item_all(
          0, 0, (void*)&hparticles[pidx], NULL, sizeof(HaloParticle),
-         &PeriodicTransform);
+         NULL);
       } // END for all halo particles
     } // END for all halos
 
