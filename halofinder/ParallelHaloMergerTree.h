@@ -107,6 +107,20 @@ public:
   int GetTotalNumberOfDeaths();
 
   /**
+   * @brief Returns the total number of halos in memory across all ranks.
+   * @return nhalos total number of halos.
+   * @note This method is collective, all ranks must call it.
+   */
+  int GetTotalNumberOfHalos();
+
+  /**
+   * @brief Returns the total number of particles in memory across all ranks.
+   * @return nhpart total number of halos particles.
+   * @note This method is collective, all ranks must call it.
+   */
+  int GetTotalNumberOfHaloParticles();
+
+  /**
    * @brief Barrier synchronization among all processes
    */
   void Barrier() { MPI_Barrier(this->Communicator); };

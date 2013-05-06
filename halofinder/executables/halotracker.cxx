@@ -208,7 +208,13 @@ int main(int argc, char **argv)
   std::vector<double> timers;
   timers.resize(timesteps.size()*2,0.0);
 
-  // STEP 7: Loop through all time-steps and track halos
+  // STEP 7: Setup vector that holds memory usage information.
+  // memUsage[i*2] holds the number of halos at timestep i, while,
+  // memUsage[i*2+1] holds the number of halo particles at timestep i.
+  std::vector<int> memUsage;
+  memUsage.resize(timesteps.size()*2,0);
+
+  // STEP 8: Loop through all time-steps and track halos
   HaloTracker = new cosmologytools::ForwardHaloTracker();
   HaloTracker->SetCommunicator( comm );
   HaloTracker->SetMergerTreeThreshold( MergerTreeThreshold );
@@ -236,13 +242,17 @@ int main(int argc, char **argv)
     timers[ t*2+1 ] = MergerTreeTimer.GetEllapsedTime();
     cosmotk::MPIUtilities::Printf(comm,"[DONE]\n");
 
+    // Update memory usage statistics
+    memUsage[ t*2   ] = HaloTracker->GetTotalNumberOfHalos();
+    memUsage[ t*2+1 ] = HaloTracker->GetTotalNumberOfHaloParticles();
+
     cosmotk::MPIUtilities::Printf(
         comm,"\t - Processed timestep %d/%d SIM TSTEP=%d\n",
               t+1,timesteps.size(),timesteps[t]);
     Halos.clear();
     } // END for all time-step
 
-  // STEP 8: Write the tree
+  // STEP 9: Write the tree
   std::ostringstream oss;
   oss << "mtree-" << rank << ".ascii";
   std::ofstream ofs;
@@ -251,7 +261,9 @@ int main(int argc, char **argv)
   ofs.close();
   //HaloTracker->WriteMergerTree("MergerTree");
 
-  // STEP 9: Write timer statistics
+  // STEP 10: Write statistics
+
+  // STEP 10.1: timer statistics, each rank, writes each own
   oss.str("");
   oss.clear();
   oss << "Timing-" << rank << ".dat";
@@ -259,17 +271,27 @@ int main(int argc, char **argv)
   ofs << "I/O;MergerTree\n";
   for(int t=0; t < timesteps.size(); ++t)
     {
-	ofs << timers[t*2] << ";" << timers[t*2+1] << std::endl;
+  ofs << timers[t*2] << ";" << timers[t*2+1] << std::endl;
     }
   ofs.close();
 
-  // STEP 10: Write statistics
+  // STEP 10.2: memory usage statistics, written by rank 0 only
+  if( rank == 0 )
+    {
+    ofs.open("merger-tree-memory-usage.dat");
+    ofs << "NumberOfHalos;NumberOfHaloParticles\n";
+    for(int t=0; t < timesteps.size(); ++t)
+      {
+      ofs << memUsage[t*2] << ";" << memUsage[t*2+1] << std::endl;
+      } // END for all timesteps
+    } // END if rank
+
+  // STEP 11: Write statistics
   WriteStatistics();
   MPI_Barrier(comm);
 
-  // STEP 8: Finalize
+  // STEP 11: Finalize
   delete HaloTracker;
-
   DIY_Finalize();
   cosmotk::MPIUtilities::Printf(comm,"Finalize DIY...[DONE]\n");
   cosmotk::MPIUtilities::Printf(comm,"Finalize MPI...[DONE]\n");

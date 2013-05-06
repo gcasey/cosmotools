@@ -94,6 +94,22 @@ public:
       INTEGER tstep, REAL redshift, std::vector<cosmotk::Halo> &halos);
 
   /**
+   * @brief Get the total number of halos that are in memory across all ranks.
+   * @return nhalos total number of halos.
+   * @note Used to profile the memory requirements for the merger-tree.
+   * @note The method is collective, all ranks must call it.
+   */
+  int GetTotalNumberOfHalos();
+
+  /**
+   * @brief Get number of halo particles that are in memory across all ranks.
+   * @return nhaloparticles total number of halo particles.
+   * @note Used to profile the memory requirements for the merger-tree.
+   * @note The method is collective, all ranks must call it.
+   */
+  int GetTotalNumberOfHaloParticles();
+
+  /**
    * @brief Returns the number of merger-tree nodes at the given time-step.
    * @param tstep the time-step in query.
    * @return N the number of nodes in the tree.
