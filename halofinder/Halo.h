@@ -158,16 +158,22 @@ public:
           std::vector<HaloParticle> &haloParticles);
 
   /**
+   * @brief Returns the bytesize of the metadata for a halo instance.
+   * @return size number of bytes required to store the medata for a halo.
+   */
+  static int GetHaloMetadataBytesize();
+
+  /**
    * @brief Registers a DIY data-type to represent a HaloInfo type.
    * @param dtype pointer to the DIY data type
    */
- static void CreateDIYHaloInfoType(DIY_Datatype *dtype);
+  static void CreateDIYHaloInfoType(DIY_Datatype *dtype);
 
- /**
-  * @brief Registers a DIY data-type to represent halo particles.
-  * @param dtype pointer to the DIY data type
-  */
- static void CreateDIYHaloParticleType(DIY_Datatype *dtype);
+  /**
+   * @brief Registers a DIY data-type to represent halo particles.
+   * @param dtype pointer to the DIY data type
+   */
+  static void CreateDIYHaloParticleType(DIY_Datatype *dtype);
 
 
   int Count;                    // A count used for book-keeping the number of

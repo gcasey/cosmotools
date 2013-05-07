@@ -15,6 +15,23 @@
 namespace cosmotk
 {
 
+int Halo::GetHaloMetadataBytesize()
+{
+  return(
+      sizeof(int)+              /* int Count */
+      sizeof(ID_T)+             /* ID_T GlobalID */
+      sizeof(int)+              /* int Tag */
+      sizeof(int)+              /* int TimeStep */
+      sizeof(unsigned char)+   /* unsigned char HaloTypeMask */
+      sizeof(int)+              /* int OwnerBlockId */
+      sizeof(REAL)+             /* REAL Redshift */
+      sizeof(REAL)+             /* REAL HaloMass */
+      3*sizeof(POSVEL_T)+       /* POSVEL_T Center[3] */
+      3*sizeof(POSVEL_T)+       /* POSVEL_T MeanCenter[3] */
+      3*sizeof(POSVEL_T)        /* POSVEL_T AverageVelocity[3] */
+      );
+}
+
 //-----------------------------------------------------------------------------
 void Halo::CreateDIYHaloInfoType(DIY_Datatype *dtype)
 {
