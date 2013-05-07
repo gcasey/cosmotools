@@ -188,6 +188,51 @@ void DistributedHaloEvolutionTree::UpdateZombieCounter(const int tstep)
 }
 
 //------------------------------------------------------------------------------
+int DistributedHaloEvolutionTree::GetTotalNumberOfBytes()
+{
+  // STEP 0: Compute local number of bytes
+  int localNumBytes = 0;
+
+  // tree nodes
+  localNumBytes += this->Nodes.size()*sizeof(HaloInfo);
+
+  // bit mask for each node
+  localNumBytes += this->EventBitMask.size()*sizeof(unsigned char);
+
+  // Sum progenitor list
+  for(unsigned int idx=0; idx < this->Progenitors.size(); ++idx)
+    {
+    localNumBytes += this->Progenitors[idx].size()*sizeof(int);
+    } // END for all progenitors
+
+  // Sum descendant list
+  for(unsigned int idx=0; idx < this->Descendants.size(); ++idx)
+    {
+    localNumBytes += this->Descendants[idx].size()*sizeof(int);
+    }
+
+  // Sum memory for Node2Idx map
+  std::map< std::string, int >::iterator iter = this->Node2Idx.begin();
+  for(; iter != this->Node2Idx.end(); ++iter )
+    {
+    localNumBytes += iter->first.size()*sizeof(char);
+    localNumBytes += sizeof(int);
+    } // END for for all items in the map
+
+  // various statistics
+  localNumBytes += 4*sizeof(int)+
+      2*this->ZombieCounter.size()*sizeof(int)+
+      2*this->NodeCounter.size()*sizeof(int);
+
+
+  // STEP 1: Sum-reduce the local sum to compute the total across all ranks
+  int totalNumBytes = 0;
+  MPI_Allreduce(
+      &localNumBytes,&totalNumBytes,1,MPI_INT,MPI_SUM,this->Communicator);
+  return( totalNumBytes );
+}
+
+//------------------------------------------------------------------------------
 std::string DistributedHaloEvolutionTree::ToString()
 {
   assert("pre: corrupted merger-tree" && this->EnsureArraysAreConsistent());

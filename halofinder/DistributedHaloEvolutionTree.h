@@ -108,6 +108,13 @@ public:
   void Clear();
 
   /**
+   * @brief Returns the number of bytes used by this instance, on all ranks.
+   * @return N the total number of bytes.
+   * @note This method is collective, hence, it must be called by all ranks.
+   */
+  int GetTotalNumberOfBytes();
+
+  /**
    * @brief Barrier synchronization among all processes
    */
   void Barrier() { MPI_Barrier(this->Communicator); }
