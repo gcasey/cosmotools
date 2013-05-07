@@ -209,10 +209,9 @@ int main(int argc, char **argv)
   timers.resize(timesteps.size()*2,0.0);
 
   // STEP 7: Setup vector that holds memory usage information.
-  // memUsage[i*2] holds the number of halos at timestep i, while,
-  // memUsage[i*2+1] holds the number of halo particles at timestep i.
+  // memUsage[i] holds the number of bytes at timestep i.
   std::vector<int> memUsage;
-  memUsage.resize(timesteps.size()*2,0);
+  memUsage.resize(timesteps.size(),0);
 
   // STEP 8: Loop through all time-steps and track halos
   HaloTracker = new cosmologytools::ForwardHaloTracker();
@@ -243,8 +242,13 @@ int main(int argc, char **argv)
     cosmotk::MPIUtilities::Printf(comm,"[DONE]\n");
 
     // Update memory usage statistics
-    memUsage[ t*2   ] = HaloTracker->GetTotalNumberOfHalos();
-    memUsage[ t*2+1 ] = HaloTracker->GetTotalNumberOfHaloParticles();
+    int haloDataSize = cosmotk::Halo::GetHaloMetadataBytesize();
+    memUsage[ t ]    = HaloTracker->GetTotalNumberOfHalos()*haloDataSize;
+    memUsage[ t ] +=
+        HaloTracker->GetTotalNumberOfHaloParticles()*sizeof(ID_T);
+    memUsage[ t ] +=
+        HaloTracker->GetHaloEvolutionTree()->GetTotalNumberOfBytes();
+
 
     cosmotk::MPIUtilities::Printf(
         comm,"\t - Processed timestep %d/%d SIM TSTEP=%d\n",
@@ -279,10 +283,10 @@ int main(int argc, char **argv)
   if( rank == 0 )
     {
     ofs.open("merger-tree-memory-usage.dat");
-    ofs << "NumberOfHalos;NumberOfHaloParticles\n";
+    ofs << "NumberOfBytesPerTimeStep\n";
     for(int t=0; t < timesteps.size(); ++t)
       {
-      ofs << memUsage[t*2] << ";" << memUsage[t*2+1] << std::endl;
+      ofs << memUsage[t] <<  std::endl;
       } // END for all timesteps
     } // END if rank
 
