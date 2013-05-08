@@ -206,7 +206,9 @@ int main(int argc, char **argv)
   // to track them.
   cosmotk::TaskTimer IOTimer,MergerTreeTimer;
   std::vector<double> timers;
+  std::vector<double> walltimers;
   timers.resize(timesteps.size()*2,0.0);
+  walltimers.resize(timesteps.size()*2,0.0);
 
   // STEP 7: Setup vector that holds memory usage information.
   // memUsage[i] holds the number of bytes at timestep i.
@@ -228,6 +230,8 @@ int main(int argc, char **argv)
     ReadHalosAtTimeStep( timesteps[t] );
     IOTimer.StopTimer();
     timers[ t*2 ] = IOTimer.GetEllapsedTime();
+
+    MPI_Allreduce(&timers[t*2],&walltimers[t*2],1,MPI_DOUBLE,MPI_MAX,comm);
     cosmotk::MPIUtilities::Printf(comm,"[DONE]\n");
 
     int numHalos = GetTotalNumberOfHalos();
@@ -239,6 +243,10 @@ int main(int argc, char **argv)
     HaloTracker->TrackHalos(timesteps[t],z,Halos);
     MergerTreeTimer.StopTimer();
     timers[ t*2+1 ] = MergerTreeTimer.GetEllapsedTime();
+
+    MPI_Allreduce(
+        &timers[t*2+1],&walltimers[t*2+1],1,MPI_DOUBLE,MPI_MAX,comm);
+
     cosmotk::MPIUtilities::Printf(comm,"[DONE]\n");
 
     // Update memory usage statistics
@@ -288,6 +296,15 @@ int main(int argc, char **argv)
       {
       ofs << memUsage[t] <<  std::endl;
       } // END for all timesteps
+    ofs.close();
+
+    ofs.open("WallTiming.dat");
+    ofs << "I/O;MergerTree\n";
+    for(int t=0; t < timesteps.size(); ++t)
+      {
+      ofs << walltimers[t*2] << ";" << walltimers[t*2+1] << std::endl;
+      }
+    ofs.close();
     } // END if rank
 
   // STEP 11: Write statistics
