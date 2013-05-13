@@ -37,6 +37,7 @@ MPI_Comm comm = MPI_COMM_WORLD;
 cosmologytools::ForwardHaloTracker *HaloTracker;
 
 // Command line parameters
+std::string DataDir="";
 std::string DataPrefix = "";
 std::string TimeStepsFile = "";
 std::string InDatFile = "";
@@ -44,6 +45,7 @@ int MergerTreeThreshold = -1;
 bool SkipFofProperties = false;
 bool Verify = false;
 bool Synthetic = false;
+bool NewLayout = false;
 
 std::vector< int > timesteps;
 std::vector<cosmotk::Halo> Halos;
@@ -156,6 +158,8 @@ void CreateSyntheticHalo(
       const int tstep, const int haloIdx, ID_T start, ID_T end);
 void CreateHalosAtTimeStep(const int tstep);
 void WriteStatistics();
+void GetFileNamesAtTimeStep(
+        int tstep, std::string &fofFile, std::string &haloParticlesFile);
 
 //------------------------------------------------------------------------------
 
@@ -420,6 +424,11 @@ void ParseArguments(int argc, char **argv)
       {
       TimeStepsFile = std::string(argv[++i]);
       }
+    else if(strcmp(argv[i],"--datadir")==0)
+      {
+      DataDir = std::string(argv[++i]);
+      NewLayout = true;
+      }
     else if(strcmp(argv[i],"--prefix")==0)
       {
       DataPrefix = std::string(argv[++i]);
@@ -620,6 +629,35 @@ int GetHaloIndex(int tstep,int haloTag)
 }
 
 //------------------------------------------------------------------------------
+void GetFileNamesAtTimeStep(
+        int tstep, std::string &fofFile, std::string &haloParticlesFile)
+{
+  std::ostringstream oss;
+  oss.clear(); oss.str("");
+
+  if( NewLayout )
+    {
+    oss << DataDir << "/STEP" << tstep << "/"
+        << DataPrefix << "." << tstep << ".fofproperties";
+    fofFile = oss.str();
+
+    oss.clear(); oss.str("");
+    oss << DataDir << "/STEP" << tstep << "/"
+        << DataPrefix << "." << tstep << ".haloparticletags";
+    haloParticlesFile = oss.str();
+    } // END if
+  else
+    {
+    oss << DataPrefix << "." << tstep << ".fofproperties";
+    fofFile = oss.str();
+
+    oss.clear(); oss.str("");
+    oss << DataPrefix << "." << tstep << ".haloparticletags";
+    haloParticlesFile = oss.str();
+    } // END else
+}
+
+//------------------------------------------------------------------------------
 void ReadHalosAtTimeStep(int tstep)
 {
   assert("pre: halos at this tstep must be empty!" && (Halos.size()==0) );
@@ -631,15 +669,10 @@ void ReadHalosAtTimeStep(int tstep)
   else
     {
     // STEP 0: Construct file names
-    std::ostringstream oss;
-    oss.clear(); oss.str("");
+    std::string fofPropertiesFile;
+    std::string haloParticlesFile;
+    GetFileNamesAtTimeStep(tstep,fofPropertiesFile,haloParticlesFile);
 
-    oss << DataPrefix << "." << tstep << ".fofproperties";
-    std::string fofPropertiesFile = oss.str();
-
-    oss.clear(); oss.str("");
-    oss << DataPrefix << "." << tstep << ".haloparticletags";
-    std::string haloParticlesFile = oss.str();
 
     // STEP 1: Open and read FOF properties file
     if( !SkipFofProperties )
