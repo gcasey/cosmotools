@@ -20,6 +20,10 @@ public:
   vtkSetStringMacro(FileName);
   vtkGetStringMacro(FileName);
 
+  // Description:
+  // Allow user to set the header size
+  vtkSetMacro(HeaderSize,int);
+
 protected:
   vtkPVoronoiReader();
   ~vtkPVoronoiReader(){}

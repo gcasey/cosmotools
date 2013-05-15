@@ -16,7 +16,25 @@
           This property specifies the file name for the PNG reader.
         </Documentation>
       </StringVectorProperty>
- 
+
+       <IntVectorProperty
+        name="HeaderSize"
+        command="SetHeaderSize"
+        label="HeaderSize"
+        number_of_elements="1"
+        default_values="256">
+       <EnumerationDomain name="center_detection_algorithm">
+        <Entry value="7"   text="7"/>
+        <Entry value="256" text="256"/>
+       </EnumerationDomain>
+       <Documentation>
+       HeaderSize use in the Voronoi files. Current versions of DIY have
+       a header size of 256 (default). Some older versions however used
+       a header size of 7. This property allows one to control the header
+       size accordingly.
+       </Documentation>
+     </IntVectorProperty>
+
       <Hints>
         <ReaderFactory extensions="out"
                        file_description="Example File Format" />
