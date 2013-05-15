@@ -3,7 +3,7 @@
  * parallel netcdf I/O for voronoi tesselation
  *
  * Wei-keng Liao (Northwestern University)
- * Tom Peterka 
+ * Tom Peterka
  * Argonne National Laboratory
  * 9700 S. Cass Ave.
  * Argonne, IL 60439
@@ -16,9 +16,14 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stddef.h>
 #include <assert.h>
 #include <mpi.h>
+
+#ifdef USEPNETCDF
 #include <pnetcdf.h>
+#endif
+
 #include "voronoi.h"
 #include "diy.h"
 #include "io.h"
@@ -58,7 +63,7 @@
  *              int face_verts(tot_num_g_face_verts) ;
  *              int neighbors(num_g_neighbors) ;
  *              int g_block_ids(tot_blocks) ;
- *      
+ *
 ---------------------------------------------------------------------------*/
 /*
   writes output in diy format
@@ -68,8 +73,8 @@
   hdrs: block headers
   out_file: output file name
 */
-void diy_write(int nblocks, struct vblock_t *vblocks, int ** hdrs, 
-	       char *out_file) {
+void diy_write(int nblocks, struct vblock_t *vblocks, int ** hdrs,
+         char *out_file) {
 
   int i;
 
@@ -96,9 +101,10 @@ void diy_write(int nblocks, struct vblock_t *vblocks, int ** hdrs,
   out_file: output file name
   comm: MPI communicator
 */
-void pnetcdf_write(int nblocks, struct vblock_t *vblocks, 
-		   char *out_file, MPI_Comm comm) {
+void pnetcdf_write(int nblocks, struct vblock_t *vblocks,
+       char *out_file, MPI_Comm comm) {
 
+#ifdef USEPNETCDF
   int err;
   int ncid, cmode, varids[23], dimids[8], dimids_2D[2];
   MPI_Offset start[2], count[2];
@@ -140,45 +146,45 @@ void pnetcdf_write(int nblocks, struct vblock_t *vblocks,
   err = ncmpi_create(comm, out_file, cmode, MPI_INFO_NULL, &ncid); ERR;
 
   /* define dimensions */
-  err = ncmpi_def_dim(ncid, "num_g_blocks", tot_quants[NUM_BLOCKS], 
-		      &dimids[0]); ERR;
+  err = ncmpi_def_dim(ncid, "num_g_blocks", tot_quants[NUM_BLOCKS],
+          &dimids[0]); ERR;
   err = ncmpi_def_dim(ncid, "XYZ", 3, &dimids[1]); ERR;
   err = ncmpi_def_dim(ncid, "num_g_verts", tot_quants[NUM_VERTS],
-		      &dimids[2]); ERR;
+          &dimids[2]); ERR;
   err = ncmpi_def_dim(ncid, "num_g_complete_cells", tot_quants[NUM_COMP_CELLS],
-		      &dimids[3]); ERR;
+          &dimids[3]); ERR;
   err = ncmpi_def_dim(ncid, "tot_num_g_cell_faces", tot_quants[NUM_CELL_FACES],
-		      &dimids[4]); ERR;
-  err = ncmpi_def_dim(ncid, "tot_num_g_face_verts", tot_quants[NUM_FACE_VERTS], 
-		      &dimids[5]); ERR;
-  err = ncmpi_def_dim(ncid, "num_g_orig_particles", tot_quants[NUM_ORIG_PARTS], 
-		      &dimids[6]); ERR;
+          &dimids[4]); ERR;
+  err = ncmpi_def_dim(ncid, "tot_num_g_face_verts", tot_quants[NUM_FACE_VERTS],
+          &dimids[5]); ERR;
+  err = ncmpi_def_dim(ncid, "num_g_orig_particles", tot_quants[NUM_ORIG_PARTS],
+          &dimids[6]); ERR;
   err = ncmpi_def_dim(ncid, "num_g_neighbors", tot_quants[NUM_NEIGHBORS],
-		      &dimids[7]); ERR;
+          &dimids[7]); ERR;
 
   /* define variables */
-  err = ncmpi_def_var(ncid, "num_verts", NC_INT, 1, &dimids[0], 
-		      &varids[0]); ERR;
-  err = ncmpi_def_var(ncid, "num_complete_cells", NC_INT, 1, &dimids[0], 
-		      &varids[1]); ERR;
-  err = ncmpi_def_var(ncid, "tot_num_cell_faces", NC_INT, 1, &dimids[0], 
-		      &varids[2]); ERR;
-  err = ncmpi_def_var(ncid, "tot_num_face_verts", NC_INT, 1, &dimids[0], 
-		      &varids[3]); ERR;
-  err = ncmpi_def_var(ncid, "num_orig_particles", NC_INT, 1, &dimids[0], 
-		      &varids[4]); ERR;
+  err = ncmpi_def_var(ncid, "num_verts", NC_INT, 1, &dimids[0],
+          &varids[0]); ERR;
+  err = ncmpi_def_var(ncid, "num_complete_cells", NC_INT, 1, &dimids[0],
+          &varids[1]); ERR;
+  err = ncmpi_def_var(ncid, "tot_num_cell_faces", NC_INT, 1, &dimids[0],
+          &varids[2]); ERR;
+  err = ncmpi_def_var(ncid, "tot_num_face_verts", NC_INT, 1, &dimids[0],
+          &varids[3]); ERR;
+  err = ncmpi_def_var(ncid, "num_orig_particles", NC_INT, 1, &dimids[0],
+          &varids[4]); ERR;
 
   /* block offsets */
-  err = ncmpi_def_var(ncid, "block_off_num_verts", NC_INT64, 1, &dimids[0], 
-		      &varids[5]); ERR;
-  err = ncmpi_def_var(ncid, "block_off_num_complete_cells", NC_INT64, 1, 
-		      &dimids[0], &varids[6]); ERR;
-  err = ncmpi_def_var(ncid, "block_off_tot_num_cell_faces", NC_INT64, 1, 
-		      &dimids[0], &varids[7]); ERR;
-  err = ncmpi_def_var(ncid, "block_off_tot_num_face_verts", NC_INT64, 1, 
-		      &dimids[0], &varids[8]); ERR;
-  err = ncmpi_def_var(ncid, "block_off_num_orig_particles", NC_INT64, 1, 
-		      &dimids[0], &varids[9]); ERR;
+  err = ncmpi_def_var(ncid, "block_off_num_verts", NC_INT64, 1, &dimids[0],
+          &varids[5]); ERR;
+  err = ncmpi_def_var(ncid, "block_off_num_complete_cells", NC_INT64, 1,
+          &dimids[0], &varids[6]); ERR;
+  err = ncmpi_def_var(ncid, "block_off_tot_num_cell_faces", NC_INT64, 1,
+          &dimids[0], &varids[7]); ERR;
+  err = ncmpi_def_var(ncid, "block_off_tot_num_face_verts", NC_INT64, 1,
+          &dimids[0], &varids[8]); ERR;
+  err = ncmpi_def_var(ncid, "block_off_num_orig_particles", NC_INT64, 1,
+          &dimids[0], &varids[9]); ERR;
 
   dimids_2D[0] = dimids[0];
   dimids_2D[1] = dimids[1];
@@ -187,27 +193,27 @@ void pnetcdf_write(int nblocks, struct vblock_t *vblocks,
 
   dimids_2D[0] = dimids[2];
   dimids_2D[1] = dimids[1];
-  err = ncmpi_def_var(ncid, "save_verts", NC_FLOAT, 2, dimids_2D, 
-		      &varids[13]); ERR;
+  err = ncmpi_def_var(ncid, "save_verts", NC_FLOAT, 2, dimids_2D,
+          &varids[13]); ERR;
   dimids_2D[0] = dimids[6];
   dimids_2D[1] = dimids[1];
-  err = ncmpi_def_var(ncid, "sites", NC_FLOAT, 2, dimids_2D, 
-		      &varids[14]); ERR;
-  err = ncmpi_def_var(ncid, "complete_cells", NC_INT, 1, &dimids[3], 
-		      &varids[15]); ERR;
-  err = ncmpi_def_var(ncid, "areas", NC_FLOAT, 1, &dimids[3], 
-		      &varids[16]); ERR;
+  err = ncmpi_def_var(ncid, "sites", NC_FLOAT, 2, dimids_2D,
+          &varids[14]); ERR;
+  err = ncmpi_def_var(ncid, "complete_cells", NC_INT, 1, &dimids[3],
+          &varids[15]); ERR;
+  err = ncmpi_def_var(ncid, "areas", NC_FLOAT, 1, &dimids[3],
+          &varids[16]); ERR;
   err = ncmpi_def_var(ncid, "vols", NC_FLOAT, 1, &dimids[3], &varids[17]); ERR;
-  err = ncmpi_def_var(ncid, "num_cell_faces", NC_INT, 1, &dimids[3], 
-		      &varids[18]); ERR;
-  err = ncmpi_def_var(ncid, "num_face_verts", NC_INT, 1, &dimids[4], 
-		      &varids[19]); ERR;
-  err = ncmpi_def_var(ncid, "face_verts", NC_INT, 1, &dimids[5], 
-		      &varids[20]); ERR;
-  err = ncmpi_def_var(ncid, "neighbors", NC_INT, 1, &dimids[7], 
-		      &varids[21]); ERR;
-  err = ncmpi_def_var(ncid, "g_block_ids", NC_INT, 1, &dimids[0], 
-		      &varids[22]); ERR;
+  err = ncmpi_def_var(ncid, "num_cell_faces", NC_INT, 1, &dimids[3],
+          &varids[18]); ERR;
+  err = ncmpi_def_var(ncid, "num_face_verts", NC_INT, 1, &dimids[4],
+          &varids[19]); ERR;
+  err = ncmpi_def_var(ncid, "face_verts", NC_INT, 1, &dimids[5],
+          &varids[20]); ERR;
+  err = ncmpi_def_var(ncid, "neighbors", NC_INT, 1, &dimids[7],
+          &varids[21]); ERR;
+  err = ncmpi_def_var(ncid, "g_block_ids", NC_INT, 1, &dimids[0],
+          &varids[22]); ERR;
 
   /* exit define mode */
   err = ncmpi_enddef(ncid); ERR;
@@ -222,38 +228,38 @@ void pnetcdf_write(int nblocks, struct vblock_t *vblocks,
     /* quantities */
     start[0] = block_ofsts[NUM_BLOCKS];
     count[0] = 1;
-    err = ncmpi_put_vara_int_all(ncid, varids[0], start, count, 
-				 &v->num_verts); ERR;
-    err = ncmpi_put_vara_int_all(ncid, varids[1], start, count, 
-				 &v->num_complete_cells); ERR;
-    err = ncmpi_put_vara_int_all(ncid, varids[2], start, count, 
-				 &v->tot_num_cell_faces); ERR;
-    err = ncmpi_put_vara_int_all(ncid, varids[3], start, count, 
-				 &v->tot_num_face_verts); ERR;
-    err = ncmpi_put_vara_int_all(ncid, varids[4], start, count, 
-				 &v->num_orig_particles); ERR;
+    err = ncmpi_put_vara_int_all(ncid, varids[0], start, count,
+         &v->num_verts); ERR;
+    err = ncmpi_put_vara_int_all(ncid, varids[1], start, count,
+         &v->num_complete_cells); ERR;
+    err = ncmpi_put_vara_int_all(ncid, varids[2], start, count,
+         &v->tot_num_cell_faces); ERR;
+    err = ncmpi_put_vara_int_all(ncid, varids[3], start, count,
+         &v->tot_num_face_verts); ERR;
+    err = ncmpi_put_vara_int_all(ncid, varids[4], start, count,
+         &v->num_orig_particles); ERR;
 
     /* block offsets */
-    err = ncmpi_put_vara_longlong_all(ncid, varids[5], start, count, 
-				      &block_ofsts[NUM_VERTS]); ERR;
-    err = ncmpi_put_vara_longlong_all(ncid, varids[6], start, count, 
-				      &block_ofsts[NUM_COMP_CELLS]); ERR;
-    err = ncmpi_put_vara_longlong_all(ncid, varids[7], start, count, 
-				      &block_ofsts[NUM_CELL_FACES]); ERR;
-    err = ncmpi_put_vara_longlong_all(ncid, varids[8], start, count, 
-				      &block_ofsts[NUM_FACE_VERTS]); ERR;
-    err = ncmpi_put_vara_longlong_all(ncid, varids[9], start, count, 
-				      &block_ofsts[NUM_ORIG_PARTS]); ERR;
+    err = ncmpi_put_vara_longlong_all(ncid, varids[5], start, count,
+              &block_ofsts[NUM_VERTS]); ERR;
+    err = ncmpi_put_vara_longlong_all(ncid, varids[6], start, count,
+              &block_ofsts[NUM_COMP_CELLS]); ERR;
+    err = ncmpi_put_vara_longlong_all(ncid, varids[7], start, count,
+              &block_ofsts[NUM_CELL_FACES]); ERR;
+    err = ncmpi_put_vara_longlong_all(ncid, varids[8], start, count,
+              &block_ofsts[NUM_FACE_VERTS]); ERR;
+    err = ncmpi_put_vara_longlong_all(ncid, varids[9], start, count,
+              &block_ofsts[NUM_ORIG_PARTS]); ERR;
 
     /* block bounds */
     start[0] = block_ofsts[NUM_BLOCKS];
     count[0] = 1;
     start[1] = 0;
     count[1] = 3;
-    err = ncmpi_put_vara_float_all(ncid, varids[11], start, count, 
-				   v->mins); ERR;
-    err = ncmpi_put_vara_float_all(ncid, varids[12], start, count, 
-				   v->maxs); ERR;
+    err = ncmpi_put_vara_float_all(ncid, varids[11], start, count,
+           v->mins); ERR;
+    err = ncmpi_put_vara_float_all(ncid, varids[12], start, count,
+           v->maxs); ERR;
 
     /* save_verts */
     start[0] = block_ofsts[NUM_VERTS];
@@ -261,51 +267,51 @@ void pnetcdf_write(int nblocks, struct vblock_t *vblocks,
     count[0] = v->num_verts;
     count[1] = 3;
     err = ncmpi_put_vara_float_all(ncid, varids[13], start, count,
-				   v->save_verts); ERR;
+           v->save_verts); ERR;
 
     /* sites */
     start[0] = block_ofsts[NUM_ORIG_PARTS];
     start[1] = 0;
     count[0] = v->num_orig_particles;
     count[1] = 3;
-    err = ncmpi_put_vara_float_all(ncid, varids[14], start, count, 
-				   v->sites); ERR;
+    err = ncmpi_put_vara_float_all(ncid, varids[14], start, count,
+           v->sites); ERR;
 
     /* complete cells */
     start[0] = block_ofsts[NUM_COMP_CELLS];
     count[0] = v->num_complete_cells;
-    err = ncmpi_put_vara_int_all(ncid, varids[15], start, count, 
-				 v->complete_cells); ERR;
+    err = ncmpi_put_vara_int_all(ncid, varids[15], start, count,
+         v->complete_cells); ERR;
 
     /* areas */
     start[0] = block_ofsts[NUM_COMP_CELLS];
     count[0] = v->num_complete_cells;
-    err = ncmpi_put_vara_float_all(ncid, varids[16], start, count, 
-				   v->areas); ERR;
+    err = ncmpi_put_vara_float_all(ncid, varids[16], start, count,
+           v->areas); ERR;
 
     /* volumes */
     start[0] = block_ofsts[NUM_COMP_CELLS];
     count[0] = v->num_complete_cells;
-    err = ncmpi_put_vara_float_all(ncid, varids[17], start, count, 
-				   v->vols); ERR;
+    err = ncmpi_put_vara_float_all(ncid, varids[17], start, count,
+           v->vols); ERR;
 
     /* num_cell_faces */
     start[0] = block_ofsts[NUM_COMP_CELLS];
     count[0] = v->num_complete_cells;
-    err = ncmpi_put_vara_int_all(ncid, varids[18], start, count, 
-				 v->num_cell_faces); ERR;
+    err = ncmpi_put_vara_int_all(ncid, varids[18], start, count,
+         v->num_cell_faces); ERR;
 
     /* num_face_verts */
     start[0] = block_ofsts[NUM_CELL_FACES];
     count[0] = v->tot_num_cell_faces;
-    err = ncmpi_put_vara_int_all(ncid, varids[19], start, count, 
-				 v->num_face_verts); ERR;
+    err = ncmpi_put_vara_int_all(ncid, varids[19], start, count,
+         v->num_face_verts); ERR;
 
     /* face verts */
     start[0] = block_ofsts[NUM_FACE_VERTS];
     count[0] = v->tot_num_face_verts;
-    err = ncmpi_put_vara_int_all(ncid, varids[20], start, count, 
-				 v->face_verts); ERR;
+    err = ncmpi_put_vara_int_all(ncid, varids[20], start, count,
+         v->face_verts); ERR;
 
     /* neighbors */
     int *neighbors = (int*)malloc(DIY_Num_neighbors(0, b) * sizeof(int));
@@ -319,8 +325,8 @@ void pnetcdf_write(int nblocks, struct vblock_t *vblocks,
     int gid = DIY_Gid(0, b);
     start[0] = block_ofsts[NUM_BLOCKS];
     count[0] = 1;
-    err = ncmpi_put_vara_int_all(ncid, varids[22], start, count, 
-				 &gid); ERR;
+    err = ncmpi_put_vara_int_all(ncid, varids[22], start, count,
+         &gid); ERR;
 
     /* update block offsets */
     block_ofsts[NUM_VERTS] += v->num_verts;
@@ -341,6 +347,7 @@ void pnetcdf_write(int nblocks, struct vblock_t *vblocks,
   }
 
   err = ncmpi_close(ncid); ERR;
+#endif
 
 }
 /*--------------------------------------------------------------------------*/
@@ -361,10 +368,11 @@ void pnetcdf_write(int nblocks, struct vblock_t *vblocks,
   side effects: allocates vblocks, gids, num_neighbors, neighbors
 
 */
-void pnetcdf_read(int *nblocks, int *tot_blocks, struct vblock_t ***vblocks, 
-		  char *in_file, MPI_Comm comm, int *gids, int *num_neighbors,
-		  int **neighbors) {
+void pnetcdf_read(int *nblocks, int *tot_blocks, struct vblock_t ***vblocks,
+      char *in_file, MPI_Comm comm, int *gids, int *num_neighbors,
+      int **neighbors) {
 
+#ifdef USEPNETCDF
   int err;
   int ncid, varids[23], dimids[8];
   MPI_Offset start[2], count[2];
@@ -390,7 +398,7 @@ void pnetcdf_read(int *nblocks, int *tot_blocks, struct vblock_t ***vblocks,
   MPI_Comm_size(comm, &groupsize);
   int start_block_ofst =  rank * (*tot_blocks / groupsize);
   *nblocks = (rank < groupsize - 1 ? (*tot_blocks / groupsize) :
-	      *tot_blocks - (rank * *tot_blocks / groupsize));
+        *tot_blocks - (rank * *tot_blocks / groupsize));
 
   /* block offsets */
   int64_t *block_ofsts = (int64_t*)malloc(*tot_blocks * sizeof(int64_t));
@@ -409,23 +417,23 @@ void pnetcdf_read(int *nblocks, int *tot_blocks, struct vblock_t ***vblocks,
     start[0] = start_block_ofst + b;
     count[0] = 1;
     err = ncmpi_inq_varid(ncid, "num_verts", &varids[0]); ERR;
-    err = ncmpi_get_vara_int_all(ncid, varids[0], start, count, 
-				 &(v->num_verts)); ERR;
+    err = ncmpi_get_vara_int_all(ncid, varids[0], start, count,
+         &(v->num_verts)); ERR;
     err = ncmpi_inq_varid(ncid, "num_complete_cells", &varids[1]); ERR;
-    err = ncmpi_get_vara_int_all(ncid, varids[1], start, count, 
-				 &(v->num_complete_cells)); ERR;
+    err = ncmpi_get_vara_int_all(ncid, varids[1], start, count,
+         &(v->num_complete_cells)); ERR;
     err = ncmpi_inq_varid(ncid, "tot_num_cell_faces", &varids[2]); ERR;
-    err = ncmpi_get_vara_int_all(ncid, varids[2], start, count, 
-				 &(v->tot_num_cell_faces)); ERR;
+    err = ncmpi_get_vara_int_all(ncid, varids[2], start, count,
+         &(v->tot_num_cell_faces)); ERR;
     err = ncmpi_inq_varid(ncid, "tot_num_face_verts", &varids[3]); ERR;
-    err = ncmpi_get_vara_int_all(ncid, varids[3], start, count, 
-				 &(v->tot_num_face_verts)); ERR;
+    err = ncmpi_get_vara_int_all(ncid, varids[3], start, count,
+         &(v->tot_num_face_verts)); ERR;
     err = ncmpi_inq_varid(ncid, "num_orig_particles", &varids[4]); ERR;
-    err = ncmpi_get_vara_int_all(ncid, varids[4], start, count, 
-				 &(v->num_orig_particles)); ERR;
+    err = ncmpi_get_vara_int_all(ncid, varids[4], start, count,
+         &(v->num_orig_particles)); ERR;
     err = ncmpi_inq_varid(ncid, "neighbors", &varids[21]); ERR;
-    err = ncmpi_inq_var(ncid, varids[21], 0, &type, &ndims, 
-			dimids, &natts);
+    err = ncmpi_inq_var(ncid, varids[21], 0, &type, &ndims,
+      dimids, &natts);
 
     /* block bounds */
     start[0] = start_block_ofst + b;
@@ -433,119 +441,119 @@ void pnetcdf_read(int *nblocks, int *tot_blocks, struct vblock_t ***vblocks,
     count[0] = 1;
     count[1] = 3;
     err = ncmpi_inq_varid(ncid, "mins", &varids[11]); ERR;
-    err = ncmpi_get_vara_float_all(ncid, varids[11], start, count, 
-				   v->mins); ERR;
+    err = ncmpi_get_vara_float_all(ncid, varids[11], start, count,
+           v->mins); ERR;
     err = ncmpi_inq_varid(ncid, "maxs", &varids[12]); ERR;
-    err = ncmpi_get_vara_float_all(ncid, varids[12], start, count, 
-				   v->maxs); ERR;
+    err = ncmpi_get_vara_float_all(ncid, varids[12], start, count,
+           v->maxs); ERR;
 
     /* save_verts */
     start[0] = 0;
     count[0] = *tot_blocks;
-    err = ncmpi_get_vara_longlong_all(ncid, varids[5], start, count, 
-				      block_ofsts); ERR;
+    err = ncmpi_get_vara_longlong_all(ncid, varids[5], start, count,
+              block_ofsts); ERR;
     v->save_verts = (float *)malloc(v->num_verts * 3 * sizeof(float));
     start[0] = block_ofsts[start_block_ofst + b];
     start[1] = 0;
     count[0] = v->num_verts;
     count[1] = 3;
     err = ncmpi_inq_varid(ncid, "save_verts", &varids[13]); ERR;
-    err = ncmpi_get_vara_float_all(ncid, varids[13], start, count, 
-				   v->save_verts); ERR;
+    err = ncmpi_get_vara_float_all(ncid, varids[13], start, count,
+           v->save_verts); ERR;
 
     /* sites */
     start[0] = 0;
     count[0] = *tot_blocks;
-    err = ncmpi_get_vara_longlong_all(ncid, varids[9], start, count, 
-				      block_ofsts); ERR;
+    err = ncmpi_get_vara_longlong_all(ncid, varids[9], start, count,
+              block_ofsts); ERR;
     v->sites = (float *)malloc(v->num_orig_particles * 3 * sizeof(float));
     start[0] = block_ofsts[start_block_ofst + b];
     start[1] = 0;
     count[0] = v->num_orig_particles;
     count[1] = 3;
     err = ncmpi_inq_varid(ncid, "sites", &varids[14]); ERR;
-    err = ncmpi_get_vara_float_all(ncid, varids[14], start, count, 
-				   v->sites); ERR;
+    err = ncmpi_get_vara_float_all(ncid, varids[14], start, count,
+           v->sites); ERR;
 
     /* complete cells */
     start[0] = 0;
     count[0] = *tot_blocks;
-    err = ncmpi_get_vara_longlong_all(ncid, varids[6], start, count, 
-				      block_ofsts); ERR;
+    err = ncmpi_get_vara_longlong_all(ncid, varids[6], start, count,
+              block_ofsts); ERR;
     v->complete_cells = (int *)malloc(v->num_complete_cells * sizeof(int));
     start[0] = block_ofsts[start_block_ofst + b];
     count[0] = v->num_complete_cells;
     err = ncmpi_inq_varid(ncid, "complete_cells", &varids[15]); ERR;
-    err = ncmpi_get_vara_int_all(ncid, varids[15], start, count, 
-				 v->complete_cells); ERR;
+    err = ncmpi_get_vara_int_all(ncid, varids[15], start, count,
+         v->complete_cells); ERR;
 
     /* areas, uses same block offsets as complete cells */
     v->areas = (float *)malloc(v->num_complete_cells * sizeof(float));
     start[0] = block_ofsts[start_block_ofst + b];
     count[0] = v->num_complete_cells;
     err = ncmpi_inq_varid(ncid, "areas", &varids[16]); ERR;
-    err = ncmpi_get_vara_float_all(ncid, varids[16], start, count, 
-				   v->areas); ERR;
+    err = ncmpi_get_vara_float_all(ncid, varids[16], start, count,
+           v->areas); ERR;
 
     /* volumes, uses same block offsets as complete cells */
     v->vols = (float *)malloc(v->num_complete_cells * sizeof(float));
     start[0] = block_ofsts[start_block_ofst + b];
     count[0] = v->num_complete_cells;
     err = ncmpi_inq_varid(ncid, "vols", &varids[17]); ERR;
-    err = ncmpi_get_vara_float_all(ncid, varids[17], start, count, 
-				   v->vols); ERR;
+    err = ncmpi_get_vara_float_all(ncid, varids[17], start, count,
+           v->vols); ERR;
 
     /* num_cell_faces, uses same block offsets as complete cells */
     v->num_cell_faces = (int *)malloc(v->num_complete_cells * sizeof(int));
     start[0] = block_ofsts[start_block_ofst + b];
     count[0] = v->num_complete_cells;
     err = ncmpi_inq_varid(ncid, "num_cell_faces", &varids[18]); ERR;
-    err = ncmpi_get_vara_int_all(ncid, varids[18], start, count, 
-				 v->num_cell_faces); ERR;
+    err = ncmpi_get_vara_int_all(ncid, varids[18], start, count,
+         v->num_cell_faces); ERR;
 
     /* num_face_verts */
     start[0] = 0;
     count[0] = *tot_blocks;
-    err = ncmpi_get_vara_longlong_all(ncid, varids[7], start, count, 
-				      block_ofsts); ERR;
+    err = ncmpi_get_vara_longlong_all(ncid, varids[7], start, count,
+              block_ofsts); ERR;
     v->num_face_verts = (int *)malloc(v->tot_num_cell_faces * sizeof(int));
     start[0] = block_ofsts[start_block_ofst + b];
     count[0] = v->tot_num_cell_faces;
     err = ncmpi_inq_varid(ncid, "num_face_verts", &varids[19]); ERR;
-    err = ncmpi_get_vara_int_all(ncid, varids[19], start, count, 
-				 v->num_face_verts); ERR;
+    err = ncmpi_get_vara_int_all(ncid, varids[19], start, count,
+         v->num_face_verts); ERR;
 
     /* face_verts */
     start[0] = 0;
     count[0] = *tot_blocks;
-    err = ncmpi_get_vara_longlong_all(ncid, varids[8], start, count, 
-				      block_ofsts); ERR;
+    err = ncmpi_get_vara_longlong_all(ncid, varids[8], start, count,
+              block_ofsts); ERR;
     v->face_verts = (int *)malloc(v->tot_num_face_verts * sizeof(int));
     start[0] = block_ofsts[start_block_ofst + b];
     count[0] = v->tot_num_face_verts;
     err = ncmpi_inq_varid(ncid, "face_verts", &varids[20]); ERR;
-    err = ncmpi_get_vara_int_all(ncid, varids[20], start, count, 
-				 v->face_verts); ERR;
+    err = ncmpi_get_vara_int_all(ncid, varids[20], start, count,
+         v->face_verts); ERR;
 
     /* neighbors */
     MPI_Offset n; /* temporary 64-bit version of number of neighbors */
     err = ncmpi_inq_varid(ncid, "neighbors", &varids[21]); ERR;
-    err = ncmpi_inq_var(ncid, varids[2], 0, &type, &ndims, 
-			dims, &natts); ERR;
+    err = ncmpi_inq_var(ncid, varids[2], 0, &type, &ndims,
+      dims, &natts); ERR;
     err = ncmpi_inq_dimlen(ncid, dims[0], &n); ERR;
     num_neighbors[b] = n;
     neighbors[b] = (int *)malloc(num_neighbors[b] * sizeof(int));
     start[0] = start_block_ofst + b;
     count[0] = num_neighbors[b];
-    err = ncmpi_get_vara_int_all(ncid, varids[21], start, count, 
-				 neighbors[b]); ERR;
+    err = ncmpi_get_vara_int_all(ncid, varids[21], start, count,
+         neighbors[b]); ERR;
 
     /* gids */
     start[0] = start_block_ofst + b;
     count[0] = 1;
     err = ncmpi_inq_varid(ncid, "g_block_ids", &varids[22]); ERR;
-    err = ncmpi_get_vara_int_all(ncid, varids[22], start, count, 
-				 &gids[b]); ERR;
+    err = ncmpi_get_vara_int_all(ncid, varids[22], start, count,
+         &gids[b]); ERR;
 
     (*vblocks)[b] = v;
 
@@ -554,7 +562,7 @@ void pnetcdf_read(int *nblocks, int *tot_blocks, struct vblock_t ***vblocks,
   /* cleanup */
   err = ncmpi_close(ncid); ERR;
   free(block_ofsts);
-
+#endif
 }
 /*--------------------------------------------------------------------------*/
 /*
@@ -571,30 +579,30 @@ void pnetcdf_read(int *nblocks, int *tot_blocks, struct vblock_t ***vblocks,
 void create_datatype(void* vblock, int did, int lid, DIY_Datatype *dtype) {
 
   did = did; /* quiet compiler warning */
-  lid = lid; 
+  lid = lid;
 
   struct vblock_t *v = (struct vblock_t *)vblock;
   struct map_block_t map[] = {
 
-    { DIY_FLOAT,  OFST, 3, 
+    { DIY_FLOAT,  OFST, 3,
       offsetof(struct vblock_t, mins)                 },
-    { DIY_FLOAT, ADDR, v->num_verts * 3, 
+    { DIY_FLOAT, ADDR, v->num_verts * 3,
       DIY_Addr(v->save_verts)                              },
     { DIY_FLOAT, ADDR, v->num_orig_particles * 3,
       DIY_Addr(v->sites)                              },
-    { DIY_INT,    ADDR, v->num_complete_cells, 
+    { DIY_INT,    ADDR, v->num_complete_cells,
       DIY_Addr(v->complete_cells)                     },
-    { DIY_FLOAT, ADDR, v->num_complete_cells, 
+    { DIY_FLOAT, ADDR, v->num_complete_cells,
       DIY_Addr(v->areas)                              },
-    { DIY_FLOAT, ADDR, v->num_complete_cells, 
+    { DIY_FLOAT, ADDR, v->num_complete_cells,
       DIY_Addr(v->vols)                               },
-    { DIY_INT,    ADDR, v->num_complete_cells, 
+    { DIY_INT,    ADDR, v->num_complete_cells,
       DIY_Addr(v->num_cell_faces)                     },
-    { DIY_INT,    ADDR, v->tot_num_cell_faces, 
+    { DIY_INT,    ADDR, v->tot_num_cell_faces,
       DIY_Addr(v->num_face_verts)                     },
-    { DIY_INT,    ADDR, v->tot_num_face_verts, 
+    { DIY_INT,    ADDR, v->tot_num_face_verts,
       DIY_Addr(v->face_verts)                         },
-    { DIY_FLOAT,  OFST, 3, 
+    { DIY_FLOAT,  OFST, 3,
       offsetof(struct vblock_t, maxs)                 },
 
   };
@@ -606,29 +614,29 @@ void create_datatype(void* vblock, int did, int lid, DIY_Datatype *dtype) {
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   fprintf(stderr, "Rank %d creating MPI struct datatype:\n"
-	  "base type = MPI_INT,   quantity = 7, address = %p\n"
-	  "base type = MPI_FLOAT, quantity = 3, address = %p\n"
-	  "base type = MPI_FLOAT, quantity = %d, address = %p\n"
-	  "base type = MPI_FLOAT, quantity = %d, address = %p\n"
-	  "base type = MPI_INT,   quantity = %d, address = %p\n"
-	  "base type = MPI_FLOAT, quantity = %d, address = %p\n"
-	  "base type = MPI_FLOAT, quantity = %d, address = %p\n"
-	  "base type = MPI_INT,   quantity = %d, address = %p\n"
-	  "base type = MPI_INT,   quantity = %d, address = %p\n"
-	  "base type = MPI_INT,   quantity = %d, address = %p\n"
-	  "base type = MPI_FLOAT, quantity = 3, address =  %p\n\n\n", 
-	  rank,
-	  hdrs[lid],
-	  vblock + offsetof(struct vblock_t, mins), 
-	  v->num_verts * 3, v->save_verts,
-	  v->num_orig_particles * 3, v->sites,
-	  v->num_complete_cells, v->complete_cells,
-	  v->num_complete_cells, v->areas,
-	  v->num_complete_cells, v->vols,
-	  v->num_complete_cells, v->num_cell_faces,
-	  v->tot_num_cell_faces, v->num_face_verts,
-	  v->tot_num_face_verts, v->face_verts,
-	  vblock + offsetof(struct vblock_t, maxs));
+    "base type = MPI_INT,   quantity = 7, address = %p\n"
+    "base type = MPI_FLOAT, quantity = 3, address = %p\n"
+    "base type = MPI_FLOAT, quantity = %d, address = %p\n"
+    "base type = MPI_FLOAT, quantity = %d, address = %p\n"
+    "base type = MPI_INT,   quantity = %d, address = %p\n"
+    "base type = MPI_FLOAT, quantity = %d, address = %p\n"
+    "base type = MPI_FLOAT, quantity = %d, address = %p\n"
+    "base type = MPI_INT,   quantity = %d, address = %p\n"
+    "base type = MPI_INT,   quantity = %d, address = %p\n"
+    "base type = MPI_INT,   quantity = %d, address = %p\n"
+    "base type = MPI_FLOAT, quantity = 3, address =  %p\n\n\n",
+    rank,
+    hdrs[lid],
+    vblock + offsetof(struct vblock_t, mins),
+    v->num_verts * 3, v->save_verts,
+    v->num_orig_particles * 3, v->sites,
+    v->num_complete_cells, v->complete_cells,
+    v->num_complete_cells, v->areas,
+    v->num_complete_cells, v->vols,
+    v->num_complete_cells, v->num_cell_faces,
+    v->tot_num_cell_faces, v->num_face_verts,
+    v->tot_num_face_verts, v->face_verts,
+    vblock + offsetof(struct vblock_t, maxs));
 #endif
 
 }
