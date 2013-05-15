@@ -17,7 +17,8 @@ INCLUDE = -I$(HOME)/diy/include -I../lib \
 	-I$(HOME)/software/qhull-2011.2/src/libqhull
 
 LIBS = 	-L../lib -ltess -L$(HOME)/diy/lib -ldiy \
-	-L$(HOME)/software/qhull-2011.2/lib -lqhullstatic -fopenmp
+	-L$(HOME)/software/qhull-2011.2/lib -lqhullstatic -fopenmp \
+	-L$(HOME)/software/parallel-netcdf-1.3.0/lib -lpnetcdf
 
 ###########
 

@@ -13,8 +13,11 @@
 
 include ../user_defs.mk
 
-INCLUDE = -I$(HOME)/diy/include -I$(HOME)/software/qhull-2011.2/src/libqhull
-LIBS = -L$(HOME)/diy/lib -ldiy -L$(HOME)/software/qhull-2011.2/lib -lqhullstatic -fopenmp
+INCLUDE = -I$(HOME)/diy/include -I$(HOME)/software/qhull-2011.2/src/libqhull \
+	-I$(HOME)/software/parallel-netcdf-1.3.0/include
+LIBS = -L$(HOME)/diy/lib -ldiy -L$(HOME)/software/qhull-2011.2/lib \
+	-lqhullstatic -fopenmp \
+	-L$(HOME)/software/parallel-netcdf-1.3.0/lib -lpnetcdf
 
 ###########
 
@@ -24,7 +27,7 @@ CCFLAGS = -g -Wall -Wextra
 CCFLAGS += -DMAC_OSX $(TIMING) -fopenmp
 GL_LIBS = -framework GLUT -framework OpenGL
 CC=mpicc
-CXX=g++
+CXX=mpicxx
 
 endif
 
@@ -36,7 +39,7 @@ CCFLAGS = -g
 CCFLAGS += -DLINUX $(TIMING)
 GL_LIBS = -lglut -lGLU -lGL
 CC=mpicc
-CXX=g++
+CXX=mpicxx
 
 endif
 
@@ -57,9 +60,10 @@ endif
 
 ###########
 
-TESS_OBJS = tess.o
-DRAW_OBJS = draw.o ser_io.o swap.o
+TESS_OBJS = tess.o io.o
+DRAW_OBJS = draw.o ser_io.o swap.o io.o
 DUMP_OBJS = dump.o ser_io.o swap.o
+DENSE_OBJS = dense.o
 
 .SUFFIXES: .c .cpp
 
@@ -74,7 +78,7 @@ default: all
 ifeq ($(ARCH), BGP)
 all: libtess.a dump
 else
-all: libtess.a draw dump
+all: libtess.a draw dump dense
 endif
 
 libtess.a: $(TESS_OBJS)
@@ -82,10 +86,13 @@ libtess.a: $(TESS_OBJS)
 	ar -cru $@ $(TESS_OBJS)
 
 draw: $(DRAW_OBJS) 
-	$(CXX) -o draw $(DRAW_OBJS) $(GL_LIBS)
+	$(CXX) -o draw $(DRAW_OBJS) $(GL_LIBS) $(LIBS)
 
 dump: $(DUMP_OBJS) 
 	$(CXX) -o dump $(DUMP_OBJS)
+
+dense: $(DENSE_OBJS) 
+	mpicxx -o dense $(DENSE_OBJS) -L$(HOME)/diy/lib -ldiy
 
 clean:
 	rm -f *.o 

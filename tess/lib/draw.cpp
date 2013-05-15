@@ -28,6 +28,13 @@
 #include <GL/gl.h>
 #endif
 
+// #define PNETCDF_IO
+
+#ifndef SERIAL_IO
+#include "mpi.h"
+#include "io.h"
+#endif
+
 using namespace std;
 
 // 3d point or vector
@@ -60,6 +67,7 @@ vec2d aspect; // scaling due to window aspect ratio
 
 // near clip plane
 float near;
+float init_near = 2.0; // initial value of near
 
 // window size
 // vec2d win_size = {1024, 512};
@@ -84,10 +92,16 @@ bool block_mode = false;
 // rendering mode
 bool draw_fancy = false;
 bool draw_particle = true;
+bool color_density = false;
+bool draw_tess = false;
 
 // volume filtering
-float min_vol = 0.0;
-float vol_step = 0.1;
+float min_vol = 0.0; // desired min vol threshold
+float max_vol = 0.0; // desired max vol threshold
+float min_vol_act = 0.0; // actual min vol we have
+float max_vol_act = 0.0; // actual max vol we have
+float min_vol_clamp = 1.0e-6; // clamp min_vol_act to this value
+float vol_step = 0.0001;
 
 vec3d sizes; // individual data sizes in each dimension
 float size; // one overall number for data size, max of individual sizes
@@ -101,6 +115,9 @@ vec3d site_center;
 // voronoi vertices, faces, cells
 vector<vec3d> verts;
 vector<int> num_face_verts;
+
+// volumes associated with faces
+vector <float> face_vols;
 
 // voronoi blocks
 vblock_t **vblocks;
@@ -143,11 +160,12 @@ void filter_volume(float min_vol);
 
 int main(int argc, char** argv) {
 
+  int num_vis_cells; // numbe of visible cells
   int n, m;
 
   if (argc < 3) {
     fprintf(stderr, "Usage: draw <filename> <swap (0 or 1)>"
-	    " [min. volume (optional)]\n");
+	    " [min. volume (optional)] [max volume (optional)]\n");
     exit(0);
   }
 
@@ -156,15 +174,31 @@ int main(int argc, char** argv) {
   if (argc > 3)
     min_vol = atof(argv[3]);
 
+  if (argc > 4)
+    max_vol = atof(argv[4]);
+
   // read the file
+
+#ifdef PNETCDF_IO
+
+  int tot_blocks; // total number of blocks
+  int *gids; // block global ids (unused)
+  int *num_neighbors; // number of neighbors for each local block (unused)
+  int **neighbors; // neighbors of each local block (unused)
+  MPI_Init(&argc, &argv);
+  pnetcdf_read(&nblocks, &tot_blocks, &vblocks, argv[1], MPI_COMM_WORLD,
+	       gids, num_neighbors, neighbors);
+  MPI_Finalize();
+
+#else
+
   SER_IO *io = new SER_IO(swap_bytes); // io object
   nblocks = io->ReadAllBlocks(argv[1], vblocks, false);
 
+#endif
+
   // package rendering data
   for (int i = 0; i < nblocks; i++) { // blocks
-
-    // debug
-//   for (int i = 0; i < 1; i++) { // blocks
 
     n = 0;
     for (int j = 0; j < vblocks[i]->num_orig_particles; j++) {
@@ -184,8 +218,17 @@ int main(int argc, char** argv) {
 
       for (int k = 0; k < vblocks[i]->num_cell_faces[j]; k++) { // faces
 
-	if (vblocks[i]->vols[j] >= min_vol)
+	if (vblocks[i]->vols[j] >= min_vol &&
+	    (max_vol <= 0.0 || vblocks[i]->vols[j] <= max_vol)) {
 	  num_face_verts.push_back(vblocks[i]->num_face_verts[n]);
+	  face_vols.push_back(vblocks[i]->vols[j]);
+	  if (i == 0 && j == 0)
+	    min_vol_act = vblocks[i]->vols[j];
+	  if (vblocks[i]->vols[j] < min_vol_act)
+	    min_vol_act = vblocks[i]->vols[j];
+	  if (vblocks[i]->vols[j] > max_vol_act)
+	    max_vol_act = vblocks[i]->vols[j];
+	}
 
 	for (int l = 0; l < vblocks[i]->num_face_verts[n]; l++) { // vertices
 
@@ -195,7 +238,8 @@ int main(int argc, char** argv) {
 	  s.y = vblocks[i]->save_verts[3 * v + 1];
 	  s.z = vblocks[i]->save_verts[3 * v + 2];
 	  m++;
-	  if (vblocks[i]->vols[j] >= min_vol)
+	  if (vblocks[i]->vols[j] >= min_vol &&
+	      (max_vol <= 0.0 || vblocks[i]->vols[j] <= max_vol))
 	    verts.push_back(s);
 
 	} // vertices
@@ -204,9 +248,19 @@ int main(int argc, char** argv) {
 
       } // faces
 
+      if (vblocks[i]->vols[j] >= min_vol &&
+	  (max_vol <= 0.0 || vblocks[i]->vols[j] <= max_vol))
+	num_vis_cells++;
+
     } // cells
 
   } // blocks
+
+  if (min_vol_act < min_vol_clamp)
+    min_vol_act = min_vol_clamp;
+
+  fprintf(stderr, "Number of particles = %d\n"
+	  "Number of visible cells = %d\n", (int)sites.size(), num_vis_cells);
 
   // start glut
   glutInit(&argc, argv); 
@@ -259,32 +313,40 @@ void display() {
 
   glEnable(GL_COLOR_MATERIAL);
 
-  // draw axes
+  // axes
   draw_axes();
 
-  // draw cell edges
-  glDisable(GL_LIGHTING);
-  glColor4f(0.5, 0.5, 0.5, 1.0);
-  glLineWidth(2);
-  n = 0;
-  for (int i = 0; i < (int)num_face_verts.size(); i++) {
-    glBegin(GL_LINE_STRIP);
-    int n0 = n; // index of first vertex in this face
-    for (int j = 0; j < num_face_verts[i]; j++) {
-      glVertex3f(verts[n].x, verts[n].y, verts[n].z);
-      n++;
-    }
-    glVertex3f(verts[n0].x, verts[n0].y, verts[n0].z); // repeat first vertex
-    glEnd();
-  }
-
-  // draw block bounds
+  // block bounds
   if (block_mode) {
     for (int i = 0; i < nblocks; i++)
       draw_cube(vblocks[i]->mins, vblocks[i]->maxs, 1.0, 0.0, 1.0);
   }
 
-  // draw sites
+  // cell edges
+  if (draw_tess) {
+
+    glDisable(GL_LIGHTING);
+    glColor4f(0.7, 0.7, 0.7, 1.0);
+    if (draw_fancy)
+      glLineWidth(3.0);
+    else
+      glLineWidth(1.0);
+    n = 0;
+    for (int i = 0; i < (int)num_face_verts.size(); i++) {
+      glBegin(GL_LINE_STRIP);
+      int n0 = n; // index of first vertex in this face
+      for (int j = 0; j < num_face_verts[i]; j++) {
+	glVertex3f(verts[n].x, verts[n].y, verts[n].z);
+	n++;
+      }
+      // repeat first vertex
+      glVertex3f(verts[n0].x, verts[n0].y, verts[n0].z);
+      glEnd();
+    }
+
+  }
+
+  // sites
   if (draw_fancy) {
     glDisable(GL_COLOR_MATERIAL);
     glEnable(GL_LIGHT0);
@@ -296,13 +358,14 @@ void display() {
     glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, shine);
     glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, amb_mat);
     if (draw_particle)
-      draw_spheres(sites, 0.04);
+      draw_spheres(sites, 0.02);
     //     draw_sprites(sites, 10.0);
   }
   else {
+    glDisable(GL_LIGHTING);
     glColor3f(1.0, 1.0, 1.0);
     glEnable(GL_POINT_SMOOTH);
-    glPointSize(1.0);
+    glPointSize(1.5);
     if (draw_particle) {
       glBegin(GL_POINTS);
       for (int i = 0; i < (int)sites.size(); i++)
@@ -312,29 +375,66 @@ void display() {
     glDisable(GL_COLOR_MATERIAL);
   }
 
-  // draw cell faces
-  if (draw_fancy) {
-    GLfloat front_mat[] = {0.3, 0.35, 0.5, 1.0};
-    GLfloat back_mat[] = {1.0, 0.3, 0.3, 1.0}; // test if back faces ever seen
-    GLfloat spec_mat[] = {0.3, 0.3, 0.3, 1.0};
-    GLfloat shine[] = {128}; // 0 - 128, 0 = shiny, 128 = dull
-    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, spec_mat);
-    glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, shine);
-    glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, front_mat);
-    glMaterialfv(GL_BACK, GL_AMBIENT_AND_DIFFUSE, back_mat);
-    n = 0;
-    for (int i = 0; i < (int)num_face_verts.size(); i++) {
-      // flat shading, one normal per face
-      vec3d normal;
-      ComputeNormal(&verts[n], num_face_verts[i], normal);
-      glBegin(GL_POLYGON);
-      for (int j = 0; j < num_face_verts[i]; j++) {
-	glNormal3f(normal.x, normal.y, normal.z);
-	glVertex3f(verts[n].x, verts[n].y, verts[n].z);
-	n++;
+  // cell faces
+  if (draw_tess) {
+
+    if (draw_fancy) {
+      float d = size / 3000.0; // face shift found by trial and error
+      GLfloat spec[] = {0.5, 0.5, 0.5, 1.0};
+      GLfloat shine[] = {16}; // 0 - 128, 0 = shiny, 128 = dull
+      glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, spec);
+      glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, shine);
+      if (color_density) {
+	n = 0;
+	for (int i = 0; i < (int)num_face_verts.size(); i++) {
+	  // flat shading, one normal per face
+	  vec3d normal;
+	  ComputeNormal(&verts[n], num_face_verts[i], normal);
+	  // logartithmic face color from red = small vol to blue = big vol
+	  float r, b;
+	  b = (log10f(face_vols[i]) - log10f(min_vol_act)) / 
+	    (log10f(max_vol_act) - log10f(min_vol_act));
+	  r = 1.0 - b;
+	  GLfloat mat[] = {r, 0.1, b, 1.0};
+	  glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, mat);
+	  // shift the face to set it back from the edges
+	  float dx = normal.x * d;
+	  float dy = normal.y * d;
+	  float dz = normal.z * d;
+	  glBegin(GL_POLYGON);
+	  // draw the face
+	  for (int j = 0; j < num_face_verts[i]; j++) {
+	    glNormal3f(normal.x, normal.y, normal.z);
+	    glVertex3f(verts[n].x - dx, verts[n].y - dy, verts[n].z - dz);
+	    n++;
+	  }
+	  glEnd();
+	}
       }
-      glEnd();
+      else {
+	GLfloat mat[] = {0.3, 0.35, 0.6, 1.0};
+	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, mat);
+	n = 0;
+	for (int i = 0; i < (int)num_face_verts.size(); i++) {
+	  // flat shading, one normal per face
+	  vec3d normal;
+	  ComputeNormal(&verts[n], num_face_verts[i], normal);
+	  // shift the face to set it back from the edges
+	  float dx = normal.x * d;
+	  float dy = normal.y * d;
+	  float dz = normal.z * d;
+	  // draw the face
+	  glBegin(GL_POLYGON);
+	  for (int j = 0; j < num_face_verts[i]; j++) {
+	    glNormal3f(normal.x, normal.y, normal.z);
+	    glVertex3f(verts[n].x - dx, verts[n].y - dy, verts[n].z - dz);
+	    n++;
+	  }
+	  glEnd();
+	}
+      }
     }
+
   }
 
   glutSwapBuffers();
@@ -370,8 +470,8 @@ void init_display() {
       site_max.z = sites[i].z;
   }
   site_center.x = (site_min.x + site_max.x) / 2.0;
-  site_center.y = (site_min.x + site_max.y) / 2.0;
-  site_center.z = (site_min.x + site_max.z) / 2.0;
+  site_center.y = (site_min.y + site_max.y) / 2.0;
+  site_center.z = (site_min.z + site_max.z) / 2.0;
   sizes.x = site_max.x - site_min.x;
   sizes.y = site_max.y - site_min.y;
   sizes.z = site_max.z - site_min.z;
@@ -424,7 +524,7 @@ void init_display() {
 	       GL_UNSIGNED_BYTE, sprite_rgba);
 
   // near clip plane
-  near = 0.1;
+  near = init_near;
 
 }
 //--------------------------------------------------------------------------
@@ -434,8 +534,8 @@ void init_display() {
 void headlight() {
 
   GLfloat light_ambient[4] = {0.1, 0.1, 0.1, 1.0};  
-  GLfloat light_diffuse[4] = {0.1, 0.1, 0.1, 1.0};  
-  GLfloat light_specular[4] = {0.7, 0.7, 0.7, 1.0};
+  GLfloat light_diffuse[4] = {0.2, 0.2, 0.2, 1.0};  
+  GLfloat light_specular[4] = {0.8, 0.8, 0.8, 1.0};
 
   glPushMatrix();
 
@@ -642,8 +742,14 @@ void key(unsigned char key, int x, int y) {
   case 'q':  // quit
     exit(1);
     break; 
-  case 'p':  //show particle, added by Jingyuan
+  case 't':  // show tessellation
+    draw_tess = !draw_tess;
+    break;
+  case 'p':  // show particles
     draw_particle = !draw_particle;
+    break;
+  case 'd':  // color by density
+    color_density = !color_density;
     break;
   case 'z':  // zoom mouse motion
     xform_mode = XFORM_SCALE; 
@@ -663,36 +769,38 @@ void key(unsigned char key, int x, int y) {
     break;
   case 'c': // increase near clip plane
     near += 0.11;
+    fprintf(stderr, "near clipping plane = %.2f from viewer\n", near);
     break;
   case 'C': // decrease near clip plane
     near -= 0.1;
+    fprintf(stderr, "near clipping plane = %.2f from viewer\n", near);
     break;
   case 'v': // restrict (minimum) volume range
     min_vol += vol_step;
-    fprintf(stderr, "Minimum volume = %.3lf\n", min_vol);
+    fprintf(stderr, "Minimum volume = %.4lf\n", min_vol);
     filter_volume(min_vol);
     break;
   case 'V': //  expand (minimum) volume range
     min_vol -= vol_step;
     if (min_vol < 0.0)
       min_vol = 0.0;
-    fprintf(stderr, "Minimum volume = %.3lf\n", min_vol);
+    fprintf(stderr, "Minimum volume = %.4lf\n", min_vol);
     filter_volume(min_vol);
     break;
   case 'R': // reset volume range
     min_vol = 0.0;
-    fprintf(stderr, "Minimum volume = %.3lf\n", min_vol);
+    fprintf(stderr, "Minimum volume = %.4lf\n", min_vol);
     filter_volume(min_vol);
     break;
   case 's': // decrease volume step size
     vol_step *= 0.1;
-    if (vol_step < 0.001)
-      vol_step = 0.001;
-    fprintf(stderr, "Volume step size = %.3lf\n", vol_step);
+    if (vol_step < 0.0001)
+      vol_step = 0.0001;
+    fprintf(stderr, "Volume step size = %.4lf\n", vol_step);
     break;
   case 'S': // increase volume step size
     vol_step *= 10.0;
-    fprintf(stderr, "Volume step size = %.3lf\n", vol_step);
+    fprintf(stderr, "Volume step size = %.4lf\n", vol_step);
     break;
   default:
     break;
@@ -704,6 +812,8 @@ void key(unsigned char key, int x, int y) {
 // filter volume
 //
 void filter_volume(float min_vol) {
+
+  int num_vis_cells = 0; // number of visible cells
 
   num_face_verts.clear();
   verts.clear();
@@ -718,7 +828,8 @@ void filter_volume(float min_vol) {
 
       for (int k = 0; k < vblocks[i]->num_cell_faces[j]; k++) { // faces
 
-	if (vblocks[i]->vols[j] >= min_vol)
+	if (vblocks[i]->vols[j] >= min_vol &&
+	      (max_vol <= 0.0 || vblocks[i]->vols[j] <= max_vol))
 	    num_face_verts.push_back(vblocks[i]->num_face_verts[n]);
 
 	for (int l = 0; l < vblocks[i]->num_face_verts[n]; l++) { // vertices
@@ -729,8 +840,9 @@ void filter_volume(float min_vol) {
 	  s.y = vblocks[i]->save_verts[3 * v + 1];
 	  s.z = vblocks[i]->save_verts[3 * v + 2];
 	  m++;
-	  if (vblocks[i]->vols[j] >= min_vol)
-	      verts.push_back(s);
+	  if (vblocks[i]->vols[j] >= min_vol &&
+	      (max_vol <= 0.0 || vblocks[i]->vols[j] <= max_vol))
+	    verts.push_back(s);
 
 	} // vertices
 
@@ -738,9 +850,15 @@ void filter_volume(float min_vol) {
 
       } // faces
 
+      if (vblocks[i]->vols[j] >= min_vol &&
+	  (max_vol <= 0.0 || vblocks[i]->vols[j] <= max_vol))
+	num_vis_cells++;
+
     } // cells
 
   } // blocks
+
+  fprintf(stderr, "Number of visible cells = %d\n", num_vis_cells);
 
 }
 //--------------------------------------------------------------------------
@@ -813,7 +931,7 @@ void init_viewport(bool reset) {
     trans.y += (win_size.y - old_win_size.y) / old_win_size.y;
   }
   else
-    near = 0.1;
+    near = init_near;
 
   old_win_size.x = win_size.x;
   old_win_size.y = win_size.y;
@@ -824,6 +942,9 @@ void init_viewport(bool reset) {
 //--------------------------------------------------------------------------
 //
 // compute normal of a face using Newell's method
+//
+// Newell's method is more robust than simply computing the cross product of
+//   three points when the points are colinear or slightly nonplanar. 
 //
 void ComputeNormal(vec3d *verts, int num_verts, vec3d &normal) {
 

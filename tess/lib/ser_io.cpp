@@ -195,6 +195,13 @@ void SER_IO::ReadBlock(FILE *fd, vblock_t* &v, int64_t ofst) {
   v->tot_num_face_verts = hdr[TOT_NUM_FACE_VERTS];
   v->num_orig_particles = hdr[NUM_ORIG_PARTICLES];
 
+  // debug
+//   fprintf(stderr, "num_verts = %d num_complete_cells = %d "
+// 	  "tot_num_cell_faces = %d tot_num_face_verts = %d "
+// 	  "num_orig_particles = %d\n",
+// 	  v->num_verts, v->num_complete_cells, v->tot_num_cell_faces,
+// 	  v->tot_num_face_verts, v->num_orig_particles);
+
   if (v->num_verts > 0)
     v->save_verts = new float[3 * v->num_verts];
   if (v->num_cells > 0) {

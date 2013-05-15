@@ -18,7 +18,9 @@ default: all
 all clean: FORCE
 	cd lib && $(MAKE) $@
 	cd driver && $(MAKE) $@
+	cd postprocessor && $(MAKE) $@
 
 FORCE:
 	cd lib && $(MAKE) clean
 	cd driver && $(MAKE) clean
+	cd postprocessor && $(MAKE) clean

@@ -50,6 +50,7 @@ set(RequiredLibs
 
 ## TESS library sources
 set(TESSLIB_SRC
+  lib/io.c
   lib/ser_io.cpp
   lib/swap.cpp
   lib/tess.c

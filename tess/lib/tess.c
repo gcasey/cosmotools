@@ -8,13 +8,14 @@
  * Argonne, IL 60439
  * tpeterka@mcs.anl.gov
  *
- * (C) 2011 by Argonne National Laboratory.
+ * (C) 2013 by Argonne National Laboratory.
  * See COPYRIGHT in top-level directory.
  *
 --------------------------------------------------------------------------*/
 #include "mpi.h"
 #include "diy.h"
 #include "tess.h"
+#include "io.h"
 
 #include <stddef.h>
 #include <stdio.h>
@@ -29,8 +30,6 @@ static float cell_size; /* maximum expected cell diameter */
 static float ghost_factor; /* ghost size multiplier */
 static double *times; /* timing info */
 
-static int DIYCalledExternal;/* indicates,whether DIY is called externally*/
-
 /* datatype profiling for John Jenkins' research */
 /* #define DATATYPE_PROFILE */
 
@@ -38,37 +37,8 @@ static int DIYCalledExternal;/* indicates,whether DIY is called externally*/
 static int **hdrs; /* headers */
 #endif
 
-/*------------------------------------------------------------------------*/
-/*
-  Initialize parallel voronoi (and later possibly delaunay) tesselation.
-  Assumes that the external application has initialized DIY.
+/* #define PNETCDF_IO */
 
-  num_blocks: local number of blocks in my process
-  cell_dia: maximum expeted cell diameter
-  ghost_mult: ghost size multiplier
-  global_mins, global_maxs: overall data extents
-  minvol, maxvol: filter range for which cells to keep
-  pass -1.0 to skip either or both bounds
-  mpi_comm: MPI communicator
-  all_times: times for particle exchange, voronoi cells, convex hulls, and output
-*/
-void tess_init_diy_initialized(
-            int num_blocks,
-            float cell_dia, float ghost_mult,
-            float minvol, float maxvol,
-            MPI_Comm mpi_comm,double *all_times)
-{
-  /* save globals */
-  comm = mpi_comm;
-  nblocks = num_blocks;
-  cell_size = cell_dia;
-  ghost_factor = ghost_mult;
-  min_vol = minvol;
-  max_vol = maxvol;
-  times   = all_times;
-
-  DIYCalledExternal = 1;
-}
 /*------------------------------------------------------------------------*/
 /*
   initialize parallel voronoi (and later possibly delaunay) tesselation
@@ -121,7 +91,6 @@ void tess_init(int num_blocks, int *gids,
   DIY_Decomposed(num_blocks, gids, bounds, NULL, NULL, NULL, NULL, neighbors, 
 		 num_neighbors, wrap);
 
-  DIYCalledExternal = 0;
 }
 /*------------------------------------------------------------------------*/
 /*
@@ -129,8 +98,8 @@ finalize parallel voronoi (and later possibly delaunay) tesselation
 */
 void tess_finalize() {
 
-  if( DIYCalledExternal == 0)
-    DIY_Finalize();
+  DIY_Finalize();
+
 }
 /*------------------------------------------------------------------------*/
 /*
@@ -206,6 +175,71 @@ void tess_test(int tot_blocks, int *data_size, float jitter, float cell_size,
 }
 /*--------------------------------------------------------------------------*/
 /*
+  postprocessing parallel voronoi (and later possibly delaunay) tesselation
+
+  num_blocks: local number of blocks in my process
+  gids: global ids of my local blocks
+  bounds: block bounds (extents) of my local blocks
+  neighbors: neighbor lists for each of my local blocks, in lid order
+  neighbor bounds need not be known, will be discovered automatically
+  num_neighbors: number of neighbors for each of my local blocks, in lid order
+  cell_dia: maximum expeted cell diameter
+  ghost_mult: ghost size multiplier
+  global_mins, global_maxs: overall data extents
+  wrap: whether wraparound neighbors are used
+  minvol, maxvol: filter range for which cells to keep
+  pass -1.0 to skip either or both bounds
+  mpi_comm: MPI communicator
+  all_times: times for particle exchange, voronoi cells, convex hulls, 
+  and output
+  particles: particles[block_num][particle] 
+  where each particle is 3 values, px, py, pz
+  num_particles; number of particles in each block
+  out_file: output file name
+*/
+void tess_post(int num_blocks, int *gids, 
+	       struct bb_t *bounds, struct gb_t **neighbors, 
+	       int *num_neighbors, float cell_dia, float ghost_mult,
+	       float *global_mins, float *global_maxs, 
+	       int wrap, float minvol, float maxvol, MPI_Comm mpi_comm,
+	       double *all_times, float **particles, int *num_particles, 
+	       char *out_file) {
+
+  int dim = 3; // 3D
+  int i;
+
+  /* save globals */
+  comm = mpi_comm;
+  nblocks = num_blocks;
+  cell_size = cell_dia;
+  ghost_factor = ghost_mult;
+  min_vol = minvol;
+  max_vol = maxvol;
+  times = all_times;
+
+  /* data extents */
+  for(i = 0; i < 3; i++) {
+    data_mins[i] = global_mins[i];
+    data_maxs[i] = global_maxs[i];
+  }
+
+  /* init times */
+  for (i = 0; i < MAX_TIMES; i++)
+    times[i] = 0.0;
+
+  /* init DIY */
+  DIY_Init(dim, NULL, 1, comm);
+  DIY_Decomposed(num_blocks, gids, bounds, NULL, NULL, NULL, NULL, neighbors, 
+		 num_neighbors, wrap);
+
+  voronoi(nblocks, particles, num_particles, cell_dia, ghost_mult,
+	  times, out_file);
+
+  DIY_Finalize();
+
+}
+/*--------------------------------------------------------------------------*/
+/*
   test of parallel voronoi (and later possibly delaunay) tesselation
 
   nblocks: local number of blocks
@@ -242,7 +276,7 @@ void voronoi(int nblocks, float **particles, int *num_particles,
   times[EXCH_TIME] = MPI_Wtime();
 #endif
 
-  /* exchange particless with neighbors */
+  /* exchange particles with neighbors */
   neighbor_particles(nblocks, particles,
 		     num_particles, cell_size * ghost_factor);
 
@@ -281,13 +315,31 @@ void voronoi(int nblocks, float **particles, int *num_particles,
   /* prepare for output */
   prep_out(nblocks, vblocks, hdrs);
 
+  /* debug */
+/*   int b; */
+/*   for (b = 0; b < nblocks; b++) { */
+/*     struct vblock_t *v = &vblocks[b]; */
+/*     fprintf(stderr, "mem gid = %d num_verts = %d num_complete_cells = %d " */
+/* 	    "tot_num_cell_faces = %d tot_num_face_verts = %d " */
+/* 	    "num_orig_particles = %d\n", DIY_Gid(0, b), */
+/* 	    v->num_verts, v->num_complete_cells, v->tot_num_cell_faces, */
+/* 	    v->tot_num_face_verts, v->num_orig_particles); */
+/*   } */
+
 #ifdef TIMING
   MPI_Barrier(comm);
   times[OUT_TIME] = MPI_Wtime();
 #endif
 
   /* write output */
-  write_out(nblocks, vblocks, hdrs, out_file);
+#ifdef PNETCDF_IO
+  char out_ncfile[256];
+  strncpy(out_ncfile, out_file, sizeof(out_ncfile));
+  strncat(out_ncfile, ".nc", sizeof(out_file));
+  pnetcdf_write(nblocks, vblocks, out_ncfile, comm);
+#else
+  diy_write(nblocks, vblocks, hdrs, out_file);
+#endif
 
 #ifdef TIMING
   MPI_Barrier(comm);
@@ -352,7 +404,7 @@ void orig_cells(int nblocks, struct vblock_t *vblocks, int dim,
 
     /* process voronoi output */
     if (!exitcode)
-      gen_voronoi_output(qh facet_list, &vblocks[i]);
+      gen_voronoi_output(qh facet_list, &vblocks[i], num_particles[i]);
 
     /* allocate cell sites for original particles */
     vblocks[i].num_orig_particles = num_orig_particles[i];
@@ -553,19 +605,25 @@ void neighbor_particles(int nblocks, float **particles, int *num_particles,
   /* copy received particles to particles */
   for (i = 0; i < nblocks; i++) {
 
-    particles[i] = 
-      (float *)realloc(particles[i], 
-		       (num_particles[i] + num_recv_particles[i]) *
-					    3 * sizeof(float));
+    if (num_recv_particles[i]) {
 
-    for (j = 0; j < num_recv_particles[i]; j++) { /* copy received particles */
-      particles[i][3 * num_particles[i]] =
-	((float*)recv_particles[i][j])[0];
-      particles[i][3 * num_particles[i] + 1] =
-	((float*)recv_particles[i][j])[1];
-      particles[i][3 * num_particles[i] + 2] =
-	((float*)recv_particles[i][j])[2];
-      num_particles[i]++;
+      /* grow space */
+      particles[i] = 
+	(float *)realloc(particles[i], 
+			 (num_particles[i] + num_recv_particles[i]) *
+			 3 * sizeof(float));
+
+      /* copy received particles */
+      for (j = 0; j < num_recv_particles[i]; j++) { 
+	particles[i][3 * num_particles[i]] =
+	  ((float*)recv_particles[i][j])[0];
+	particles[i][3 * num_particles[i] + 1] =
+	  ((float*)recv_particles[i][j])[1];
+	particles[i][3 * num_particles[i] + 2] =
+	  ((float*)recv_particles[i][j])[2];
+	num_particles[i]++;
+      }
+
     }
 
   }
@@ -583,34 +641,6 @@ void neighbor_particles(int nblocks, float **particles, int *num_particles,
 void item_type(DIY_Datatype *dtype) {
 
   DIY_Create_vector_datatype(3, 1, DIY_FLOAT, dtype);
-
-}
-/*--------------------------------------------------------------------------*/
-/*
-  writes output
-
-  nblocks: number of blocks
-  vblocks: pointer to array of vblocks
-  hdrs: block headers
-  out_file: output file name
-*/
-void write_out(int nblocks, struct vblock_t *vblocks, int ** hdrs, 
-	       char *out_file) {
-
-  int i;
-
-  /* pointers to voronoi blocks, needed for writing output */
-  void **pvblocks;
-  pvblocks = (void**)malloc(sizeof(void*) * nblocks);
-  for (i = 0; i < nblocks; i++)
-    pvblocks[i] = &vblocks[i];
-
-  /* write output */
-  DIY_Write_open_all(0, out_file, 0); /* uncompressed for now */
-  DIY_Write_blocks_all(0, pvblocks, nblocks, hdrs, &create_datatype);
-  DIY_Write_close_all(0);
-
-  free(pvblocks);
 
 }
 /*--------------------------------------------------------------------------*/
@@ -1155,14 +1185,12 @@ void prep_out(int nblocks, struct vblock_t *vblocks, int **hdrs) {
           vblocks[i].verts[3 * j + 1] < data_mins[1] ||
           vblocks[i].verts[3 * j + 1] > data_maxs[1] ||
           vblocks[i].verts[3 * j + 2] < data_mins[2] ||
-          vblocks[i].verts[3 * j + 2] > data_maxs[2])
-      {
+          vblocks[i].verts[3 * j + 2] > data_maxs[2]) {
         vblocks[i].save_verts[3 * j    ] = 0;
         vblocks[i].save_verts[3 * j + 1] = 0;
         vblocks[i].save_verts[3 * j + 2] = 0;
       }
-      else
-      {
+      else {
         vblocks[i].save_verts[3 * j]     = vblocks[i].verts[3 * j];
         vblocks[i].save_verts[3 * j + 1] = vblocks[i].verts[3 * j + 1];
         vblocks[i].save_verts[3 * j + 2] = vblocks[i].verts[3 * j + 2];
@@ -1175,6 +1203,7 @@ void prep_out(int nblocks, struct vblock_t *vblocks, int **hdrs) {
 
   /* save headers */
   for (i = 0; i < nblocks; i++) {
+
     hdrs[i][NUM_VERTS] = vblocks[i].num_verts;
     hdrs[i][NUM_CELLS] = vblocks[i].num_cells;
     hdrs[i][TOT_NUM_CELL_VERTS] = vblocks[i].tot_num_cell_verts;
@@ -1343,6 +1372,9 @@ void complete_cells(struct vblock_t *vblock, int lid, float ghost) {
   for (j = 0; j < vblock->num_cells; j++) {
 
     /* init */
+    if (!vblock->num_cell_verts[j])
+      continue;
+
     int complete = 1;
     too_small = (min_vol > 0.0 ? 1 : 0);
 
@@ -1466,6 +1498,8 @@ int gen_particles(int lid, float **particles, float jitter) {
   int num_particles;
   float jit; /* random jitter amount, 0 - MAX_JITTER */
 
+  /* linear positions */
+
   /* allocate particles */
   struct bb_t bounds;
   DIY_Block_bounds(0, lid, &bounds);
@@ -1477,7 +1511,6 @@ int gen_particles(int lid, float **particles, float jitter) {
 
   /* assign particles */
 
-  /* 3D test */
   n = 0;
   for (i = 0; i < sizes[0]; i++) {
     for (j = 0; j < sizes[1]; j++) {
@@ -1490,26 +1523,26 @@ int gen_particles(int lid, float **particles, float jitter) {
 
 	// and now jitter them
 	jit = rand() / (float)RAND_MAX * 2 * jitter - jitter;
-	if ((*particles)[3 * n] - jit >= bounds.min[0] && 
+	if ((*particles)[3 * n] - jit >= bounds.min[0] &&
 	    (*particles)[3 * n] - jit <= bounds.max[0])
 	  (*particles)[3 * n] -= jit;
-	else if ((*particles)[3 * n] + jit >= bounds.min[0] && 
+	else if ((*particles)[3 * n] + jit >= bounds.min[0] &&
 		 (*particles)[3 * n] + jit <= bounds.max[0])
 	  (*particles)[3 * n] += jit;
 
 	jit = rand() / (float)RAND_MAX * 2 * jitter - jitter;
-	if ((*particles)[3 * n + 1] - jit >= bounds.min[1] && 
+	if ((*particles)[3 * n + 1] - jit >= bounds.min[1] &&
 	    (*particles)[3 * n + 1] - jit <= bounds.max[1])
 	  (*particles)[3 * n + 1] -= jit;
-	else if ((*particles)[3 * n + 1] + jit >= bounds.min[1] && 
+	else if ((*particles)[3 * n + 1] + jit >= bounds.min[1] &&
 		 (*particles)[3 * n + 1] + jit <= bounds.max[1])
 	  (*particles)[3 * n + 1] += jit;
 
 	jit = rand() / (float)RAND_MAX * 2 * jitter - jitter;
-	if ((*particles)[3 * n + 2] - jit >= bounds.min[2] && 
+	if ((*particles)[3 * n + 2] - jit >= bounds.min[2] &&
 	    (*particles)[3 * n + 2] - jit <= bounds.max[2])
 	  (*particles)[3 * n + 2] -= jit;
-	else if ((*particles)[3 * n + 2] + jit >= bounds.min[2] && 
+	else if ((*particles)[3 * n + 2] + jit >= bounds.min[2] &&
 		 (*particles)[3 * n + 2] + jit <= bounds.max[2])
 	  (*particles)[3 * n + 2] += jit;
 
@@ -1519,6 +1552,60 @@ int gen_particles(int lid, float **particles, float jitter) {
       }
     }
   }
+
+  /* quadratic positions */
+
+/*   /\* allocate particles *\/ */
+/*   struct bb_t bounds; */
+/*   DIY_Block_bounds(0, lid, &bounds); */
+/*   sizes[0] = (int)sqrtf(bounds.max[0] - bounds.min[0]) + 1; */
+/*   sizes[1] = (int)sqrtf(bounds.max[1] - bounds.min[1]) + 1; */
+/*   sizes[2] = (int)sqrtf(bounds.max[2] - bounds.min[2]) + 1; */
+/*   num_particles = sizes[0] * sizes[1] * sizes[2]; */
+/*   *particles = (float *)malloc(num_particles * 3 * sizeof(float)); */
+
+/*   /\* assign particles *\/ */
+/*   n = 0; */
+/*   for (i = 0; i < sizes[0]; i++) { */
+/*     for (j = 0; j < sizes[1]; j++) { */
+/*       for (k = 0; k < sizes[2]; k++) { */
+
+/* 	// start with particles on a grid */
+/* 	(*particles)[3 * n] = bounds.min[0] + i * i; */
+/* 	(*particles)[3 * n + 1] = bounds.min[1] + j * j; */
+/* 	(*particles)[3 * n + 2] = bounds.min[2] + k * k; */
+
+/* 	// and now jitter them */
+/* 	jit = rand() / (float)RAND_MAX * 2 * jitter - jitter; */
+/* 	if ((*particles)[3 * n] - jit >= bounds.min[0] && */
+/* 	    (*particles)[3 * n] - jit <= bounds.max[0]) */
+/* 	  (*particles)[3 * n] -= jit; */
+/* 	else if ((*particles)[3 * n] + jit >= bounds.min[0] && */
+/* 		 (*particles)[3 * n] + jit <= bounds.max[0]) */
+/* 	  (*particles)[3 * n] += jit; */
+
+/* 	jit = rand() / (float)RAND_MAX * 2 * jitter - jitter; */
+/* 	if ((*particles)[3 * n + 1] - jit >= bounds.min[1] && */
+/* 	    (*particles)[3 * n + 1] - jit <= bounds.max[1]) */
+/* 	  (*particles)[3 * n + 1] -= jit; */
+/* 	else if ((*particles)[3 * n + 1] + jit >= bounds.min[1] && */
+/* 		 (*particles)[3 * n + 1] + jit <= bounds.max[1]) */
+/* 	  (*particles)[3 * n + 1] += jit; */
+
+/* 	jit = rand() / (float)RAND_MAX * 2 * jitter - jitter; */
+/* 	if ((*particles)[3 * n + 2] - jit >= bounds.min[2] && */
+/* 	    (*particles)[3 * n + 2] - jit <= bounds.max[2]) */
+/* 	  (*particles)[3 * n + 2] -= jit; */
+/* 	else if ((*particles)[3 * n + 2] + jit >= bounds.min[2] && */
+/* 		 (*particles)[3 * n + 2] + jit <= bounds.max[2]) */
+/* 	  (*particles)[3 * n + 2] += jit; */
+
+
+/* 	n++; */
+
+/*       } */
+/*     } */
+/*   } */
 
   /* debug: print particles */
 /*   for (n = 0; n < num_particles; n++) */
@@ -1535,10 +1622,12 @@ int gen_particles(int lid, float **particles, float jitter) {
 
   facetlist: qhull list of convex hull facets
   vblock: pointer to one voronoi block, allocated by caller
+  num_particles: number of particles used to generate the tessellation
   side effects: allocates data structures inside of vblock, caller's
   responsibility to free
 */
-void gen_voronoi_output(facetT *facetlist, struct vblock_t *vblock) {
+void gen_voronoi_output(facetT *facetlist, struct vblock_t *vblock, 
+			int num_particles) {
 
   int i, numcenters, numvertices= 0, numneighbors, numinf, vertex_i, vertex_n;
   facetT *facet, *neighbor, **neighborp;
@@ -1590,8 +1679,10 @@ void gen_voronoi_output(facetT *facetlist, struct vblock_t *vblock) {
     }
   }
 
-  /* number of vertices in each cell */
-  vblock->num_cell_verts = (int *)malloc(sizeof(int) * temp_num_cells);
+  /* number of vertices in each cell. temp_num_cells <= num_particles, 
+     allocate to quantity num_particles to be safe */
+  vblock->num_cell_verts = (int *)malloc(sizeof(int) * num_particles);
+  memset(vblock->num_cell_verts, 0, sizeof(int) * num_particles);
   i = 0;
   FOREACHvertex_i_(vertices) {
     numneighbors = 0;
@@ -1766,85 +1857,6 @@ void convex_to_voronoi(struct cblock_t *cblock, struct vblock_t *vblock,
     free((cblock->face_verts)[j]);
   free(cblock->face_verts);
   free(cblock->num_face_verts);
-
-}
-/*--------------------------------------------------------------------------*/
-/*
-  creates DIY datatype for the subset of the voronoi block to write to disk
-
-  vblock: voronoi block
-  did: domain id (unused in this case)
-  lid: local block number (unused in this case)
-  dtype: pointer to datatype
-
-  side effects: commits datatype
-
-  returns: pointer to base address associated with the dataytpe
-*/
-void *create_datatype(void* vblock, int did, int lid, DIY_Datatype *dtype) {
-
-  did = did; /* quiet compiler warning */
-  lid = lid; 
-
-  struct vblock_t *v = (struct vblock_t *)vblock;
-  struct map_block_t map[] = {
-
-    { DIY_FLOAT,  OFST, 3, 
-      offsetof(struct vblock_t, mins)                 },
-    { DIY_FLOAT, ADDR, v->num_verts * 3, 
-      DIY_Addr(v->save_verts)                              },
-    { DIY_FLOAT, ADDR, v->num_orig_particles * 3,
-      DIY_Addr(v->sites)                              },
-    { DIY_INT,    ADDR, v->num_complete_cells, 
-      DIY_Addr(v->complete_cells)                     },
-    { DIY_FLOAT, ADDR, v->num_complete_cells, 
-      DIY_Addr(v->areas)                              },
-    { DIY_FLOAT, ADDR, v->num_complete_cells, 
-      DIY_Addr(v->vols)                               },
-    { DIY_INT,    ADDR, v->num_complete_cells, 
-      DIY_Addr(v->num_cell_faces)                     },
-    { DIY_INT,    ADDR, v->tot_num_cell_faces, 
-      DIY_Addr(v->num_face_verts)                     },
-    { DIY_INT,    ADDR, v->tot_num_face_verts, 
-      DIY_Addr(v->face_verts)                         },
-    { DIY_FLOAT,  OFST, 3, 
-      offsetof(struct vblock_t, maxs)                 },
-
-  };
-
-  DIY_Create_struct_datatype(DIY_Addr(vblock), 10, map, dtype);
-
-#ifdef DATATYPE_PROFILE
-  /* print datatype data for John Jenkins */
-  int rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  fprintf(stderr, "Rank %d creating MPI struct datatype:\n"
-	  "base type = MPI_INT,   quantity = 7, address = %p\n"
-	  "base type = MPI_FLOAT, quantity = 3, address = %p\n"
-	  "base type = MPI_FLOAT, quantity = %d, address = %p\n"
-	  "base type = MPI_FLOAT, quantity = %d, address = %p\n"
-	  "base type = MPI_INT,   quantity = %d, address = %p\n"
-	  "base type = MPI_FLOAT, quantity = %d, address = %p\n"
-	  "base type = MPI_FLOAT, quantity = %d, address = %p\n"
-	  "base type = MPI_INT,   quantity = %d, address = %p\n"
-	  "base type = MPI_INT,   quantity = %d, address = %p\n"
-	  "base type = MPI_INT,   quantity = %d, address = %p\n"
-	  "base type = MPI_FLOAT, quantity = 3, address =  %p\n\n\n", 
-	  rank,
-	  hdrs[lid],
-	  vblock + offsetof(struct vblock_t, mins), 
-	  v->num_verts * 3, v->save_verts,
-	  v->num_orig_particles * 3, v->sites,
-	  v->num_complete_cells, v->complete_cells,
-	  v->num_complete_cells, v->areas,
-	  v->num_complete_cells, v->vols,
-	  v->num_complete_cells, v->num_cell_faces,
-	  v->tot_num_cell_faces, v->num_face_verts,
-	  v->tot_num_face_verts, v->face_verts,
-	  vblock + offsetof(struct vblock_t, maxs));
-#endif
-
-  return DIY_BOTTOM;
 
 }
 /*--------------------------------------------------------------------------*/
