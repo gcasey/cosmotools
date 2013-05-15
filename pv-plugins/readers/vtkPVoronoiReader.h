@@ -43,6 +43,8 @@ private:
   int dim; // number of dimensions in the dataset
   bool swap_bytes; // whether to swap bytes for endian conversion
 
+  int HeaderSize;
+
   //swap
   void Swap(char *n, int nitems, int item_size);
   void Swap8(char *n);

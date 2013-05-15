@@ -23,10 +23,6 @@
 #include <inttypes.h>
 using namespace std;
 
-#ifndef HDR_ELEMS
-#define HDR_ELEMS 7
-#endif
-
 #define VTK_CREATE(type, name) \
     vtkSmartPointer<type> name = vtkSmartPointer<type>::New()
 #define VTK_NEW(type, name) \
@@ -37,6 +33,7 @@ vtkStandardNewMacro(vtkPVoronoiReader);
 vtkPVoronoiReader::vtkPVoronoiReader()
 {
   this->swap_bytes = 0;
+  this->HeaderSize = 256;
   this->FileName = NULL;
   this->SetNumberOfInputPorts(0);
   this->SetNumberOfOutputPorts(1);
@@ -230,11 +227,11 @@ void vtkPVoronoiReader::ReadHeader(FILE *fd, int *hdr, int64_t ofst)
   int count;
 
   fseek(fd, ofst, SEEK_SET);
-  count = fread(hdr, sizeof(int), HDR_ELEMS, fd);
-  assert(count == HDR_ELEMS);
+  count = fread(hdr, sizeof(int), this->HeaderSize, fd);
+  assert(count == this->HeaderSize);
 
   if (swap_bytes)
-    Swap((char *)hdr, HDR_ELEMS, sizeof(int));
+    Swap((char *)hdr, this->HeaderSize, sizeof(int));
 }
 
 //
@@ -247,12 +244,12 @@ void vtkPVoronoiReader::ReadHeader(FILE *fd, int *hdr, int64_t ofst)
 //
 int vtkPVoronoiReader::CopyHeader(unsigned char *in_buf, int *hdr)
 {
-  memcpy(hdr, in_buf, HDR_ELEMS * sizeof(int));
+  memcpy(hdr, in_buf, this->HeaderSize * sizeof(int));
 
   if (swap_bytes)
-    Swap((char *)hdr, HDR_ELEMS, sizeof(int));
+    Swap((char *)hdr, this->HeaderSize, sizeof(int));
 
-  return(HDR_ELEMS * sizeof(int));
+  return(this->HeaderSize * sizeof(int));
 }
 
 //
@@ -267,7 +264,7 @@ int vtkPVoronoiReader::CopyHeader(unsigned char *in_buf, int *hdr)
 void vtkPVoronoiReader::ReadBlock(FILE *fd, vblock_t* &v, int64_t ofst)
 {
   // get header info
-  int hdr[HDR_ELEMS];
+  int hdr[this->HeaderSize];
   ReadHeader(fd, hdr, ofst);
 
   // create block
@@ -338,7 +335,7 @@ void vtkPVoronoiReader::CopyBlock(unsigned char *in_buf, vblock_t* &v)
   int ofst = 0; // offset in buffer for next section of data to read
 
   // get header info
-  int hdr[HDR_ELEMS];
+  int hdr[this->HeaderSize];
   ofst += CopyHeader(in_buf, hdr);
 
   // create block
