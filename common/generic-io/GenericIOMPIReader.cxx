@@ -487,15 +487,25 @@ void GenericIOMPIReader::ReadHeader()
  int N     = 0;     // the number of variables in the file.
  int error = 0;     // Flag that indicates there is a checksum error reading
                      // the header.
+ std::vector<char> Header;
+
  switch(this->Rank)
    {
    case 0:
      // Read header
      this->Read(&this->GH,sizeof(GlobalHeader),0,"GlobalHeader");
 
-     // Read checksum for header
-     uint64_t headerCRC;
-     this->Read(&headerCRC,CRCSize,sizeof(GlobalHeader),"HeaderCRC");
+     // Read entire header & its checksum
+     Header.resize(this->GH.HeaderSize+CRCSize,0xFE/* poison */);
+     this->Read(&Header[0],this->GH.HeaderSize+CRCSize,0,"EntireHeader");
+
+     // header checksum -- CRC is endian independent. It must be verified
+     // before byteswapping.
+     if(crc64_omp(&Header[0],this->GH.HeaderSize+CRCSize) != (uint64_t)-1)
+       {
+       N = 0;
+       error = 1;
+       }
 
      // Byte-swap header if necessary
      if( !GenericIOUtilities::DoesFileEndianMatch(&this->GH) )
@@ -503,7 +513,6 @@ void GenericIOMPIReader::ReadHeader()
        this->SwapEndian = true;
        shouldSwapInt    = 1;
        GenericIOUtilities::SwapGlobalHeader(&this->GH);
-       GenericIOUtilities::SwapEndian(&headerCRC,CRCSize);
        }
      else
        {
@@ -511,17 +520,15 @@ void GenericIOMPIReader::ReadHeader()
        shouldSwapInt    = 0;
        }
 
-     // header checksum
-     if(!GenericIOUtilities::CRC64CheckSum(
-           &this->GH,sizeof(GlobalHeader),headerCRC) )
-       {
-       N = 0;
-       error = 1;
-       }
-     else
+
+     if( error == 0 )
        {
        this->ReadVariableHeaders();
        N = this->VH.size();
+       }
+     else
+       {
+       N = 0;
        }
 
      // TODO: perhaps we could fuse this to a single bcast!
