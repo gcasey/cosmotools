@@ -20,7 +20,7 @@ GenericIOUtilities::~GenericIOUtilities()
 }
 
 //------------------------------------------------------------------------------
-bool GenericIOUtilities::CRC64CheckSum(
+bool GenericIOUtilities::VerifyChecksum(
       const void* data, size_t nbytes, uint64_t cs)
 {
   uint64_t crc64 = crc64_omp(data,nbytes);

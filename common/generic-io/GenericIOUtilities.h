@@ -49,7 +49,7 @@ public:
    * @param cs the checksum to compare against.
    * @return status true iff the checksum passes, else, false.
    */
-  static bool CRC64CheckSum(
+  static bool VerifyChecksum(
       const void* data,size_t nbytes,uint64_t cs);
 
   /**
