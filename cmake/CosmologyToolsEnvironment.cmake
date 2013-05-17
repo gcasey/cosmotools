@@ -36,6 +36,9 @@ mark_as_advanced(
     EXECUTABLE_OUTPUT_PATH
     CMAKE_Fortran_MODULE_DIRECTORY)
 
+## This is needed for UINT64_C in GenericIO
+add_definitions(-D__STDC_CONSTANT_MACROS)
+
 ## Choose whether to turn on verbosity or not
 option(MAKEFILE_VERBOSE "Turn on verbose makefiles." OFF)
 if(${MAKEFILE_VERBOSE})

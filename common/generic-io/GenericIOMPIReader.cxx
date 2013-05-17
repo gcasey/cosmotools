@@ -1,4 +1,7 @@
 #include "GenericIOMPIReader.h"
+#include "CRC64.h"
+
+
 #include "GenericIOUtilities.h"
 
 // C/C++ includes
