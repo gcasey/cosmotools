@@ -484,12 +484,18 @@ void GenericIOMPIReader::ReadVariableHeaders()
 void GenericIOMPIReader::ReadHeader()
 {
  int shouldSwapInt; // int used to broadcast should swap.
- int N = 0;         // the number of variables in the file.
+ int N     = 0;     // the number of variables in the file.
+ int error = 0;     // Flag that indicates there is a checksum error reading
+                     // the header.
  switch(this->Rank)
    {
    case 0:
      // Read header
      this->Read(&this->GH,sizeof(GlobalHeader),0,"GlobalHeader");
+
+     // Read checksum for header
+     uint64_t headerCRC;
+     this->Read(&headerCRC,CRCSize,sizeof(GlobalHeader),"HeaderCRC");
 
      // Byte-swap header if necessary
      if( !GenericIOUtilities::DoesFileEndianMatch(&this->GH) )
@@ -497,30 +503,54 @@ void GenericIOMPIReader::ReadHeader()
        this->SwapEndian = true;
        shouldSwapInt    = 1;
        GenericIOUtilities::SwapGlobalHeader(&this->GH);
+       GenericIOUtilities::SwapEndian(&headerCRC,CRCSize);
        }
      else
        {
        this->SwapEndian = false;
        shouldSwapInt    = 0;
        }
-     this->ReadVariableHeaders();
-     N = this->VH.size();
+
+     // header checksum
+     if(!GenericIOUtilities::CRC64CheckSum(
+           &this->GH,sizeof(GlobalHeader),headerCRC) )
+       {
+       N = 0;
+       error = 1;
+       }
+     else
+       {
+       this->ReadVariableHeaders();
+       N = this->VH.size();
+       }
+
+     // TODO: perhaps we could fuse this to a single bcast!
+     MPI_Bcast(&error,1,MPI_INTEGER,0,this->Communicator);
      MPI_Bcast(&shouldSwapInt,1,MPI_INTEGER,0,this->Communicator);
      MPI_Bcast(&N,1,MPI_INTEGER,0,this->Communicator);
      break;
    default:
+     MPI_Bcast(&error,1,MPI_INTEGER,0,this->Communicator);
      MPI_Bcast(&shouldSwapInt,1,MPI_INTEGER,0,this->Communicator);
      this->SwapEndian = (shouldSwapInt==1)? true : false;
      MPI_Bcast(&N,1,MPI_INTEGER,0,this->Communicator);
      this->VH.resize( N );
    } // END switch
 
-   // Broadcast header
-   MPI_Bcast(&this->GH,sizeof(GlobalHeader),MPI_BYTE,0,this->Communicator);
+   if(error == 1)
+     {
+     throw std::runtime_error("Header CRC checksum failed!");
+     } // END if
+   else
+     {
+     // Broadcast header
+     MPI_Bcast(
+       &this->GH,sizeof(GlobalHeader),MPI_BYTE,0,this->Communicator);
 
-   // Broadcast variable header
-   MPI_Bcast(
-      &this->VH[0],N*sizeof(VariableHeader),MPI_BYTE,0,this->Communicator);
+     // Broadcast variable header
+     MPI_Bcast(
+       &this->VH[0],N*sizeof(VariableHeader),MPI_BYTE,0,this->Communicator);
+     } // END else
 }
 
 //------------------------------------------------------------------------------
