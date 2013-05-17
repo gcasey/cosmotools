@@ -1,5 +1,7 @@
 #include "GenericIOUtilities.h"
 
+#include "CRC64.h"
+
 #include <iostream>
 #include <cassert>
 
@@ -15,6 +17,18 @@ GenericIOUtilities::GenericIOUtilities()
 GenericIOUtilities::~GenericIOUtilities()
 {
   // TODO Auto-generated destructor stub
+}
+
+//------------------------------------------------------------------------------
+bool GenericIOUtilities::CRC64CheckSum(
+      const void* data, size_t nbytes, uint64_t cs)
+{
+  uint64_t crc64 = crc64_omp(data,nbytes);
+  if( crc64 == cs )
+    {
+    return true;
+    }
+  return false;
 }
 
 //------------------------------------------------------------------------------

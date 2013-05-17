@@ -42,6 +42,17 @@ public:
       std::vector<int> &assigned);
 
   /**
+   * @brief Computes a 64-bit CRC checksum for the supplied data and verifies
+   * it against the expected checksum, cs.
+   * @param data the data to check.
+   * @param nbytes the number of bytes of the data.
+   * @param cs the checksum to compare against.
+   * @return status true iff the checksum passes, else, false.
+   */
+  static bool CRC64CheckSum(
+      const void* data,size_t nbytes,uint64_t cs);
+
+  /**
    * @brief Checks if the endian of this machine matches the endian of the
    * file encoded in the global header.
    * @param GH pointer to the global header
