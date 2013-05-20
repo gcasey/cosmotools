@@ -1,8 +1,8 @@
 #include "GenericIOMPIReader.h"
+
 #include "CRC64.h"
-
-
 #include "GenericIOUtilities.h"
+#include "MPIUtilities.h"
 
 // C/C++ includes
 #include <cassert>
@@ -77,61 +77,61 @@ void GenericIOMPIReader::OpenAndReadHeader( bool skipBlockHeaders )
   this->ReadHeader();
 
   // STEP 3: Index the variables
-  this->IndexVariables();
-
-  // STEP 4: Detect file type, i.e., if the data is written to separate files
-  switch( this->Rank )
-    {
-    case 0:
-      {
-      this->DetermineFileType();
-      int split = (this->SplitMode)? 1 : 0;
-      MPI_Bcast(&split,1,MPI_INTEGER,0,this->Communicator);
-      if( this->SplitMode )
-        {
-        skipBlockHeaders = true;
-
-        // Setup to read metadata file in process 0
-        this->AssignedBlocks.push_back( 0 );
-        this->ReadBlockHeaders();
-
-        this->ReadBlockToFileMap();
-
-        // Clear temporary data used for reading the block-to-file mapping
-        this->AssignedBlocks.clear();
-        this->RH.clear();
-        this->VH.clear();
-        } // END if splitmode
-      } // END rank==0
-      break;
-    default:
-      {
-      int split = -1;
-      MPI_Bcast(&split,1,MPI_INTEGER,0,this->Communicator);
-      this->SplitMode = (split==1)? true : false;
-      if( this->SplitMode )
-        {
-        skipBlockHeaders = true;
-        this->ReadBlockToFileMap();
-        } // END if splitmode
-      } // END default
-    } // END switch
-  MPI_Barrier(this->Communicator);
-
-  // STEP 5: Round robin assignment
-  GenericIOUtilities::RoundRobin(
-    this->Rank,this->NumRanks,this->GH.NRanks,this->AssignedBlocks);
-
-  // STEP 6: Setup internal readers, if split mode
-  this->SetupInternalReaders();
-  MPI_Barrier(this->Communicator);
-
-  // STEP 7: Read block headers
-  if( !skipBlockHeaders )
-    {
-    this->ReadBlockHeaders();
-    }
-  MPI_Barrier(this->Communicator);
+//  this->IndexVariables();
+//
+//  // STEP 4: Detect file type, i.e., if the data is written to separate files
+//  switch( this->Rank )
+//    {
+//    case 0:
+//      {
+//      this->DetermineFileType();
+//      int split = (this->SplitMode)? 1 : 0;
+//      MPI_Bcast(&split,1,MPI_INTEGER,0,this->Communicator);
+//      if( this->SplitMode )
+//        {
+//        skipBlockHeaders = true;
+//
+//        // Setup to read metadata file in process 0
+//        this->AssignedBlocks.push_back( 0 );
+//        this->ReadBlockHeaders();
+//
+//        this->ReadBlockToFileMap();
+//
+//        // Clear temporary data used for reading the block-to-file mapping
+//        this->AssignedBlocks.clear();
+//        this->RH.clear();
+//        this->VH.clear();
+//        } // END if splitmode
+//      } // END rank==0
+//      break;
+//    default:
+//      {
+//      int split = -1;
+//      MPI_Bcast(&split,1,MPI_INTEGER,0,this->Communicator);
+//      this->SplitMode = (split==1)? true : false;
+//      if( this->SplitMode )
+//        {
+//        skipBlockHeaders = true;
+//        this->ReadBlockToFileMap();
+//        } // END if splitmode
+//      } // END default
+//    } // END switch
+//  MPI_Barrier(this->Communicator);
+//
+//  // STEP 5: Round robin assignment
+//  GenericIOUtilities::RoundRobin(
+//    this->Rank,this->NumRanks,this->GH.NRanks,this->AssignedBlocks);
+//
+//  // STEP 6: Setup internal readers, if split mode
+//  this->SetupInternalReaders();
+//  MPI_Barrier(this->Communicator);
+//
+//  // STEP 7: Read block headers
+//  if( !skipBlockHeaders )
+//    {
+//    this->ReadBlockHeaders();
+//    }
+//  MPI_Barrier(this->Communicator);
 }
 
 //------------------------------------------------------------------------------
@@ -424,6 +424,10 @@ void GenericIOMPIReader::ReadSingleFileData()
       dataPtr = static_cast<char*>(dataPtr)+bytesize;
       } // END for all assigned blocks
 
+    //
+    // TODO: Perform checksum of the variable here
+    //
+
     // Swap endian if necessary
     if(this->SwapEndian)
       {
@@ -483,81 +487,95 @@ void GenericIOMPIReader::ReadVariableHeaders()
 //------------------------------------------------------------------------------
 void GenericIOMPIReader::ReadHeader()
 {
- int shouldSwapInt; // int used to broadcast should swap.
- int N     = 0;     // the number of variables in the file.
- int error = 0;     // Flag that indicates there is a checksum error reading
-                     // the header.
- std::vector<char> Header;
+ // Internal attributes. Each element in the `attribs` array represents a
+ // particular attribute, e.g., whether we should swap endian, etc., as
+ // indicated below. The reason for storing these attributes in an array
+ // instead of individual ints is so that we can send all these attributes
+ // with a single broadcast to all ranks.
+ int attribs[3]=
+   { 0, // indicates whether to swap or not
+     0, // indicates the entire header size,including the CRC checksum
+     0  // indicates whether an error occured
+   };
 
+ // Integers corresponding to indices in the `attribs` array for
+ const int SWAP        = 0;
+ const int HEADER_SIZE = 1;
+ const int ERROR       = 2;
+
+ // Read in attributes
  switch(this->Rank)
    {
    case 0:
-     // Read header
+     // Read the global header
      this->Read(&this->GH,sizeof(GlobalHeader),0,"GlobalHeader");
 
      // Read entire header & its checksum
-     Header.resize(this->GH.HeaderSize+CRCSize,0xFE/* poison */);
-     this->Read(&Header[0],this->GH.HeaderSize+CRCSize,0,"EntireHeader");
+     attribs[HEADER_SIZE] = this->GH.HeaderSize+CRCSize;
+     this->EntireHeader.resize(attribs[HEADER_SIZE],0xFE/* poison */);
+     this->Read(&this->EntireHeader[0],attribs[HEADER_SIZE],0,"EntireHeader");
 
      // header checksum -- CRC is endian independent. It must be verified
-     // before byteswapping.
-     if(crc64_omp(&Header[0],this->GH.HeaderSize+CRCSize) != (uint64_t)-1)
+     // before byte-swapping.
+     if(crc64_omp(&this->EntireHeader[0],attribs[HEADER_SIZE])!=(uint64_t)-1)
        {
-       N = 0;
-       error = 1;
+       attribs[ERROR] = 1;
        }
 
      // Byte-swap header if necessary
      if( !GenericIOUtilities::DoesFileEndianMatch(&this->GH) )
        {
        this->SwapEndian = true;
-       shouldSwapInt    = 1;
-       GenericIOUtilities::SwapGlobalHeader(&this->GH);
+       attribs[SWAP]    = 1;
        }
      else
        {
        this->SwapEndian = false;
-       shouldSwapInt    = 0;
+       attribs[SWAP]    = 0;
        }
-
-
-     if( error == 0 )
-       {
-       this->ReadVariableHeaders();
-       N = this->VH.size();
-       }
-     else
-       {
-       N = 0;
-       }
-
-     // TODO: perhaps we could fuse this to a single bcast!
-     MPI_Bcast(&error,1,MPI_INTEGER,0,this->Communicator);
-     MPI_Bcast(&shouldSwapInt,1,MPI_INTEGER,0,this->Communicator);
-     MPI_Bcast(&N,1,MPI_INTEGER,0,this->Communicator);
+     MPI_Bcast(attribs,3,MPI_INTEGER,0,this->Communicator);
      break;
    default:
-     MPI_Bcast(&error,1,MPI_INTEGER,0,this->Communicator);
-     MPI_Bcast(&shouldSwapInt,1,MPI_INTEGER,0,this->Communicator);
-     this->SwapEndian = (shouldSwapInt==1)? true : false;
-     MPI_Bcast(&N,1,MPI_INTEGER,0,this->Communicator);
-     this->VH.resize( N );
+     MPI_Bcast(attribs,3,MPI_INTEGER,0,this->Communicator);
+     this->SwapEndian = (attribs[SWAP]==1)? true : false;
+     this->EntireHeader.resize( attribs[HEADER_SIZE] );
    } // END switch
 
-   if(error == 1)
-     {
-     throw std::runtime_error("Header CRC checksum failed!");
-     } // END if
-   else
-     {
-     // Broadcast header
-     MPI_Bcast(
-       &this->GH,sizeof(GlobalHeader),MPI_BYTE,0,this->Communicator);
+ // Check for errors
+ if(attribs[ERROR]==1)
+   {
+   throw std::runtime_error("Header CRC checksum failed!");
+   }
 
-     // Broadcast variable header
-     MPI_Bcast(
-       &this->VH[0],N*sizeof(VariableHeader),MPI_BYTE,0,this->Communicator);
-     } // END else
+ // Broadcast the raw bytes of the entire header
+ assert("pre: headers has not been properly allocated!" &&
+           (this->EntireHeader.size()==attribs[HEADER_SIZE]) );
+ MPI_Bcast(
+   &this->EntireHeader[0],attribs[HEADER_SIZE],MPI_CHAR,0,this->Communicator);
+
+ // Ensure broadcast of the header was successful
+ if(crc64_omp(&this->EntireHeader[0],attribs[HEADER_SIZE])!=(uint64_t)-1)
+   {
+   attribs[ERROR] = 1;
+   }
+ int errors = 0;
+ MPI_Allreduce(
+     &attribs[ERROR],&errors,1,MPI_INTEGER,MPI_SUM,this->Communicator);
+ if(errors > 0 )
+   {
+   throw std::runtime_error("Error broadcasting header to ranks!");
+   }
+
+ // Extract the global header
+ this->GH = *(GlobalHeader*)(&this->EntireHeader[0]);
+ if( this->SwapEndian )
+   {
+   GenericIOUtilities::SwapGlobalHeader(&this->GH);
+   }
+
+ // Read the variable headers
+ this->ReadVariableHeaders();
+ this->Barrier();
 }
 
 //------------------------------------------------------------------------------
