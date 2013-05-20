@@ -105,7 +105,7 @@ protected:
    * @param blockHeader data-structure where to read in the block header
    * @see ReadBlockHeaders
    */
-  void ReadBlockHeader(const int blkIdx, RankHeader *blockHeader);
+  void ReadBlockHeader(const int blkIdx, RankHeader& blockHeader);
 
   /**
    * @brief If SplitMode is used, this method will attach a reader for each
