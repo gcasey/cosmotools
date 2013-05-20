@@ -178,6 +178,8 @@ public:
 
 protected:
   MPI_Comm Communicator;
+  int Rank;
+  int NumRanks;
 
   bool SwapEndian;
   bool SplitMode;

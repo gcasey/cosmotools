@@ -62,8 +62,6 @@ public:
 
 protected:
   MPI_File FH;
-  int Rank;
-  int NumRanks;
 
   // Flag that indicates that all data requests should be proxied to the
   // internal readers.
