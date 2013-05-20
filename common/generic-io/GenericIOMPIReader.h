@@ -84,7 +84,7 @@ protected:
    * @pre vh != NULL
    * @see ReadVariableHeaders
    */
-  void ReadVariableHeader( const int i, VariableHeader* vh );
+  void ReadVariableHeader( const int i, VariableHeader& vh );
 
   /**
    * @brief Reads in the variable headers for the number of variables.

@@ -7,6 +7,7 @@
 // C/C++ includes
 #include <cassert>
 #include <cstddef>
+#include <cstdio>
 #include <fstream>
 #include <iostream>
 #include <set>
@@ -77,7 +78,8 @@ void GenericIOMPIReader::OpenAndReadHeader( bool skipBlockHeaders )
   this->ReadHeader();
 
   // STEP 3: Index the variables
-//  this->IndexVariables();
+  this->IndexVariables();
+
 //
 //  // STEP 4: Detect file type, i.e., if the data is written to separate files
 //  switch( this->Rank )
@@ -458,17 +460,18 @@ void GenericIOMPIReader::Close()
 
 //------------------------------------------------------------------------------
 void GenericIOMPIReader::ReadVariableHeader(
-        const int idx, VariableHeader *vh)
+        const int idx, VariableHeader& vh)
 {
-  assert("pre: vh!=NULL" && (vh != NULL) );
-
-  std::ostringstream oss;
-  oss << "Reading variable " << idx;
   uint64_t offSet = this->GH.VarsStart + idx*sizeof(VariableHeader);
-  this->Read(vh,sizeof(VariableHeader),offSet, oss.str() );
+  assert("pre: detected variable offset out-of-bounds!" &&
+            offSet < this->EntireHeader.size()-CRCSize );
+
+  // Copy the bytes of the variable header from the raw header data
+  memcpy(&vh,&this->EntireHeader[offSet],sizeof(VariableHeader));
+
   if(this->SwapEndian)
     {
-    GenericIOUtilities::SwapVariableHeader(vh);
+    GenericIOUtilities::SwapVariableHeader(&vh);
     }
 }
 
@@ -480,7 +483,7 @@ void GenericIOMPIReader::ReadVariableHeaders()
   this->VH.resize( this->GH.NVars );
   for(int i=0; i < this->GH.NVars; ++i )
     {
-    this->ReadVariableHeader(i, &this->VH[i] );
+    this->ReadVariableHeader(i, this->VH[i] );
     } // END for all variables
 }
 
