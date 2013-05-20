@@ -169,8 +169,20 @@ protected:
   bool SwapEndian;
   bool SplitMode;
 
+  // Stores the entire raw bytes of the GenericIO header which consists of the
+  // GlobalHeader, the variable headers and the block (rank) headers.
+  std::vector< char > EntireHeader;
+
+  // Extracted global header, each process will extract the GlobaHeader and
+  // cache it in this ivar.
   GlobalHeader GH;
+
+  // Extracted variable header, each process extracts all of the variable
+  // headers in the file and cache them in this vector.
   std::vector< VariableHeader > VH;
+
+  // Extracted rank headers, i.e., blocks headers in the file. Each process
+  // will *only* extract and cache the blocks that it is assigned.
   std::vector< RankHeader > RH;
 
   std::map<std::string, int> VariableName2IndexMap;
