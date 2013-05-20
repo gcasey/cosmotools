@@ -80,60 +80,60 @@ void GenericIOMPIReader::OpenAndReadHeader( bool skipBlockHeaders )
   // STEP 3: Index the variables
   this->IndexVariables();
 
-//
-//  // STEP 4: Detect file type, i.e., if the data is written to separate files
-//  switch( this->Rank )
-//    {
-//    case 0:
-//      {
-//      this->DetermineFileType();
-//      int split = (this->SplitMode)? 1 : 0;
-//      MPI_Bcast(&split,1,MPI_INTEGER,0,this->Communicator);
-//      if( this->SplitMode )
-//        {
-//        skipBlockHeaders = true;
-//
-//        // Setup to read metadata file in process 0
-//        this->AssignedBlocks.push_back( 0 );
-//        this->ReadBlockHeaders();
-//
-//        this->ReadBlockToFileMap();
-//
-//        // Clear temporary data used for reading the block-to-file mapping
-//        this->AssignedBlocks.clear();
-//        this->RH.clear();
-//        this->VH.clear();
-//        } // END if splitmode
-//      } // END rank==0
-//      break;
-//    default:
-//      {
-//      int split = -1;
-//      MPI_Bcast(&split,1,MPI_INTEGER,0,this->Communicator);
-//      this->SplitMode = (split==1)? true : false;
-//      if( this->SplitMode )
-//        {
-//        skipBlockHeaders = true;
-//        this->ReadBlockToFileMap();
-//        } // END if splitmode
-//      } // END default
-//    } // END switch
-//  MPI_Barrier(this->Communicator);
-//
-//  // STEP 5: Round robin assignment
-//  GenericIOUtilities::RoundRobin(
-//    this->Rank,this->NumRanks,this->GH.NRanks,this->AssignedBlocks);
-//
-//  // STEP 6: Setup internal readers, if split mode
-//  this->SetupInternalReaders();
-//  MPI_Barrier(this->Communicator);
-//
-//  // STEP 7: Read block headers
-//  if( !skipBlockHeaders )
-//    {
-//    this->ReadBlockHeaders();
-//    }
-//  MPI_Barrier(this->Communicator);
+
+  // STEP 4: Detect file type, i.e., if the data is written to separate files
+  switch( this->Rank )
+    {
+    case 0:
+      {
+      this->DetermineFileType();
+      int split = (this->SplitMode)? 1 : 0;
+      MPI_Bcast(&split,1,MPI_INTEGER,0,this->Communicator);
+      if( this->SplitMode )
+        {
+        skipBlockHeaders = true;
+
+        // Setup to read metadata file in process 0
+        this->AssignedBlocks.push_back( 0 );
+        this->ReadBlockHeaders();
+
+        this->ReadBlockToFileMap();
+
+        // Clear temporary data used for reading the block-to-file mapping
+        this->AssignedBlocks.clear();
+        this->RH.clear();
+        this->VH.clear();
+        } // END if splitmode
+      } // END rank==0
+      break;
+    default:
+      {
+      int split = -1;
+      MPI_Bcast(&split,1,MPI_INTEGER,0,this->Communicator);
+      this->SplitMode = (split==1)? true : false;
+      if( this->SplitMode )
+        {
+        skipBlockHeaders = true;
+        this->ReadBlockToFileMap();
+        } // END if splitmode
+      } // END default
+    } // END switch
+  this->Barrier();
+
+  // STEP 5: Round robin assignment
+  GenericIOUtilities::RoundRobin(
+    this->Rank,this->NumRanks,this->GH.NRanks,this->AssignedBlocks);
+
+  // STEP 6: Setup internal readers, if split mode
+  this->SetupInternalReaders();
+  this->Barrier();
+
+  // STEP 7: Read block headers
+  if( !skipBlockHeaders )
+    {
+    this->ReadBlockHeaders();
+    }
+  this->Barrier();
 }
 
 //------------------------------------------------------------------------------
