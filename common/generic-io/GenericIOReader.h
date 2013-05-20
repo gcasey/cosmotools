@@ -25,9 +25,20 @@ public:
   virtual ~GenericIOReader();
 
   /**
+   * @brief Get/Set macro for the MPI communicator.
+   */
+  GetNSetMacro(Communicator,MPI_Comm);
+
+  /**
    * @brief Get macro for number of files.
    */
   GetMacro(NumberOfFiles,int);
+
+  /**
+   * @brief Barrier synchronization across all MPI ranks.
+   */
+  void Barrier()
+    {MPI_Barrier(this->Communicator);};
 
   /**
    * @brief Returns the variable information object for the ith variable.
@@ -166,11 +177,14 @@ public:
   virtual void Close() = 0;
 
 protected:
+  MPI_Comm Communicator;
+
   bool SwapEndian;
   bool SplitMode;
 
   // Stores the entire raw bytes of the GenericIO header which consists of the
-  // GlobalHeader, the variable headers and the block (rank) headers.
+  // GlobalHeader, the variable headers and the block (rank) headers, including
+  // the checksum of the header.
   std::vector< char > EntireHeader;
 
   // Extracted global header, each process will extract the GlobaHeader and

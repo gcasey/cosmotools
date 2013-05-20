@@ -25,8 +25,6 @@ public:
   GenericIOMPIReader();
   virtual ~GenericIOMPIReader();
 
-  GetNSetMacro(Communicator,MPI_Comm);
-
   /**
    * @brief Opens and reads the header of the file and initializes internal
    * data-structures.
@@ -63,7 +61,6 @@ public:
   virtual void Close();
 
 protected:
-  MPI_Comm Communicator;
   MPI_File FH;
   int Rank;
   int NumRanks;
