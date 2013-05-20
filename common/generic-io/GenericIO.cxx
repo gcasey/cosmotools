@@ -409,6 +409,12 @@ void GenericIO::write() {
     uint64_t CRC = crc64_omp(Vars[i].Data, WriteSize);
     char *CRCLoc = Vars[i].HasExtraSpace ?
       ((char *) Vars[i].Data) + WriteSize : (char *) &CRC;
+
+    // When using extra space for the CRC write, preserve the original contents.
+    char CRCSave[CRCSize];
+    if (Vars[i].HasExtraSpace)
+      std::copy(CRCLoc, CRCLoc + CRCSize, CRCSave);
+
     crc64_invert(CRC, CRCLoc);
 
     if (Vars[i].HasExtraSpace) {
@@ -417,6 +423,9 @@ void GenericIO::write() {
       FH.get()->write(Vars[i].Data, WriteSize, Offset, Vars[i].Name);
       FH.get()->write(CRCLoc, CRCSize, Offset + WriteSize, Vars[i].Name + " CRC");
     }
+
+    if (Vars[i].HasExtraSpace)
+       std::copy(CRCSave, CRCSave + CRCSize, CRCLoc);
 
     Offset += WriteSize + CRCSize;
   }
@@ -883,6 +892,11 @@ void GenericIO::readData(int EffRank, bool PrintStats, bool CollStats) {
 
       assert(Vars[i].HasExtraSpace && "Extra space required for reading");
 
+      char CRCSave[CRCSize];
+      char *CRCLoc = ((char *) Vars[i].Data) + ReadSize - CRCSize;
+      if (Vars[i].HasExtraSpace)
+        std::copy(CRCLoc, CRCLoc + CRCSize, CRCSave);
+
       try {
         FH.get()->read(Vars[i].Data, ReadSize, Offset, Vars[i].Name);
       } catch (...) {
@@ -896,6 +910,9 @@ void GenericIO::readData(int EffRank, bool PrintStats, bool CollStats) {
       if (CRC != (uint64_t) -1) {
         ++NErrs[1];
       }
+
+      if (Vars[i].HasExtraSpace)
+        std::copy(CRCSave, CRCSave + CRCSize, CRCLoc);
 
       break;
     }

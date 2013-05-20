@@ -79,7 +79,10 @@ protected:
 class GenericIO {
 public:
   enum VariableFlags {
-    VarHasExtraSpace =  (1 << 0),
+    VarHasExtraSpace =  (1 << 0), // Note that this flag indicates that the
+                                  // extra space is available, but the GenericIO
+                                  // implementation is required to
+                                  // preserve its contents.
     VarIsPhysCoordX  =  (1 << 1),
     VarIsPhysCoordY  =  (1 << 2),
     VarIsPhysCoordZ  =  (1 << 3),
