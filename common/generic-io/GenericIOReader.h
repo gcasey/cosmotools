@@ -11,9 +11,10 @@
 #include "GenericIOBase.h" // Base class
 #include "GenericIODefinitions.hpp"
 
-#include <map>    // for STL map
-#include <string> // for STL string
-#include <vector> // for STL vector
+#include <cassert> // for assert()
+#include <map>     // for STL map
+#include <string>  // for STL string
+#include <vector>  // for STL vector
 
 namespace cosmotk
 {
