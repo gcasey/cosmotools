@@ -1,5 +1,7 @@
 #include "GenericIOReader.h"
 
+#include "GenericIOUtilities.h"
+
 #include <iostream>
 #include <set>
 
@@ -78,6 +80,35 @@ VariableInfo GenericIOReader::GetFileVariableInfo(const int i)
       static_cast<bool>(this->VH[i].Flags & ValueMaybePhysGhost)
       );
   return( VI );
+}
+
+//------------------------------------------------------------------------------
+void GenericIOReader::ReadVariableHeader(
+        const int idx, VariableHeader& vh)
+{
+  uint64_t offSet = this->GH.VarsStart + idx*sizeof(VariableHeader);
+  assert("pre: detected variable header offset out-of-bounds!" &&
+            offSet < this->EntireHeader.size()-CRCSize );
+
+  // Copy the bytes of the variable header from the raw header data
+  memcpy(&vh,&this->EntireHeader[offSet],sizeof(VariableHeader));
+
+  if(this->SwapEndian)
+    {
+    GenericIOUtilities::SwapVariableHeader(&vh);
+    }
+}
+
+//------------------------------------------------------------------------------
+void GenericIOReader::ReadVariableHeaders()
+{
+  assert( "pre: file has no variables!" && (this->GH.NVars > 0) );
+
+  this->VH.resize( this->GH.NVars );
+  for(int i=0; i < this->GH.NVars; ++i )
+    {
+    this->ReadVariableHeader(i, this->VH[i] );
+    } // END for all variables
 }
 
 //------------------------------------------------------------------------------

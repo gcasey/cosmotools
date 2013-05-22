@@ -386,35 +386,6 @@ void GenericIOMPIReader::Close()
 }
 
 //------------------------------------------------------------------------------
-void GenericIOMPIReader::ReadVariableHeader(
-        const int idx, VariableHeader& vh)
-{
-  uint64_t offSet = this->GH.VarsStart + idx*sizeof(VariableHeader);
-  assert("pre: detected variable header offset out-of-bounds!" &&
-            offSet < this->EntireHeader.size()-CRCSize );
-
-  // Copy the bytes of the variable header from the raw header data
-  memcpy(&vh,&this->EntireHeader[offSet],sizeof(VariableHeader));
-
-  if(this->SwapEndian)
-    {
-    GenericIOUtilities::SwapVariableHeader(&vh);
-    }
-}
-
-//------------------------------------------------------------------------------
-void GenericIOMPIReader::ReadVariableHeaders()
-{
-  assert( "pre: file has no variables!" && (this->GH.NVars > 0) );
-
-  this->VH.resize( this->GH.NVars );
-  for(int i=0; i < this->GH.NVars; ++i )
-    {
-    this->ReadVariableHeader(i, this->VH[i] );
-    } // END for all variables
-}
-
-//------------------------------------------------------------------------------
 void GenericIOMPIReader::ReadHeader()
 {
  // Internal attributes. Each element in the `attribs` array represents a

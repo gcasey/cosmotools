@@ -238,6 +238,21 @@ protected:
   void ReadBlockToFileMap();
 
   /**
+   * @brief Reads the header of the ith variable
+   * @param vh the variable header where the dara will be read in.
+   * @pre vh != NULL
+   * @see ReadVariableHeaders
+   */
+  void ReadVariableHeader( const int i, VariableHeader& vh );
+
+  /**
+   * @brief Reads in the variable headers for the number of variables.
+   * @pre This method assumes that the global header has been read in.
+   * @see ReadVariableHeader
+   */
+  void ReadVariableHeaders();
+
+  /**
    * @brief Builds an index based on variable name.
    */
   void IndexVariables();
