@@ -23,12 +23,26 @@ GenericIOUtilities::~GenericIOUtilities()
 bool GenericIOUtilities::VerifyChecksum(
       const void* data, size_t nbytes, uint64_t cs)
 {
-  uint64_t crc64 = crc64_omp(data,nbytes);
-  if( crc64 == cs )
-    {
-    return true;
-    }
-  return false;
+// I am not sure why this does not work ???
+//  uint64_t crc64 = crc64_slow(data,nbytes);
+//  if( crc64 == cs )
+//    {
+//    return true;
+//    }
+//  return false;
+
+	std::vector< char > rawdata;
+	rawdata.resize(nbytes+CRCSize);
+	memcpy(&rawdata[0],data,nbytes);
+	memcpy(&rawdata[nbytes],&cs,CRCSize);
+
+	bool status = true;
+	if(crc64_omp(&rawdata[0],nbytes+CRCSize) != (uint64_t)-1)
+	  {
+	  status = false;
+	  }
+	rawdata.clear();
+	return( status );
 }
 
 //------------------------------------------------------------------------------
