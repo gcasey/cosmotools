@@ -42,7 +42,7 @@ bool GenericIOUtilities::VerifyChecksum(
 	memcpy(&rawdata[nbytes],&cs,CRCSize);
 
 	bool status = true;
-	if(crc64_omp(&rawdata[0],nbytes+CRCSize) != (uint64_t)-1)
+	if(crc64_omp(&rawdata[0],rawdata.size()) != (uint64_t)-1)
 	  {
 	  status = false;
 	  }
