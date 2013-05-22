@@ -423,12 +423,20 @@ void GenericIOMPIReader::ReadSingleFileData()
 
       // Read in the block data
       this->Read(dataPtr,bytesize,offSet,this->Vars[varIdx].Name);
+
+      // Read checksum
+      uint64_t checksum;
+      this->Read(&checksum,CRCSize,offSet+bytesize,"variable checksum");
+
+      // Verify Checksum
+      if( !GenericIOUtilities::VerifyChecksum(dataPtr,bytesize,checksum) )
+      	{
+    	throw std::runtime_error(
+    	  "Variable checksum failed for variable " + this->Vars[varIdx].Name);
+      	} // END if checksum
+
       dataPtr = static_cast<char*>(dataPtr)+bytesize;
       } // END for all assigned blocks
-
-    //
-    // TODO: Perform checksum of the variable here
-    //
 
     // Swap endian if necessary
     if(this->SwapEndian)
