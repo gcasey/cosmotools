@@ -5,10 +5,12 @@
  */
 
 // C++ includes
-#include <iostream>
-#include <vector>
+#include <cassert>
 #include <iomanip>
+#include <iostream>
 #include <limits>
+#include <sstream>
+#include <vector>
 
 // MPI include
 #include <mpi.h>
@@ -36,13 +38,17 @@ struct DataInformation
 // Global Methods
 //==============================================================================
 template<class T>
-void PrintData(void *dataPtr, const int idx)
+std::string PrintData(void *dataPtr, const int idx)
 {
   T* castedPtr = static_cast< T* >( dataPtr );
-  std::cout << std::scientific
+  std::ostringstream sbuf;
+  sbuf.clear();
+  sbuf.str("");
+
+  sbuf << std::scientific
             << std::setprecision( std::numeric_limits<T>::digits10 )
             << castedPtr[ idx ] << ";";
-  std::cout.flush();
+  return( sbuf.str() );
 }
 
 /**
@@ -70,9 +76,19 @@ int main(int argc, char **argv)
   std::vector< DataInformation > DataVector;
   DataVector.resize( reader.GetNumberOfVariablesInFile() );
   int N = reader.GetNumberOfElements();
+
+  cosmotk::MPIUtilities::Printf(
+		  comm,"NUMBER OF VARIABLES=%d\n",reader.GetNumberOfVariablesInFile());
+  cosmotk::MPIUtilities::SynchronizedPrintf(
+		  comm,"NUMBER OF ELEMENTS=%d\n",N);
+  MPI_Barrier(comm);
+
+  std::ostringstream oss;
+  oss.str("");
+  oss.clear();
   for(int i=0; i < reader.GetNumberOfVariablesInFile(); ++i)
     {
-    std::cout << reader.GetVariableName(i) << " (";
+
     DataVector[ i ].VariableInformation = reader.GetFileVariableInfo( i );
 
     int type = cosmotk::GenericIOUtilities::DetectVariablePrimitiveType(
@@ -80,18 +96,29 @@ int main(int argc, char **argv)
     assert( "pre: undefined data type!" &&
             (type >= 0) && (type < cosmotk::NUM_PRIMITIVE_TYPES) );
 
-    std::cout << cosmotk::PRIMITIVE_NAME[type] << ");";
+    oss.str("");
+    oss << reader.GetVariableName(i) << " ("
+        << cosmotk::PRIMITIVE_NAME[type] << ");";
+    cosmotk::MPIUtilities::Printf(comm,"VARIABLE=%s\n",oss.str().c_str());
+
     DataVector[ i ].Data =
         cosmotk::GenericIOUtilities::AllocateVariableArray(
             DataVector[ i ].VariableInformation,N);
     reader.AddVariable(
         DataVector[ i ].VariableInformation,DataVector[ i ].Data);
     }
-  std::cout << std::endl;
+
+  cosmotk::MPIUtilities::Printf(comm,"Reading Data\n");
   reader.ReadData();
+  cosmotk::MPIUtilities::Printf(comm,"Reading Data [DONE]\n");
+
   reader.Close();
+  cosmotk::MPIUtilities::Printf(comm,"Close File [DONE]\n");
 
   // STEP 3: Loop and print out data according to type
+  oss.clear();
+  oss.str("");
+  oss << std::endl;
   for(int j=0; j < N; ++j )
     {
     for(unsigned int i=0; i < DataVector.size(); ++i)
@@ -116,35 +143,38 @@ int main(int argc, char **argv)
 //      else if( type == cosmotk::GENERIC_IO_INT32_TYPE )
       if( type == cosmotk::GENERIC_IO_INT32_TYPE )
         {
-        PrintData<int32_t>(DataVector[ i ].Data,j);
+        oss << PrintData<int32_t>(DataVector[ i ].Data,j);
         } // END if int32_t
       else if( type == cosmotk::GENERIC_IO_INT64_TYPE )
         {
-        PrintData<int64_t>(DataVector[ i ].Data,j);
+        oss << PrintData<int64_t>(DataVector[ i ].Data,j);
         } // END if int64_t
       else if( type == cosmotk::GENERIC_IO_UINT32_TYPE )
         {
-        PrintData<uint32_t>(DataVector[ i ].Data,j);
+        oss << PrintData<uint32_t>(DataVector[ i ].Data,j);
         } // END if uint32_t
       else if( type == cosmotk::GENERIC_IO_UINT64_TYPE )
         {
-        PrintData<uint64_t>(DataVector[ i ].Data,j);
+        oss << PrintData<uint64_t>(DataVector[ i ].Data,j);
         } // END if uint64_t
       else if( type == cosmotk::GENERIC_IO_DOUBLE_TYPE )
         {
-        PrintData<double>(DataVector[ i ].Data,j);
+        oss << PrintData<double>(DataVector[ i ].Data,j);
         } // END if double
       else if( type == cosmotk::GENERIC_IO_FLOAT_TYPE )
         {
-        PrintData<float>(DataVector[ i ].Data,j);
+        oss << PrintData<float>(DataVector[ i ].Data,j);
         } // END if float
       else
         {
         std::cerr << "ERROR: Undefined datatype!\n";
         } // END else
       } // END for all variables read
-    std::cout << std::endl;
+    oss << std::endl;
     } // END for all elements
+
+  cosmotk::MPIUtilities::SynchronizedPrintf(comm,"%s",oss.str().c_str());
+  MPI_Barrier(comm);
 
   // STEP 4: Delete all read data
   for(unsigned int i=0; i < DataVector.size(); ++i )
