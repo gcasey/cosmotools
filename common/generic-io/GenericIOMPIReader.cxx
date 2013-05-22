@@ -384,13 +384,6 @@ void GenericIOMPIReader::ReadSingleFileData()
     assert( "pre: Data for variable is NULL!" &&
             (this->Vars[varIdx].Data != NULL) );
 
-    // Ensure the variable has extra space
-    if(!this->Vars[varIdx].HasExtraSpace)
-      {
-      throw std::runtime_error(
-          "pre: Extra space is required for reading!");
-      } // END if extra space
-
     // Get the variable size
     size_t vsize = this->Vars[varIdx].Size;
 
