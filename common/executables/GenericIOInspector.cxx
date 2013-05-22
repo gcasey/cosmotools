@@ -28,6 +28,10 @@ int rank;
 int size;
 MPI_Comm comm = MPI_COMM_WORLD;
 
+/* Command line arguments */
+bool OnlyMetaData = true;
+std::string File  = "";
+
 struct DataInformation
 {
   cosmotk::VariableInfo VariableInformation;
@@ -51,6 +55,24 @@ std::string PrintData(void *dataPtr, const int idx)
   return( sbuf.str() );
 }
 
+//==============================================================================
+void ParseArguments(int argc, char **argv)
+{
+	for(int i=1; i < argc; ++i)
+	  {
+	  if(strcmp(argv[i],"--file")==0)
+	    {
+	    File = std::string(argv[++i]);
+	    }
+	  else if(strcmp(argv[i],"--all")==0)
+	  	{
+		OnlyMetaData = false;
+	  	}
+	  } // END for all arguments
+
+	assert("pre: specify [--file <file>]" && (File != "") );
+}
+
 /**
  * @brief Program main
  * @param argc argument counter
@@ -65,18 +87,21 @@ int main(int argc, char **argv)
   MPI_Comm_size(comm,&size);
 
   // STEP 1: Get file name to read
-  std::string file=std::string(argv[1]);
+  ParseArguments(argc,argv);
 
   // STEP 2: Read and print vars
   cosmotk::GenericIOMPIReader reader;
   reader.SetCommunicator(comm);
-  reader.SetFileName(file);
+  reader.SetFileName(File);
   reader.OpenAndReadHeader();
 
   std::vector< DataInformation > DataVector;
-  DataVector.resize( reader.GetNumberOfVariablesInFile() );
-  int N = reader.GetNumberOfElements();
+  if( !OnlyMetaData )
+	{
+	DataVector.resize( reader.GetNumberOfVariablesInFile() );
+	}
 
+  int N = reader.GetNumberOfElements();
   cosmotk::MPIUtilities::Printf(
 		  comm,"NUMBER OF VARIABLES=%d\n",reader.GetNumberOfVariablesInFile());
   cosmotk::MPIUtilities::SynchronizedPrintf(
@@ -88,11 +113,14 @@ int main(int argc, char **argv)
   oss.clear();
   for(int i=0; i < reader.GetNumberOfVariablesInFile(); ++i)
     {
-
-    DataVector[ i ].VariableInformation = reader.GetFileVariableInfo( i );
+	if( !OnlyMetaData )
+	  {
+      DataVector[ i ].VariableInformation = reader.GetFileVariableInfo( i );
+	  }
 
     int type = cosmotk::GenericIOUtilities::DetectVariablePrimitiveType(
-                              DataVector[ i ].VariableInformation);
+                              reader.GetFileVariableInfo(i));
+
     assert( "pre: undefined data type!" &&
             (type >= 0) && (type < cosmotk::NUM_PRIMITIVE_TYPES) );
 
@@ -101,16 +129,22 @@ int main(int argc, char **argv)
         << cosmotk::PRIMITIVE_NAME[type] << ");";
     cosmotk::MPIUtilities::Printf(comm,"VARIABLE=%s\n",oss.str().c_str());
 
-    DataVector[ i ].Data =
-        cosmotk::GenericIOUtilities::AllocateVariableArray(
-            DataVector[ i ].VariableInformation,N);
-    reader.AddVariable(
-        DataVector[ i ].VariableInformation,DataVector[ i ].Data);
-    }
+    if( !OnlyMetaData )
+	  {
+	  DataVector[ i ].Data =
+		cosmotk::GenericIOUtilities::AllocateVariableArray(
+				DataVector[ i ].VariableInformation,N);
+	  reader.AddVariable(
+		DataVector[ i ].VariableInformation,DataVector[ i ].Data);
+	  } // END if onlyt metadata
+    } // END for all variables in the file
 
-  cosmotk::MPIUtilities::Printf(comm,"Reading Data\n");
-  reader.ReadData();
-  cosmotk::MPIUtilities::Printf(comm,"Reading Data [DONE]\n");
+  if( !OnlyMetaData )
+	{
+	cosmotk::MPIUtilities::Printf(comm,"Reading Data\n");
+	reader.ReadData();
+	cosmotk::MPIUtilities::Printf(comm,"Reading Data [DONE]\n");
+	}
 
   reader.Close();
   cosmotk::MPIUtilities::Printf(comm,"Close File [DONE]\n");
@@ -121,6 +155,11 @@ int main(int argc, char **argv)
   oss << std::endl;
   for(int j=0; j < N; ++j )
     {
+	if( OnlyMetaData )
+	  {
+	  break;
+	  }
+
     for(unsigned int i=0; i < DataVector.size(); ++i)
       {
       int type =
