@@ -23,6 +23,11 @@ GenericIOUtilities::~GenericIOUtilities()
 bool GenericIOUtilities::VerifyChecksum(
       const void* data, size_t nbytes, uint64_t cs)
 {
+	if( data==NULL || nbytes==0)
+	  {
+	  return true;
+	  }
+
 // I am not sure why this does not work ???
 //  uint64_t crc64 = crc64_slow(data,nbytes);
 //  if( crc64 == cs )
