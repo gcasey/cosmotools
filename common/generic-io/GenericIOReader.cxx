@@ -1,6 +1,7 @@
 #include "GenericIOReader.h"
 
 #include <iostream>
+#include <set>
 
 namespace cosmotk
 {
@@ -77,6 +78,80 @@ VariableInfo GenericIOReader::GetFileVariableInfo(const int i)
       static_cast<bool>(this->VH[i].Flags & ValueMaybePhysGhost)
       );
   return( VI );
+}
+
+//------------------------------------------------------------------------------
+void GenericIOReader::ReadBlockToFileMap()
+{
+  assert("pre: file must be in SplitMode" && this->SplitMode);
+
+  // STEP 0: Rank 0 reads block-to-file mapping and distributes it to all ranks
+  int NumElements=0;
+  int *rank = NULL;
+  int *part = NULL;
+  switch(this->Rank)
+    {
+    case 0:
+      NumElements = this->GetNumberOfElements();
+      MPI_Bcast(&NumElements,1,MPI_INTEGER,0,this->Communicator);
+      rank = new int[NumElements];
+      part = new int[NumElements];
+      this->AddVariable("$rank",rank);
+      this->AddVariable("$partition",part);
+      this->ReadData();
+      MPI_Bcast(rank,NumElements,MPI_INTEGER,0,this->Communicator);
+      MPI_Bcast(part,NumElements,MPI_INTEGER,0,this->Communicator);
+      this->ClearVariables();
+
+      // Correct the global header
+      this->GH.NRanks = NumElements;
+      break;
+    default:
+      MPI_Bcast(&NumElements,1,MPI_INTEGER,0,this->Communicator);
+      rank = new int[NumElements];
+      part = new int[NumElements];
+      MPI_Bcast(rank,NumElements,MPI_INTEGER,0,this->Communicator);
+      MPI_Bcast(part,NumElements,MPI_INTEGER,0,this->Communicator);
+
+      // Correct the global header
+      this->GH.NRanks = NumElements;
+    } // END switch
+
+  // STEP 1: All processes
+  std::set<int> parts;
+  std::map<int,int> counter;
+  int blkIdxInFile = -1;
+  for(int i=0; i < NumElements; ++i)
+    {
+    parts.insert(part[i]);
+    this->BlockToFileMap[ rank[i] ] = part[i];
+
+    blkIdxInFile = -1;
+    if( counter.find(part[i]) != counter.end() )
+      {
+      blkIdxInFile    = counter[ part[i] ];
+      counter[ part[i] ] += 1;
+      } // END if
+    else
+      {
+      blkIdxInFile = 0;
+      counter[ part[i] ] = 1;
+      } // END else
+    this->BlockToIdxWithinFile[ rank[i] ] = blkIdxInFile;
+    } // END for all elements
+  this->NumberOfFiles = parts.size();
+
+  // STEP 2: Delete dynamically allocated data
+  counter.clear();
+  parts.clear();
+  if( rank != NULL )
+    {
+    delete [] rank;
+    }
+  if( part != NULL )
+    {
+    delete [] part;
+    }
 }
 
 //------------------------------------------------------------------------------

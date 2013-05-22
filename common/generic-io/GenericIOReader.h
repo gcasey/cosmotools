@@ -232,6 +232,12 @@ protected:
   void DetermineFileType();
 
   /**
+   * @brief Reads in the BlockToFile mapping.
+   * @pre this->SplitMode==true.
+   */
+  void ReadBlockToFileMap();
+
+  /**
    * @brief Builds an index based on variable name.
    */
   void IndexVariables();
