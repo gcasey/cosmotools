@@ -419,7 +419,8 @@ void GenericIOMPIReader::ReadSingleFileData()
 
       // Read checksum
       uint64_t checksum;
-      this->Read(&checksum,CRCSize,offSet+bytesize,"variable checksum");
+      offSet += bytesize;
+      this->Read(&checksum,CRCSize,offSet,"variable checksum");
 
       // Verify Checksum
       if( !GenericIOUtilities::VerifyChecksum(dataPtr,bytesize,checksum) )
