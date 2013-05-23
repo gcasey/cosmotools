@@ -1,9 +1,11 @@
 #include "GenericIOReader.h"
 
+#include "CRC64.h"
 #include "GenericIOUtilities.h"
 
 #include <iostream>
 #include <set>
+#include <stdexcept>
 
 namespace cosmotk
 {
@@ -80,6 +82,100 @@ VariableInfo GenericIOReader::GetFileVariableInfo(const int i)
       static_cast<bool>(this->VH[i].Flags & ValueMaybePhysGhost)
       );
   return( VI );
+}
+
+//------------------------------------------------------------------------------
+void GenericIOReader::ReadHeader()
+{
+ // Internal attributes. Each element in the `attribs` array represents a
+ // particular attribute, e.g., whether we should swap endian, etc., as
+ // indicated below. The reason for storing these attributes in an array
+ // instead of individual ints is so that we can send all these attributes
+ // with a single broadcast to all ranks.
+ int attribs[3]=
+   { 0, // indicates whether to swap or not
+     0, // indicates the entire header size,including the CRC checksum
+     0  // indicates whether an error occured
+   };
+
+ // Integers corresponding to indices in the `attribs` array for
+ const int SWAP        = 0;
+ const int HEADER_SIZE = 1;
+ const int ERROR       = 2;
+
+ // Read in attributes
+ switch(this->Rank)
+   {
+   case 0:
+     // Read the global header
+     this->Read(&this->GH,sizeof(GlobalHeader),0,"GlobalHeader");
+
+     // Read entire header & its checksum
+     attribs[HEADER_SIZE] = this->GH.HeaderSize+CRCSize;
+     this->EntireHeader.resize(attribs[HEADER_SIZE],0xFE/* poison */);
+     this->Read(&this->EntireHeader[0],attribs[HEADER_SIZE],0,"EntireHeader");
+
+     // header checksum -- CRC is endian independent. It must be verified
+     // before byte-swapping.
+     if(crc64_omp(&this->EntireHeader[0],attribs[HEADER_SIZE])!=(uint64_t)-1)
+       {
+       attribs[ERROR] = 1;
+       }
+
+     // Byte-swap header if necessary
+     if( !GenericIOUtilities::DoesFileEndianMatch(&this->GH) )
+       {
+       this->SwapEndian = true;
+       attribs[SWAP]    = 1;
+       }
+     else
+       {
+       this->SwapEndian = false;
+       attribs[SWAP]    = 0;
+       }
+     MPI_Bcast(attribs,3,MPI_INTEGER,0,this->Communicator);
+     break;
+   default:
+     MPI_Bcast(attribs,3,MPI_INTEGER,0,this->Communicator);
+     this->SwapEndian = (attribs[SWAP]==1)? true : false;
+     this->EntireHeader.resize( attribs[HEADER_SIZE] );
+   } // END switch
+
+ // Check for errors
+ if(attribs[ERROR]==1)
+   {
+   throw std::runtime_error("Header CRC checksum failed!");
+   }
+
+ // Broadcast the raw bytes of the entire header
+ assert("pre: headers has not been properly allocated!" &&
+           (this->EntireHeader.size()==attribs[HEADER_SIZE]) );
+ MPI_Bcast(
+   &this->EntireHeader[0],attribs[HEADER_SIZE],MPI_CHAR,0,this->Communicator);
+
+ // Ensure broadcast of the header was successful
+ if(crc64_omp(&this->EntireHeader[0],attribs[HEADER_SIZE])!=(uint64_t)-1)
+   {
+   attribs[ERROR] = 1;
+   }
+ int errors = 0;
+ MPI_Allreduce(
+     &attribs[ERROR],&errors,1,MPI_INTEGER,MPI_SUM,this->Communicator);
+ if(errors > 0 )
+   {
+   throw std::runtime_error("Error broadcasting header to ranks!");
+   }
+
+ // Extract the global header
+ this->GH = *(GlobalHeader*)(&this->EntireHeader[0]);
+ if( this->SwapEndian )
+   {
+   GenericIOUtilities::SwapGlobalHeader(&this->GH);
+   }
+
+ // Read the variable headers
+ this->ReadVariableHeaders();
+ this->Barrier();
 }
 
 //------------------------------------------------------------------------------

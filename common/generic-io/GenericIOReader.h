@@ -230,12 +230,29 @@ protected:
   std::vector< int > AssignedBlocks;
 
   /**
+   * @brief Reads data into the user-supplied buffer from the MPI file handle
+   * @param buf the buffer where the data will be read into
+   * @param count the number of bytes to read
+   * @param offset the offset from which to read
+   * @param name name of the data being read, primarily, used for
+   * debugging and error reporting.
+   */
+  virtual void Read(void *buf, size_t count, off_t offset,
+		  	  	  	  const std::string &name) = 0;
+
+  /**
    * @brief Based on the global & variable headers, this method determines if
    * the file has been written in split mode or not.
    * @pre The variables must have been indexed prior to calling this method,
    * i.e., this method should be called after IndexVariables() has been called.
    */
   void DetermineFileType();
+
+  /**
+   * @brief Reads the global and variable header of the file and broadcasts
+   * them to all ranks.
+   */
+  void ReadHeader();
 
   /**
    * @brief Reads in the BlockToFile mapping.

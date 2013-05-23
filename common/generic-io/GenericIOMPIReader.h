@@ -67,12 +67,6 @@ protected:
   GenericIOMPIReader** InternalReaders;
 
   /**
-   * @brief Reads the global and variable header of the file and broadcasts
-   * them to all ranks.
-   */
-  void ReadHeader();
-
-  /**
    * @brief If SplitMode is used, this method will attach a reader for each
    * corresponding file.
    */
@@ -96,7 +90,7 @@ protected:
    * @param variableName name of the data being read, primarily, used for
    * debugging and error reporting.
    */
-  virtual void Read(void *buf, size_t count,
+  void Read(void *buf, size_t count,
                       off_t offset, const std::string &variableName );
 
 private:
