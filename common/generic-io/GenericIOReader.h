@@ -11,10 +11,11 @@
 #include "GenericIOBase.h" // Base class
 #include "GenericIODefinitions.hpp"
 
-#include <cassert> // for assert()
-#include <map>     // for STL map
-#include <string>  // for STL string
-#include <vector>  // for STL vector
+#include <cassert>     // for assert()
+#include <map>         // for STL map
+#include <string>  	   // for STL string
+#include <sys/types.h> // for off_t
+#include <vector>  	   // for STL vector
 
 namespace cosmotk
 {
@@ -162,7 +163,7 @@ public:
    * is assigned to will be read.
    * @pre !This->FileName.empty()
    */
-  virtual void OpenAndReadHeader( bool skipBlockHeaders=false )  = 0;
+  void OpenAndReadHeader( bool skipBlockHeaders=false );
 
   /**
    * @brief Read the headers of each assigned block.
@@ -190,6 +191,13 @@ protected:
 
   bool SwapEndian;
   bool SplitMode;
+
+  // Flag that indicates that all data requests should be proxied to the
+  // internal readers.
+  bool ProxyEnabled;
+
+  // List of internal readers used when reading in SplitMode.
+  GenericIOReader** InternalReaders;
 
   // Stores the entire raw bytes of the GenericIO header which consists of the
   // GlobalHeader, the variable headers and the block (rank) headers, including
@@ -246,6 +254,19 @@ protected:
    */
   virtual void Read(void *buf, size_t count, off_t offset,
 		  	  	  	  const std::string &name) = 0;
+
+  /**
+   * @brief Allocates internal readers.
+   * @param N number of readers to allocate.
+   * @note This method is implemented by concrete implementations.
+   */
+  virtual void AllocateInternalReaders(const int N)=0;
+
+  /**
+   * @brief If SplitMode is used, this method will attach a reader for each
+   * corresponding file.
+   */
+  void SetupInternalReaders();
 
   /**
    * @brief Based on the global & variable headers, this method determines if

@@ -69,81 +69,20 @@ void GenericIOMPIReader::Open()
 }
 
 //------------------------------------------------------------------------------
-void GenericIOMPIReader::OpenAndReadHeader( bool skipBlockHeaders )
+void GenericIOMPIReader::AllocateInternalReaders(const int N)
 {
-  // sanity checks
-  assert( "pre: No communicator is supplied" &&
-          (this->Communicator != MPI_COMM_NULL) );
-  assert("pre: FileName is empty!" && (!this->FileName.empty()) );
+  assert("pre: Internal Readers should be NULL!" &&
+		 (this->InternalReaders==NULL) );
+  assert("pre: NumberOfReaders(N) > 0" && (N > 0) );
 
+  this->InternalReaders = new GenericIOReader*[N];
+  assert("pre: Could not allocate internal readers array!" &&
+		  (this->InternalReaders != NULL));
 
-  // STEP 0: Get Rank and NumRanks information
-  MPI_Comm_rank(this->Communicator, &this->Rank);
-  MPI_Comm_size(this->Communicator, &this->NumRanks);
-
-  // STEP 1: Open file, if not successful, throw runtime_error exception
-  this->Open();
-
-  // STEP 2: Read Global & Variable header
-  this->ReadHeader();
-
-  // STEP 3: Index the variables
-  this->IndexVariables();
-
-
-  // STEP 4: Detect file type, i.e., if the data is written to separate files
-  switch( this->Rank )
+  for( int i=0; i < N; ++i )
     {
-    case 0:
-      {
-      this->DetermineFileType();
-      int split = (this->SplitMode)? 1 : 0;
-      MPI_Bcast(&split,1,MPI_INTEGER,0,this->Communicator);
-      if( this->SplitMode )
-        {
-        skipBlockHeaders = true;
-
-        // Setup to read metadata file in process 0
-        this->AssignedBlocks.push_back( 0 );
-        this->ReadBlockHeaders();
-
-        this->ReadBlockToFileMap();
-
-        // Clear temporary data used for reading the block-to-file mapping
-        this->AssignedBlocks.clear();
-        this->RH.clear();
-        this->VH.clear();
-        } // END if splitmode
-      } // END rank==0
-      break;
-    default:
-      {
-      int split = -1;
-      MPI_Bcast(&split,1,MPI_INTEGER,0,this->Communicator);
-      this->SplitMode = (split==1)? true : false;
-      if( this->SplitMode )
-        {
-        skipBlockHeaders = true;
-        this->ReadBlockToFileMap();
-        } // END if splitmode
-      } // END default
-    } // END switch
-  this->Barrier();
-
-  // STEP 5: Round robin assignment
-  GenericIOUtilities::RoundRobin(
-    this->Rank,this->NumRanks,this->GH.NRanks,this->AssignedBlocks);
-
-  // STEP 6: Setup internal readers, if split mode
-  this->SetupInternalReaders();
-  this->Barrier();
-
-  // STEP 7: Read block headers
-  if( !skipBlockHeaders )
-    {
-    this->ReadBlockHeaders();
-    }
-  this->Barrier();
+	this->InternalReaders[ i ] = new GenericIOMPIReader();
+    } // END for all readers
 }
 
 //------------------------------------------------------------------------------
@@ -169,85 +108,6 @@ int GenericIOMPIReader::GetNumberOfElements()
       } // END for all blocks
     }
   return( NElements );
-}
-
-//------------------------------------------------------------------------------
-void GenericIOMPIReader::SetupInternalReaders()
-{
-  // STEP 0: Short-circuit if we are reading a single file
-  if( !this->SplitMode )
-    {
-    return;
-    }
-
-  this->RH.clear();
-  this->VH.clear();
-
-  // STEP 1: Construct all readers, based on number of separate files that
-  // we have to read.
-  this->InternalReaders = new GenericIOMPIReader *[this->NumberOfFiles];
-
-  std::ostringstream oss;
-  for(int i=0; i < this->NumberOfFiles; ++i)
-    {
-    oss.clear(); oss.str("");
-    oss << this->FileName << "#" << i;
-    GenericIOMPIReader *iReader = new GenericIOMPIReader();
-    iReader->SetCommunicator( this->Communicator );
-    iReader->SetFileName(oss.str());
-    iReader->OpenAndReadHeader( /* skipBlock headers */ true );
-    assert("internal reader should not be in SplitMode" &&
-           !iReader->IsSplitMode());
-
-    /* Manually prescribe block assignement for this reader */
-    iReader->ClearBlockAssignment();
-    this->InternalReaders[ i ] = iReader;
-    assert("manually assign blocks to internal reader!" &&
-            iReader->GetNumberOfAssignedBlocks()==0);
-    }
-
-  // STEP 2: Enable proxying calls to internal readers.
-  // Indicate that calls to this class should be proxied to the underlying
-  // internal readers.
-  this->ProxyEnabled = true;
-
-  // STEP 3: Prescribe block assignment. Note, block assignment is done on
-  // the total number of blocks, in OpenAndReadHeader. The total number of
-  // blocks is implicitely given by the total number of elements read from
-  // the block-to-file map, see ReadBlockToFileMap() method.
-  for( unsigned int block=0; block < this->AssignedBlocks.size(); ++block)
-    {
-    int globalBlockIdx = this->AssignedBlocks[ block ];
-
-    // Sanity checks!
-    assert("ERROR: Cannot map block to file!" &&
-     (this->BlockToFileMap.find(globalBlockIdx)!=this->BlockToFileMap.end()));
-    assert("ERROR: Cannot map block to idx within file!" &&
-     (this->BlockToIdxWithinFile.find(globalBlockIdx)!=
-      this->BlockToIdxWithinFile.end()));
-
-    int fileIdx = this->BlockToFileMap[ globalBlockIdx ];
-    assert("ERROR: fileIdx is out-of-bounds" &&
-            (fileIdx >= 0) && (fileIdx < this->NumberOfFiles) );
-
-    // Get block Idx within file
-    int idxWithinFile = this->BlockToIdxWithinFile[ globalBlockIdx ];
-
-    this->InternalReaders[ fileIdx ]->AssignBlock( idxWithinFile );
-    } // END for all assigned blocks
-
-  // STEP 4: Read the block headers for each reader on each process
-  for(int i=0; i < this->NumberOfFiles; ++i)
-    {
-    this->InternalReaders[ i ]->ReadBlockHeaders();
-    }
-
-  // STEP 5: Proxy variable headers to proxy reader
-  for(int i=0;i < this->InternalReaders[0]->GetNumberOfVariablesInFile();++i)
-    {
-    this->VH.push_back(this->InternalReaders[0]->GetVariableHeader(i) );
-    } // END for all variables
-
 }
 
 //------------------------------------------------------------------------------

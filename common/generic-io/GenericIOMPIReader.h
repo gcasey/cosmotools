@@ -26,14 +26,6 @@ public:
   virtual ~GenericIOMPIReader();
 
   /**
-   * @brief Opens and reads the header of the file and initializes internal
-   * data-structures.
-   * @pre !This->FileName.empty()
-   * @pre this->Communicator != MPI_COMM_NULL
-   */
-  virtual void OpenAndReadHeader( bool skipBlockHeaders=false );
-
-  /**
    * @brief Overrides GetNumberOfElements to provide support for SplitMode
    * @return N the number of elements to read.
    * @see GenericIOReader::GetNumberOfElements()
@@ -56,21 +48,6 @@ public:
 
 protected:
   MPI_File FH;
-
-  // Flag that indicates that all data requests should be proxied to the
-  // internal readers.
-  bool ProxyEnabled;
-
-  /**
-   * @brief List of internal readers
-   */
-  GenericIOMPIReader** InternalReaders;
-
-  /**
-   * @brief If SplitMode is used, this method will attach a reader for each
-   * corresponding file.
-   */
-  void SetupInternalReaders();
 
   /**
    * @brief Read the data in split mode.
@@ -97,6 +74,13 @@ protected:
    */
   void Read(void *buf, size_t count,
                       off_t offset, const std::string &variableName );
+
+  /**
+   * @brief Allocates N the internal readers array.
+   * @param N number of readers to allocate.
+   * @pre N > 0
+   */
+  void AllocateInternalReaders(const int N);
 
 private:
   DISABLE_COPY_AND_ASSIGNMENT(GenericIOMPIReader);
