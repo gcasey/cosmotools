@@ -17,6 +17,7 @@ set(GENERIC_IO_SRC
     generic-io/GenericIOReader.cxx
     generic-io/GenericIOUtilities.cxx
     generic-io/GenericIOMPIReader.cxx
+    generic-io/GenericIOPosixReader.cxx
     )
 
 ## Append GenericIO sources to list of sources
