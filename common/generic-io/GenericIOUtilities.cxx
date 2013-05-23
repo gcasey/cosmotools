@@ -23,31 +23,25 @@ GenericIOUtilities::~GenericIOUtilities()
 bool GenericIOUtilities::VerifyChecksum(
       const void* data, size_t nbytes, uint64_t cs)
 {
-	if( data==NULL || nbytes==0)
-	  {
-	  return true;
-	  }
+  if( data==NULL || nbytes==0)
+    {
+    return true;
+    }
 
-// I am not sure why this does not work ???
-//  uint64_t crc64 = crc64_slow(data,nbytes);
-//  if( crc64 == cs )
-//    {
-//    return true;
-//    }
-//  return false;
+  // Compute the checksum
+  uint64_t crc64 = crc64_omp(data,nbytes);
 
-	std::vector< char > rawdata;
-	rawdata.resize(nbytes+CRCSize);
-	memcpy(&rawdata[0],data,nbytes);
-	memcpy(&rawdata[nbytes],&cs,CRCSize);
+  // Get the inverse checksum, because, that is what is stored in the file
+  // and what we are comparing against
+  uint64_t crc64_inv;
+  crc64_invert(crc64,&crc64_inv);
 
-	bool status = true;
-	if(crc64_omp(&rawdata[0],rawdata.size()) != (uint64_t)-1)
-	  {
-	  status = false;
-	  }
-	rawdata.clear();
-	return( status );
+  // Compare against the inverse checksum, cs, read from the file.
+  if(crc64_inv == cs )
+    {
+    return true;
+    }
+  return false;
 }
 
 //------------------------------------------------------------------------------
