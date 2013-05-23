@@ -1,6 +1,7 @@
 #include "DistributedHaloEvolutionTree.h"
 
 // CosmologyTools includes
+#include "GenericIO.h"
 #include "Halo.h"
 #include "MergerTreeEvent.h"
 
@@ -230,6 +231,44 @@ int DistributedHaloEvolutionTree::GetTotalNumberOfBytes()
   MPI_Allreduce(
       &localNumBytes,&totalNumBytes,1,MPI_INT,MPI_SUM,this->Communicator);
   return( totalNumBytes );
+}
+
+//------------------------------------------------------------------------------
+void DistributedHaloEvolutionTree::WriteTree(std::string fileName)
+{
+  // STEP 0: Allocate writer
+  cosmotk::GenericIO writer(this->Communicator,fileName,cosmotk::FileIOPOSIX);
+
+  // STEP 1: Allocate temporary arrays for writting
+  int N = this->GetNumberOfNodes();
+  std::vector< ID_T > treeNodeIds(N,-1);
+  std::vector< ID_T > haloTags(N,-1);
+  std::vector< REAL > haloMass(N,0.0);
+  std::vector< int > tstep(N,-1);
+  std::vector< REAL > redshift(N,0.0);
+  std::vector< POSVEL_T > center_x(N,0.0);
+  std::vector< POSVEL_T > center_y(N,0.0);
+  std::vector< POSVEL_T > center_z(N,0.0);
+  std::vector< POSVEL_T > mcx(N,0.0);
+  std::vector< POSVEL_T > mcy(N,0.0);
+  std::vector< POSVEL_T > mcz(N,0.0);
+  std::vector< POSVEL_T > vx(N,0.0);
+  std::vector< POSVEL_T > vy(N,0.0);
+  std::vector< POSVEL_T > vz(N,0.0);
+  std::vector< ID_T > descendant(N,-1);
+  std::vector< unsigned char > eventMask(N,0xFE /* poison */);
+
+  // STEP 2: Fill arrays
+  // TODO: implement this
+
+  // STEP 3: Register variables & data arrays to the writer
+  // TODO: implement this
+
+  // STEP 4: Write the data
+  writer.write();
+
+  // STEP 5: De-allocate temporary arrays
+  // TODO: implement this
 }
 
 //------------------------------------------------------------------------------

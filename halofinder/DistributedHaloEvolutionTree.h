@@ -126,6 +126,11 @@ public:
    */
   std::string ToString();
 
+  /**
+   * @brief Writes the Tree in GenericIO.
+   */
+  void WriteTree( std::string fileName );
+
 protected:
 
   // User-supplied MPI communicator
