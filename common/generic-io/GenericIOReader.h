@@ -263,10 +263,16 @@ protected:
   virtual void AllocateInternalReaders(const int N)=0;
 
   /**
-   * @brief If SplitMode is used, this method will attach a reader for each
-   * corresponding file.
+   * @brief Sets up the internal readers used for SplitMode I/O.
+   * @note Applicable iff SplitMode.
    */
   void SetupInternalReaders();
+
+  /**
+   * @brief Clears the internal readers.
+   * @note Applicable iff SplitMode.
+   */
+  void ClearInternalReaders();
 
   /**
    * @brief Based on the global & variable headers, this method determines if
@@ -325,7 +331,6 @@ protected:
    * @brief Reads data from a single file.
    */
   void ReadSingleFileData();
-
 
   /**
    * @brief Returns the number of elements at the given block.

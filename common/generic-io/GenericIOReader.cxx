@@ -32,7 +32,11 @@ GenericIOReader::GenericIOReader()
 //------------------------------------------------------------------------------
 GenericIOReader::~GenericIOReader()
 {
-  // TODO Auto-generated destructor stub
+   this->ClearInternalReaders();
+   this->VH.clear();
+   this->RH.clear();
+   this->AssignedBlocks.clear();
+   this->EntireHeader.clear();
 }
 
 //------------------------------------------------------------------------------
@@ -93,6 +97,24 @@ VariableInfo GenericIOReader::GetFileVariableInfo(const int i)
       static_cast<bool>(this->VH[i].Flags & ValueMaybePhysGhost)
       );
   return( VI );
+}
+
+//------------------------------------------------------------------------------
+void GenericIOReader::ClearInternalReaders()
+{
+ if( !this->SplitMode )
+  {
+  return;
+  }
+
+ for(int i=0; i < this->NumberOfFiles; ++i)
+   {
+   if( this->InternalReaders[i] != NULL )
+     {
+	 delete this->InternalReaders[i];
+     }
+   }
+ delete [] this->InternalReaders;
 }
 
 //------------------------------------------------------------------------------

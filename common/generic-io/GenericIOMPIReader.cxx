@@ -36,17 +36,7 @@ GenericIOMPIReader::GenericIOMPIReader()
 //------------------------------------------------------------------------------
 GenericIOMPIReader::~GenericIOMPIReader()
 {
-  if( this->SplitMode )
-    {
-    for(int i=0; i < this->NumberOfFiles; ++i)
-      {
-      if( this->InternalReaders[i] != NULL)
-        {
-        delete this->InternalReaders[i];
-        }
-      }
-    delete [] this->InternalReaders;
-    } // END if split-mode
+
 }
 
 //------------------------------------------------------------------------------
