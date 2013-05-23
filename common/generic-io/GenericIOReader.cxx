@@ -111,7 +111,7 @@ void GenericIOReader::ClearInternalReaders()
    {
    if( this->InternalReaders[i] != NULL )
      {
-	 delete this->InternalReaders[i];
+   delete this->InternalReaders[i];
      }
    }
  delete [] this->InternalReaders;
@@ -389,7 +389,7 @@ void GenericIOReader::ReadBlockHeader(
              offSet < this->EntireHeader.size()-CRCSize );
 
    // Copy the bytes of the variable header from the raw header data
-   memcpy(&blockHeader,&this->EntireHeader[offSet],sizeof(VariableHeader));
+   memcpy(&blockHeader,&this->EntireHeader[offSet],sizeof(RankHeader));
 
   if(this->SwapEndian)
     {
@@ -609,10 +609,10 @@ void GenericIOReader::ReadSingleFileData()
 
       // Verify Checksum
       if( !GenericIOUtilities::VerifyChecksum(dataPtr,bytesize,checksum) )
-      	{
-    	throw std::runtime_error(
-    	  "Variable checksum failed for variable " + this->Vars[varIdx].Name);
-      	} // END if checksum
+        {
+      throw std::runtime_error(
+        "Variable checksum failed for variable " + this->Vars[varIdx].Name);
+        } // END if checksum
 
       dataPtr = static_cast<char*>(dataPtr)+bytesize;
       } // END for all assigned blocks
@@ -637,23 +637,23 @@ int GenericIOReader::GetNumberOfElements()
 {
   int NElements = 0;
   if( this->SplitMode && this->ProxyEnabled )
-	{
-	for(int i=0; i < this->NumberOfFiles; ++i)
-	  {
-	  assert("pre: internal reader is NULL" &&
-			  (this->InternalReaders[i] != NULL));
+  {
+  for(int i=0; i < this->NumberOfFiles; ++i)
+    {
+    assert("pre: internal reader is NULL" &&
+        (this->InternalReaders[i] != NULL));
 
-	  NElements += this->InternalReaders[ i ]->GetNumberOfElements();
-	  } // END for all files
-	} // END if reading in split mode
+    NElements += this->InternalReaders[ i ]->GetNumberOfElements();
+    } // END for all files
+  } // END if reading in split mode
   else
-	{
-	unsigned int blkIdx=0;
-	for(; blkIdx < this->AssignedBlocks.size(); ++blkIdx)
-	  {
-	  NElements += this->GetNumberOfElementsForBlock(blkIdx);
-	  } // END for all blocks
-	}
+  {
+  unsigned int blkIdx=0;
+  for(; blkIdx < this->AssignedBlocks.size(); ++blkIdx)
+    {
+    NElements += this->GetNumberOfElementsForBlock(blkIdx);
+    } // END for all blocks
+  }
   return( NElements );
 }
 
