@@ -22,6 +22,7 @@
 #include "ForwardHaloTracker.h"
 #include "GenericIO.h"
 #include "GenericIOMPIReader.h"
+#include "GenericIOPosixReader.h"
 #include "GenericIOReader.h"
 #include "Halo.h"
 #include "MPIUtilities.h"
@@ -46,6 +47,7 @@ bool SkipFofProperties = false;
 bool Verify = false;
 bool Synthetic = false;
 bool NewLayout = false;
+bool UsePosix  = false;
 
 std::vector< int > timesteps;
 std::vector<cosmotk::Halo> Halos;
@@ -160,6 +162,7 @@ void CreateHalosAtTimeStep(const int tstep);
 void WriteStatistics();
 void GetFileNamesAtTimeStep(
         int tstep, std::string &fofFile, std::string &haloParticlesFile);
+cosmotk::GenericIOReader* GetReader();
 
 //------------------------------------------------------------------------------
 
@@ -349,6 +352,21 @@ void CreateHalosAtTimeStep(const int tstep)
 }
 
 //------------------------------------------------------------------------------
+cosmotk::GenericIOReader* GetReader()
+{
+  cosmotk::GenericIOReader* reader = NULL;
+  if( UsePosix )
+    {
+    reader = new cosmotk::GenericIOPosixReader();
+    }
+  else
+    {
+    reader = new cosmotk::GenericIOMPIReader();
+    }
+  return( reader );
+}
+
+//------------------------------------------------------------------------------
 void CreateSyntheticHalo(
       const int tstep, const int haloIdx, ID_T start, ID_T end)
 {
@@ -452,6 +470,10 @@ void ParseArguments(int argc, char **argv)
     else if(strcmp(argv[i],"--verify")==0)
       {
       Verify = true;
+      }
+    else if(strcmp(argv[i],"--use-posix")==0)
+      {
+      UsePosix = true;
       }
     else
       {
@@ -677,11 +699,11 @@ void ReadHalosAtTimeStep(int tstep)
     // STEP 1: Open and read FOF properties file
     if( !SkipFofProperties )
       {
-      cosmotk::GenericIOMPIReader FofPropertiesReader;
-      FofPropertiesReader.SetFileName(fofPropertiesFile);
-      FofPropertiesReader.SetCommunicator(comm);
-      FofPropertiesReader.OpenAndReadHeader();
-      int nfof = FofPropertiesReader.GetNumberOfElements();
+      cosmotk::GenericIOReader* FofPropertiesReader = GetReader();
+      FofPropertiesReader->SetFileName(fofPropertiesFile);
+      FofPropertiesReader->SetCommunicator(comm);
+      FofPropertiesReader->OpenAndReadHeader();
+      int nfof = FofPropertiesReader->GetNumberOfElements();
       ID_T *haloTags      = new ID_T[nfof];
       POSVEL_T *center_x = new POSVEL_T[nfof];
       POSVEL_T *center_y = new POSVEL_T[nfof];
@@ -694,19 +716,19 @@ void ReadHalosAtTimeStep(int tstep)
       POSVEL_T *halo_vz  = new POSVEL_T[nfof];
       POSVEL_T *halomass = new POSVEL_T[nfof];
 
-      FofPropertiesReader.AddVariable("fof_halo_tag", haloTags);
-      FofPropertiesReader.AddVariable("fof_halo_center_x", center_x);
-      FofPropertiesReader.AddVariable("fof_halo_center_y", center_y);
-      FofPropertiesReader.AddVariable("fof_halo_center_z", center_z);
-      FofPropertiesReader.AddVariable("fof_halo_mean_x",mcx);
-      FofPropertiesReader.AddVariable("fof_halo_mean_y",mcy);
-      FofPropertiesReader.AddVariable("fof_halo_mean_z",mcz);
-      FofPropertiesReader.AddVariable("fof_halo_mean_vx", halo_vx);
-      FofPropertiesReader.AddVariable("fof_halo_mean_vy", halo_vy);
-      FofPropertiesReader.AddVariable("fof_halo_mean_vz", halo_vz);
-      FofPropertiesReader.AddVariable("fof_halo_mass", halomass);
+      FofPropertiesReader->AddVariable("fof_halo_tag", haloTags);
+      FofPropertiesReader->AddVariable("fof_halo_center_x", center_x);
+      FofPropertiesReader->AddVariable("fof_halo_center_y", center_y);
+      FofPropertiesReader->AddVariable("fof_halo_center_z", center_z);
+      FofPropertiesReader->AddVariable("fof_halo_mean_x",mcx);
+      FofPropertiesReader->AddVariable("fof_halo_mean_y",mcy);
+      FofPropertiesReader->AddVariable("fof_halo_mean_z",mcz);
+      FofPropertiesReader->AddVariable("fof_halo_mean_vx", halo_vx);
+      FofPropertiesReader->AddVariable("fof_halo_mean_vy", halo_vy);
+      FofPropertiesReader->AddVariable("fof_halo_mean_vz", halo_vz);
+      FofPropertiesReader->AddVariable("fof_halo_mass", halomass);
 
-      FofPropertiesReader.ReadData();
+      FofPropertiesReader->ReadData();
 
       for( int i=0; i < nfof; ++i )
         {
@@ -748,22 +770,23 @@ void ReadHalosAtTimeStep(int tstep)
       delete [] halo_vy;
       delete [] halo_vz;
       delete [] halomass;
-      FofPropertiesReader.Close();
+      FofPropertiesReader->Close();
+      delete FofPropertiesReader;
       } // END if skip FOF properties
 
     // STEP 2: Open and read HaloParticle tags
-    cosmotk::GenericIOMPIReader HaloParticlesReader;
-    HaloParticlesReader.SetFileName(haloParticlesFile);
-    HaloParticlesReader.SetCommunicator(comm);
-    HaloParticlesReader.OpenAndReadHeader();
-    int npart = HaloParticlesReader.GetNumberOfElements();
+    cosmotk::GenericIOReader* HaloParticlesReader = GetReader();
+    HaloParticlesReader->SetFileName(haloParticlesFile);
+    HaloParticlesReader->SetCommunicator(comm);
+    HaloParticlesReader->OpenAndReadHeader();
+    int npart = HaloParticlesReader->GetNumberOfElements();
     ID_T *particleIds  = new ID_T[npart];
     ID_T *halo_tags    = new ID_T[npart];
 
-    HaloParticlesReader.AddVariable("id",particleIds);
-    HaloParticlesReader.AddVariable("fof_halo_tag",halo_tags);
+    HaloParticlesReader->AddVariable("id",particleIds);
+    HaloParticlesReader->AddVariable("fof_halo_tag",halo_tags);
 
-    HaloParticlesReader.ReadData();
+    HaloParticlesReader->ReadData();
 
     for(int i=0; i < npart; ++i)
       {
@@ -775,7 +798,8 @@ void ReadHalosAtTimeStep(int tstep)
       }
 
     // STEP 3: Close files
-    HaloParticlesReader.Close();
+    HaloParticlesReader->Close();
+    delete HaloParticlesReader;
 
     // STEP 4: De-allocate memory
     delete [] halo_tags;
