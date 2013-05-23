@@ -310,6 +310,8 @@ void GenericIOReader::ReadHeader()
      // before byte-swapping.
      if(crc64_omp(&this->EntireHeader[0],attribs[HEADER_SIZE])!=(uint64_t)-1)
        {
+       std::cerr << "\nWARNING: header checksum verification failed @"
+                 << __FILE__ << ":" << __LINE__ << std::endl;
        attribs[ERROR] = 1;
        }
 
@@ -335,6 +337,8 @@ void GenericIOReader::ReadHeader()
  // Check for errors
  if(attribs[ERROR]==1)
    {
+   std::cerr << "\nWARNING: header checksum verification failed @"
+              << __FILE__ << ":" << __LINE__ << std::endl;
    throw std::runtime_error("Header CRC checksum failed!");
    }
 
@@ -347,6 +351,8 @@ void GenericIOReader::ReadHeader()
  // Ensure broadcast of the header was successful
  if(crc64_omp(&this->EntireHeader[0],attribs[HEADER_SIZE])!=(uint64_t)-1)
    {
+   std::cerr << "\nWARNING: header checksum verification failed @"
+              << __FILE__ << ":" << __LINE__ << std::endl;
    attribs[ERROR] = 1;
    }
  int errors = 0;
