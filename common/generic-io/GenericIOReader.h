@@ -230,12 +230,19 @@ protected:
   std::vector< int > AssignedBlocks;
 
   /**
+   * @brief Opens the FileHandle from where the data is going to be read.
+   * @note This method is implemented by concrete implementations.
+   */
+  virtual void Open()=0;
+
+  /**
    * @brief Reads data into the user-supplied buffer from the MPI file handle
    * @param buf the buffer where the data will be read into
    * @param count the number of bytes to read
    * @param offset the offset from which to read
    * @param name name of the data being read, primarily, used for
    * debugging and error reporting.
+   * @note This method is implemented by concrete implementations.
    */
   virtual void Read(void *buf, size_t count, off_t offset,
 		  	  	  	  const std::string &name) = 0;

@@ -83,6 +83,11 @@ protected:
   void ReadSingleFileData();
 
   /**
+   * @brief Open the FileHandle.
+   */
+  void Open();
+
+  /**
    * @brief Reads data into the user-supplied buffer from the MPI file handle
    * @param buf the buffer where the data will be read into
    * @param count the number of bytes to read

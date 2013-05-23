@@ -50,6 +50,25 @@ GenericIOMPIReader::~GenericIOMPIReader()
 }
 
 //------------------------------------------------------------------------------
+void GenericIOMPIReader::Open()
+{
+  // sanity checks
+  assert("pre: empty filename!" && (!this->FileName.empty()) );
+
+  int rc = MPI_File_open(
+                this->Communicator,
+                const_cast<char*>(this->FileName.c_str()),
+                MPI_MODE_RDONLY,
+                MPI_INFO_NULL,
+                &this->FH);
+  if( rc != MPI_SUCCESS )
+    {
+    throw std::runtime_error( "Unable to open file: " + this->FileName );
+    }
+
+}
+
+//------------------------------------------------------------------------------
 void GenericIOMPIReader::OpenAndReadHeader( bool skipBlockHeaders )
 {
   // sanity checks
@@ -63,16 +82,7 @@ void GenericIOMPIReader::OpenAndReadHeader( bool skipBlockHeaders )
   MPI_Comm_size(this->Communicator, &this->NumRanks);
 
   // STEP 1: Open file, if not successful, throw runtime_error exception
-  int rc = MPI_File_open(
-                this->Communicator,
-                const_cast<char*>(this->FileName.c_str()),
-                MPI_MODE_RDONLY,
-                MPI_INFO_NULL,
-                &this->FH);
-  if( rc != MPI_SUCCESS )
-    {
-    throw std::runtime_error( "Unable to open file: " + this->FileName );
-    }
+  this->Open();
 
   // STEP 2: Read Global & Variable header
   this->ReadHeader();
