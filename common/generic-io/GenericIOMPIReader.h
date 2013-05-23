@@ -33,31 +33,12 @@ public:
   virtual int GetNumberOfElements();
 
   /**
-   * @brief Reads the data in to the user-supplied registered arrays.
-   * @note The user should have registered the arrays to read via calls to
-   * the AddVariable method.
-   * @see GenericIOBase::AddVariable.
-   * @pre this->Communicator != MPI_COMM_NULL
-   */
-  virtual void ReadData();
-
-  /**
    * @brief Closes the file
    */
-  virtual void Close();
+  void Close();
 
 protected:
   MPI_File FH;
-
-  /**
-   * @brief Read the data in split mode.
-   */
-  void ReadSplitModeData();
-
-  /**
-   * @brief Reads data from a single file.
-   */
-  void ReadSingleFileData();
 
   /**
    * @brief Open the FileHandle.

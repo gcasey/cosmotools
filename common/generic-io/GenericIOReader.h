@@ -177,7 +177,7 @@ public:
    * the AddVariable method.
    * @see GenericIOBase::AddVariable.
    */
-  virtual void ReadData() = 0;
+  void ReadData();
 
   /**
    * @brief Closes the file
@@ -315,6 +315,17 @@ protected:
    * @brief Builds an index based on variable name.
    */
   void IndexVariables();
+
+  /**
+   * @brief Read the data in split mode.
+   */
+  void ReadSplitModeData();
+
+  /**
+   * @brief Reads data from a single file.
+   */
+  void ReadSingleFileData();
+
 
   /**
    * @brief Returns the number of elements at the given block.
