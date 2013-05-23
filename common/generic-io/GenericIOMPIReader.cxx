@@ -20,17 +20,8 @@ namespace cosmotk
 //------------------------------------------------------------------------------
 GenericIOMPIReader::GenericIOMPIReader()
 {
-  this->Communicator = MPI_COMM_NULL;
-  this->SwapEndian   = false;
-  this->Rank         = 0;
-  this->NumRanks     = 0;
-  this->VH.resize( 0 );
-  this->RH.resize( 0 );
-  this->AssignedBlocks.resize( 0 );
-  this->IOStrategy   = FileIOMPI;
-  this->ProxyEnabled = false;
-  this->SplitMode    = false;
-  this->InternalReaders = NULL;
+  this->FH 			    = MPI_FILE_NULL;
+  this->IOStrategy      = FileIOMPI;
 }
 
 //------------------------------------------------------------------------------
@@ -43,6 +34,7 @@ GenericIOMPIReader::~GenericIOMPIReader()
 void GenericIOMPIReader::Open()
 {
   // sanity checks
+  assert("pre: non-null file Handle" && (this->FH == MPI_FILE_NULL) );
   assert("pre: empty filename!" && (!this->FileName.empty()) );
 
   int rc = MPI_File_open(
@@ -56,6 +48,7 @@ void GenericIOMPIReader::Open()
     throw std::runtime_error( "Unable to open file: " + this->FileName );
     }
 
+  assert("post: file handle is NULL!" && (this->FH != MPI_FILE_NULL) );
 }
 
 //------------------------------------------------------------------------------
@@ -92,6 +85,8 @@ void GenericIOMPIReader::Close()
 void GenericIOMPIReader::Read(
         void *buf, size_t count, off_t offset, const std::string &varName)
 {
+  assert("pre: file handle is NULL!" && (this->FH != MPI_FILE_NULL) );
+
   while( count > 0 )
     {
     MPI_Status status;
