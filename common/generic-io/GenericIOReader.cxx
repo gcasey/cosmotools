@@ -14,9 +14,19 @@ namespace cosmotk
 //------------------------------------------------------------------------------
 GenericIOReader::GenericIOReader()
 {
-  this->SwapEndian    = false;
-  this->SplitMode     = false;
-  this->NumberOfFiles = 1;
+  this->Communicator  	= MPI_COMM_NULL;
+  this->NumRanks	  	= 0;
+  this->Rank		  	= 0;
+  this->SwapEndian    	= false;
+  this->SplitMode     	= false;
+  this->NumberOfFiles 	= 0;
+  this->InternalReaders = NULL;
+  this->ProxyEnabled    = false;
+
+  this->VH.resize(0);
+  this->RH.resize(0);
+  this->AssignedBlocks.resize(0);
+  this->EntireHeader.resize(0);
 }
 
 //------------------------------------------------------------------------------
