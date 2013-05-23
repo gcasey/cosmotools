@@ -154,7 +154,7 @@ public:
    * @return N the number of elements to read
    * @post N >= 0.
    */
-  virtual int GetNumberOfElements();
+  int GetNumberOfElements();
 
   /**
    * @brief Opens and reads the header of the file and initializes internal

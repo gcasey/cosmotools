@@ -26,13 +26,6 @@ public:
   virtual ~GenericIOMPIReader();
 
   /**
-   * @brief Overrides GetNumberOfElements to provide support for SplitMode
-   * @return N the number of elements to read.
-   * @see GenericIOReader::GetNumberOfElements()
-   */
-  virtual int GetNumberOfElements();
-
-  /**
    * @brief Closes the file
    */
   void Close();

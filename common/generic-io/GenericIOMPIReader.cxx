@@ -86,31 +86,6 @@ void GenericIOMPIReader::AllocateInternalReaders(const int N)
 }
 
 //------------------------------------------------------------------------------
-int GenericIOMPIReader::GetNumberOfElements()
-{
-  int NElements = 0;
-  if( this->SplitMode && this->ProxyEnabled )
-    {
-    for(int i=0; i < this->NumberOfFiles; ++i)
-      {
-      assert("pre: internal reader is NULL" &&
-              (this->InternalReaders[i] != NULL));
-
-      NElements += this->InternalReaders[ i ]->GetNumberOfElements();
-      } // END for all files
-    } // END if reading in split mode
-  else
-    {
-    unsigned int blkIdx=0;
-    for(; blkIdx < this->AssignedBlocks.size(); ++blkIdx)
-      {
-      NElements += this->GetNumberOfElementsForBlock(blkIdx);
-      } // END for all blocks
-    }
-  return( NElements );
-}
-
-//------------------------------------------------------------------------------
 void GenericIOMPIReader::Close()
 {
   MPI_File_close(&this->FH);
