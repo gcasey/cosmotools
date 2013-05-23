@@ -165,6 +165,12 @@ public:
   virtual void OpenAndReadHeader( bool skipBlockHeaders=false )  = 0;
 
   /**
+   * @brief Read the headers of each assigned block.
+   * @see ReadBlockHeader
+   */
+  void ReadBlockHeaders();
+
+  /**
    * @brief Reads the data in to the user-supplied registered arrays.
    * @note The user should have registered the arrays to read via calls to
    * the AddVariable method.
@@ -244,6 +250,14 @@ protected:
    * @see ReadVariableHeaders
    */
   void ReadVariableHeader( const int i, VariableHeader& vh );
+
+  /**
+   * @brief Reads the block header corresponding to the given block index.
+   * @param blkIdx the index of the block to reader
+   * @param blockHeader data-structure where to read in the block header
+   * @see ReadBlockHeaders
+   */
+  void ReadBlockHeader(const int blkIdx, RankHeader& blockHeader);
 
   /**
    * @brief Reads in the variable headers for the number of variables.

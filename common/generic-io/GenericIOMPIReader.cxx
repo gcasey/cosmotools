@@ -480,34 +480,6 @@ void GenericIOMPIReader::ReadHeader()
 }
 
 //------------------------------------------------------------------------------
-void GenericIOMPIReader::ReadBlockHeader(
-        const int blkIdx, RankHeader& blockHeader)
-{
-  uint64_t offSet = this->GH.RanksStart + blkIdx*sizeof(RankHeader);
-  assert("pre: detected rank header offset out-of-bounds!" &&
-             offSet < this->EntireHeader.size()-CRCSize );
-
-   // Copy the bytes of the variable header from the raw header data
-   memcpy(&blockHeader,&this->EntireHeader[offSet],sizeof(VariableHeader));
-
-  if(this->SwapEndian)
-    {
-    GenericIOUtilities::SwapRankHeader(&blockHeader);
-    }
-}
-
-//------------------------------------------------------------------------------
-void GenericIOMPIReader::ReadBlockHeaders()
-{
-  this->RH.resize( this->AssignedBlocks.size() );
-  for(unsigned int blk=0; blk < this->AssignedBlocks.size(); ++blk)
-    {
-    int blkIdx = this->AssignedBlocks[ blk ];
-    this->ReadBlockHeader(blkIdx,this->RH[blk]);
-    } // END for all assigned blocks
-}
-
-//------------------------------------------------------------------------------
 void GenericIOMPIReader::Read(
         void *buf, size_t count, off_t offset, const std::string &varName)
 {

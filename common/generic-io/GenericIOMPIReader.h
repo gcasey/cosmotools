@@ -34,12 +34,6 @@ public:
   virtual void OpenAndReadHeader( bool skipBlockHeaders=false );
 
   /**
-   * @brief Read the headers of each assigned block.
-   * @see ReadBlockHeader
-   */
-  void ReadBlockHeaders();
-
-  /**
    * @brief Overrides GetNumberOfElements to provide support for SplitMode
    * @return N the number of elements to read.
    * @see GenericIOReader::GetNumberOfElements()
@@ -77,14 +71,6 @@ protected:
    * them to all ranks.
    */
   void ReadHeader();
-
-  /**
-   * @brief Reads the block header corresponding to the given block index.
-   * @param blkIdx the index of the block to reader
-   * @param blockHeader data-structure where to read in the block header
-   * @see ReadBlockHeaders
-   */
-  void ReadBlockHeader(const int blkIdx, RankHeader& blockHeader);
 
   /**
    * @brief If SplitMode is used, this method will attach a reader for each
