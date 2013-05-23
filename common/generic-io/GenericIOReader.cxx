@@ -301,6 +301,19 @@ void GenericIOReader::ReadHeader()
      // Read the global header
      this->Read(&this->GH,sizeof(GlobalHeader),0,"GlobalHeader");
 
+     // Byte-swap header if necessary
+     if( !GenericIOUtilities::DoesFileEndianMatch(&this->GH) )
+       {
+       GenericIOUtilities::SwapGlobalHeader(&this->GH);
+       this->SwapEndian = true;
+       attribs[SWAP]    = 1;
+       }
+     else
+       {
+       this->SwapEndian = false;
+       attribs[SWAP]    = 0;
+       }
+
      // Read entire header & its checksum
      attribs[HEADER_SIZE] = this->GH.HeaderSize+CRCSize;
      this->EntireHeader.resize(attribs[HEADER_SIZE],0xFE/* poison */);
@@ -315,17 +328,7 @@ void GenericIOReader::ReadHeader()
        attribs[ERROR] = 1;
        }
 
-     // Byte-swap header if necessary
-     if( !GenericIOUtilities::DoesFileEndianMatch(&this->GH) )
-       {
-       this->SwapEndian = true;
-       attribs[SWAP]    = 1;
-       }
-     else
-       {
-       this->SwapEndian = false;
-       attribs[SWAP]    = 0;
-       }
+
      MPI_Bcast(attribs,3,MPI_INTEGER,0,this->Communicator);
      break;
    default:
