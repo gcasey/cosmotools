@@ -320,6 +320,7 @@ void DistributedHaloEvolutionTree::WriteTree(std::string fileName)
   writer->addVariable("event_mask",&eventMask[0],GenericIO::VarHasExtraSpace);
 
   // STEP 4: Write the data
+  writer->setNumElems(N);
   writer->write();
   delete writer;
 
