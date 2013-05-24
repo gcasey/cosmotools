@@ -26,8 +26,9 @@ ForwardHaloTracker::ForwardHaloTracker()
   this->Initialized       = false;
 
   this->MergerTreeFileName   = "MergerTree";
-  this->MergerTreeThreshold  = 10;
-  this->MergerTreeFileFormat = cosmotk::MergerTreeFileFormat::GENERIC_IO;
+  this->MergerTreeThreshold  = 50;
+  this->MergerTreeFileFormat =
+      cosmotk::MergerTreeFileFormat::GENERIC_IO_POSIX;
 
   this->TemporalHaloData   = new TemporalHaloInformation();
   this->HaloEvolutionTree  = new cosmotk::DistributedHaloEvolutionTree();
