@@ -2,6 +2,7 @@
 
 // CosmologyTools includes
 #include "GenericIO.h"
+#include "GenericIODefinitions.hpp"
 #include "Halo.h"
 #include "MergerTreeEvent.h"
 #include "MergerTreeFileFormat.h"
@@ -239,42 +240,43 @@ int DistributedHaloEvolutionTree::GetTotalNumberOfBytes()
 void DistributedHaloEvolutionTree::WriteTree(std::string fileName)
 {
   // STEP 0: Allocate writer
-  cosmotk::GenericIO *writer = NULL;
+  GenericIO *writer = NULL;
   switch(this->MergerTreeFileFormat)
     {
-    case cosmotk::MergerTreeFileFormat::GENERIC_IO_MPI:
+    case MergerTreeFileFormat::GENERIC_IO_MPI:
       writer = new GenericIO(
-          this->Communicator,fileName,cosmotk::GenericIO::FileIOMPI);
+          this->Communicator,fileName,GenericIO::FileIOMPI);
       break;
-    case cosmotk::MergerTreeFileFormat::GENERIC_IO_POSIX:
+    case MergerTreeFileFormat::GENERIC_IO_POSIX:
       writer = new GenericIO(
-          this->Communicator,fileName,cosmotk::GenericIO::FileIOPOSIX);
+          this->Communicator,fileName,GenericIO::FileIOPOSIX);
       break;
     default:
       std::cerr << "WARNING: invalid file format! ";
       std::cerr << "Defaulting to GENERIC_IO_POSIX\n";
       writer = new GenericIO(
-          this->Communicator,fileName,cosmotk::GenericIO::FileIOPOSIX);
+          this->Communicator,fileName,GenericIO::FileIOPOSIX);
     } // END switch
 
   // STEP 1: Allocate temporary arrays for writting
   int N = this->GetNumberOfNodes();
-  std::vector< ID_T > treeNodeIds(N,-1);
-  std::vector< ID_T > haloTags(N,-1);
-  std::vector< REAL > haloMass(N,0.0);
-  std::vector< int > tsteps(N,-1);
-  std::vector< REAL > redshift(N,0.0);
-  std::vector< POSVEL_T > center_x(N,0.0);
-  std::vector< POSVEL_T > center_y(N,0.0);
-  std::vector< POSVEL_T > center_z(N,0.0);
-  std::vector< POSVEL_T > mcx(N,0.0);
-  std::vector< POSVEL_T > mcy(N,0.0);
-  std::vector< POSVEL_T > mcz(N,0.0);
-  std::vector< POSVEL_T > vx(N,0.0);
-  std::vector< POSVEL_T > vy(N,0.0);
-  std::vector< POSVEL_T > vz(N,0.0);
-  std::vector< ID_T > descendant(N,-1);
-  std::vector< unsigned char > eventMask(N,0xFE /* poison */);
+  std::vector< ID_T > treeNodeIds(N+(CRCSize/sizeof(ID_T)),-1);
+  std::vector< ID_T > haloTags(N+(CRCSize/sizeof(ID_T)),-1);
+  std::vector< REAL > haloMass(N+(CRCSize/sizeof(REAL)),0.0);
+  std::vector< int > tsteps(N+(CRCSize/sizeof(int)),-1);
+  std::vector< REAL > redshift(N+(CRCSize/sizeof(REAL)),0.0);
+  std::vector< POSVEL_T > center_x(N+(CRCSize/sizeof(POSVEL_T)),0.0);
+  std::vector< POSVEL_T > center_y(N+(CRCSize/sizeof(POSVEL_T)),0.0);
+  std::vector< POSVEL_T > center_z(N+(CRCSize/sizeof(POSVEL_T)),0.0);
+  std::vector< POSVEL_T > mcx(N+(CRCSize/sizeof(POSVEL_T)),0.0);
+  std::vector< POSVEL_T > mcy(N+(CRCSize/sizeof(POSVEL_T)),0.0);
+  std::vector< POSVEL_T > mcz(N+(CRCSize/sizeof(POSVEL_T)),0.0);
+  std::vector< POSVEL_T > vx(N+(CRCSize/sizeof(POSVEL_T)),0.0);
+  std::vector< POSVEL_T > vy(N+(CRCSize/sizeof(POSVEL_T)),0.0);
+  std::vector< POSVEL_T > vz(N+(CRCSize/sizeof(POSVEL_T)),0.0);
+  std::vector< ID_T > descendant(N+(CRCSize/sizeof(ID_T)),-1);
+  std::vector< unsigned char > eventMask(
+      N+(CRCSize/sizeof(unsigned char)),0xFE /* poison */);
 
   // STEP 2: Fill arrays
   for(int i=0; i < N; ++i)
@@ -298,22 +300,24 @@ void DistributedHaloEvolutionTree::WriteTree(std::string fileName)
     } // END for all nodes
 
   // STEP 3: Register variables & data arrays to the writer
-  writer->addVariable("tree_node_id", &treeNodeIds[0]);
-  writer->addVariable("halo_tag", &haloTags[0]);
-  writer->addVariable("halo_mass", &haloMass[0]);
-  writer->addVariable("timestep", &tsteps[0]);
-  writer->addVariable("redshift", &redshift[0]);
-  writer->addVariable("center_x", &center_x[0]);
-  writer->addVariable("center_y", &center_y[0]);
-  writer->addVariable("center_z", &center_z[0]);
-  writer->addVariable("mean_center_x", &mcx[0]);
-  writer->addVariable("mean_center_y", &mcy[0]);
-  writer->addVariable("mean_center_z", &mcz[0]);
-  writer->addVariable("v_x", &vx[0]);
-  writer->addVariable("v_y", &vy[0]);
-  writer->addVariable("v_z", &vz[0]);
-  writer->addVariable("descendant_id", &descendant[0]);
-  writer->addVariable("event_mask", &eventMask[0]);
+  writer->addVariable(
+      "tree_node_id",&treeNodeIds[0],GenericIO::VarHasExtraSpace);
+  writer->addVariable("halo_tag",&haloTags[0],GenericIO::VarHasExtraSpace);
+  writer->addVariable("halo_mass",&haloMass[0],GenericIO::VarHasExtraSpace);
+  writer->addVariable("timestep",&tsteps[0],GenericIO::VarHasExtraSpace);
+  writer->addVariable("redshift",&redshift[0],GenericIO::VarHasExtraSpace);
+  writer->addVariable("center_x",&center_x[0],GenericIO::VarHasExtraSpace);
+  writer->addVariable("center_y",&center_y[0],GenericIO::VarHasExtraSpace);
+  writer->addVariable("center_z",&center_z[0],GenericIO::VarHasExtraSpace);
+  writer->addVariable("mean_center_x",&mcx[0],GenericIO::VarHasExtraSpace);
+  writer->addVariable("mean_center_y",&mcy[0],GenericIO::VarHasExtraSpace);
+  writer->addVariable("mean_center_z",&mcz[0],GenericIO::VarHasExtraSpace);
+  writer->addVariable("v_x",&vx[0],GenericIO::VarHasExtraSpace);
+  writer->addVariable("v_y",&vy[0],GenericIO::VarHasExtraSpace);
+  writer->addVariable("v_z",&vz[0],GenericIO::VarHasExtraSpace);
+  writer->addVariable(
+      "descendant_id",&descendant[0],GenericIO::VarHasExtraSpace);
+  writer->addVariable("event_mask",&eventMask[0],GenericIO::VarHasExtraSpace);
 
   // STEP 4: Write the data
   writer->write();
