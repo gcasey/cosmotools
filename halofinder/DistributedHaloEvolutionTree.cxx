@@ -239,8 +239,23 @@ int DistributedHaloEvolutionTree::GetTotalNumberOfBytes()
 void DistributedHaloEvolutionTree::WriteTree(std::string fileName)
 {
   // STEP 0: Allocate writer
-  cosmotk::GenericIO writer(
-      this->Communicator,fileName,cosmotk::GenericIO::FileIOPOSIX);
+  cosmotk::GenericIO *writer = NULL;
+  switch(this->MergerTreeFileFormat)
+    {
+    case cosmotk::MergerTreeFileFormat::GENERIC_IO_MPI:
+      writer = new GenericIO(
+          this->Communicator,fileName,cosmotk::GenericIO::FileIOMPI);
+      break;
+    case cosmotk::MergerTreeFileFormat::GENERIC_IO_POSIX:
+      writer = new GenericIO(
+          this->Communicator,fileName,cosmotk::GenericIO::FileIOPOSIX);
+      break;
+    default:
+      std::cerr << "WARNING: invalid file format! ";
+      std::cerr << "Defaulting to GENERIC_IO_POSIX\n";
+      writer = new GenericIO(
+          this->Communicator,fileName,cosmotk::GenericIO::FileIOPOSIX);
+    } // END switch
 
   // STEP 1: Allocate temporary arrays for writting
   int N = this->GetNumberOfNodes();
@@ -283,27 +298,28 @@ void DistributedHaloEvolutionTree::WriteTree(std::string fileName)
     } // END for all nodes
 
   // STEP 3: Register variables & data arrays to the writer
-  writer.addVariable("tree_node_id", &treeNodeIds[0]);
-  writer.addVariable("halo_tag", &haloTags[0]);
-  writer.addVariable("halo_mass", &haloMass[0]);
-  writer.addVariable("timestep", &tsteps[0]);
-  writer.addVariable("redshift", &redshift[0]);
-  writer.addVariable("center_x", &center_x[0]);
-  writer.addVariable("center_y", &center_y[0]);
-  writer.addVariable("center_z", &center_z[0]);
-  writer.addVariable("mean_center_x", &mcx[0]);
-  writer.addVariable("mean_center_y", &mcy[0]);
-  writer.addVariable("mean_center_z", &mcz[0]);
-  writer.addVariable("v_x", &vx[0]);
-  writer.addVariable("v_y", &vy[0]);
-  writer.addVariable("v_z", &vz[0]);
-  writer.addVariable("descendant_id", &descendant[0]);
-  writer.addVariable("event_mask", &eventMask[0]);
+  writer->addVariable("tree_node_id", &treeNodeIds[0]);
+  writer->addVariable("halo_tag", &haloTags[0]);
+  writer->addVariable("halo_mass", &haloMass[0]);
+  writer->addVariable("timestep", &tsteps[0]);
+  writer->addVariable("redshift", &redshift[0]);
+  writer->addVariable("center_x", &center_x[0]);
+  writer->addVariable("center_y", &center_y[0]);
+  writer->addVariable("center_z", &center_z[0]);
+  writer->addVariable("mean_center_x", &mcx[0]);
+  writer->addVariable("mean_center_y", &mcy[0]);
+  writer->addVariable("mean_center_z", &mcz[0]);
+  writer->addVariable("v_x", &vx[0]);
+  writer->addVariable("v_y", &vy[0]);
+  writer->addVariable("v_z", &vz[0]);
+  writer->addVariable("descendant_id", &descendant[0]);
+  writer->addVariable("event_mask", &eventMask[0]);
 
   // STEP 4: Write the data
-  writer.write();
+  writer->write();
+  delete writer;
 
-  // STEP 5: De-allocate temporary arrays
+  // STEP 5: De-allocate temporary arrays & data-structures
   treeNodeIds.clear();
   haloTags.clear();
   haloMass.clear();
