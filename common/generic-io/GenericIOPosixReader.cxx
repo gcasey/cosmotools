@@ -1,5 +1,6 @@
 #include "GenericIOPosixReader.h"
 
+#include <unistd.h>
 #include <cassert>
 #include <errno.h>
 #include <fcntl.h>
