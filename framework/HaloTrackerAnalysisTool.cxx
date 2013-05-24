@@ -42,6 +42,7 @@ HaloTrackerAnalysisTool::~HaloTrackerAnalysisTool()
 {
   if( this->HaloTracker != NULL )
     {
+    this->HaloTracker->WriteMergerTree( this->MERGER_TREE_FILE );
     delete this->HaloTracker;
     }
 }
@@ -106,7 +107,6 @@ void HaloTrackerAnalysisTool::Execute(SimulationParticles *particles)
   this->HaloTracker->SetNG(this->NG);
   this->HaloTracker->SetNDIM(this->NDIM);
   this->HaloTracker->SetPMIN(this->PMIN);
-  this->HaloTracker->SetMergerTreeFileName(this->MERGER_TREE_FILE);
   this->HaloTracker->SetMergerTreeThreshold(this->MERGER_TREE_THRESHOLD);
   this->HaloTracker->SetMergerTreeFileFormat(this->MERGER_TREE_FILE_FORMAT);
 
