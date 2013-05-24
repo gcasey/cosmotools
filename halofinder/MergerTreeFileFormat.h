@@ -10,7 +10,8 @@ public:
   enum
     {
     DIY = 0,
-    GENERIC_IO,
+    GENERIC_IO_MPI,
+    GENERIC_IO_POSIX,
 
     UNDEFINED
     };
