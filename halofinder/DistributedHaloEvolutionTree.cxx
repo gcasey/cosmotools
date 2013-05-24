@@ -81,8 +81,8 @@ void DistributedHaloEvolutionTree::InsertNode(
   // STEP 2: Initialize progenitor and descendant lists for the node
   std::vector< int > myProgenitors;
   myProgenitors.resize( 0 );
-  std::vector< int > myDescendants;
-  myDescendants.resize( 0 );
+
+  std::set< halo_link_t > myDescendants;
   this->Progenitors.push_back( myProgenitors );
   this->Descendants.push_back( myDescendants );
 
@@ -132,7 +132,10 @@ void DistributedHaloEvolutionTree::LinkHalos(
   if(this->HasNode(progenitor->GetHashCode()))
     {
     int idx = this->Node2Idx[ progenitor->GetHashCode() ];
-    this->Descendants[ idx ].push_back( descendant->GlobalID );
+    halo_link_t link;
+    link.ID   = descendant->GlobalID;
+    link.Mass = descendant->HaloMass;
+    this->Descendants[ idx ].insert( link );
     }
 
   // STEP 1: If the descendant is local, i.e., exists in this rank, update
@@ -399,18 +402,23 @@ ID_T DistributedHaloEvolutionTree::GetDescendant(const int i)
   assert("pre: local index out-of-bounds!" &&
           (i >= 0) && (i < this->Nodes.size() ) );
 
+  std::set< halo_link_t >::iterator it;
   if( this->Descendants[ i ].size() == 0 )
     {
     return( -1 );
     }
   else if( this->Descendants[ i ].size() > 1 )
     {
-    // TODO: must select descendant with highest mass
     this->IssueSplitWarning( i );
-    return( this->Descendants[ i ][ 0 ]);
     }
+
   assert("pre: No single descendant!" && (this->Descendants[i].size()==1));
-  return( this->Descendants[ i ][ 0 ]);
+
+  // The beginning of the descendant list for the ith node always points to the
+  // most massive descendant.
+  it = this->Descendants[ i ].begin();
+  ID_T idx = (*it).ID;
+  return(idx);
 }
 
 //------------------------------------------------------------------------------
@@ -439,6 +447,7 @@ std::string DistributedHaloEvolutionTree::ToString()
   oss << "EVENT_TYPE\t";
   oss << std::endl;
 
+  std::set< halo_link_t >::iterator it;
   for(int i=0; i < this->GetNumberOfNodes(); ++i)
     {
     oss << std::scientific
@@ -458,10 +467,11 @@ std::string DistributedHaloEvolutionTree::ToString()
     oss << this->Nodes[ i ].AverageVelocity[ 2 ] << "\t";
     oss << this->Nodes[ i ].HaloMass << "\t";
 
+    it=this->Descendants[i].begin();
     oss << "[ ";
-    for(int didx=0; didx < this->Descendants[i].size(); ++didx)
+    for(; it != this->Descendants[i].end(); ++it)
       {
-      oss << this->Descendants[i][didx] << " ";
+      oss << (*it).ID << " ";
       } // END for all descendants
 
     // Put a -1 if there are no descendants. Note, this

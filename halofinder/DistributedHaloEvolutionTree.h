@@ -149,7 +149,7 @@ protected:
   std::vector< std::vector<int> > Progenitors;
 
   // For each node, store a list of descendants
-  std::vector< std::vector<int> > Descendants;
+  std::vector< std::set< halo_link_t > > Descendants;
 
   // For each node, store the bitmask that encodes the various events.
   std::vector<unsigned char> EventBitMask;
