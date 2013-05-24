@@ -25,7 +25,6 @@ ForwardHaloTracker::ForwardHaloTracker()
   this->Communicator      = MPI_COMM_NULL;
   this->Initialized       = false;
 
-  this->MergerTreeFileName   = "MergerTree";
   this->MergerTreeThreshold  = 50;
   this->MergerTreeFileFormat =
       cosmotk::MergerTreeFileFormat::GENERIC_IO_POSIX;
@@ -206,7 +205,7 @@ void ForwardHaloTracker::WriteMergerTree(std::string fileName)
           (this->HaloEvolutionTree != NULL) );
 
   this->HaloEvolutionTree->SetMergerTreeFileFormat(this->MergerTreeFileFormat);
-  this->HaloEvolutionTree->WriteTree(this->MergerTreeFileName);
+  this->HaloEvolutionTree->WriteTree(fileName);
 }
 
 //------------------------------------------------------------------------------

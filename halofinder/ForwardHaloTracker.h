@@ -68,7 +68,6 @@ public:
   GetNSetMacro(PMIN,INTEGER);
   GetNSetMacro(LinkingLength,REAL);
   GetNSetMacro(Communicator,MPI_Comm);
-  GetNSetMacro(MergerTreeFileName,std::string);
   GetNSetMacro(MergerTreeThreshold,int);
   GetNSetMacro(MergerTreeFileFormat,int);
 
@@ -172,7 +171,6 @@ protected:
   INTEGER TimeStep;
   REAL RedShift;
 
-  std::string MergerTreeFileName;
   int MergerTreeThreshold;
   int MergerTreeFileFormat;
 
