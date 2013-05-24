@@ -168,6 +168,16 @@ protected:
   int NumberOfSplits;
 
   /**
+   * @brief Returns the descendant of the ith node.
+   * @param i the local node index, i.e., index to the Nodes array.
+   * @return idx the ID of the descendant.
+   * @note Most times a node will have a single descendant. However, when
+   * SPLIT events occur, it is possible to have more than one descendant.
+   * In this case, the method will select a descendant with the highest mass.
+   */
+  ID_T GetDescendant(const int i);
+
+  /**
    * @brief Ensures that the data arrays used internally are consistent.
    * @return status true if consistent, else, false.
    * @note Used mostly for sanity checking.

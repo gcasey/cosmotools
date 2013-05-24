@@ -237,14 +237,15 @@ int DistributedHaloEvolutionTree::GetTotalNumberOfBytes()
 void DistributedHaloEvolutionTree::WriteTree(std::string fileName)
 {
   // STEP 0: Allocate writer
-  cosmotk::GenericIO writer(this->Communicator,fileName,cosmotk::FileIOPOSIX);
+  cosmotk::GenericIO writer(
+      this->Communicator,fileName,cosmotk::GenericIO::FileIOPOSIX);
 
   // STEP 1: Allocate temporary arrays for writting
   int N = this->GetNumberOfNodes();
   std::vector< ID_T > treeNodeIds(N,-1);
   std::vector< ID_T > haloTags(N,-1);
   std::vector< REAL > haloMass(N,0.0);
-  std::vector< int > tstep(N,-1);
+  std::vector< int > tsteps(N,-1);
   std::vector< REAL > redshift(N,0.0);
   std::vector< POSVEL_T > center_x(N,0.0);
   std::vector< POSVEL_T > center_y(N,0.0);
@@ -259,16 +260,83 @@ void DistributedHaloEvolutionTree::WriteTree(std::string fileName)
   std::vector< unsigned char > eventMask(N,0xFE /* poison */);
 
   // STEP 2: Fill arrays
-  // TODO: implement this
+  for(int i=0; i < N; ++i)
+    {
+    treeNodeIds[ i ] = this->Nodes[ i ].GlobalID;
+    haloTags[ i ]    = this->Nodes[ i ].Tag;
+    haloMass[ i ]    = this->Nodes[ i ].HaloMass;
+    tsteps[ i ]      = this->Nodes[ i ].TimeStep;
+    redshift[ i ]    = this->Nodes[ i ].Redshift;
+    center_x[ i ]    = this->Nodes[ i ].Center[ 0 ];
+    center_y[ i ]    = this->Nodes[ i ].Center[ 1 ];
+    center_z[ i ]    = this->Nodes[ i ].Center[ 2 ];
+    mcx[ i ]         = this->Nodes[ i ].MeanCenter[ 0 ];
+    mcy[ i ]         = this->Nodes[ i ].MeanCenter[ 1 ];
+    mcz[ i ]         = this->Nodes[ i ].MeanCenter[ 2 ];
+    vx[ i ]          = this->Nodes[ i ].AverageVelocity[ 0 ];
+    vy[ i ]          = this->Nodes[ i ].AverageVelocity[ 1 ];
+    vz[ i ]          = this->Nodes[ i ].AverageVelocity[ 2 ];
+    descendant[ i ]  = this->GetDescendant( i );
+    eventMask[ i ]   = this->EventBitMask[ i ];
+    } // END for all nodes
 
   // STEP 3: Register variables & data arrays to the writer
-  // TODO: implement this
+  writer.addVariable("tree_node_id", &treeNodeIds[0]);
+  writer.addVariable("halo_tag", &haloTags[0]);
+  writer.addVariable("halo_mass", &haloMass[0]);
+  writer.addVariable("timestep", &tsteps[0]);
+  writer.addVariable("redshift", &redshift[0]);
+  writer.addVariable("center_x", &center_x[0]);
+  writer.addVariable("center_y", &center_y[0]);
+  writer.addVariable("center_z", &center_z[0]);
+  writer.addVariable("mean_center_x", &mcx[0]);
+  writer.addVariable("mean_center_y", &mcy[0]);
+  writer.addVariable("mean_center_z", &mcz[0]);
+  writer.addVariable("v_x", &vx[0]);
+  writer.addVariable("v_y", &vy[0]);
+  writer.addVariable("v_z", &vz[0]);
+  writer.addVariable("descendant_id", &descendant[0]);
+  writer.addVariable("event_mask", &eventMask[0]);
 
   // STEP 4: Write the data
   writer.write();
 
   // STEP 5: De-allocate temporary arrays
-  // TODO: implement this
+  treeNodeIds.clear();
+  haloTags.clear();
+  haloMass.clear();
+  tsteps.clear();
+  redshift.clear();
+  center_x.clear();
+  center_y.clear();
+  center_z.clear();
+  mcx.clear();
+  mcy.clear();
+  mcz.clear();
+  vx.clear();
+  vy.clear();
+  vz.clear();
+  descendant.clear();
+  eventMask.clear();
+}
+
+//------------------------------------------------------------------------------
+ID_T DistributedHaloEvolutionTree::GetDescendant(const int i)
+{
+  assert("pre: local index out-of-bounds!" &&
+          (i >= 0) && (i < this->Nodes.size() ) );
+
+  if( this->Descendants[ i ].size() == 0 )
+    {
+    return( -1 );
+    }
+  else if( this->Descendants[ i ].size() > 1 )
+    {
+    // TODO: must select descendant with highest mass
+    return( this->Descendants[ i ][ 0 ]);
+    }
+  assert("pre: No single descendant!" && (this->Descendants[i].size()==1));
+  return( this->Descendants[ i ][ 0 ]);
 }
 
 //------------------------------------------------------------------------------
