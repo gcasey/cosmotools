@@ -332,6 +332,10 @@ int GenericIOUtilities::DetectVariablePrimitiveType(
         {
         type = GENERIC_IO_UINT64_TYPE;
         }
+      else if(vinfo.Size == sizeof(unsigned char))
+        {
+        type = GENERIC_IO_UCHAR_TYPE;
+        }
       else
         {
         std::cerr << "WARNING: Cannot detect unsigned integer type!";
@@ -367,6 +371,12 @@ void* GenericIOUtilities::AllocateVariableArray(
 //      ptr = static_cast<void*>(data);
 //      }
 //      break;
+    case GENERIC_IO_UCHAR_TYPE:
+      {
+      unsigned char *data = new unsigned char[ numElements ];
+      ptr = static_cast<void*>(data);
+      }
+      break;
     case GENERIC_IO_INT32_TYPE:
       {
       int32_t *data = new int32_t[ numElements ];
