@@ -175,6 +175,12 @@ protected:
   int MergerTreeFileFormat;
 
   /**
+   * @brief Issues a split warning message to stderr.
+   * @param i the local node index, i.e., index to the Nodes array.
+   */
+  void IssueSplitWarning(const int i);
+
+  /**
    * @brief Returns the descendant of the ith node.
    * @param i the local node index, i.e., index to the Nodes array.
    * @return idx the ID of the descendant.

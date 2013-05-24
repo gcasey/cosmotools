@@ -344,6 +344,30 @@ void DistributedHaloEvolutionTree::WriteTree(std::string fileName)
 }
 
 //------------------------------------------------------------------------------
+void DistributedHaloEvolutionTree::IssueSplitWarning(const int i)
+{
+  assert("pre: local index out-of-bounds!" &&
+          (i >= 0) && (i < this->Nodes.size() ) );
+  std::cerr << "\n\n====\n";
+  std::cerr << "WARNING: SPLIT HALO DETECTED\n";
+  std::cerr << "HALO GLOBAL ID: " << this->Nodes[ i ].GlobalID << std::endl;
+  std::cerr << "HALO TIMESTEP: "  << this->Nodes[ i ].TimeStep << std::endl;
+  std::cerr << "HALO REDSHIFT: " << this->Nodes[ i ].Redshift << std::endl;
+  std::cerr << "HALO ID: " << this->Nodes[ i ].Tag << std::endl;
+  std::cerr << "HALO MASS: " << this->Nodes[ i ].HaloMass << std::endl;
+  std::cerr << "CENTER: " << this->Nodes[ i ].Center[ 0 ] << " "
+                          << this->Nodes[ i ].Center[ 1 ] << " "
+                          << this->Nodes[ i ].Center[ 2 ] << std::endl;
+  std::cerr << "MEAN-CENTER: " << this->Nodes[ i ].MeanCenter[ 0 ] << " "
+                          << this->Nodes[ i ].MeanCenter[ 1 ] << " "
+                          << this->Nodes[ i ].MeanCenter[ 2 ] << std::endl;
+  std::cerr << "VELOCITY: " << this->Nodes[ i ].AverageVelocity[ 0 ] << " "
+                       << this->Nodes[ i ].AverageVelocity[ 1 ] << " "
+                       << this->Nodes[ i ].AverageVelocity[ 2 ] << std::endl;
+  std::cerr << "===\n\n";
+}
+
+//------------------------------------------------------------------------------
 ID_T DistributedHaloEvolutionTree::GetDescendant(const int i)
 {
   assert("pre: local index out-of-bounds!" &&
@@ -356,6 +380,7 @@ ID_T DistributedHaloEvolutionTree::GetDescendant(const int i)
   else if( this->Descendants[ i ].size() > 1 )
     {
     // TODO: must select descendant with highest mass
+    this->IssueSplitWarning( i );
     return( this->Descendants[ i ][ 0 ]);
     }
   assert("pre: No single descendant!" && (this->Descendants[i].size()==1));
