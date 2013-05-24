@@ -241,7 +241,7 @@ int DistributedHaloEvolutionTree::GetTotalNumberOfBytes()
   // Sum descendant list
   for(unsigned int idx=0; idx < this->Descendants.size(); ++idx)
     {
-    localNumBytes += this->Descendants[idx].size()*sizeof(int);
+    localNumBytes += this->Descendants[idx].size()*sizeof(halo_link_t);
     }
 
   // Sum memory for Node2Idx map
