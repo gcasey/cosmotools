@@ -272,20 +272,16 @@ int main(int argc, char **argv)
     } // END for all time-step
 
   // STEP 9: Write the tree
-  std::ostringstream oss;
-  oss << "mtree-" << rank << ".ascii";
-  std::ofstream ofs;
-  ofs.open(oss.str().c_str());
-  ofs << HaloTracker->GetHaloEvolutionTree()->ToString();
-  ofs.close();
-  //HaloTracker->WriteMergerTree("MergerTree");
+  HaloTracker->WriteMergerTree("MergerTree.dat");
 
   // STEP 10: Write statistics
 
   // STEP 10.1: timer statistics, each rank, writes each own
+  std::ostringstream oss;
   oss.str("");
   oss.clear();
   oss << "Timing-" << rank << ".dat";
+  std::ofstream ofs;
   ofs.open(oss.str().c_str());
   ofs << "I/O;MergerTree\n";
   for(int t=0; t < timesteps.size(); ++t)
