@@ -24,6 +24,7 @@
 
 // Forward declarations
 struct HaloInfo;
+struct halo_link_t;
 
 
 namespace cosmotk

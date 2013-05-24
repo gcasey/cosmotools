@@ -16,6 +16,32 @@
 #include <set>
 #include <limits>
 
+/**
+ * @brief Data structure to represent a link to a halo.
+ * @note This data-structure is used to store descendants
+ * in an STL set s.t. they are sorted based on their corresponding
+ * mass.
+ */
+struct halo_link_t
+{
+  ID_T ID;    // The global ID of the halo.
+  REAL Mass;  // The mass of the halo corresponding to the given ID.
+
+  bool operator < (const halo_link_t& t) const
+  {
+  // Store halos in descending order based on their mass. The most massive
+  // halo will be the first in the list.
+  return( Mass > t.Mass );
+  }
+
+  bool operator == (const halo_link_t& t) const
+  {
+  // Two links are equal iff they have the same ID.
+  return( ID == t.ID );
+  }
+
+};
+
 //------------------------------------------------------------------------------
 
 namespace cosmotk
