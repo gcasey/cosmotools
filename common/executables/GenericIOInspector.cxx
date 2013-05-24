@@ -61,23 +61,23 @@ std::string PrintData(void *dataPtr, const int idx)
 //==============================================================================
 void ParseArguments(int argc, char **argv)
 {
-	for(int i=1; i < argc; ++i)
-	  {
-	  if(strcmp(argv[i],"--file")==0)
-	    {
-	    File = std::string(argv[++i]);
-	    }
-	  else if(strcmp(argv[i],"--use-posix")==0)
-	    {
-		UsePosix = true;
-	    }
-	  else if(strcmp(argv[i],"--all")==0)
-	  	{
-		OnlyMetaData = false;
-	  	}
-	  } // END for all arguments
+  for(int i=1; i < argc; ++i)
+    {
+    if(strcmp(argv[i],"--file")==0)
+      {
+      File = std::string(argv[++i]);
+      }
+    else if(strcmp(argv[i],"--use-posix")==0)
+      {
+    UsePosix = true;
+      }
+    else if(strcmp(argv[i],"--all")==0)
+      {
+    OnlyMetaData = false;
+      }
+    } // END for all arguments
 
-	assert("pre: specify [--file <file>]" && (File != "") );
+  assert("pre: specify [--file <file>]" && (File != "") );
 }
 
 /**
@@ -100,11 +100,11 @@ int main(int argc, char **argv)
   cosmotk::GenericIOReader *reader = NULL;
   if( UsePosix )
     {
-	reader = new cosmotk::GenericIOPosixReader();
+  reader = new cosmotk::GenericIOPosixReader();
     }
   else
     {
-	reader = new cosmotk::GenericIOMPIReader();
+  reader = new cosmotk::GenericIOMPIReader();
     }
 
   reader->SetCommunicator(comm);
@@ -113,15 +113,15 @@ int main(int argc, char **argv)
 
   std::vector< DataInformation > DataVector;
   if( !OnlyMetaData )
-	{
-	DataVector.resize( reader->GetNumberOfVariablesInFile() );
-	}
+  {
+  DataVector.resize( reader->GetNumberOfVariablesInFile() );
+  }
 
   int N = reader->GetNumberOfElements();
   cosmotk::MPIUtilities::Printf(
-		  comm,"NUMBER OF VARIABLES=%d\n",reader->GetNumberOfVariablesInFile());
+      comm,"NUMBER OF VARIABLES=%d\n",reader->GetNumberOfVariablesInFile());
   cosmotk::MPIUtilities::SynchronizedPrintf(
-		  comm,"NUMBER OF ELEMENTS=%d\n",N);
+      comm,"NUMBER OF ELEMENTS=%d\n",N);
   MPI_Barrier(comm);
 
   std::ostringstream oss;
@@ -129,10 +129,10 @@ int main(int argc, char **argv)
   oss.clear();
   for(int i=0; i < reader->GetNumberOfVariablesInFile(); ++i)
     {
-	if( !OnlyMetaData )
-	  {
+  if( !OnlyMetaData )
+    {
       DataVector[ i ].VariableInformation = reader->GetFileVariableInfo( i );
-	  }
+    }
 
     int type = cosmotk::GenericIOUtilities::DetectVariablePrimitiveType(
                               reader->GetFileVariableInfo(i));
@@ -146,21 +146,21 @@ int main(int argc, char **argv)
     cosmotk::MPIUtilities::Printf(comm,"VARIABLE=%s\n",oss.str().c_str());
 
     if( !OnlyMetaData )
-	  {
-	  DataVector[ i ].Data =
-		cosmotk::GenericIOUtilities::AllocateVariableArray(
-				DataVector[ i ].VariableInformation,N);
-	  reader->AddVariable(
-		DataVector[ i ].VariableInformation,DataVector[ i ].Data);
-	  } // END if onlyt metadata
+    {
+    DataVector[ i ].Data =
+    cosmotk::GenericIOUtilities::AllocateVariableArray(
+        DataVector[ i ].VariableInformation,N);
+    reader->AddVariable(
+    DataVector[ i ].VariableInformation,DataVector[ i ].Data);
+    } // END if onlyt metadata
     } // END for all variables in the file
 
   if( !OnlyMetaData )
-	{
-	cosmotk::MPIUtilities::Printf(comm,"Reading Data\n");
-	reader->ReadData();
-	cosmotk::MPIUtilities::Printf(comm,"Reading Data [DONE]\n");
-	}
+  {
+  cosmotk::MPIUtilities::Printf(comm,"Reading Data\n");
+  reader->ReadData();
+  cosmotk::MPIUtilities::Printf(comm,"Reading Data [DONE]\n");
+  }
 
   reader->Close();
   delete reader;
@@ -172,10 +172,10 @@ int main(int argc, char **argv)
   oss << std::endl;
   for(int j=0; j < N; ++j )
     {
-	if( OnlyMetaData )
-	  {
-	  break;
-	  }
+  if( OnlyMetaData )
+    {
+    break;
+    }
 
     for(unsigned int i=0; i < DataVector.size(); ++i)
       {
@@ -221,6 +221,10 @@ int main(int argc, char **argv)
         {
         oss << PrintData<float>(DataVector[ i ].Data,j);
         } // END if float
+      else if( type == cosmotk::GENERIC_IO_UCHAR_TYPE )
+        {
+        oss << PrintData<unsigned char>(DataVector[ i ].Data, j);
+        }
       else
         {
         std::cerr << "ERROR: Undefined datatype!\n";
