@@ -4,6 +4,7 @@
 #include "GenericIO.h"
 #include "Halo.h"
 #include "MergerTreeEvent.h"
+#include "MergerTreeFileFormat.h"
 
 // STL includes
 #include <cassert>
@@ -27,6 +28,7 @@ DistributedHaloEvolutionTree::DistributedHaloEvolutionTree()
   this->NumberOfRebirths = 0;
   this->NumberOfSplits   = 0;
   this->NumberOfZombies  = 0;
+  this->MergerTreeFileFormat = cosmotk::MergerTreeFileFormat::GENERIC_IO_POSIX;
 }
 
 //------------------------------------------------------------------------------

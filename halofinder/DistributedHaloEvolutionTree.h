@@ -43,6 +43,11 @@ public:
    */
   GetNSetMacro(Communicator,MPI_Comm);
 
+  /**
+   * @brief Get/Set macro for MergerTree file format.
+   */
+  GetNSetMacro(MergerTreeFileFormat,int);
+
   // Get macros for some of the statistics
   GetMacro(NumberOfMergers,int);
   GetMacro(NumberOfRebirths,int);
@@ -166,6 +171,8 @@ protected:
   int NumberOfMergers;
   int NumberOfRebirths;
   int NumberOfSplits;
+
+  int MergerTreeFileFormat;
 
   /**
    * @brief Returns the descendant of the ith node.
