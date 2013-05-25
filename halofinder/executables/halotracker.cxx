@@ -21,6 +21,7 @@
 #include "CosmologyToolsMacros.h"
 #include "ForwardHaloTracker.h"
 #include "GenericIO.h"
+#include "GenericIODefinitions.hpp"
 #include "GenericIOMPIReader.h"
 #include "GenericIOPosixReader.h"
 #include "GenericIOReader.h"
@@ -700,29 +701,41 @@ void ReadHalosAtTimeStep(int tstep)
       FofPropertiesReader->SetCommunicator(comm);
       FofPropertiesReader->OpenAndReadHeader();
       int nfof = FofPropertiesReader->GetNumberOfElements();
-      ID_T *haloTags      = new ID_T[nfof];
-      POSVEL_T *center_x = new POSVEL_T[nfof];
-      POSVEL_T *center_y = new POSVEL_T[nfof];
-      POSVEL_T *center_z = new POSVEL_T[nfof];
-      POSVEL_T *mcx      = new POSVEL_T[nfof];
-      POSVEL_T *mcy      = new POSVEL_T[nfof];
-      POSVEL_T *mcz      = new POSVEL_T[nfof];
-      POSVEL_T *halo_vx  = new POSVEL_T[nfof];
-      POSVEL_T *halo_vy  = new POSVEL_T[nfof];
-      POSVEL_T *halo_vz  = new POSVEL_T[nfof];
-      POSVEL_T *halomass = new POSVEL_T[nfof];
+      int padposvel_t = cosmotk::CRCSize/sizeof(POSVEL_T);
+      ID_T *haloTags     = new ID_T[nfof+(cosmotk::CRCSize/sizeof(ID_T))];
+      POSVEL_T *center_x = new POSVEL_T[nfof+padposvel_t];
+      POSVEL_T *center_y = new POSVEL_T[nfof+padposvel_t];
+      POSVEL_T *center_z = new POSVEL_T[nfof+padposvel_t];
+      POSVEL_T *mcx      = new POSVEL_T[nfof+padposvel_t];
+      POSVEL_T *mcy      = new POSVEL_T[nfof+padposvel_t];
+      POSVEL_T *mcz      = new POSVEL_T[nfof+padposvel_t];
+      POSVEL_T *halo_vx  = new POSVEL_T[nfof+padposvel_t];
+      POSVEL_T *halo_vy  = new POSVEL_T[nfof+padposvel_t];
+      POSVEL_T *halo_vz  = new POSVEL_T[nfof+padposvel_t];
+      POSVEL_T *halomass = new POSVEL_T[nfof+padposvel_t];
 
-      FofPropertiesReader->AddVariable("fof_halo_tag", haloTags);
-      FofPropertiesReader->AddVariable("fof_halo_center_x", center_x);
-      FofPropertiesReader->AddVariable("fof_halo_center_y", center_y);
-      FofPropertiesReader->AddVariable("fof_halo_center_z", center_z);
-      FofPropertiesReader->AddVariable("fof_halo_mean_x",mcx);
-      FofPropertiesReader->AddVariable("fof_halo_mean_y",mcy);
-      FofPropertiesReader->AddVariable("fof_halo_mean_z",mcz);
-      FofPropertiesReader->AddVariable("fof_halo_mean_vx", halo_vx);
-      FofPropertiesReader->AddVariable("fof_halo_mean_vy", halo_vy);
-      FofPropertiesReader->AddVariable("fof_halo_mean_vz", halo_vz);
-      FofPropertiesReader->AddVariable("fof_halo_mass", halomass);
+      FofPropertiesReader->AddVariable(
+    	"fof_halo_tag",haloTags,cosmotk::GenericIOBase::ValueHasExtraSpace);
+      FofPropertiesReader->AddVariable(
+       "fof_halo_center_x",center_x,cosmotk::GenericIOBase::ValueHasExtraSpace);
+      FofPropertiesReader->AddVariable(
+       "fof_halo_center_y",center_y,cosmotk::GenericIOBase::ValueHasExtraSpace);
+      FofPropertiesReader->AddVariable(
+       "fof_halo_center_z",center_z,cosmotk::GenericIOBase::ValueHasExtraSpace);
+      FofPropertiesReader->AddVariable(
+       "fof_halo_mean_x",mcx,cosmotk::GenericIOBase::ValueHasExtraSpace);
+      FofPropertiesReader->AddVariable(
+       "fof_halo_mean_y",mcy,cosmotk::GenericIOBase::ValueHasExtraSpace);
+      FofPropertiesReader->AddVariable(
+       "fof_halo_mean_z",mcz,cosmotk::GenericIOBase::ValueHasExtraSpace);
+      FofPropertiesReader->AddVariable(
+       "fof_halo_mean_vx",halo_vx,cosmotk::GenericIOBase::ValueHasExtraSpace);
+      FofPropertiesReader->AddVariable(
+       "fof_halo_mean_vy",halo_vy,cosmotk::GenericIOBase::ValueHasExtraSpace);
+      FofPropertiesReader->AddVariable(
+       "fof_halo_mean_vz",halo_vz,cosmotk::GenericIOBase::ValueHasExtraSpace);
+      FofPropertiesReader->AddVariable(
+       "fof_halo_mass",halomass,cosmotk::GenericIOBase::ValueHasExtraSpace);
 
       FofPropertiesReader->ReadData();
 
@@ -776,11 +789,13 @@ void ReadHalosAtTimeStep(int tstep)
     HaloParticlesReader->SetCommunicator(comm);
     HaloParticlesReader->OpenAndReadHeader();
     int npart = HaloParticlesReader->GetNumberOfElements();
-    ID_T *particleIds  = new ID_T[npart];
-    ID_T *halo_tags    = new ID_T[npart];
+    ID_T *particleIds  = new ID_T[npart+(cosmotk::CRCSize/sizeof(ID_T))];
+    ID_T *halo_tags    = new ID_T[npart+(cosmotk::CRCSize/sizeof(ID_T))];
 
-    HaloParticlesReader->AddVariable("id",particleIds);
-    HaloParticlesReader->AddVariable("fof_halo_tag",halo_tags);
+    HaloParticlesReader->AddVariable(
+    	"id",particleIds,cosmotk::GenericIOBase::ValueHasExtraSpace);
+    HaloParticlesReader->AddVariable(
+    	"fof_halo_tag",halo_tags,cosmotk::GenericIOBase::ValueHasExtraSpace);
 
     HaloParticlesReader->ReadData();
 
