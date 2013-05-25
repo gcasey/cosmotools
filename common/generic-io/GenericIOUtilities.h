@@ -42,12 +42,24 @@ public:
       std::vector<int> &assigned);
 
   /**
+   * @brief Verifies the checksum supplied with and corresponding to the data.
+   * @param data the data buffer which includes the checksum padded at the end.
+   * @param nbytes the number of bytes including the checksum
+   * @return status true iff the checksum verification passes, else, false.
+   * @see GenericIOUtilities::VerifyChecksum
+   * @note This version is used primarily when the data+crc are read with a
+   * single read, i.e., when the user-supplied buffer has allocated extra
+   * space for the crc.
+   */
+  static bool VerifyChecksum(const void* data, size_t nbytes);
+
+  /**
    * @brief Computes a 64-bit CRC checksum for the supplied data and verifies
    * it against the expected checksum, cs.
    * @param data the data to check.
    * @param nbytes the number of bytes of the data.
    * @param cs the checksum to compare against.
-   * @return status true iff the checksum passes, else, false.
+   * @return status true iff the checksum verification passes, else, false.
    */
   static bool VerifyChecksum(
       const void* data,size_t nbytes,uint64_t cs);

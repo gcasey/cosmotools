@@ -20,6 +20,21 @@ GenericIOUtilities::~GenericIOUtilities()
 }
 
 //------------------------------------------------------------------------------
+bool GenericIOUtilities::VerifyChecksum(const void* data, size_t nbytes)
+{
+  if( data==NULL || nbytes==0)
+	{
+	return true;
+	}
+
+  if(crc64_omp(data,nbytes)!=(uint64_t)(-1))
+  	{
+	return false;
+  	}
+  return true;
+}
+
+//------------------------------------------------------------------------------
 bool GenericIOUtilities::VerifyChecksum(
       const void* data, size_t nbytes, uint64_t cs)
 {
