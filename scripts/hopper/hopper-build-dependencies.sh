@@ -5,9 +5,16 @@ nproc=8
 bold=`tput bold`
 normal=`tput sgr0`
 baseDir=`pwd`
-export CC=mpicc
-export CXX=mpicxx
+export CC=cc
+export CXX=CC
 
+
+#==============================================================================
+# STEP 0: Load needed modules
+echo "${bold}=== Loading Modules ===${normal}"
+module swap PrgEnv-pgi PrgEnv-gnu
+#module load cmake
+#module load tcl
 
 #==============================================================================
 # STEP 1: Download & build DIY
@@ -19,8 +26,8 @@ diyBuildDir=$baseDir"/diy-build"
 mkdir $diyBuildDir
 
 cd $diySourceDir
-export MPICC=mpicc
-export MPICXX=mpicxx
+export MPICC=cc
+export MPICXX=CC
 ./configure --enable-fpic --disable-openmp --prefix=$diyBuildDir
 make -j$nproc
 make install

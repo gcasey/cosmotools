@@ -5,8 +5,8 @@ nproc=8
 bold=`tput bold`
 normal=`tput sgr0`
 baseDir=`pwd`
-export CC=mpicc
-export CXX=mpicxx
+export CC=mpixlc_r
+export CXX=mpixlcxx_r
 
 
 #==============================================================================
@@ -19,9 +19,9 @@ diyBuildDir=$baseDir"/diy-build"
 mkdir $diyBuildDir
 
 cd $diySourceDir
-export MPICC=mpicc
-export MPICXX=mpicxx
-./configure --enable-fpic --disable-openmp --prefix=$diyBuildDir
+export MPICC=mpixlc_r
+export MPICXX=mpixlcxx_r
+./configure --disable-openmp --prefix=$diyBuildDir
 make -j$nproc
 make install
 
