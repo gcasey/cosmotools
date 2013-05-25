@@ -1,0 +1,93 @@
+<ServerManagerConfiguration>
+  <ProxyGroup name="filters">
+    <SourceProxy name="VoronoiFilter"
+                 class="VoronoiFilter"
+                 label="VoronoiFilter">
+      <Documentation
+         long_help="Setting the parameters visualizing voronoi data"
+         short_help="Vornonoi filter settings">
+      </Documentation>
+
+      <InputProperty
+        name="Input"
+        command="SetInputConnection">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources"/>
+          <Group name="filters"/>
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkMultiBlockDataSet"/>
+        </DataTypeDomain>
+        <Documentation>
+          This property specifies the input for this filter.
+        </Documentation>
+      </InputProperty>
+
+      <DoubleVectorProperty
+         name="VolumeRange"
+         label="Volume Range"
+         command="SetVolumeRange"
+         number_of_elements="2"
+         animateable="1"
+         default_values="7 8" >
+         <DoubleRangeDomain name="range"/>
+      </DoubleVectorProperty>
+
+      <DoubleVectorProperty
+        name="AreaRange"
+        label="AreaRange"
+        command="SetAreaRange"
+        number_of_elements="2"
+        default_values="0 100">
+         <DoubleRangeDomain name="range"/>
+      </DoubleVectorProperty>
+    </SourceProxy>
+
+    <SourceProxy name="MinkowskiFilter"
+                 class="vtkMinkowskiFilter"
+                 label="MinkowskiFilter">
+      <Documentation
+         long_help="Applying Minkowski functionals"
+         short_help="Minkowski filter settings">
+      </Documentation>
+      <InputProperty
+        name="Input"
+        command="SetInputConnection">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources"/>
+          <Group name="filters"/>
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkUnstructuredGrid"/>
+        </DataTypeDomain>
+        <Documentation>
+          This property specifies the input for this filter.
+        </Documentation>
+      </InputProperty>
+    </SourceProxy>
+
+    <SourceProxy name="PMergeConnected"
+                 class="vtkPMergeConnected"
+                 label="PMergeConnected">
+      <Documentation
+         long_help="Use global RegionId and merge cells with the same RegionId to a polyhedron cell"
+         short_help="PMergeConnected filter settings">
+      </Documentation>
+      <InputProperty
+        name="Input"
+        command="SetInputConnection">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources"/>
+          <Group name="filters"/>
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkMultiBlockDataSet"/>
+        </DataTypeDomain>
+        <Documentation>
+          This property specifies the input for this filter.
+        </Documentation>
+      </InputProperty>
+    </SourceProxy>
+
+  </ProxyGroup>
+</ServerManagerConfiguration>
