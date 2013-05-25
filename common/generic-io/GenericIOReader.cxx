@@ -608,20 +608,32 @@ void GenericIOReader::ReadSingleFileData()
       // Compute number of bytes to read
       size_t bytesize = NBlockElements*vsize;
 
-      // Read in the block data
-      this->Read(dataPtr,bytesize,offSet,this->Vars[varIdx].Name);
+      if( this->Vars[ varIdx ].HasExtraSpace )
+      	{
+    	this->Read(dataPtr,bytesize+CRCSize,offSet,this->Vars[varIdx].Name);
+    	if(!GenericIOUtilities::VerifyChecksum(dataPtr,bytesize+CRCSize))
+    	  {
+		  throw std::runtime_error(
+		   "Variable checksum failed for variable " + this->Vars[varIdx].Name);
+    	  } // END if checksum
+      	} // END if extra space
+      else
+      	{
+    	// Read in the block data
+    	this->Read(dataPtr,bytesize,offSet,this->Vars[varIdx].Name);
 
-      // Read checksum
-      uint64_t checksum;
-      offSet += bytesize;
-      this->Read(&checksum,CRCSize,offSet,"variable checksum");
+    	// Read checksum
+    	uint64_t checksum;
+    	offSet += bytesize;
+    	this->Read(&checksum,CRCSize,offSet,"variable checksum");
 
-      // Verify Checksum
-      if( !GenericIOUtilities::VerifyChecksum(dataPtr,bytesize,checksum) )
-        {
-      throw std::runtime_error(
-        "Variable checksum failed for variable " + this->Vars[varIdx].Name);
-        } // END if checksum
+    	// Verify Checksum
+    	if( !GenericIOUtilities::VerifyChecksum(dataPtr,bytesize,checksum) )
+          {
+    	  throw std::runtime_error(
+    	   "Variable checksum failed for variable " + this->Vars[varIdx].Name);
+          } // END if checksum
+      	} // END else no extra space
 
       dataPtr = static_cast<char*>(dataPtr)+bytesize;
       } // END for all assigned blocks
