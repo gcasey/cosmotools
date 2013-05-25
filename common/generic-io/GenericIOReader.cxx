@@ -321,13 +321,13 @@ void GenericIOReader::ReadHeader()
 
      // header checksum -- CRC is endian independent. It must be verified
      // before byte-swapping.
-     if(crc64_omp(&this->EntireHeader[0],attribs[HEADER_SIZE])!=(uint64_t)-1)
+     if(!GenericIOUtilities::VerifyChecksum(
+    		 &this->EntireHeader[0],attribs[HEADER_SIZE]))
        {
-       std::cerr << "\nWARNING: header checksum verification failed @"
-                 << __FILE__ << ":" << __LINE__ << std::endl;
-       attribs[ERROR] = 1;
+	   std::cerr << "\nWARNING: header checksum verification failed @"
+				 << __FILE__ << ":" << __LINE__ << std::endl;
+	   attribs[ERROR] = 1;
        }
-
 
      MPI_Bcast(attribs,3,MPI_INTEGER,0,this->Communicator);
      break;
