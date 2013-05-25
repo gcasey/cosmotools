@@ -19,7 +19,7 @@ module swap PrgEnv-pgi PrgEnv-gnu
 #==============================================================================
 # STEP 1: Download & build DIY
 echo "${bold}=== Download & Build DIY ===${normal}"
-svn co -r165 https://svn.mcs.anl.gov/repos/diy/trunk diy-source
+svn co -r178 https://svn.mcs.anl.gov/repos/diy/trunk diy-source
 
 diySourceDir=$baseDir"/diy-source"
 diyBuildDir=$baseDir"/diy-build"
