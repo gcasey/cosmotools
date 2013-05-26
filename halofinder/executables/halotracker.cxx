@@ -233,7 +233,7 @@ int main(int argc, char **argv)
     cosmotk::MPIUtilities::Printf(
         comm,"t=%d, redshift=%f\n", timesteps[t], z);
 
-    cosmotk::MPIUtilities::Printf(comm,"Read halos...");
+    cosmotk::MPIUtilities::Printf(comm,"Read halos...\n");
     IOTimer.StartTimer();
     ReadHalosAtTimeStep( timesteps[t] );
     IOTimer.StopTimer();
@@ -692,6 +692,12 @@ void ReadHalosAtTimeStep(int tstep)
     std::string haloParticlesFile;
     GetFileNamesAtTimeStep(tstep,fofPropertiesFile,haloParticlesFile);
 
+    // Print the files that are being read
+    cosmotk::MPIUtilities::Printf(
+    		comm,"FOFFILE: %s",fofPropertiesFile.c_str());
+    cosmotk::MPIUtilities::Printf(
+    		comm,"TAGSFILE: %s",haloParticlesFile.c_str());
+
 
     // STEP 1: Open and read FOF properties file
     if( !SkipFofProperties )
@@ -742,6 +748,12 @@ void ReadHalosAtTimeStep(int tstep)
       for( int i=0; i < nfof; ++i )
         {
         int tag = haloTags[i];
+        if( tag < 0 )
+          {
+          std::cerr << "ERROR: TAG is negative: " << tag << std::endl;
+          std::cerr << "ROW: "  << i 	<< std::endl;
+          std::cerr << "RANK: " << rank << std::endl;
+          } // END if tag is negative
         assert("pre: tag should not be negative!" &&
                 (tag >= 0) );
 
