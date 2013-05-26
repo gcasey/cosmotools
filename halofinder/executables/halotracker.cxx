@@ -694,9 +694,9 @@ void ReadHalosAtTimeStep(int tstep)
 
     // Print the files that are being read
     cosmotk::MPIUtilities::Printf(
-    		comm,"FOFFILE: %s",fofPropertiesFile.c_str());
+    		comm,"FOFFILE: %s\n",fofPropertiesFile.c_str());
     cosmotk::MPIUtilities::Printf(
-    		comm,"TAGSFILE: %s",haloParticlesFile.c_str());
+    		comm,"TAGSFILE: %s\n",haloParticlesFile.c_str());
 
 
     // STEP 1: Open and read FOF properties file
