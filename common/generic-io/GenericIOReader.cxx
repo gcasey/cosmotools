@@ -555,8 +555,17 @@ void GenericIOReader::ReadSplitModeData()
           static_cast<char*>(this->Vars[varIdx].Data)+(nskip*vsize);
       assert("pre: dataPtr is NULL!" && (dataPtr != NULL) );
 
-      this->InternalReaders[ i ]->AddVariable(
-          this->GetVariableInfo(varIdx),dataPtr);
+      if(this->Vars[varIdx].HasExtraSpace)
+        {
+    	this->InternalReaders[ i ]->AddVariable(
+    			this->GetVariableInfo(varIdx),dataPtr,
+    			GenericIOBase::ValueHasExtraSpace);
+        } // END if extra space
+      else
+      	{
+	    this->InternalReaders[ i ]->AddVariable(
+				this->GetVariableInfo(varIdx),dataPtr);
+      	} // END else extra space
 
       } // END for all variables
 
