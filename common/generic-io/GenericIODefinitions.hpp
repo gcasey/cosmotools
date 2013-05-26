@@ -84,8 +84,9 @@ struct VariableInfo
     {
     this->Name = "";
     this->Size = 0;
-    this->IsFloat = true;
-    this->IsFloat = true;
+    this->IsFloat  = true;
+    this->IsFloat  = true;
+    this->IsSigned = true;
     this->IsPhysCoordX = false;
     this->IsPhysCoordY = false;
     this->IsPhysCoordZ = false;
