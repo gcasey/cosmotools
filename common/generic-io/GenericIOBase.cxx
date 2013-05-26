@@ -1,5 +1,7 @@
 #include "GenericIOBase.h"
 
+#include <cassert>
+
 namespace cosmotk
 {
 
