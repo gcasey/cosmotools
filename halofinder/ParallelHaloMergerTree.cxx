@@ -45,6 +45,22 @@ void ParallelHaloMergerTree::UpdateMergerTree(
   assert("pre: HaloNeighborExchange object is NULL!" &&
           (this->NeighborExchange != NULL) );
 
+  int nrank		  = 0;
+  int averageSize = 0;
+  if( this->Verbose )
+    {
+	MPI_Comm_size(this->Communicator,&nrank);
+	int tot = M*N;
+	MPIUtilities::SynchronizedPrintf(
+			this->Communicator,"MATRIX: %d x %d (%d total)",M,N,tot);
+	int sum = 0;
+	MPI_Allreduce(&tot,&sum,1,MPI_INT,MPI_SUM,this->Communicator);
+	averageSize = sum/nrank;
+	MPIUtilities::Printf(
+			this->Communicator,"AVERAGE MATRIX SIZE: %d", averageSize);
+    } // END if Verbose
+
+
   this->NeighborExchange->SetCommunicator( this->Communicator );
 
   // STEP 0: Exchange halos -- This step set's up the TemporalHalos data-struct
