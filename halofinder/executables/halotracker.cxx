@@ -246,7 +246,7 @@ int main(int argc, char **argv)
     cosmotk::MPIUtilities::Printf(comm,"Number of halos=%d\n", numHalos );
     NumHalosAtTimeStep[ timesteps[t] ] = numHalos;
 
-    cosmotk::MPIUtilities::Printf(comm,"Track halos...");
+    cosmotk::MPIUtilities::Printf(comm,"Track halos...\n");
     MergerTreeTimer.StartTimer();
     HaloTracker->TrackHalos(timesteps[t],z,Halos);
     MergerTreeTimer.StopTimer();
