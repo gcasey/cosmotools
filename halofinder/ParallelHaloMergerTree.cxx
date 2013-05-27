@@ -5,6 +5,7 @@
 #include "HaloNeighborExchange.h"
 #include "HaloType.h"
 #include "MPIUtilities.h"
+#include "TaskTimer.h"
 
 // DIY communication sub-strate
 #include "diy.h"
@@ -45,6 +46,8 @@ void ParallelHaloMergerTree::UpdateMergerTree(
   assert("pre: HaloNeighborExchange object is NULL!" &&
           (this->NeighborExchange != NULL) );
 
+  TaskTimer exchangeTimer, mtreeTimer, buildTreeTimer,handleDeathTimer;
+
   int nrank		  = 0;
   int averageSize = 0;
   if( this->Verbose )
@@ -52,18 +55,24 @@ void ParallelHaloMergerTree::UpdateMergerTree(
 	MPI_Comm_size(this->Communicator,&nrank);
 	int tot = M*N;
 	MPIUtilities::SynchronizedPrintf(
-			this->Communicator,"MATRIX: %d x %d (%d total)",M,N,tot);
+			this->Communicator,"MATRIX: %d x %d (%d total)\n",M,N,tot);
 	int sum = 0;
 	MPI_Allreduce(&tot,&sum,1,MPI_INT,MPI_SUM,this->Communicator);
 	averageSize = sum/nrank;
 	MPIUtilities::Printf(
-			this->Communicator,"AVERAGE MATRIX SIZE: %d", averageSize);
+			this->Communicator,"AVERAGE MATRIX SIZE: %d\n", averageSize);
     } // END if Verbose
 
 
   this->NeighborExchange->SetCommunicator( this->Communicator );
 
   // STEP 0: Exchange halos -- This step set's up the TemporalHalos data-struct
+  if( this->Verbose )
+    {
+	MPIUtilities::Printf(this->Communicator,"EXCHANGE HALOS...\n");
+    }
+
+  exchangeTimer.StartTimer();
   if( this->TemporalHalos.size() == 0 )
     {
     // This is the first time that we run the algorithm, so we must communicate
@@ -93,8 +102,21 @@ void ParallelHaloMergerTree::UpdateMergerTree(
     this->NeighborExchange->ExchangeHalos(
         haloSet2,N,this->TemporalHalos[this->CurrentIdx]);
     }
+  exchangeTimer.StopTimer();
+  if( this->Verbose )
+    {
+	MPIUtilities::Printf(
+		   this->Communicator,"EXCHANGE HALOS [DONE] (%f)\n",
+	   	   exchangeTimer.GetEllapsedTime());
+    }
 
   // STEP 1: Register halos
+  if( this->Verbose )
+    {
+	MPIUtilities::Printf(this->Communicator,"COMPUTE SIMILARITY MATRIX...\n");
+    }
+
+  mtreeTimer.StartTimer();
   this->RegisterHalos(
       t1,&this->TemporalHalos[this->PreviousIdx][0],
           this->TemporalHalos[this->PreviousIdx].size(),
@@ -104,10 +126,31 @@ void ParallelHaloMergerTree::UpdateMergerTree(
 
   // STEP 2: Compute merger-tree
   this->ComputeMergerTree();
+  mtreeTimer.StopTimer();
+  if( this->Verbose )
+    {
+	MPIUtilities::Printf(
+			this->Communicator,"SIMILARITY MATRIX [DONE] (%f)\n",
+			mtreeTimer.GetEllapsedTime() );
+    }
+
   //this->PrintMatrix( this->GetRank() );
 
   // STEP 3: Update the halo-evolution tree
+  if( this->Verbose )
+    {
+	MPIUtilities::Printf(this->Communicator,"BUILD MERGER TREE...\n");
+    }
+
+  buildTreeTimer.StartTimer();
   this->UpdateHaloEvolutionTree( t );
+  buildTreeTimer.StopTimer();
+  if( this->Verbose )
+    {
+	MPIUtilities::Printf(
+			this->Communicator,"BUILD MERGER TREE [DONE] (%f)\n",
+			buildTreeTimer.GetEllapsedTime());
+    }
 
   // STEP 4: Print diagnostics for this interval
   if( this->Verbose )
@@ -136,7 +179,21 @@ void ParallelHaloMergerTree::UpdateMergerTree(
     }
 
   // STEP 5: Handle Death events
+  if( this->Verbose )
+    {
+	MPIUtilities::Printf(this->Communicator,"HANDLE DEATH EVENTS...\n");
+    }
+
+  handleDeathTimer.StartTimer();
   this->HandleDeathEvents( t );
+  handleDeathTimer.StopTimer();
+
+  if( this->Verbose )
+    {
+	MPIUtilities::Printf(
+			this->Communicator,"HANDLE DEATH EVENTS [DONE] (%f)",
+			handleDeathTimer.GetEllapsedTime());
+    }
 
   // STEP 6: Barrier synchronization
   this->Barrier();
