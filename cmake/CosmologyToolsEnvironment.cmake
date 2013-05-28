@@ -2,6 +2,9 @@
 set(CMAKE_BUILD_TYPE Debug CACHE STRING
   "one of: Release, Debug, RelWithDebInfo or MinSizeRel")
 
+## Set compiler flags, etc.
+include(CompilerExtras)
+
 ## Set the path where all the header will be stored
 set(HEADER_INCLUDES_DIRECTORY
     ${PROJECT_BINARY_DIR}/include
