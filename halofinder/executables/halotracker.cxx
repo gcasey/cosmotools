@@ -155,7 +155,7 @@ void ParseArguments(int argc, char **argv);
 void ParseSimulationParameters();
 void ReadInAnalysisTimeSteps();
 void ReadHalosAtTimeStep(int tstep);
-int GetHaloIndex(int tstep,int haloTag);
+int GetHaloIndex(int tstep,ID_T haloTag);
 REAL ComputeRedShift(const int tstep);
 void CreateSyntheticHalo(
       const int tstep, const int haloIdx, ID_T start, ID_T end);
@@ -628,7 +628,7 @@ REAL ComputeRedShift(const int tstep)
 }
 
 //------------------------------------------------------------------------------
-int GetHaloIndex(int tstep,int haloTag)
+int GetHaloIndex(int tstep,ID_T haloTag)
 {
   std::string hashCode = cosmotk::Halo::GetHashCodeForHalo(haloTag,tstep);
   if( Halo2Idx.find(hashCode) != Halo2Idx.end() )
@@ -694,9 +694,9 @@ void ReadHalosAtTimeStep(int tstep)
 
     // Print the files that are being read
     cosmotk::MPIUtilities::Printf(
-    		comm,"FOFFILE: %s\n",fofPropertiesFile.c_str());
+        comm,"FOFFILE: %s\n",fofPropertiesFile.c_str());
     cosmotk::MPIUtilities::Printf(
-    		comm,"TAGSFILE: %s\n",haloParticlesFile.c_str());
+        comm,"TAGSFILE: %s\n",haloParticlesFile.c_str());
 
 
     // STEP 1: Open and read FOF properties file
@@ -721,7 +721,7 @@ void ReadHalosAtTimeStep(int tstep)
       POSVEL_T *halomass = new POSVEL_T[nfof+padposvel_t];
 
       FofPropertiesReader->AddVariable(
-    	"fof_halo_tag",haloTags,cosmotk::GenericIOBase::ValueHasExtraSpace);
+      "fof_halo_tag",haloTags,cosmotk::GenericIOBase::ValueHasExtraSpace);
       FofPropertiesReader->AddVariable(
        "fof_halo_center_x",center_x,cosmotk::GenericIOBase::ValueHasExtraSpace);
       FofPropertiesReader->AddVariable(
@@ -747,15 +747,14 @@ void ReadHalosAtTimeStep(int tstep)
 
       for( int i=0; i < nfof; ++i )
         {
-        int tag = haloTags[i];
-        if( tag < 0 )
+        if( haloTags[i] < 0 )
           {
-          std::cerr << "ERROR: TAG is negative: " << tag << std::endl;
+          std::cerr << "ERROR: TAG is negative: " << haloTags[i] << std::endl;
           std::cerr << "ROW: "  << i 	<< std::endl;
           std::cerr << "RANK: " << rank << std::endl;
           } // END if tag is negative
         assert("pre: tag should not be negative!" &&
-                (tag >= 0) );
+                (haloTags[i] >= 0) );
 
 //        std::cout << tstep << "\t";
 //        std::cout << tag << "\t";
@@ -767,7 +766,7 @@ void ReadHalosAtTimeStep(int tstep)
 //        std::cout << halo_vz[i] << std::endl;
 //        std::cout.flush();
 
-        int idx = GetHaloIndex(tstep,tag);
+        int idx = GetHaloIndex(tstep,haloTags[i]);
         Halos[idx].Center[0] = center_x[i];
         Halos[idx].Center[1] = center_y[i];
         Halos[idx].Center[2] = center_z[i];
@@ -805,9 +804,9 @@ void ReadHalosAtTimeStep(int tstep)
     ID_T *halo_tags    = new ID_T[npart+(cosmotk::CRCSize/sizeof(ID_T))];
 
     HaloParticlesReader->AddVariable(
-    	"id",particleIds,cosmotk::GenericIOBase::ValueHasExtraSpace);
+      "id",particleIds,cosmotk::GenericIOBase::ValueHasExtraSpace);
     HaloParticlesReader->AddVariable(
-    	"fof_halo_tag",halo_tags,cosmotk::GenericIOBase::ValueHasExtraSpace);
+      "fof_halo_tag",halo_tags,cosmotk::GenericIOBase::ValueHasExtraSpace);
 
     HaloParticlesReader->ReadData();
 
