@@ -20,7 +20,7 @@ int Halo::GetHaloMetadataBytesize()
   return(
       sizeof(int)+              /* int Count */
       sizeof(ID_T)+             /* ID_T GlobalID */
-      sizeof(int)+              /* int Tag */
+      sizeof(ID_T)+             /* ID_T Tag */
       sizeof(int)+              /* int TimeStep */
       sizeof(unsigned char)+   /* unsigned char HaloTypeMask */
       sizeof(int)+              /* int OwnerBlockId */
@@ -37,7 +37,7 @@ void Halo::CreateDIYHaloInfoType(DIY_Datatype *dtype)
 {
   struct map_block_t halo_map[10] = {
    {DIY_ID_T,     OFST, 1, offsetof(struct HaloInfo,GlobalID)},
-   {DIY_INT,      OFST, 1, offsetof(struct HaloInfo, Tag)},
+   {DIY_ID_T,     OFST, 1, offsetof(struct HaloInfo, Tag)},
    {DIY_INT,      OFST, 1, offsetof(struct HaloInfo, TimeStep)},
    {DIY_REAL_T,   OFST, 1, offsetof(struct HaloInfo, Redshift)},
    {DIY_REAL_T,   OFST, 1, offsetof(struct HaloInfo, HaloMass)},
@@ -54,9 +54,9 @@ void Halo::CreateDIYHaloInfoType(DIY_Datatype *dtype)
 void Halo::CreateDIYHaloParticleType(DIY_Datatype *dtype)
 {
   struct map_block_t halo_part_map[3] = {
-   {DIY_INT,  OFST, 1, offsetof(struct HaloParticle, Tag)},
+   {DIY_ID_T, OFST, 1, offsetof(struct HaloParticle, Tag)},
    {DIY_INT,  OFST, 1, offsetof(struct HaloParticle, TimeStep)},
-   {DIY_ID_T,  OFST, 1, offsetof(struct HaloParticle, HaloParticleID)},
+   {DIY_ID_T, OFST, 1, offsetof(struct HaloParticle, HaloParticleID)},
   };
   DIY_Create_struct_datatype(0, 3, halo_part_map, dtype);
 }
@@ -125,7 +125,7 @@ Halo::Halo( HaloInfo *halo )
 
 //-----------------------------------------------------------------------------
 Halo::Halo(
-    int Tag, int TimeStep, REAL redShift,
+    ID_T Tag, int TimeStep, REAL redShift,
     POSVEL_T cntr[3], POSVEL_T vel[3],
     ID_T *particleIds, int N)
 {
@@ -142,7 +142,7 @@ Halo::~Halo()
 
 //-----------------------------------------------------------------------------
 void Halo::InitHalo(
-    int Tag, int TimeStep, REAL redShift,
+    ID_T Tag, int TimeStep, REAL redShift,
     POSVEL_T cntr[3], POSVEL_T vel[3],
     ID_T *particleIds, int N)
 {
@@ -214,7 +214,7 @@ std::string Halo::GetHashCode()
 }
 
 //-----------------------------------------------------------------------------
-std::string Halo::GetHashCodeForHalo(int tag, int timestep)
+std::string Halo::GetHashCodeForHalo(ID_T tag, int timestep)
 {
   std::ostringstream oss;
   oss << timestep << "." << tag;
