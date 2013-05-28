@@ -69,7 +69,7 @@ void SynchronizedPrintf(MPI_Comm comm, const char *fmt,...)
     // STEP 0: Print message
     va_list argptr;
     va_start(argptr,fmt);
-    printf("[%d]: ",rank);
+    printf("# [%d]: ",rank);
     vprintf(fmt,argptr);
     fflush(stdout);
     va_end(argptr);
@@ -90,7 +90,7 @@ void SynchronizedPrintf(MPI_Comm comm, const char *fmt,...)
     // STEP 1: Print message
     va_list argptr;
     va_start(argptr,fmt);
-    printf("[%d]: ",rank);
+    printf("# [%d]: ",rank);
     vprintf(fmt,argptr);
     fflush(stdout);
     va_end(argptr);
@@ -103,7 +103,7 @@ void SynchronizedPrintf(MPI_Comm comm, const char *fmt,...)
     // STEP 1: Print message
     va_list argptr;
     va_start(argptr,fmt);
-    printf("[%d]: ",rank);
+    printf("# [%d]: ",rank);
     vprintf(fmt,argptr);
     fflush(stdout);
     va_end(argptr);
