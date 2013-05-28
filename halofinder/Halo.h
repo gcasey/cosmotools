@@ -23,7 +23,7 @@
  */
 struct HaloInfo {
   ID_T GlobalID;
-  int Tag;
+  ID_T Tag;
   int TimeStep;
   REAL Redshift;
   REAL HaloMass;
@@ -40,7 +40,7 @@ struct HaloInfo {
  * over DIY.
  */
 struct HaloParticle {
-  int Tag;
+  ID_T Tag;
   int TimeStep;
   ID_T HaloParticleID;
 };
@@ -67,7 +67,7 @@ public:
    * @param particleIds the particle IDs of the halo
    * @param N the total number of particles
    */
-  Halo(int Tag, int TimeStep, REAL redShift,
+  Halo(ID_T Tag, int TimeStep, REAL redShift,
         POSVEL_T cntr[3], POSVEL_T vel[3],
         ID_T *particleIds, int N);
 
@@ -119,7 +119,7 @@ public:
    * @param timestep the timestep of the halo
    * @return h a hashcode for a halo with the given tag and timestep
    */
-  static std::string GetHashCodeForHalo(int tag, int timestep);
+  static std::string GetHashCodeForHalo(ID_T tag, int timestep);
 
   /**
    * @brief Gets the hash code of this halo instance.
@@ -182,7 +182,7 @@ public:
   ID_T GlobalID;                // Global halo ID associated with a halo, i.e.
                                 // an ID that is unique for all time-steps.
 
-  int Tag;                      // The tag/ID of the halo. This is the local
+  ID_T Tag;                      // The tag/ID of the halo. This is the local
                                 // ID, i.e., the ID assigned by the halo-finder
                                 // and is unique only within a given time-step.
 
@@ -213,7 +213,7 @@ private:
    * @param N the total number of particles
    */
   void InitHalo(
-          int Tag, int TimeStep, REAL redShift,
+          ID_T Tag, int TimeStep, REAL redShift,
           POSVEL_T cntr[3], POSVEL_T vel[3],
           ID_T *particleIds, int N);
 };
