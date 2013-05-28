@@ -54,7 +54,7 @@ std::string PrintData(void *dataPtr, const int idx)
 
   sbuf << std::scientific
             << std::setprecision( std::numeric_limits<T>::digits10 )
-            << castedPtr[ idx ] << ";";
+            << castedPtr[ idx ] << "\t";
   return( sbuf.str() );
 }
 
@@ -119,9 +119,9 @@ int main(int argc, char **argv)
 
   int N = reader->GetNumberOfElements();
   cosmotk::MPIUtilities::Printf(
-      comm,"NUMBER OF VARIABLES=%d\n",reader->GetNumberOfVariablesInFile());
+      comm,"# NUMBER OF VARIABLES=%d\n",reader->GetNumberOfVariablesInFile());
   cosmotk::MPIUtilities::SynchronizedPrintf(
-      comm,"NUMBER OF ELEMENTS=%d\n",N);
+      comm,"# NUMBER OF ELEMENTS=%d\n",N);
   MPI_Barrier(comm);
 
   std::ostringstream oss;
@@ -143,7 +143,7 @@ int main(int argc, char **argv)
     oss.str("");
     oss << reader->GetVariableName(i) << " ("
         << cosmotk::PRIMITIVE_NAME[type] << ");";
-    cosmotk::MPIUtilities::Printf(comm,"VARIABLE=%s\n",oss.str().c_str());
+    cosmotk::MPIUtilities::Printf(comm,"# VARIABLE=%s\n",oss.str().c_str());
 
     if( !OnlyMetaData )
     {
@@ -157,14 +157,14 @@ int main(int argc, char **argv)
 
   if( !OnlyMetaData )
   {
-  cosmotk::MPIUtilities::Printf(comm,"Reading Data\n");
+  cosmotk::MPIUtilities::Printf(comm,"# Reading Data\n");
   reader->ReadData();
-  cosmotk::MPIUtilities::Printf(comm,"Reading Data [DONE]\n");
+  cosmotk::MPIUtilities::Printf(comm,"# Reading Data [DONE]\n");
   }
 
   reader->Close();
   delete reader;
-  cosmotk::MPIUtilities::Printf(comm,"Close File [DONE]\n");
+  cosmotk::MPIUtilities::Printf(comm,"# Close File [DONE]\n");
 
   // STEP 3: Loop and print out data according to type
   oss.clear();
