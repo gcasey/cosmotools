@@ -35,19 +35,15 @@ int Halo::GetHaloMetadataBytesize()
 //-----------------------------------------------------------------------------
 void Halo::CreateDIYHaloInfoType(DIY_Datatype *dtype)
 {
-  struct map_block_t halo_map[10] = {
+  struct map_block_t halo_map[6] = {
    {DIY_ID_T,     OFST, 1, offsetof(struct HaloInfo,GlobalID)},
    {DIY_ID_T,     OFST, 1, offsetof(struct HaloInfo, Tag)},
    {DIY_INT,      OFST, 1, offsetof(struct HaloInfo, TimeStep)},
-   {DIY_REAL_T,   OFST, 1, offsetof(struct HaloInfo, Redshift)},
    {DIY_REAL_T,   OFST, 1, offsetof(struct HaloInfo, HaloMass)},
-   {DIY_POSVEL_T, OFST, 3, offsetof(struct HaloInfo, Center)},
-   {DIY_POSVEL_T, OFST, 3, offsetof(struct HaloInfo, MeanCenter)},
-   {DIY_POSVEL_T, OFST, 3, offsetof(struct HaloInfo, AverageVelocity)},
    {DIY_INT,      OFST, 1, offsetof(struct HaloInfo, DIYGlobalId)},
    {DIY_INT,      OFST, 1, offsetof(struct HaloInfo, Count)},
   };
-  DIY_Create_struct_datatype(0, 10, halo_map, dtype);
+  DIY_Create_struct_datatype(0, 6, halo_map, dtype);
 }
 
 //-----------------------------------------------------------------------------
