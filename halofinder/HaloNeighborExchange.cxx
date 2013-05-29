@@ -9,12 +9,6 @@
 #include "diy.h"
 
 
-static void PeriodicTransform(char *item, unsigned char direction)
-{
-  // Do nothing here. No need to transform halos when they are mapped
-  // along a period direction.
-}
-
 namespace cosmotk
 {
 
