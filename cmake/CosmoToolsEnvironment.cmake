@@ -63,6 +63,3 @@ option(ENABLE_THIRDPARTY_SQLITE "Enable SQlite" OFF)
 if(${ENABLE_THIRDPARTY_SQLITE})
  add_definitions(-DSQLITE)
 endif()
-
-## Choose whether to build tests or not
-option(BUILD_TESTING "Build Tests." OFF)
