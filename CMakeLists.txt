@@ -7,75 +7,50 @@ project(CosmoTools C CXX)
 ## Set path for cmake modules
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
-include(CosmoToolsDependencies)
 include(CosmoToolsEnvironment)
+include(CosmoToolsMacros)
+
+include(CosmoToolsDependencies)
+
 include(CosmoToolsTypes)
-include(GetPackageSources)
 
 ## list of required libraries for the entire package
 set(CosmoToolsRequiredLibs ${MPI_C_LIBRARIES})
+if(${ENABLE_DIY})
+ list(APPEND CosmoToolsRequiredLibs ${DIY_LIBRRARIES})
+endif()
 
-## Set the list of all the cosmotools sources
-set(cosmosrclist)
 
 ## Set the list of cosmology packages to be build. Note the order here matters!
-set(cosmopackages
+set(modules
     common
-    sfprobe
-    halofinder
-    tess
     )
 
 ## Sets whether or not the simulation interface will be built
-option(BUILD_SIMULATION_INTERFACE "Build Simulation inteface" OFF)
-if(${BUILD_SIMULATION_INTERFACE})
-  set(cosmopackages
-    ${cosmopackages}
-    framework
-    interfaces
-    )
-endif()
+#option(BUILD_SIMULATION_INTERFACE "Build Simulation inteface" OFF)
+#if(${BUILD_SIMULATION_INTERFACE})
+#  set(cosmopackages
+#    ${cosmopackages}
+#    framework
+#    interfaces
+#    )
+#endif()
 
 ## Sets whether or not ParaView plugins will be built
-option(BUILD_PV_PLUGINS "Build ParaView Plugins" OFF)
-if(${BUILD_PV_PLUGINS})
- set(cosmopackages
-     ${cosmopackages}
-     pv-plugins
-     )
-endif()
+#option(BUILD_PV_PLUGINS "Build ParaView Plugins" OFF)
+#if(${BUILD_PV_PLUGINS})
+# set(cosmopackages
+#     ${cosmopackages}
+#     pv-plugins
+#     )
+#endif()
 
 ## Loop through all packages
 set(emptyList)
-foreach(pkg ${cosmopackages})
-  ## These are declared here and populated by each package
-  ## NOTE: These variables must be set before the call to add_subdirectory
-  set(PACKAGE_${pkg}_INCLUDE_DIRS ${emptyList}
-      CACHE INTERNAL "package include directories" FORCE)
-  set(PACKAGE_${pkg}_EXTERNAL_INCLUDES ${emptyList}
-      CACHE INTERNAL "package external include directories" FORCE)
-  set(PACKAGE_${pkg}_LIBRARIES ${emptyList}
-      CACHE INTERNAL "package libraries" FORCE)
-  set(PACKAGE_${pkg}_EXTERNAL_LIBRARIES ${emptyList}
-      CACHE INTERNAL "package external libraries" FORCE)
-  set(PACKAGE_${pkg}_SOURCES ${emptyList}
-      CACHE INTERNAL "package sources" FORCE)
-
-  ## add package to build
-  add_subdirectory(${pkg})
-
-  include_directories(${PACKAGE_${pkg}_EXTERNAL_INCLUDES})
-
-
-  ## append package required libaries
-  list(APPEND CosmoRequiredLibs ${PACKAGE_${pkg}_EXTERNAL_LIBRARIES})
-
-  ## append package sources to the cosmosrclist
-  list(APPEND cosmosrclist ${PACKAGE_${pkg}_SOURCES})
+foreach(module_m ${modules})
+  add_subdirectory(${module_m})
 endforeach()
 
-## Build single library
-option(BUILD_SINGLE_LIBRARY "Build a single library" OFF)
 if(${BUILD_SINGLE_LIBRARY})
  if(BUILD_SHARED_LIBS)
   add_library(cosmotools SHARED ${cosmosrclist})

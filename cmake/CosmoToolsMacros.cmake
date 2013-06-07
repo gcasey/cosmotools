@@ -5,9 +5,6 @@
 # The following variables are expected to have been set:
 #
 #   PACKAGE_${pkg}_SOURCES
-
-
-
 macro(GetPackageSources pkg basepath srclist)
 #    message(STATUS "Setting package sources for ${pkg}")
     foreach(src ${srclist})
@@ -18,3 +15,14 @@ macro(GetPackageSources pkg basepath srclist)
         CACHE INTERNAL "${pkg} sources")
     endforeach()
 endmacro(GetPackageSources)
+
+# -
+#
+macro(CosmoToolsLibrary lib srccode)
+if(${BUILD_SINGLE_LIBRARY} AND BUILD_SHARED_LIBS)
+    add_library(${lib})
+elseif($BUILD_SINGLE_LIBRARY})
+elseif(BUILD_SHARED_LIBS)
+else()
+endif()
+endmacro(CosmoToolsLibrary)
