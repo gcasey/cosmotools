@@ -42,21 +42,18 @@ mark_as_advanced(
 ## This is needed for UINT64_C in GenericIO
 add_definitions(-D__STDC_CONSTANT_MACROS)
 
-## Choose whether to turn on verbosity or not
-option(MAKEFILE_VERBOSE "Turn on verbose makefiles." OFF)
-if(${MAKEFILE_VERBOSE})
- set(CMAKE_VERBOSE_MAKEFILE ON)
-endif()
-
-
 ## Choose static or shared libraries.
 option(BUILD_SHARED_LIBS "Build shared libraries." OFF)
 if(NOT BUILD_SHARED_LIBS)
  ## If we are building statically, make everything PICable so that we can
  ## link with shared libraries
- add_definitions(-fPIC)
-endif()
+ if(CMAKE_COMPILER_IS_GNUCC)
+   set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} -fPIC)
+   set(CMAKE_C_FLAGS ${CMAKE_C_FLAGS} -fPIC)
+ endif() # END if compiler is GNU
+endif() # END if not building shared libraries
 
+## Enable framework statistics
 option(ENABLE_FRAMEWORK_STATISTICS "Enable Framework Statistics" OFF)
 if(${ENABLE_FRAMEWORK_STATISTICS})
   add_definitions(-DENABLESTATS)
