@@ -57,9 +57,11 @@ include_directories(
 add_definitions(-DOMPI_SKIP_MPICXX -DMPICH_SKIP_MPICXX)
 
 ## DIY is a required dependency, find it here
-include(FindDIY REQUIRED)
-include_directories(${DIY_INCLUDE_DIRS})
-
+option(ENABLE_DIY, "Enable DIY" OFF)
+if(${ENABLE_DIY})
+  include(FindDIY REQUIRED)
+  include_directories(${DIY_INCLUDE_DIRS})
+endif()
 
 ## Choose static or shared libraries.
 option(BUILD_SHARED_LIBS "Build shared libraries." OFF)
