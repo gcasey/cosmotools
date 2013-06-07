@@ -1,5 +1,5 @@
 ## Set the minimum version for cmake to 2.8
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 2.8.11)
 
 ## Set the project name and enable C/C++ support by default
 project(CosmoTools C CXX)
@@ -7,14 +7,13 @@ project(CosmoTools C CXX)
 ## Set path for cmake modules
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
-include(CosmologyToolsEnvironment)
-include(CosmologyToolsTypes)
+include(CosmoToolsDependencies)
+include(CosmoToolsEnvironment)
+include(CosmoToolsTypes)
 include(GetPackageSources)
 
 ## list of required libraries for the entire package
-set(CosmoRequiredLibs
-    ${MPI_C_LIBRARIES}
-    ${DIY_LIBRARIES})
+set(CosmoToolsRequiredLibs ${MPI_C_LIBRARIES})
 
 ## Set the list of all the cosmotools sources
 set(cosmosrclist)
@@ -44,22 +43,6 @@ if(${BUILD_PV_PLUGINS})
      ${cosmopackages}
      pv-plugins
      )
-endif()
-
-## Sets whether or not VTK programs will be built
-option(BUILD_VTK_PROGRAMS "Build VTK Programs" OFF)
-if(${BUILD_VTK_PROGRAMS})
- find_package(VTK COMPONENTS
-    vtkCommonDataModel
-    vtkFiltersCosmo
-    vtkIOXML
-    )
- set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS ${VTK_DEFINITIONS})
- include_directories(SYSTEM ${VTK_INCLUDE_DIRS})
-endif()
-
-if(${ENABLE_THIRDPARTY_SQLITE})
-    add_subdirectory(thirdparty/sqlite)
 endif()
 
 ## Loop through all packages
