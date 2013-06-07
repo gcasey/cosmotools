@@ -48,20 +48,6 @@ if(${MAKEFILE_VERBOSE})
  set(CMAKE_VERBOSE_MAKEFILE ON)
 endif()
 
-## MPI is a required dependency
-include(FindMPI REQUIRED)
-include_directories(
-    ${HEADER_INCLUDES_DIRECTORY}
-    common
-    ${MPI_C_INCLUDE_PATH})
-add_definitions(-DOMPI_SKIP_MPICXX -DMPICH_SKIP_MPICXX)
-
-## DIY is a required dependency, find it here
-option(ENABLE_DIY, "Enable DIY" OFF)
-if(${ENABLE_DIY})
-  include(FindDIY REQUIRED)
-  include_directories(${DIY_INCLUDE_DIRS})
-endif()
 
 ## Choose static or shared libraries.
 option(BUILD_SHARED_LIBS "Build shared libraries." OFF)
@@ -74,14 +60,6 @@ endif()
 option(ENABLE_FRAMEWORK_STATISTICS "Enable Framework Statistics" OFF)
 if(${ENABLE_FRAMEWORK_STATISTICS})
   add_definitions(-DENABLESTATS)
-endif()
-
-option(ENABLE_DAX "Enable DAX Toolkit" OFF)
-if(${ENABLE_DAX})
-  add_definitions(-DUSEDAX)
-  find_package(Dax REQUIRED)
-  DaxConfigureTBB(REQUIRED)
-  DaxConfigureCuda()
 endif()
 
 option(ENABLE_THIRDPARTY_SQLITE "Enable SQlite" OFF)
