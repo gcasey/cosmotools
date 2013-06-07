@@ -56,8 +56,11 @@ endif() # END if not building shared libraries
 ## Enable framework statistics
 option(ENABLE_FRAMEWORK_STATISTICS "Enable Framework Statistics" OFF)
 if(${ENABLE_FRAMEWORK_STATISTICS})
-  add_definitions(-DENABLESTATS)
+ add_definitions(-DENABLESTATS)
 endif()
+
+## Build single library
+option(BUILD_SINGLE_LIBRARY "Build a single library" OFF)
 
 option(ENABLE_THIRDPARTY_SQLITE "Enable SQlite" OFF)
 if(${ENABLE_THIRDPARTY_SQLITE})
