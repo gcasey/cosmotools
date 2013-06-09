@@ -1,15 +1,16 @@
-project(halofinder)
+cmake_minimum_required(VERSION 2.8)
+project(cosmohalo)
 
-## Append this to the global include directories for this package
+## Specicy global include dirs and global libraries for this project
+## such that, they can be used within other projects.
 set(PACKAGE_halofinder_INCLUDE_DIRS
     ${PACKAGE_halofinder_INCLUDE_DIRS}
     ${PROJECT_SOURCE_DIR}
     CACHE INTERNAL "package include directories")
 set(PACKAGE_halofinder_LIBRARIES
-    ${PACKAGE_halofinder_LIBRARIES}
-    common
-    fwdhalotracker
-    CACHE INTERNAL "package libraries")
+   ${PACKAGE_halofinder_LIBRARIES}
+   cosmohalo
+   CACHE INTERNAL "package libraries")
 
 ## Move header files to include directory in the build tree
 file(GLOB HEADERS *.h)
@@ -18,42 +19,56 @@ foreach(header ${HEADERS})
   file(COPY ${header} DESTINATION ${HEADER_INCLUDES_DIRECTORY})
 endforeach()
 
-## Append to the include directories
-include_directories(
-    ${PROJECT_SOURCE_DIR}
-    ${PROJECT_SOURCE_DIR}/cosmohalo)
+set(Cosmo_LIBS  ${MPI_C_LIBRARIES})
 
-## Add halofinder directories
-add_subdirectory(cosmohalo)
+## List of executables
+#set(Cosmo_PROGRAMS
+#  BinHalos.cxx
+#  NToN.cxx
+#  OneToN.cxx
+#  )
 
-## List of sources for the halo tracker
-set(HALOTRACKER_SRC
-    DistributedHaloEvolutionTree.cxx
-    ForwardHaloTracker.cxx
-    Halo.cxx
-    HaloDataInformation.cxx
-    HaloMergerTreeKernel.cxx
-    HaloNeighborExchange.cxx
-    ParallelHaloMergerTree.cxx
-    TemporalHaloInformation.cxx
-    )
+## Set cosmo sources
+set(Cosmo_SOURCES
+  BHTree.cxx
+  ChainingMesh.cxx
+  CosmoHaloFinder.cxx
+  CosmoHaloFinderP.cxx
+  FOFHaloProperties.cxx
+  GridExchange.cxx
+  HaloCenterFinder.cxx
+  HaloFinderInput.cxx
+  InitialExchange.cxx
+  Message.cxx
+  ParticleDistribute.cxx
+  ParticleExchange.cxx
+  Partition.cxx
+  SODHalo.cxx
+  SubHaloFinder.cxx
+  Timer.cxx
+  Timings.cxx
+  bigchunk.cxx
+  dims.cxx
+  )
 
 ## Specify global source list for this project
 #set(PACKAGE_halofinder_SOURCES
 #    ${PACKAGE_halofinder_SOURCES}
-#    ${HALOTRACKER_SRC}
+#    ${Cosmo_SOURCES}
 #    CACHE INTERNAL "package sources")
-GetPackageSources(halofinder ${PROJECT_SOURCE_DIR} "${HALOTRACKER_SRC}")
+GetPackageSources(halofinder ${PROJECT_SOURCE_DIR} "${Cosmo_SOURCES}")
 
+## Create the libraries
 if(BUILD_SHARED_LIBS)
- add_library(fwdhalotracker SHARED ${HALOTRACKER_SRC})
+ add_library(cosmohalo SHARED ${Cosmo_SOURCES})
 else()
- add_library(fwdhalotracker STATIC ${HALOTRACKER_SRC})
+ add_library(cosmohalo STATIC ${Cosmo_SOURCES})
 endif()
-target_link_libraries(fwdhalotracker
-    ${PACKAGE_halofinder_LIBRARIES}
-    ${DIY_LIBRARIES}
-    ${MPI_C_LIBRARIES})
+target_link_libraries(cosmohalo ${MPI_C_LIBRARIES})
 
-## Add executables directory to the build
-add_subdirectory(executables)
+## Compile each program
+foreach(prgm ${Cosmo_PROGRAMS})
+  get_filename_component(appName ${prgm} NAME_WE)
+  add_executable( ${appName} ${prgm} )
+  target_link_libraries(${appName} ${Cosmo_LIBS} cosmohalo ${MPI_C_LIBRARIES})
+endforeach()
