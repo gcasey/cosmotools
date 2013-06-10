@@ -4,6 +4,10 @@ include_directories(
     ${MPI_C_INCLUDE_PATH})
 add_definitions(-DOMPI_SKIP_MPICXX -DMPICH_SKIP_MPICXX)
 
+## GenericIO is a required dependency
+find_package(GenericIO REQUIRED)
+include_directories(${GENERIC_IO_INCLUDE_DIR})
+
 ## Enable DIY
 option(ENABLE_DIY "Enable DIY" OFF)
 if(${ENABLE_DIY})
