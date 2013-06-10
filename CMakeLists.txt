@@ -16,43 +16,25 @@ include_directories(${HEADER_INCLUDES_DIRECTORY})
 
 ## list of required libraries for the entire package
 set(CosmoToolsRequiredLibs ${MPI_C_LIBRARIES} ${GENERIC_IO_LIBRARIES})
-if(${ENABLE_DIY})
- list(APPEND CosmoToolsRequiredLibs ${DIY_LIBRRARIES})
-endif()
 
-
-## Set the list of cosmology packages to be build. Note the order here matters!
+## Set the list of module that will be built. Note the order here matters!
 set(modules
     common
     algorithms
     )
 
-## Sets whether or not the simulation interface will be built
-#option(BUILD_SIMULATION_INTERFACE "Build Simulation inteface" OFF)
-#if(${BUILD_SIMULATION_INTERFACE})
-#  set(cosmopackages
-#    ${cosmopackages}
-#    framework
-#    interfaces
-#    )
-#endif()
-
-## Sets whether or not ParaView plugins will be built
-#option(BUILD_PV_PLUGINS "Build ParaView Plugins" OFF)
-#if(${BUILD_PV_PLUGINS})
-# set(cosmopackages
-#     ${cosmopackages}
-#     pv-plugins
-#     )
-#endif()
+## Builds C [and Fortran] interface
+if(BUILD_SIMULATION_INTERFACE)
+  list(APPEND modules interfaces)
+endif()
 
 ## Loop through all packages
-set(emptyList)
-foreach(module_m ${modules})
-  add_subdirectory(${module_m})
-endforeach()
+foreach(mod ${modules})
+  add_subdirectory(${mod})
+endforeach() ## END for each module
 
-if(${BUILD_SINGLE_LIBRARY})
+## Build a single cosmotools library
+if(BUILD_SINGLE_LIBRARY)
     if(BUILD_SHARED_LIBS)
         add_library(cosmotools SHARED
             $<TARGET_OBJECTS:common_obj>
@@ -63,6 +45,10 @@ if(${BUILD_SINGLE_LIBRARY})
             $<TARGET_OBJECTS:common_obj>
             $<TARGET_OBJECTS:halofinder_obj>
             )
-    endif()
+    endif() # END if Build shared libraries
     target_link_libraries(cosmotools ${CosmoToolsRequiredLibs})
+endif() # END if Build single library
+
+if(BUILD_PV_PLUGINS)
+  add_subdirectory(pv-plugins)
 endif()
