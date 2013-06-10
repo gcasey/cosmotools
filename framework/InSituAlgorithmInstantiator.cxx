@@ -1,10 +1,11 @@
-#include "AnalysisToolInstantiator.h"
+#include "InSituAlgorithmInstantiator.h"
 
-#include "AnalysisTool.h"
-#include "LANLHaloFinderAnalysisTool.h"
-#include "TessVoidFinderAnalysisTool.h"
-#include "HaloTrackerAnalysisTool.h"
+#include "InSituAlgorithm.h"
+#include "LANLHaloFinderInSituAlgorithm.h"
 
+#if defined(USEDIY) && defined(USEQHULL)
+  #include "TessVoidFinderInSituAlgorithm.h"
+#endif
 
 #include <iostream>
 #include <cassert>
@@ -12,35 +13,33 @@
 namespace cosmotk
 {
 
-AnalysisToolInstantiator::AnalysisToolInstantiator()
+InSituAlgorithmInstantiator::InSituAlgorithmInstantiator()
 {
   // TODO Auto-generated constructor stub
 
 }
 
 //-----------------------------------------------------------------------------
-AnalysisToolInstantiator::~AnalysisToolInstantiator()
+InSituAlgorithmInstantiator::~InSituAlgorithmInstantiator()
 {
   // TODO Auto-generated destructor stub
 }
 
 //-----------------------------------------------------------------------------
-AnalysisTool* AnalysisToolInstantiator::CreateInstance(
+InSituAlgorithm* InSituAlgorithmInstantiator::CreateInstance(
     std::string instanceName)
 {
-  AnalysisTool *tool = NULL;
+  InSituAlgorithm *tool = NULL;
   if(instanceName == "LANLHALOFINDER")
     {
-    tool = new LANLHaloFinderAnalysisTool();
+    tool = new LANLHaloFinderInSituAlgorithm();
     }
+#if defined(USEDIY) && defined(USEQHULL)
   else if(instanceName == "TESS")
     {
-    tool = new TessVoidFinderAnalysisTool();
+    tool = new TessVoidFinderInSituAlgorithm();
     }
-  else if(instanceName == "HALOTRACKER")
-    {
-    tool = new HaloTrackerAnalysisTool();
-    }
+#endif
   else
     {
     std::cerr << "ERROR: undefined analysis tool: " << instanceName;

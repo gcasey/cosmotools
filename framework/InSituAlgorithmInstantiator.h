@@ -1,33 +1,33 @@
 /**
  * @brief A singleton class used to instantiate AnalysisTools
  */
-#ifndef ANALYSISTOOLINSTANTIATOR_H_
-#define ANALYSISTOOLINSTANTIATOR_H_
+#ifndef InSituAlgorithmINSTANTIATOR_H_
+#define InSituAlgorithmINSTANTIATOR_H_
 
-#include "CosmologyToolsMacros.h"
+#include "CosmoToolsMacros.h"
 
 namespace cosmotk
 {
 
 // Forward declarations
-class AnalysisTool;
+class InSituAlgorithm;
 
-class AnalysisToolInstantiator
+class InSituAlgorithmInstantiator
 {
 public:
-  AnalysisToolInstantiator();
-  virtual ~AnalysisToolInstantiator();
+  InSituAlgorithmInstantiator();
+  virtual ~InSituAlgorithmInstantiator();
 
   /**
    * @brief Return an analysis tool instance corresponding to the given name.
    * @param instanceName the name of the analysis tool to instantiate
-   * @return tool pointer to a concrete AnalysisTool instance
+   * @return tool pointer to a concrete InSituAlgorithm instance
    * @post if (tool == NULL) it indicates that the instanceName was not found.
    */
-  static AnalysisTool* CreateInstance(std::string instanceName);
+  static InSituAlgorithm* CreateInstance(std::string instanceName);
 
 private:
-  DISABLE_COPY_AND_ASSIGNMENT(AnalysisToolInstantiator);
+  DISABLE_COPY_AND_ASSIGNMENT(InSituAlgorithmInstantiator);
 };
 
 } /* namespace cosmotk */
