@@ -13,7 +13,7 @@ endmacro(copy_headers)
 # according to globally defined user-supplied parameters.
 macro(cosmotools_library lib srccode)
     if(${BUILD_SINGLE_LIBRARY})
-        add_library(${lib} OBJECT ${srccode})
+        add_library(${lib}_obj OBJECT ${srccode})
     elseif(BUILD_SHARED_LIBS)
         add_library(${lib} SHARED ${srccode})
     else()
