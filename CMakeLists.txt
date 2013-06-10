@@ -24,6 +24,7 @@ endif()
 ## Set the list of cosmology packages to be build. Note the order here matters!
 set(modules
     common
+    algorithms
     )
 
 ## Sets whether or not the simulation interface will be built
@@ -53,9 +54,15 @@ endforeach()
 
 if(${BUILD_SINGLE_LIBRARY})
     if(BUILD_SHARED_LIBS)
-        add_library(cosmotools SHARED $<TARGET_OBJECTS:common_obj>)
+        add_library(cosmotools SHARED
+            $<TARGET_OBJECTS:common_obj>
+            $<TARGET_OBJECTS:halofinder_obj>
+            )
     else()
-        add_library(cosmotools STATIC $<TARGET_OBJECTS:common_obj>)
+        add_library(cosmotools STATIC
+            $<TARGET_OBJECTS:common_obj>
+            $<TARGET_OBJECTS:halofinder_obj>
+            )
     endif()
     target_link_libraries(cosmotools ${CosmoToolsRequiredLibs})
 endif()
