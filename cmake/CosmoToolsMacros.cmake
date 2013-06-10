@@ -1,28 +1,22 @@
-# - Given a list of sources with relative path, get the list with absolute path
-# GetPackageSources(pkg basepath srclist)
-# - macro which takes a source list and converts it to
-#
-# The following variables are expected to have been set:
-#
-#   PACKAGE_${pkg}_SOURCES
-macro(GetPackageSources pkg basepath srclist)
-#    message(STATUS "Setting package sources for ${pkg}")
-    foreach(src ${srclist})
-#      message(STATUS "setting source: ${basepath}/${src}")
-      set(PACKAGE_${pkg}_SOURCES
-        ${PACKAGE_${pkg}_SOURCES}
-        ${basepath}/${src}
-        CACHE INTERNAL "${pkg} sources")
+# - Given a list of headers, copy the to includes directory in the build tree.
+# copy_headers(hdrs)
+macro(copy_headers hdrs)
+    foreach(hdr ${hdrs})
+      file(COPY ${hdr} DESTINATION ${HEADER_INCLUDES_DIRECTORY})
     endforeach()
-endmacro(GetPackageSources)
+endmacro(copy_headers)
 
-# -
-#
-macro(CosmoToolsLibrary lib srccode)
-if(${BUILD_SINGLE_LIBRARY} AND BUILD_SHARED_LIBS)
-    add_library(${lib})
-elseif($BUILD_SINGLE_LIBRARY})
-elseif(BUILD_SHARED_LIBS)
-else()
-endif()
-endmacro(CosmoToolsLibrary)
+# - Builds a library for the associated code
+# cosmotools_library(lib srccode)
+# - Give the sources files, a library is compiled with the specified name. This
+# library may be a shared library, a static library or an object library
+# according to globally defined user-supplied parameters.
+macro(cosmotools_library lib srccode)
+    if(${BUILD_SINGLE_LIBRARY})
+        add_library(${lib} OBJECT ${srccode})
+    elseif(BUILD_SHARED_LIBS)
+        add_library(${lib} SHARED ${srccode})
+    else()
+        add_library(${lib} STATIC ${srccode})
+    endif()
+endmacro(cosmotools_library)
