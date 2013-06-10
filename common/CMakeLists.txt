@@ -14,8 +14,8 @@ endforeach()
 
 ## Configure CosmologyToolsDefinitions
 configure_file(
-    ${PROJECT_SOURCE_DIR}/CosmologyToolsDefinitions.h.in
-    ${HEADER_INCLUDES_DIRECTORY}/CosmologyToolsDefinitions.h)
+    ${PROJECT_SOURCE_DIR}/CosmoToolsDefinitions.h.in
+    ${HEADER_INCLUDES_DIRECTORY}/CosmoToolsDefinitions.h)
 
 
 if(BUILD_SHARED_LIBS)
@@ -24,5 +24,3 @@ else()
  add_library(common STATIC ${COMMON_SRC})
 endif()
 target_link_libraries(common ${MPI_C_LIBRARIES})
-
-add_subdirectory(executables)
