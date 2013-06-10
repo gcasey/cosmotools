@@ -2,10 +2,10 @@
  * @brief CosmologyToolsManager to keep persistent information through the
  * life-time of the simulation.
  */
-#ifndef COSMOLOGYTOOLSMANAGER_H_
-#define COSMOLOGYTOOLSMANAGER_H_
+#ifndef InSituAnalysisManager_H_
+#define InSituAnalysisManager_H_
 
-#include "CosmologyToolsMacros.h"
+#include "CosmoToolsMacros.h"
 #include <mpi.h>
 
 #include <cassert>
@@ -16,24 +16,23 @@
 namespace cosmotk {
 
 // Forward declaration
-class AnalysisTool;
-class CosmologyToolsConfiguration;
+class InSituAlgorithm;
+class InSituAnalysisConfig;
 class SimulationParticles;
-class CosmologyToolsConfiguration;
 
-class CosmologyToolsManager
+class InSituAnalysisManager
 {
 public:
 
   /**
    * @brief Default Constructor
    */
-  CosmologyToolsManager();
+  InSituAnalysisManager();
 
   /**
    * @brief Destructor
    */
-  ~CosmologyToolsManager();
+  ~InSituAnalysisManager();
 
   /**
    * @brief Initializes the cosmology environment
@@ -132,13 +131,13 @@ private:
   bool XYZPeriodic;
 
   // Storage for configuration parameters
-  CosmologyToolsConfiguration *Configuration;
+  InSituAnalysisConfig *Configuration;
 
   // Data-structure to store the simulation particles
   SimulationParticles *Particles;
 
   // List of Analysis tools by name
-  std::map<std::string,AnalysisTool*> AnalysisTools;
+  std::map<std::string,InSituAlgorithm*> InSituAlgorithms;
 
   // Timers & other stats
   std::map<std::string,double>      Timers;       // Discrete times at each tstep
@@ -147,7 +146,7 @@ private:
 
   /**
    * @brief Checks if the communicator associated with this instance of the
-   * CosmologyToolsManager is a cartesian communicator.
+   * InSituAnalysisManager is a cartesian communicator.
    * @return status true if the communicator is cartesian, else, false.
    */
   bool IsCartesianCommunicator();
@@ -222,7 +221,7 @@ private:
   /**
    * @brief Clears the analysis tools
    */
-  void ClearAnalysisTools();
+  void ClearInSituAlgorithms();
 
   /**
    * @brief Parses the configuration file on rank 0 and distributes parameters
@@ -233,11 +232,11 @@ private:
   /**
    * @brief Creates analysis tools
    */
-  void CreateAnalysisTools();
+  void CreateInSituAlgorithms();
 
   /**
    * @brief Checks if the tool exists in the list of analysis for this
-   * CosmologyToolsManager instance.
+   * InSituAnalysisManager instance.
    * @param toolName the name of the tool in query
    * @return status true if the
    */
@@ -249,9 +248,9 @@ private:
    * @return tool pointer to analysis tool instance
    * @post tool != NULL
    */
-  AnalysisTool* GetToolByName(const std::string &toolName);
+  InSituAlgorithm* GetToolByName(const std::string &toolName);
 
-  DISABLE_COPY_AND_ASSIGNMENT(CosmologyToolsManager);
+  DISABLE_COPY_AND_ASSIGNMENT(InSituAnalysisManager);
 };
 
 } // END cosmotk namespace

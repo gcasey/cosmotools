@@ -1,11 +1,13 @@
-#include "CosmologyToolsManager.h"
+#include "InSituAnalysisManager.h"
 
-#include "AnalysisTool.h"
-#include "AnalysisToolInstantiator.h"
-#include "CosmologyToolsConfiguration.h"
+#include "InSituAlgorithm.h"
+#include "InSituAlgorithmInstantiator.h"
+#include "InSituAnalysisConfig.h"
 #include "SimulationParticles.h"
 
+#ifdef USEDIY
 #include "diy.h"
+#endif
 
 #include <cassert>
 #include <iostream>
@@ -30,6 +32,7 @@
 
 namespace cosmotk {
 
+#ifdef USEDIY
 unsigned char neigh_dirs[] = {
   DIY_X0,                   DIY_X1,
   DIY_Y0,                   DIY_Y1,
@@ -45,7 +48,7 @@ unsigned char neigh_dirs[] = {
   DIY_X0 | DIY_Y1 | DIY_Z0, DIY_X1 | DIY_Y0 | DIY_Z1,
   DIY_X0 | DIY_Y1 | DIY_Z1, DIY_X1 | DIY_Y0 | DIY_Z0,
 };
-
+#endif
 
 //
 // Neighbors are enumerated so that particles can be attached to the correct
@@ -98,7 +101,7 @@ enum NEIGHBOR
 };
 
 //------------------------------------------------------------------------------
-CosmologyToolsManager::CosmologyToolsManager()
+InSituAnalysisManager::InSituAnalysisManager()
 {
   this->ConfigurationFile = "";
   this->Communicator      = MPI_COMM_NULL;
@@ -107,11 +110,11 @@ CosmologyToolsManager::CosmologyToolsManager()
   this->ConfigurationIsRead = false;
   this->XYZPeriodic       = false;
   this->Particles         = new SimulationParticles();
-  this->Configuration     = new CosmologyToolsConfiguration();
+  this->Configuration     = new InSituAnalysisConfig();
 }
 
 //------------------------------------------------------------------------------
-CosmologyToolsManager::~CosmologyToolsManager()
+InSituAnalysisManager::~InSituAnalysisManager()
 {
    if( this->Particles != NULL )
     {
@@ -123,7 +126,7 @@ CosmologyToolsManager::~CosmologyToolsManager()
     delete this->Configuration;
     }
 
-  this->ClearAnalysisTools();
+  this->ClearInSituAlgorithms();
 
 #ifdef ENABLESTATS
   this->FinalizeTimers();
@@ -131,7 +134,7 @@ CosmologyToolsManager::~CosmologyToolsManager()
 }
 
 //------------------------------------------------------------------------------
-void CosmologyToolsManager::ComputeRankNeighbors(
+void InSituAnalysisManager::ComputeRankNeighbors(
         int pos[3], int neighbor[26] )
 {
   assert("pre: communicator is not cartesian!" &&
@@ -177,7 +180,7 @@ void CosmologyToolsManager::ComputeRankNeighbors(
 }
 
 //------------------------------------------------------------------------------
-void CosmologyToolsManager::GetBlockBounds(
+void InSituAnalysisManager::GetBlockBounds(
         int decompSize[3], int pos[3], float min[3], float size[3])
 {
   // NOTE: This method essentially computes the following from HACC
@@ -195,7 +198,7 @@ void CosmologyToolsManager::GetBlockBounds(
 }
 
 //------------------------------------------------------------------------------
-int CosmologyToolsManager::GetRankByPosition(int i, int j, int k)
+int InSituAnalysisManager::GetRankByPosition(int i, int j, int k)
 {
   assert("pre: communicator is not cartesian!" &&
                this->IsCartesianCommunicator());
@@ -207,7 +210,7 @@ int CosmologyToolsManager::GetRankByPosition(int i, int j, int k)
 }
 
 //------------------------------------------------------------------------------
-bool CosmologyToolsManager::IsCartesianCommunicator()
+bool InSituAnalysisManager::IsCartesianCommunicator()
 {
   assert("pre: MPI communicator is NULL!" &&
          (this->Communicator != MPI_COMM_NULL) );
@@ -218,8 +221,9 @@ bool CosmologyToolsManager::IsCartesianCommunicator()
 }
 
 //------------------------------------------------------------------------------
-void CosmologyToolsManager::SetupDIYDecomposition()
+void InSituAnalysisManager::SetupDIYDecomposition()
 {
+#ifdef USEDIY
   assert("pre: MPI communicator is NULL!" &&
          (this->Communicator != MPI_COMM_NULL) );
 
@@ -301,22 +305,25 @@ void CosmologyToolsManager::SetupDIYDecomposition()
                   NULL,NULL,NULL,NULL,
                   neighbors,num_neighbors,wrap);
 
+#endif
 }
 
 //------------------------------------------------------------------------------
-void CosmologyToolsManager::Initialize(MPI_Comm comm)
+void InSituAnalysisManager::Initialize(MPI_Comm comm)
 {
   assert("pre: invalid communicator" && (comm != MPI_COMM_NULL) );
   this->Communicator = comm;
   MPI_Comm_size(this->Communicator,&this->NumRanks);
   MPI_Comm_rank(this->Communicator,&this->Rank);
 
+#ifdef USEDIY
   DIY_Init(3,NULL,1,this->Communicator);
   this->SetupDIYDecomposition();
+#endif
 }
 
 //------------------------------------------------------------------------------
-void CosmologyToolsManager::SetDomainParameters(
+void InSituAnalysisManager::SetDomainParameters(
         REAL boxlength, INTEGER ghostoverlap, INTEGER NDIM,
         bool XYZPeriodic)
 {
@@ -327,14 +334,14 @@ void CosmologyToolsManager::SetDomainParameters(
 }
 
 //------------------------------------------------------------------------------
-void CosmologyToolsManager::SetAnalysisConfiguration(char *configfile)
+void InSituAnalysisManager::SetAnalysisConfiguration(char *configfile)
 {
   assert("pre: configfile is NULL" && (configfile != NULL));
   this->ConfigurationFile = std::string( configfile );
 }
 
 //------------------------------------------------------------------------------
-bool CosmologyToolsManager::IsExecutionTimeStep(
+bool InSituAnalysisManager::IsExecutionTimeStep(
         INTEGER tstep, REAL redShift)
 {
   bool status = false;
@@ -344,18 +351,18 @@ bool CosmologyToolsManager::IsExecutionTimeStep(
   this->ParseConfigurationFile();
 
   // STEP 1: Create a vector of analysis tools
-  this->CreateAnalysisTools();
+  this->CreateInSituAlgorithms();
   this->EndTimer(tstep,"ReadConfiguration");
   this->Barrier();
 
   // STEP 2: Loop through all analsysis tools and see if anything needs to
   // be executed.
-  std::map<std::string,AnalysisTool*>::iterator toolIter;
-  toolIter=this->AnalysisTools.begin();
-  for( ;toolIter!=this->AnalysisTools.end(); ++toolIter)
+  std::map<std::string,InSituAlgorithm*>::iterator toolIter;
+  toolIter=this->InSituAlgorithms.begin();
+  for( ;toolIter!=this->InSituAlgorithms.end(); ++toolIter)
     {
     std::string toolName = toolIter->first;
-    AnalysisTool *tool   = toolIter->second;
+    InSituAlgorithm *tool   = toolIter->second;
     assert("pre: NULL tool!" && (tool != NULL) );
 
     PRINTLN(<< tool->GetInformation() );
@@ -374,7 +381,7 @@ bool CosmologyToolsManager::IsExecutionTimeStep(
 }
 
 //------------------------------------------------------------------------------
-void CosmologyToolsManager::SetParticles(
+void InSituAnalysisManager::SetParticles(
         INTEGER tstep, REAL redShift,
         POSVEL_T *px, POSVEL_T *py, POSVEL_T *pz,
         POSVEL_T *vx, POSVEL_T *vy, POSVEL_T *vz,
@@ -393,7 +400,7 @@ void CosmologyToolsManager::SetParticles(
 }
 
 //------------------------------------------------------------------------------
-void CosmologyToolsManager::ParseConfigurationFile()
+void InSituAnalysisManager::ParseConfigurationFile()
 {
   assert( "pre: ConfigurationFile should not be empty!" &&
            !this->ConfigurationFile.empty());
@@ -403,29 +410,29 @@ void CosmologyToolsManager::ParseConfigurationFile()
     delete this->Configuration;
     }
 
-  this->Configuration = new CosmologyToolsConfiguration();
+  this->Configuration = new InSituAnalysisConfig();
   this->Configuration->SetCommunicator( this->Communicator );
   this->Configuration->SetConfigFile(this->ConfigurationFile);
   this->Configuration->ParseFile();
 }
 
 //------------------------------------------------------------------------------
-void CosmologyToolsManager::ClearAnalysisTools()
+void InSituAnalysisManager::ClearInSituAlgorithms()
 {
-  std::map<std::string,AnalysisTool*>::iterator iter;
-  iter = this->AnalysisTools.begin();
-  for(; iter != this->AnalysisTools.end(); ++iter)
+  std::map<std::string,InSituAlgorithm*>::iterator iter;
+  iter = this->InSituAlgorithms.begin();
+  for(; iter != this->InSituAlgorithms.end(); ++iter)
     {
-    assert("pre: AnalysisTool is NULL!" && (iter->second!=NULL) );
+    assert("pre: InSituAlgorithm is NULL!" && (iter->second!=NULL) );
     delete iter->second;
     } // End for all analysis tools
-  this->AnalysisTools.clear();
+  this->InSituAlgorithms.clear();
 }
 
 //------------------------------------------------------------------------------
-bool CosmologyToolsManager::ToolExists(const std::string &toolName)
+bool InSituAnalysisManager::ToolExists(const std::string &toolName)
 {
-  if(this->AnalysisTools.find(toolName) != this->AnalysisTools.end() )
+  if(this->InSituAlgorithms.find(toolName) != this->InSituAlgorithms.end() )
     {
     return true;
     }
@@ -433,17 +440,17 @@ bool CosmologyToolsManager::ToolExists(const std::string &toolName)
 }
 
 //------------------------------------------------------------------------------
-AnalysisTool* CosmologyToolsManager::GetToolByName(
+InSituAlgorithm* InSituAnalysisManager::GetToolByName(
     const std::string &name)
 {
-  AnalysisTool *tool = NULL;
+  InSituAlgorithm *tool = NULL;
   if( this->ToolExists(name) )
     {
-    tool = this->AnalysisTools[name];
+    tool = this->InSituAlgorithms[name];
     }
   else
     {
-    tool = AnalysisToolInstantiator::CreateInstance(
+    tool = InSituAlgorithmInstantiator::CreateInstance(
         this->Configuration->GetToolClassInstance(name));
     assert("pre: Cannot create tool instance!" && (tool != NULL) );
     tool->SetCommunicator( this->Communicator );
@@ -453,11 +460,11 @@ AnalysisTool* CosmologyToolsManager::GetToolByName(
 }
 
 //------------------------------------------------------------------------------
-void CosmologyToolsManager::CreateAnalysisTools()
+void InSituAnalysisManager::CreateInSituAlgorithms()
 {
   assert("pre: NULL configuration!" && (this->Configuration != NULL) );
 
-  AnalysisTool *tool = NULL;
+  InSituAlgorithm *tool = NULL;
   for(int i=0; i < this->Configuration->GetNumberOfAnalysisTools(); ++i)
     {
     std::string toolName = this->Configuration->GetToolName( i );
@@ -478,12 +485,12 @@ void CosmologyToolsManager::CreateAnalysisTools()
     tool->SetDomainParameters(
         this->BoxLength,this->GhostOverlap,this->NDIM);
     tool->SetParameters(toolParameters);
-    this->AnalysisTools[ toolName ] = tool;
+    this->InSituAlgorithms[ toolName ] = tool;
     } // END for all tools in the configuration file
 }
 
 //------------------------------------------------------------------------------
-void CosmologyToolsManager::StartTimer(
+void InSituAnalysisManager::StartTimer(
       INTEGER tstep, std::string eventName)
 {
 
@@ -514,7 +521,7 @@ void CosmologyToolsManager::StartTimer(
 }
 
 //------------------------------------------------------------------------------
-void CosmologyToolsManager::EndTimer(INTEGER tstep, std::string eventName)
+void InSituAnalysisManager::EndTimer(INTEGER tstep, std::string eventName)
 {
 
 #ifdef ENABLESTATS
@@ -541,7 +548,7 @@ void CosmologyToolsManager::EndTimer(INTEGER tstep, std::string eventName)
 }
 
 //------------------------------------------------------------------------------
-void CosmologyToolsManager::GatherVector(
+void InSituAnalysisManager::GatherVector(
       std::vector<double> &snd, std::vector<double> &rcv)
 {
   // STEP 0: Get the number of items each process will send
@@ -565,7 +572,7 @@ void CosmologyToolsManager::GatherVector(
 }
 
 //------------------------------------------------------------------------------
-void CosmologyToolsManager::FinalizeTimers()
+void InSituAnalysisManager::FinalizeTimers()
 {
   // STEP 0: Print out the frequency of each event
   std::map<std::string,INTEGER>::iterator eventCounterIter=
@@ -668,7 +675,7 @@ void CosmologyToolsManager::FinalizeTimers()
 }
 
 //------------------------------------------------------------------------------
-void CosmologyToolsManager::CoProcess()
+void InSituAnalysisManager::CoProcess()
 {
   assert("pre: communicator is NULL!" && (this->Communicator!=MPI_COMM_NULL));
   assert("pre: simulation particles data-structure is NULL" &&
@@ -683,7 +690,7 @@ void CosmologyToolsManager::CoProcess()
     this->ParseConfigurationFile();
 
     // STEP 1: Create a vector of analysis tools
-    this->CreateAnalysisTools();
+    this->CreateInSituAlgorithms();
     this->EndTimer(this->Particles->TimeStep,"ReadConfiguration");
     this->Barrier();
     }
@@ -692,7 +699,7 @@ void CosmologyToolsManager::CoProcess()
       << "\n\n====================\n"
       << "COSMO TOOLS\n"
       << "Number of Analysis tools: "
-      << this->AnalysisTools.size()
+      << this->InSituAlgorithms.size()
       << std::endl << std::endl
       << "TIME STEP: " << this->Particles->TimeStep << std::endl
       << "RED SHIFT: " << this->Particles->RedShift );
@@ -704,12 +711,12 @@ void CosmologyToolsManager::CoProcess()
   // executed, check if the output should be generated and if output is
   // requested, write it to disk.
   this->StartTimer(this->Particles->TimeStep,"TotalInSituExecution");
-  std::map<std::string,AnalysisTool*>::iterator toolIter;
-  toolIter=this->AnalysisTools.begin();
-  for( ;toolIter!=this->AnalysisTools.end(); ++toolIter)
+  std::map<std::string,InSituAlgorithm*>::iterator toolIter;
+  toolIter=this->InSituAlgorithms.begin();
+  for( ;toolIter!=this->InSituAlgorithms.end(); ++toolIter)
     {
     std::string toolName = toolIter->first;
-    AnalysisTool *tool   = toolIter->second;
+    InSituAlgorithm *tool   = toolIter->second;
     assert("pre: NULL tool!" && (tool != NULL) );
 
     PRINTLN(<< tool->GetInformation() );
@@ -752,12 +759,14 @@ void CosmologyToolsManager::CoProcess()
 }
 
 //------------------------------------------------------------------------------
-void CosmologyToolsManager::Finalize()
+void InSituAnalysisManager::Finalize()
 {
 //  this->Communicator      = MPI_COMM_NULL;
 //  this->ConfigurationFile = "";
-  this->ClearAnalysisTools();
+  this->ClearInSituAlgorithms();
+#ifdef USEDIY
   DIY_Finalize();
+#endif
 }
 
 } // END cosmotk namespace
