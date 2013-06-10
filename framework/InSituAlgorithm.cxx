@@ -1,4 +1,4 @@
-#include "AnalysisTool.h"
+#include "InSituAlgorithm.h"
 
 #include "SimulationParticles.h"
 
@@ -13,7 +13,7 @@
 namespace cosmotk
 {
 
-AnalysisTool::AnalysisTool()
+InSituAlgorithm::InSituAlgorithm()
 {
   this->Name              = "";
   this->GenerateOutput    = false;
@@ -27,13 +27,13 @@ AnalysisTool::AnalysisTool()
 }
 
 //-----------------------------------------------------------------------------
-AnalysisTool::~AnalysisTool()
+InSituAlgorithm::~InSituAlgorithm()
 {
   this->ExplicitTimeSteps.clear();
 }
 
 //-----------------------------------------------------------------------------
-void AnalysisTool::SetExplicitTimeSteps(INTEGER *tsteps, int N )
+void InSituAlgorithm::SetExplicitTimeSteps(INTEGER *tsteps, int N )
 {
   assert("pre: timesteps array is NULL" && (tsteps != NULL) );
 
@@ -44,7 +44,7 @@ void AnalysisTool::SetExplicitTimeSteps(INTEGER *tsteps, int N )
 }
 
 //-----------------------------------------------------------------------------
-bool AnalysisTool::ShouldExecute(INTEGER ts)
+bool InSituAlgorithm::ShouldExecute(INTEGER ts)
 {
   /* Short circuit here! */
   if( !this->IsEnabled() )
@@ -85,7 +85,7 @@ bool AnalysisTool::ShouldExecute(INTEGER ts)
 }
 
 //-----------------------------------------------------------------------------
-double AnalysisTool::GetDoubleParameter(std::string key)
+double InSituAlgorithm::GetDoubleParameter(std::string key)
 {
   assert("pre: string parameter is empty!" && (!key.empty()) );
   assert("pre: parameter does not exist!" &&
@@ -95,7 +95,7 @@ double AnalysisTool::GetDoubleParameter(std::string key)
 }
 
 //-----------------------------------------------------------------------------
-int AnalysisTool::GetIntParameter(std::string key)
+int InSituAlgorithm::GetIntParameter(std::string key)
 {
   assert("pre: string parameter is empty!" && (!key.empty()) );
   assert("pre: parameter does not exist!" &&
@@ -105,7 +105,7 @@ int AnalysisTool::GetIntParameter(std::string key)
 }
 
 //-----------------------------------------------------------------------------
-std::set<int> AnalysisTool::GetIntListParameter(std::string key)
+std::set<int> InSituAlgorithm::GetIntListParameter(std::string key)
 {
   assert("pre: string parameter is empty!" && (!key.empty()) );
   assert("pre: parameter does not exist!" &&
@@ -128,7 +128,7 @@ std::set<int> AnalysisTool::GetIntListParameter(std::string key)
 }
 
 //-----------------------------------------------------------------------------
-bool AnalysisTool::GetBooleanParameter(std::string key)
+bool InSituAlgorithm::GetBooleanParameter(std::string key)
 {
   assert("pre: string parameter is empty!" && (!key.empty()) );
   assert("pre: parameter does not exist!" &&
@@ -143,7 +143,7 @@ bool AnalysisTool::GetBooleanParameter(std::string key)
 }
 
 //-----------------------------------------------------------------------------
-std::string AnalysisTool::GetStringParameter(std::string key)
+std::string InSituAlgorithm::GetStringParameter(std::string key)
 {
   assert("pre: string parameter is empty!" && (!key.empty()) );
   assert("pre: parameter does not exist!" &&
@@ -152,9 +152,9 @@ std::string AnalysisTool::GetStringParameter(std::string key)
 }
 
 //-----------------------------------------------------------------------------
-void AnalysisTool::ParseBasicParameters()
+void InSituAlgorithm::ParseBasicParameters()
 {
-  assert( "pre: AnalysisTool parameters are empty" &&
+  assert( "pre: InSituAlgorithm parameters are empty" &&
           (!this->Parameters.empty()) );
 
   // STEP 0: Get frequency parameters
@@ -187,7 +187,7 @@ void AnalysisTool::ParseBasicParameters()
 }
 
 //-----------------------------------------------------------------------------
-std::string AnalysisTool::GetBasicInformation()
+std::string InSituAlgorithm::GetBasicInformation()
 {
   std::ostringstream oss;
   oss.str("");
