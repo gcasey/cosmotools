@@ -42,16 +42,17 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 =========================================================================*/
 
-#include <iostream>
+#include <cassert>
 #include <fstream>
-#include <sstream>
 #include <iomanip>
-#include <set>
+#include <iostream>
 #include <math.h>
+#include <set>
+#include <sstream>
 
-#include "Partition.h"
 #include "FOFHaloProperties.h"
 #include "HaloCenterFinder.h"
+#include "Partition.h"
 #include "Timings.h"
 
 #include "GenericIO.h"
@@ -628,7 +629,7 @@ void FOFHaloProperties::FOFHaloCatalog(
     centerZ[halo] = this->zz[centerIndex];
   }
 
-  cosmotk::GenericIO GIO(Partition::getComm(), cname.str());
+  gio::GenericIO GIO(Partition::getComm(), cname.str());
   GIO.setNumElems(this->numberOfHalos);
   GIO.addVariable("fof_halo_tag", haloTags);
   GIO.addVariable("fof_halo_mass", *haloMass);
