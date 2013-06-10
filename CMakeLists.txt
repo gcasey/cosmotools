@@ -21,6 +21,7 @@ set(CosmoToolsRequiredLibs ${MPI_C_LIBRARIES} ${GENERIC_IO_LIBRARIES})
 set(modules
     common
     algorithms
+    framework
     )
 
 ## Builds C [and Fortran] interface
