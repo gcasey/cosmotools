@@ -39,9 +39,6 @@ mark_as_advanced(
     EXECUTABLE_OUTPUT_PATH
     CMAKE_Fortran_MODULE_DIRECTORY)
 
-## This is needed for UINT64_C in GenericIO
-add_definitions(-D__STDC_CONSTANT_MACROS)
-
 ## Choose static or shared libraries.
 option(BUILD_SHARED_LIBS "Build shared libraries." OFF)
 if(NOT BUILD_SHARED_LIBS)
@@ -60,9 +57,9 @@ if(${ENABLE_FRAMEWORK_STATISTICS})
 endif()
 
 ## Build single library
-option(BUILD_SINGLE_LIBRARY "Build a single library" OFF)
+option(BUILD_SINGLE_LIBRARY "Build a single library" ON)
+option(BUILD_SIMULATION_INTERFACE "Build simulation interface" OFF)
 
-option(ENABLE_THIRDPARTY_SQLITE "Enable SQlite" OFF)
-if(${ENABLE_THIRDPARTY_SQLITE})
- add_definitions(-DSQLITE)
+if(ENABLE_DIY AND ENABLE_QHULL)
+  option(BUILD_PV_PLUGINS "Build ParaView Plugings" OFF)
 endif()
