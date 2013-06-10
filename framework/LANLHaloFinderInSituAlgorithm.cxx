@@ -1,4 +1,4 @@
-#include "LANLHaloFinderAnalysisTool.h"
+#include "LANLHaloFinderInSituAlgorithm.h"
 #include "Partition.h"
 
 #include <iostream>
@@ -11,7 +11,7 @@
 namespace cosmotk
 {
 
-LANLHaloFinderAnalysisTool::LANLHaloFinderAnalysisTool()
+LANLHaloFinderInSituAlgorithm::LANLHaloFinderInSituAlgorithm()
 {
   this->Name               = "LANLHaloFinder";
   this->LinkingLength      = 0.2;
@@ -32,7 +32,7 @@ LANLHaloFinderAnalysisTool::LANLHaloFinderAnalysisTool()
 }
 
 //-----------------------------------------------------------------------------
-LANLHaloFinderAnalysisTool::~LANLHaloFinderAnalysisTool()
+LANLHaloFinderInSituAlgorithm::~LANLHaloFinderInSituAlgorithm()
 {
   if(this->HaloFinder != NULL)
     {
@@ -47,7 +47,7 @@ LANLHaloFinderAnalysisTool::~LANLHaloFinderAnalysisTool()
 }
 
 //-----------------------------------------------------------------------------
-void LANLHaloFinderAnalysisTool::ParseParameters()
+void LANLHaloFinderInSituAlgorithm::ParseParameters()
 {
   // STEP 0: Parse basic parameters, as defined by super-class
   this->ParseBasicParameters();
@@ -78,7 +78,7 @@ void LANLHaloFinderAnalysisTool::ParseParameters()
 }
 
 //-----------------------------------------------------------------------------
-void LANLHaloFinderAnalysisTool::Execute(SimulationParticles *particles)
+void LANLHaloFinderInSituAlgorithm::Execute(SimulationParticles *particles)
 {
   assert("pre: halofinder is NULL!" && (this->HaloFinder != NULL));
   assert("pre: input particles are NULL!" && (particles != NULL) );
@@ -158,7 +158,7 @@ void LANLHaloFinderAnalysisTool::Execute(SimulationParticles *particles)
 }
 
 //-----------------------------------------------------------------------------
-int LANLHaloFinderAnalysisTool::GetTotalNumberOfHaloParticles()
+int LANLHaloFinderInSituAlgorithm::GetTotalNumberOfHaloParticles()
 {
   assert("pre: halofinder is NULL!" && (this->HaloFinder != NULL));
   int total = 0;
@@ -177,7 +177,7 @@ int LANLHaloFinderAnalysisTool::GetTotalNumberOfHaloParticles()
 }
 
 //-----------------------------------------------------------------------------
-int LANLHaloFinderAnalysisTool::GetTotalNumberOfParticles(int N)
+int LANLHaloFinderInSituAlgorithm::GetTotalNumberOfParticles(int N)
 {
   int total = 0;
   MPI_Reduce(&N,&total,1,MPI_INT,MPI_SUM,0,this->Communicator);
@@ -185,7 +185,7 @@ int LANLHaloFinderAnalysisTool::GetTotalNumberOfParticles(int N)
 }
 
 //-----------------------------------------------------------------------------
-void LANLHaloFinderAnalysisTool::WriteHaloStatistics()
+void LANLHaloFinderInSituAlgorithm::WriteHaloStatistics()
 {
 
   if( this->Rank() == 0 )
@@ -207,7 +207,7 @@ void LANLHaloFinderAnalysisTool::WriteHaloStatistics()
 }
 
 //-----------------------------------------------------------------------------
-void LANLHaloFinderAnalysisTool::WriteOutput()
+void LANLHaloFinderInSituAlgorithm::WriteOutput()
 {
   assert("pre: halofinder is NULL!" && (this->HaloFinder != NULL));
   assert("pre: MPI communicator is NULL!" &&
@@ -223,7 +223,7 @@ void LANLHaloFinderAnalysisTool::WriteOutput()
 }
 
 //-----------------------------------------------------------------------------
-std::string LANLHaloFinderAnalysisTool::GetInformation()
+std::string LANLHaloFinderInSituAlgorithm::GetInformation()
 {
   return(this->GetBasicInformation());
 }

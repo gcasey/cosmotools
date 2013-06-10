@@ -2,11 +2,11 @@
  * @brief A concrete instance of AnalysisTool that implements functionality for
  * running the LANL halofinder within the in situ framework.
  */
-#ifndef LANLHALOFINDERANALYSISTOOL_H_
-#define LANLHALOFINDERANALYSISTOOL_H_
+#ifndef LANLHALOFINDERInSituAlgorithm_H_
+#define LANLHALOFINDERInSituAlgorithm_H_
 
-#include "CosmologyToolsMacros.h"
-#include "AnalysisTool.h"
+#include "CosmoToolsMacros.h"
+#include "InSituAlgorithm.h"
 #include "CosmoHaloFinderP.h"
 
 #include <map>
@@ -25,19 +25,19 @@ enum CenterFinder
   NUMBER_OF_CENTER_FINDER_METHODS
 };
 
-class LANLHaloFinderAnalysisTool : public AnalysisTool
+class LANLHaloFinderInSituAlgorithm : public InSituAlgorithm
 {
 public:
 
   /**
    * @brief Default constructor
    */
-  LANLHaloFinderAnalysisTool();
+  LANLHaloFinderInSituAlgorithm();
 
   /**
    * @brief Destructor
    */
-  virtual ~LANLHaloFinderAnalysisTool();
+  virtual ~LANLHaloFinderInSituAlgorithm();
 
   /**
    * @brief Parses the parameters of this analysis tool
@@ -54,12 +54,12 @@ public:
 
   /**
    * @brief Writes the output of the halo-finder
-   * @see AnalysisTool::WriteOutput
+   * @see InSituAlgorithm::WriteOutput
    */
   virtual void WriteOutput();
 
   /**
-   * @brief Returns the information of this AnalysisTool instance
+   * @brief Returns the information of this InSituAlgorithm instance
    * @return s a string consisting of information for this class instance.
    */
   virtual std::string GetInformation();
@@ -109,7 +109,7 @@ protected:
 
 
 private:
-  DISABLE_COPY_AND_ASSIGNMENT(LANLHaloFinderAnalysisTool);
+  DISABLE_COPY_AND_ASSIGNMENT(LANLHaloFinderInSituAlgorithm);
 };
 
 } /* namespace cosmotk */
