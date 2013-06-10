@@ -40,11 +40,13 @@ if(BUILD_SINGLE_LIBRARY)
         add_library(cosmotools SHARED
             $<TARGET_OBJECTS:common_obj>
             $<TARGET_OBJECTS:halofinder_obj>
+            $<TARGET_OBJECTS:framework_obj>
             )
     else()
         add_library(cosmotools STATIC
             $<TARGET_OBJECTS:common_obj>
             $<TARGET_OBJECTS:halofinder_obj>
+            $<TARGET_OBJECTS:framework_obj>
             )
     endif() # END if Build shared libraries
     target_link_libraries(cosmotools ${CosmoToolsRequiredLibs})
