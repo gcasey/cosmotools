@@ -5,7 +5,7 @@
 #ifndef InSituAlgorithm_H_
 #define InSituAlgorithm_H_
 
-#include "CosmologyToolsMacros.h"
+#include "CosmoToolsMacros.h"
 
 // C/C++ includes
 #include <cassert>

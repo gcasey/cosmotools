@@ -7,7 +7,7 @@
 #ifndef SIMULATIONPARTICLES_H_
 #define SIMULATIONPARTICLES_H_
 
-#include "CosmologyToolsMacros.h"
+#include "CosmoToolsMacros.h"
 
 
 namespace cosmotk
