@@ -1,7 +1,7 @@
 #ifndef COSMOLOGYTOOLSMACROS_H_
 #define COSMOLOGYTOOLSMACROS_H_
 
-#include "CosmologyToolsDefinitions.h"
+#include "CosmoToolsDefinitions.h"
 
 /**
  * @brief A macro to disable the copy constructor and assignment of a class.
