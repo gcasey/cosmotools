@@ -1,26 +1,19 @@
 project(common)
 
+## Sources in common
 set(COMMON_SRC
     MPIUtilities.cxx
     TaskTimer.cxx
-    CACHE INTERNAL "package sources")
+    )
 
 ## Move header files to include directory in the build tree
 file(GLOB HEADERS *.h)
-foreach(header ${HEADERS})
-  get_filename_component(headerFile ${header} NAME)
-  file(COPY ${header} DESTINATION ${HEADER_INCLUDES_DIRECTORY})
-endforeach()
+copy_headers("${HEADERS}")
 
-## Configure CosmologyToolsDefinitions
+## Configure CosmoToolsDefinitions and put it in the HEADER_INCLUDES_DIR
 configure_file(
     ${PROJECT_SOURCE_DIR}/CosmoToolsDefinitions.h.in
     ${HEADER_INCLUDES_DIRECTORY}/CosmoToolsDefinitions.h)
 
 
-if(BUILD_SHARED_LIBS)
- add_library(common SHARED ${COMMON_SRC})
-else()
- add_library(common STATIC ${COMMON_SRC})
-endif()
-target_link_libraries(common ${MPI_C_LIBRARIES})
+cosmotools_library(common "${COMMON_SRC}")
