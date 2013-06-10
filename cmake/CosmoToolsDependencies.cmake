@@ -5,7 +5,7 @@ include_directories(
 add_definitions(-DOMPI_SKIP_MPICXX -DMPICH_SKIP_MPICXX)
 
 ## Enable DIY
-option(ENABLE_DIY, "Enable DIY" OFF)
+option(ENABLE_DIY "Enable DIY" OFF)
 if(${ENABLE_DIY})
   add_definitions(-DUSEDIY)
   find_package(DIY REQUIRED)
@@ -13,7 +13,7 @@ if(${ENABLE_DIY})
 endif()
 
 ## Enable Qhull
-option(ENABLE_QHULL, "Enable Qhull" OFF)
+option(ENABLE_QHULL "Enable Qhull" OFF)
 if(${ENABLE_QHULL})
   add_definitions(-DUSEQHULL)
   find_package(Qhull REQUIRED)
