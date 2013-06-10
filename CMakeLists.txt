@@ -9,10 +9,10 @@ set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
 include(CosmoToolsEnvironment)
 include(CosmoToolsMacros)
-
 include(CosmoToolsDependencies)
-
 include(CosmoToolsTypes)
+
+include_directories(${HEADER_INCLUDES_DIRECTORY})
 
 ## list of required libraries for the entire package
 set(CosmoToolsRequiredLibs ${MPI_C_LIBRARIES})
