@@ -13,8 +13,11 @@ set(FRAMEWORK_SRC
     InSituAnalysisManager.cxx
     LANLHaloFinderInSituAlgorithm.cxx
     SimulationParticles.cxx
-    TessInSituAlgorithm.cxx
     )
+
+if(ENABLE_DIY AND ENABLE_QHULL)
+  list(APPEND FRAMEWORK_SRC TessInSituAlgorith.cxx)
+endif()
 
 
 ## Create the framework library
