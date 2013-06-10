@@ -1,4 +1,4 @@
-#include "CosmologyToolsConfiguration.h"
+#include "InSituAnalysisConfig.h"
 
 #include <algorithm>
 #include <cassert>
@@ -12,7 +12,7 @@
 namespace cosmotk
 {
 
-CosmologyToolsConfiguration::CosmologyToolsConfiguration()
+InSituAnalysisConfig::InSituAnalysisConfig()
 {
   this->Communicator  = MPI_COMM_NULL;
   this->RawConfigData = "";
@@ -25,13 +25,13 @@ CosmologyToolsConfiguration::CosmologyToolsConfiguration()
 }
 
 //------------------------------------------------------------------------------
-CosmologyToolsConfiguration::~CosmologyToolsConfiguration()
+InSituAnalysisConfig::~InSituAnalysisConfig()
 {
   this->Clear();
 }
 
 //------------------------------------------------------------------------------
-void CosmologyToolsConfiguration::Clear()
+void InSituAnalysisConfig::Clear()
 {
   this->RawConfigData = "";
   this->ToolNames.clear();
@@ -40,7 +40,7 @@ void CosmologyToolsConfiguration::Clear()
 }
 
 //------------------------------------------------------------------------------
-void CosmologyToolsConfiguration::ReadInConfigurationFile()
+void InSituAnalysisConfig::ReadInConfigurationFile()
 {
   std::stringstream sstream;
 
@@ -63,7 +63,7 @@ void CosmologyToolsConfiguration::ReadInConfigurationFile()
 }
 
 //------------------------------------------------------------------------------
-void CosmologyToolsConfiguration::RegisterAnalysisTool(
+void InSituAnalysisConfig::RegisterAnalysisTool(
         std::string toolName, bool status)
 {
   this->ToolNames.push_back( toolName );
@@ -74,7 +74,7 @@ void CosmologyToolsConfiguration::RegisterAnalysisTool(
 }
 
 //------------------------------------------------------------------------------
-bool CosmologyToolsConfiguration::Parsebool(std::string s)
+bool InSituAnalysisConfig::Parsebool(std::string s)
 {
   assert("pre: string parameter is empty" && (!s.empty()));
   std::transform(s.begin(),s.end(),s.begin(),::toupper);
@@ -86,7 +86,7 @@ bool CosmologyToolsConfiguration::Parsebool(std::string s)
 }
 
 //------------------------------------------------------------------------------
-bool CosmologyToolsConfiguration::ParseRawData()
+bool InSituAnalysisConfig::ParseRawData()
 {
   assert("pre: RawData is empty!" && (!this->RawConfigData.empty()) );
 
@@ -217,7 +217,7 @@ bool CosmologyToolsConfiguration::ParseRawData()
 }
 
 //------------------------------------------------------------------------------
-void CosmologyToolsConfiguration::WriteConfiguration(std::string file)
+void InSituAnalysisConfig::WriteConfiguration(std::string file)
 {
   std::ofstream ofs;
   ofs.open( file.c_str() );
@@ -288,7 +288,7 @@ void CosmologyToolsConfiguration::WriteConfiguration(std::string file)
 }
 
 //------------------------------------------------------------------------------
-bool CosmologyToolsConfiguration::ParseFile()
+bool InSituAnalysisConfig::ParseFile()
 {
   assert("pre: No MPI Communicator was supplied!" &&
            (this->Communicator != MPI_COMM_NULL) );
@@ -323,13 +323,13 @@ bool CosmologyToolsConfiguration::ParseFile()
 }
 
 //------------------------------------------------------------------------------
-int CosmologyToolsConfiguration::GetNumberOfAnalysisTools()
+int InSituAnalysisConfig::GetNumberOfAnalysisTools()
 {
   return(static_cast<int>(this->ToolNames.size()));
 }
 
 //------------------------------------------------------------------------------
-std::string CosmologyToolsConfiguration::GetToolInstanceName(
+std::string InSituAnalysisConfig::GetToolInstanceName(
     const int idx)
 {
   std::string key = this->GetToolName(idx);
@@ -337,7 +337,7 @@ std::string CosmologyToolsConfiguration::GetToolInstanceName(
 }
 
 //------------------------------------------------------------------------------
-std::string CosmologyToolsConfiguration::GetToolClassInstance(
+std::string InSituAnalysisConfig::GetToolClassInstance(
       std::string name)
 {
   std::string instance ="";
@@ -354,7 +354,7 @@ std::string CosmologyToolsConfiguration::GetToolClassInstance(
 }
 
 //------------------------------------------------------------------------------
-std::string CosmologyToolsConfiguration::GetToolName(const int idx)
+std::string InSituAnalysisConfig::GetToolName(const int idx)
 {
   assert("pre: index is out-of-bounds!" &&
           (idx >= 0) && (idx < this->GetNumberOfAnalysisTools()) );
@@ -362,7 +362,7 @@ std::string CosmologyToolsConfiguration::GetToolName(const int idx)
 }
 
 //------------------------------------------------------------------------------
-void CosmologyToolsConfiguration::GetToolParameters(
+void InSituAnalysisConfig::GetToolParameters(
         std::string toolName, Dictionary &parameters)
 {
   if(this->ToolToDictionary.find(toolName) != this->ToolToDictionary.end())
@@ -372,7 +372,7 @@ void CosmologyToolsConfiguration::GetToolParameters(
 }
 
 //------------------------------------------------------------------------------
-bool CosmologyToolsConfiguration::ToolExists(std::string toolName)
+bool InSituAnalysisConfig::ToolExists(std::string toolName)
 {
   bool status = false;
   if(this->ToolStatus.find(toolName) != this->ToolStatus.end() )
@@ -387,7 +387,7 @@ bool CosmologyToolsConfiguration::ToolExists(std::string toolName)
 }
 
 //------------------------------------------------------------------------------
-bool CosmologyToolsConfiguration::IsToolEnabled(std::string toolName)
+bool InSituAnalysisConfig::IsToolEnabled(std::string toolName)
 {
   bool status = false;
   if( this->ToolExists( toolName ) )

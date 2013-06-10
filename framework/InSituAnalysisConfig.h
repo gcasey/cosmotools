@@ -3,10 +3,10 @@
  * tools parameters.
  */
 
-#ifndef COSMOLOGYTOOLSCONFIGURATION_H_
-#define COSMOLOGYTOOLSCONFIGURATION_H_
+#ifndef InSituAnalysisConfig_H_
+#define InSituAnalysisConfig_H_
 
-#include "CosmologyToolsMacros.h"
+#include "CosmoToolsMacros.h"
 
 
 // C/C++ includes
@@ -20,11 +20,11 @@
 namespace cosmotk
 {
 
-class CosmologyToolsConfiguration
+class InSituAnalysisConfig
 {
 public:
-  CosmologyToolsConfiguration();
-  virtual ~CosmologyToolsConfiguration();
+  InSituAnalysisConfig();
+  virtual ~InSituAnalysisConfig();
 
   GetNSetMacro(ConfigFile,std::string);
   GetNSetMacro(Version,double);
@@ -152,7 +152,7 @@ protected:
   void RegisterAnalysisTool(std::string toolName, bool status);
 
 private:
-  DISABLE_COPY_AND_ASSIGNMENT(CosmologyToolsConfiguration);
+  DISABLE_COPY_AND_ASSIGNMENT(InSituAnalysisConfig);
 };
 
 } /* namespace cosmotk */
