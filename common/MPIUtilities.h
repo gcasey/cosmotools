@@ -4,7 +4,7 @@
 #ifndef MPIUTILITIES_H_
 #define MPIUTILITIES_H_
 
-#include "CosmologyToolsMacros.h"
+#include "CosmoToolsMacros.h"
 
 #include <mpi.h>
 
