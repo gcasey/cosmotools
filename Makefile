@@ -31,7 +31,7 @@ endif
 
 ## Propagate compile flags from the environment
 ifndef ${COSMOTOOLS_CXXFLAGS}
-	COSMOTOOLS_CXXFLAGS := -O3
+	COSMOTOOLS_CXXFLAGS := -O2 -Wall
 endif
 
 ## include subdirectories
@@ -64,7 +64,7 @@ $(COSMOTOOLS_OBJDIR):
 	
 %.o: %.cxx | $(COSMOTOOLS_OBJDIR)
 	$(ECHO) -n $(BOLD) $< $(NBOLD)
-	${COSMOTOOLS_MPICXX} ${COSMOTOOLS_INCLUDES} ${COSMOTOOLS_CXXFLAGS} -c $< -o $@
+	${COSMOTOOLS_MPICXX} -I${COSMOTOOLS_INCLUDES} ${COSMOTOOLS_CXXFLAGS} -c $< -o $@
 	
 $(COSMOTOOLS_OBJDIR)/libcosmotools.a: $(COSMOTOOLS_OBJDIR)/libcosmotools.a($(OBJECTS))
 	$(ECHO) -n $(BOLD) $@ $(NBOLD)
