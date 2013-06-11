@@ -66,7 +66,7 @@ $(COSMOTOOLS_OBJDIR):
 	mkdir -p $(COSMOTOOLS_OBJDIR)
 	
 %.o: %.cxx | $(COSMOTOOLS_OBJDIR)
-	${COUNT} += 1
+	$(eval $(COUNT)=$(COUNT)+${1})
 	$(ECHO) -n $(BOLD) "[" $(COUNT) "]" $< " ** \n" $(NBOLD) 
 	${COSMOTOOLS_MPICXX} ${COSMOTOOLS_INCLUDES} ${COSMOTOOLS_CXXFLAGS} -c $< -o $@
 	
