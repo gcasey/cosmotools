@@ -1,45 +1,45 @@
 /*=========================================================================
-                                                                                
+
 Copyright (c) 2007, Los Alamos National Security, LLC
 
 All rights reserved.
 
-Copyright 2007. Los Alamos National Security, LLC. 
-This software was produced under U.S. Government contract DE-AC52-06NA25396 
-for Los Alamos National Laboratory (LANL), which is operated by 
-Los Alamos National Security, LLC for the U.S. Department of Energy. 
-The U.S. Government has rights to use, reproduce, and distribute this software. 
+Copyright 2007. Los Alamos National Security, LLC.
+This software was produced under U.S. Government contract DE-AC52-06NA25396
+for Los Alamos National Laboratory (LANL), which is operated by
+Los Alamos National Security, LLC for the U.S. Department of Energy.
+The U.S. Government has rights to use, reproduce, and distribute this software.
 NEITHER THE GOVERNMENT NOR LOS ALAMOS NATIONAL SECURITY, LLC MAKES ANY WARRANTY,
-EXPRESS OR IMPLIED, OR ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.  
-If software is modified to produce derivative works, such modified software 
-should be clearly marked, so as not to confuse it with the version available 
+EXPRESS OR IMPLIED, OR ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.
+If software is modified to produce derivative works, such modified software
+should be clearly marked, so as not to confuse it with the version available
 from LANL.
- 
-Additionally, redistribution and use in source and binary forms, with or 
-without modification, are permitted provided that the following conditions 
+
+Additionally, redistribution and use in source and binary forms, with or
+without modification, are permitted provided that the following conditions
 are met:
--   Redistributions of source code must retain the above copyright notice, 
-    this list of conditions and the following disclaimer. 
+-   Redistributions of source code must retain the above copyright notice,
+    this list of conditions and the following disclaimer.
 -   Redistributions in binary form must reproduce the above copyright notice,
     this list of conditions and the following disclaimer in the documentation
-    and/or other materials provided with the distribution. 
+    and/or other materials provided with the distribution.
 -   Neither the name of Los Alamos National Security, LLC, Los Alamos National
     Laboratory, LANL, the U.S. Government, nor the names of its contributors
-    may be used to endorse or promote products derived from this software 
-    without specific prior written permission. 
+    may be used to endorse or promote products derived from this software
+    without specific prior written permission.
 
 THIS SOFTWARE IS PROVIDED BY LOS ALAMOS NATIONAL SECURITY, LLC AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
-THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
-ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL SECURITY, LLC OR 
-CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, 
-EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, 
-PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; 
-OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, 
-WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR 
-OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF 
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL SECURITY, LLC OR
+CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-                                                                                
+
 =========================================================================*/
 
 // .NAME HaloFinder - drive the halo finding from input to output
@@ -75,7 +75,8 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <iostream>
 #include <fstream>
 #include <sstream>
-#include <rru_mpi.h>
+
+#include <mpi.h>
 
 using namespace std;
 
@@ -108,24 +109,24 @@ public:
   // halos or A* refinement algorithm which uses chaining mesh of halo particles
   // and can operate on independent arrays of particle locations
   int MBPCenterFinding(
-	POTENTIAL_T* minPotential,
-	long particleCount,
-	POSVEL_T* xLocHalo,
-	POSVEL_T* yLocHalo,
-	POSVEL_T* zLocHalo,
-	POSVEL_T* massHalo,
-	ID_T* id);
+  POTENTIAL_T* minPotential,
+  long particleCount,
+  POSVEL_T* xLocHalo,
+  POSVEL_T* yLocHalo,
+  POSVEL_T* zLocHalo,
+  POSVEL_T* massHalo,
+  ID_T* id);
 
   // Most connected particle center finding uses either N^2/2 algorithm on small
   // halos or a chaining mesh algorithm and can operate on independent arrays
   // of particle locations
   int MCPCenterFinding(
-	long particleCount,
-	POSVEL_T* xLocHalo,
-	POSVEL_T* yLocHalo,
-	POSVEL_T* zLocHalo,
-	POSVEL_T* massHalo,
-	ID_T* id);
+  long particleCount,
+  POSVEL_T* xLocHalo,
+  POSVEL_T* yLocHalo,
+  POSVEL_T* zLocHalo,
+  POSVEL_T* massHalo,
+  ID_T* id);
 
   // Subhalo finding requires extraction of halo particles from FOF halo list
   // and building of a Barnes Hut tree of those particles
@@ -157,16 +158,16 @@ private:
   string outFile;		// Base name of output particle files
   string dataType;		// BLOCK or RECORD structure input
   string distributeType;	// ROUND_ROBIN every proc looks at all files
-				// ONE_TO_ONE files match to processors
+        // ONE_TO_ONE files match to processors
 
   float massConvertFactor;	// Multiply every mass read by factor
   float distConvertFactor;	// Multiply every pos read by factor
   float rhocConvertFactor;	// RHO_C based on Mpc/h, convert to match units
   float sodMassConvertFactor;	// SOD_MASS based on Msun/h, convert units
-				// If units are Msun and Mpc and user wants to
+        // If units are Msun and Mpc and user wants to
                                 // keep them, rhoc * hubble * hubble
                                 // If units are Msun and Mpc and user wants to
-                                // convert massFactor = hubble, 
+                                // convert massFactor = hubble,
                                 // distFactor = hubble, rhocFactor = 1.0
 
   POSVEL_T rL;			// Physical coordinate box size
@@ -309,14 +310,14 @@ HaloFinder::HaloFinder(int argc, char* argv[])
   // Set to 1.0 and it always cuts, set to 0.01 to aggressively grow
   // small subhalos
   this->alphaFactor = (POSVEL_T) this->haloIn.getAlphaSubhalo();
-  
+
   // Beta factor controls the Poisson noise significance of candidates
   // Original SUBFIND algorithm would have beta = 0.0 meaning that all
   // candidates are allowed to remain as separate and not be COMBINED
   // immediately into the saddle point partner.  If beta is larger it will
   // allow the identification of very small substructures such as tails
   this->betaFactor = (POSVEL_T) this->haloIn.getBetaSubhalo();
-  
+
   // Minimum size of a subhalo candidate
   this->minCandidateSize = this->haloIn.getMinSubhaloSize();
 
@@ -331,7 +332,7 @@ HaloFinder::HaloFinder(int argc, char* argv[])
          << (this->particleMass * GRAVITY_C) << endl;
     cout << "Cut/Grow factor: " << this->alphaFactor << endl;
     cout << "Poisson noise factor: " << this->betaFactor << endl;
-    cout << "Minimum candidate size: " << this->minCandidateSize << endl; 
+    cout << "Minimum candidate size: " << this->minCandidateSize << endl;
     cout << "Number of neighbors for SPH: " << this->numSPHNeighbors << endl;
     cout << "Number of neighbors for subgroups: " << this->numNeighbors << endl;
   }
@@ -426,7 +427,7 @@ void HaloFinder::DistributeParticles()
   this->tag = new vector<ID_T>;
   this->status = new vector<STATUS_T>;
 
-  this->distribute.setParticles(this->xx, this->yy, this->zz, 
+  this->distribute.setParticles(this->xx, this->yy, this->zz,
                                 this->vx, this->vy, this->vz,
                                 this->mass, this->tag);
   if (this->distributeType == "ROUND_ROBIN")
@@ -447,9 +448,9 @@ void HaloFinder::DistributeParticles()
       (*this->mass)[i] = this->particleMass;
 
   // Exchange particles adds dead particles to all the vectors
-  this->exchange.setParticles(this->xx, this->yy, this->zz, 
+  this->exchange.setParticles(this->xx, this->yy, this->zz,
                               this->vx, this->vy, this->vz, this->mass,
-                              this->potential, this->tag, 
+                              this->potential, this->tag,
                               this->mask, this->status);
   this->exchange.exchangeParticles();
 
@@ -474,11 +475,11 @@ void HaloFinder::FOFHaloFinder()
   static Timings::TimerRef h1timer = Timings::getTimer("FOF Halo Finder");
   Timings::startTimer(h1timer);
 
-  this->haloFinder.setParameters(this->outFile, this->rL, this->deadSize, 
+  this->haloFinder.setParameters(this->outFile, this->rL, this->deadSize,
                                  this->np, this->pmin, this->bb);
-  this->haloFinder.setParticles(this->xx, this->yy, this->zz, 
-                                this->vx, this->vy, this->vz, 
-                                this->potential, this->tag, 
+  this->haloFinder.setParticles(this->xx, this->yy, this->zz,
+                                this->vx, this->vy, this->vz,
+                                this->potential, this->tag,
                                 this->mask, this->status);
 
   // Run serial halo finder
@@ -515,10 +516,10 @@ void HaloFinder::BasicFOFHaloProperties()
   int* fofHaloList = this->haloFinder.getHaloList();
 
   // Construct the FOF properties class
-  this->fof.setHalos(this->numberOfFOFHalos, 
+  this->fof.setHalos(this->numberOfFOFHalos,
                      fofHalos, fofHaloCount, fofHaloList);
   this->fof.setParameters(this->outFile, this->rL, this->deadSize, this->bb);
-  this->fof.setParticles(this->xx, this->yy, this->zz, 
+  this->fof.setParticles(this->xx, this->yy, this->zz,
                          this->vx, this->vy, this->vz, this->mass,
                          this->potential, this->tag, this->mask, this->status);
 
@@ -547,7 +548,7 @@ void HaloFinder::BasicFOFHaloProperties()
 
   // Find the velocity dispersion of every FOF halo
   this->fofVelDisp = new vector<POSVEL_T>;
-  this->fof.FOFVelocityDispersion(this->fofXVel, 
+  this->fof.FOFVelocityDispersion(this->fofXVel,
                                 this->fofYVel, this->fofZVel, this->fofVelDisp);
 
   Timings::stopTimer(ftimer);
@@ -555,7 +556,7 @@ void HaloFinder::BasicFOFHaloProperties()
 
 /////////////////////////////////////////////////////////////////////////////
 //
-// Center finder requires special data structures so extract the locations 
+// Center finder requires special data structures so extract the locations
 // for each individual FOF halo into arrays for passing to HaloCenterFinder
 // An advantage to passing arrays to these classes is that they can
 // be used with any set of particles a user wants processed
@@ -604,14 +605,14 @@ void HaloFinder::FOFCenterFinding()
       int centerIndex;
       POTENTIAL_T minPotential;
       if (this->haloIn.getUseMBPCenterFinder() == 1) {
-        centerIndex = MBPCenterFinding(&minPotential, particleCount, 
+        centerIndex = MBPCenterFinding(&minPotential, particleCount,
                                   xLocHalo, yLocHalo, zLocHalo, massHalo, id);
         this->fofCenter->push_back(actualIndx[centerIndex]);
       }
 
       // Most connected particle method of center finding
       else if (this->haloIn.getUseMCPCenterFinder() == 1) {
-        centerIndex = MCPCenterFinding(particleCount, 
+        centerIndex = MCPCenterFinding(particleCount,
                                   xLocHalo, yLocHalo, zLocHalo, massHalo, id);
         this->fofCenter->push_back(actualIndx[centerIndex]);
       }
@@ -636,7 +637,7 @@ void HaloFinder::FOFCenterFinding()
 /////////////////////////////////////////////////////////////////////////////
 
 int HaloFinder::MBPCenterFinding(
-			POTENTIAL_T* minPotential,
+      POTENTIAL_T* minPotential,
                         long particleCount,
                         POSVEL_T* xLocHalo,
                         POSVEL_T* yLocHalo,
@@ -652,7 +653,7 @@ int HaloFinder::MBPCenterFinding(
 
   // Create the center finder
   HaloCenterFinder centerFinder;
-  centerFinder.setParticles(particleCount, 
+  centerFinder.setParticles(particleCount,
                             xLocHalo, yLocHalo, zLocHalo, massHalo, id);
   centerFinder.setParameters(this->bb, this->distConvertFactor);
 
@@ -676,12 +677,12 @@ int HaloFinder::MBPCenterFinding(
 /////////////////////////////////////////////////////////////////////////////
 
 int HaloFinder::MCPCenterFinding(
-			long particleCount,
-			POSVEL_T* xLocHalo,
-			POSVEL_T* yLocHalo,
-			POSVEL_T* zLocHalo,
-			POSVEL_T* massHalo,
-			ID_T* id)
+      long particleCount,
+      POSVEL_T* xLocHalo,
+      POSVEL_T* yLocHalo,
+      POSVEL_T* zLocHalo,
+      POSVEL_T* massHalo,
+      ID_T* id)
 
 {
   // Find the index of the particle at the FOF center
@@ -691,7 +692,7 @@ int HaloFinder::MCPCenterFinding(
 
   // Create the center finder
   HaloCenterFinder centerFinder;
-  centerFinder.setParticles(particleCount, 
+  centerFinder.setParticles(particleCount,
                             xLocHalo, yLocHalo, zLocHalo, massHalo, id);
   centerFinder.setParameters(this->bb, this->distConvertFactor);
 
@@ -709,7 +710,7 @@ int HaloFinder::MCPCenterFinding(
 
 /////////////////////////////////////////////////////////////////////////////
 //
-// Subhalo finder requires special data structures so extract the locations 
+// Subhalo finder requires special data structures so extract the locations
 // for each individual FOF halo into arrays for passing to SubHaloFinder
 // An advantage to passing arrays to these classes is that they can
 // be used with any set of particles a user wants processed
@@ -728,7 +729,7 @@ void HaloFinder::FOFSubHaloFinding()
     sname << outFile << ".subhalo";
   } else {
     sname << outFile << ".subhalo." << myProc;
-  } 
+  }
   ofstream sStream(sname.str().c_str(), ios::out);
 
   // Get FOF halo information
@@ -746,7 +747,7 @@ void HaloFinder::FOFSubHaloFinding()
       if (particleCount > this->haloIn.getMinFOFSubhalo()) {
 
         cout << "Rank: " << this->myProc
-             << " Subhalo find on FOF halo " << halo 
+             << " Subhalo find on FOF halo " << halo
              << " count " << particleCount << endl;
 
         sStream << "FOF Halo: " << halo << endl
@@ -767,7 +768,7 @@ void HaloFinder::FOFSubHaloFinding()
                                    << (*this->fofZVel)[halo] << "]" << endl
                 << "  FOF velocity dispersion = "
                                    << (*this->fofVelDisp)[halo] << endl << endl;
-      
+
         POSVEL_T* xLocHalo = new POSVEL_T[particleCount];
         POSVEL_T* yLocHalo = new POSVEL_T[particleCount];
         POSVEL_T* zLocHalo = new POSVEL_T[particleCount];
@@ -791,7 +792,7 @@ void HaloFinder::FOFSubHaloFinding()
                                  this->minCandidateSize,
                                  this->numSPHNeighbors, this->numNeighbors);
 
-        subFinder->setParticles(particleCount, xLocHalo, yLocHalo, zLocHalo, 
+        subFinder->setParticles(particleCount, xLocHalo, yLocHalo, zLocHalo,
                                 xVelHalo, yVelHalo, zVelHalo, massHalo, id);
 
         subFinder->findSubHalos();
@@ -804,11 +805,11 @@ void HaloFinder::FOFSubHaloFinding()
 
         // Construct the FOF properties class
         FOFHaloProperties subhaloProp;
-        subhaloProp.setHalos(numberOfSubhalos, 
+        subhaloProp.setHalos(numberOfSubhalos,
                      fofSubhalos, fofSubhaloCount, fofSubhaloList);
-        subhaloProp.setParameters(this->outFile, 
+        subhaloProp.setParameters(this->outFile,
                                   this->rL, this->deadSize, this->bb);
-        subhaloProp.setParticles(particleCount, xLocHalo, yLocHalo, zLocHalo, 
+        subhaloProp.setParticles(particleCount, xLocHalo, yLocHalo, zLocHalo,
                          xVelHalo, yVelHalo, zVelHalo, massHalo, id);
 
         // Run some halo properties on subhalos
@@ -858,14 +859,14 @@ void HaloFinder::FOFSubHaloFinding()
                                   << subhaloXVel[sindx] << ","
                                   << subhaloYVel[sindx] << ","
                                   << subhaloZVel[sindx] << "]" << endl
-                  << "    velocity dispersion = " 
+                  << "    velocity dispersion = "
                                   << subhaloVelDisp[sindx] << endl;
         }
         sStream << "------------------------------------------" << endl << endl;
 
         // Write individual subhalos to file
         ostringstream name;
-        name << outFile << "_subhalo_" << halo 
+        name << outFile << "_subhalo_" << halo
              << "_" << particleCount << ".cosmo";
         string fileName = name.str();
         subFinder->writeSubhaloCosmoFile(fileName);
@@ -879,7 +880,7 @@ void HaloFinder::FOFSubHaloFinding()
         delete [] massHalo;
         delete [] id;
         delete [] actualIndx;
-     
+
         delete subFinder;
       }
     }
@@ -918,23 +919,23 @@ void HaloFinder::FOFHaloCatalog()
               << "  FOF count = " << fofHaloCount[halo] << endl
               << "  FOF tag = " << fofHalos[halo] << endl
               << "  FOF mass = " << (*this->fofMass)[halo] << endl
-              << "  FOF center = ["   
+              << "  FOF center = ["
                                  << (*this->xx)[center] << ","
                                  << (*this->yy)[center] << ","
                                  << (*this->zz)[center] << "]" << endl
-              << "  FOF center of mass = [" 
+              << "  FOF center of mass = ["
                                  << (*this->fofXCofMass)[halo] << ","
                                  << (*this->fofYCofMass)[halo] << ","
                                  << (*this->fofZCofMass)[halo] << "]" << endl
-              << "  FOF avg loc = [" 
+              << "  FOF avg loc = ["
                                  << (*this->fofXPos)[halo] << ","
                                  << (*this->fofYPos)[halo] << ","
                                  << (*this->fofZPos)[halo] << "]" << endl
-              << "  FOF avg vel = [" 
+              << "  FOF avg vel = ["
                                  << (*this->fofXVel)[halo] << ","
                                  << (*this->fofYVel)[halo] << ","
                                  << (*this->fofZVel)[halo] << "]" << endl
-              << "  FOF velocity dispersion = " 
+              << "  FOF velocity dispersion = "
                                  << (*this->fofVelDisp)[halo] << endl;
     }
   }
@@ -995,21 +996,21 @@ void HaloFinder::SODHaloFinding()
         int center = (*fofCenter)[halo];
 
         SODHalo* sod = new SODHalo();
-        sod->setParameters(chain, numberOfBins, rL, np, 
-                           this->RHOC, this->SODMASS, 
+        sod->setParameters(chain, numberOfBins, rL, np,
+                           this->RHOC, this->SODMASS,
                            rhoRatio, cMinFactor, cMaxFactor);
-        sod->setParticles(this->xx, this->yy, this->zz, 
+        sod->setParticles(this->xx, this->yy, this->zz,
                           this->vx, this->vy, this->vz, this->mass, this->tag);
 
         // SOD halos are calculated from the center particle location of FOF
         // Send average velocity of FOF halo for calculating radial velocity
         sod->createSODHalo(
-             fofHaloCount[halo], 
-             (*xx)[center], 
-             (*yy)[center], 
+             fofHaloCount[halo],
+             (*xx)[center],
+             (*yy)[center],
              (*zz)[center],
-             (*fofXVel)[halo], 
-             (*fofYVel)[halo], 
+             (*fofXVel)[halo],
+             (*fofYVel)[halo],
              (*fofZVel)[halo],
              (*fofMass)[halo]);
 
@@ -1039,7 +1040,7 @@ void HaloFinder::SODHaloFinding()
           POSVEL_T binRhoRatio[numberOfBins];	// rho / rho_c
           POSVEL_T binRadVelocity[numberOfBins];// avg radial velocity
 
-          sod->SODProfile(binCount, binMass, binRadius, 
+          sod->SODProfile(binCount, binMass, binRadius,
                           binRho, binRhoRatio, binRadVelocity);
 
           // Show how to extract information from SODHalo
@@ -1066,7 +1067,7 @@ void HaloFinder::SODHaloFinding()
           int centerIndex;
           POTENTIAL_T minPotential;
           if (this->haloIn.getUseMBPCenterFinder() == 1) {
-            centerIndex = MBPCenterFinding(&minPotential, particleCount, 
+            centerIndex = MBPCenterFinding(&minPotential, particleCount,
                                   xLocHalo, yLocHalo, zLocHalo, massHalo, id);
             sodMinPotLocation[0] = (*xx)[actualIndx[centerIndex]];
             sodMinPotLocation[1] = (*yy)[actualIndx[centerIndex]];
@@ -1075,7 +1076,7 @@ void HaloFinder::SODHaloFinding()
 
           // Most connected particle method of center finding
           else if (this->haloIn.getUseMCPCenterFinder() == 1) {
-            centerIndex = MCPCenterFinding(particleCount, 
+            centerIndex = MCPCenterFinding(particleCount,
                                   xLocHalo, yLocHalo, zLocHalo, massHalo, id);
             sodMinPotLocation[0] = (*xx)[actualIndx[centerIndex]];
             sodMinPotLocation[1] = (*yy)[actualIndx[centerIndex]];
@@ -1085,28 +1086,28 @@ void HaloFinder::SODHaloFinding()
           // Write profile information
           sStream << "Halo " << (*tag)[fofHalos[halo]] << endl
                   << "  FOF count = " << fofHaloCount[halo] << endl
-                  << "  FOF center = [" 
-                                     << (*xx)[center] << " , " 
-                                     << (*yy)[center] << " , " 
+                  << "  FOF center = ["
+                                     << (*xx)[center] << " , "
+                                     << (*yy)[center] << " , "
                                      << (*zz)[center] << "]" << endl
                   << "  SOD count = " << particleCount << endl
                   << "  SOD radius = " << sodRadius << endl
                   << "  SOD mass = " << sodMass << endl
                   << "  SOD min pot location = ["
-                                     << sodMinPotLocation[0] << " , " 
-                                     << sodMinPotLocation[1] << " , " 
+                                     << sodMinPotLocation[0] << " , "
+                                     << sodMinPotLocation[1] << " , "
                                      << sodMinPotLocation[2] << "]" << endl
                   << "  SOD center of mass = ["
-                                     << sodCenterOfMass[0] << " , " 
-                                     << sodCenterOfMass[1] << " , " 
+                                     << sodCenterOfMass[0] << " , "
+                                     << sodCenterOfMass[1] << " , "
                                      << sodCenterOfMass[2] << "]" << endl
                   << "  SOD avg location = ["
-                                     << sodAverageLocation[0] << " , " 
-                                     << sodAverageLocation[1] << " , " 
+                                     << sodAverageLocation[0] << " , "
+                                     << sodAverageLocation[1] << " , "
                                      << sodAverageLocation[2] << "]" << endl
-                  << "  SOD velocity = [" 
-                                     << sodAverageVelocity[0] << " , " 
-                                     << sodAverageVelocity[1] << " , " 
+                  << "  SOD velocity = ["
+                                     << sodAverageVelocity[0] << " , "
+                                     << sodAverageVelocity[1] << " , "
                                      << sodAverageVelocity[2] << "]" << endl
                   << "  SOD velocity dispersion = " << sodVelDisp << endl;
 
@@ -1143,12 +1144,12 @@ void HaloFinder::SODHaloFinding()
 // Write a .cosmo file of the requested halo
 //
 /////////////////////////////////////////////////////////////////////////////
-  
+
 void HaloFinder::WriteCosmoFiles(int size)
-{       
+{
   int* fofHaloCount = this->haloFinder.getHaloCount();
   for (int halo = 0; halo < this->numberOfFOFHalos; halo++) {
-  
+
     long particleCount = fofHaloCount[halo];
     if (particleCount == size && halo == 0) {
 
@@ -1160,7 +1161,7 @@ void HaloFinder::WriteCosmoFiles(int size)
       int iBlock[COSMO_INT];
 
       // Allocate arrays which will hold halo particle information
-      POSVEL_T* xLocHalo = new POSVEL_T[particleCount]; 
+      POSVEL_T* xLocHalo = new POSVEL_T[particleCount];
       POSVEL_T* yLocHalo = new POSVEL_T[particleCount];
       POSVEL_T* zLocHalo = new POSVEL_T[particleCount];
       POSVEL_T* xVelHalo = new POSVEL_T[particleCount];
@@ -1184,14 +1185,14 @@ void HaloFinder::WriteCosmoFiles(int size)
         fBlock[4] = zLocHalo[p];
         fBlock[5] = zVelHalo[p];
         fBlock[6] = massHalo[p];
-        cStream.write(reinterpret_cast<char*>(fBlock), 
+        cStream.write(reinterpret_cast<char*>(fBlock),
                       COSMO_FLOAT * sizeof(POSVEL_T));
         iBlock[0] = id[p];
-        cStream.write(reinterpret_cast<char*>(iBlock), 
+        cStream.write(reinterpret_cast<char*>(iBlock),
                       COSMO_INT * sizeof(ID_T));
       }
       cStream.close();
-    
+
       delete [] xLocHalo;
       delete [] yLocHalo;
       delete [] zLocHalo;
@@ -1202,8 +1203,8 @@ void HaloFinder::WriteCosmoFiles(int size)
       delete [] id;
       delete [] actualIndx;
     }
-  }                             
-}   
+  }
+}
 
 /////////////////////////////////////////////////////////////////////////////
 //
