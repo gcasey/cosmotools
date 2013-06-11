@@ -63,11 +63,11 @@ $(COSMOTOOLS_OBJDIR):
 	mkdir -p $(COSMOTOOLS_OBJDIR)
 	
 %.o: %.cxx | $(COSMOTOOLS_OBJDIR)
-	$(ECHO) -n $(BOLD) $< $(NBOLD) "\n"
+	$(ECHO) -n $(BOLD) " ** " $< " ** \n" $(NBOLD) 
 	${COSMOTOOLS_MPICXX} ${COSMOTOOLS_INCLUDES} ${COSMOTOOLS_CXXFLAGS} -c $< -o $@
 	
 $(COSMOTOOLS_OBJDIR)/libcosmotools.a: $(COSMOTOOLS_OBJDIR)/libcosmotools.a($(OBJECTS))
-	$(ECHO) -n $(BOLD) $@ $(NBOLD) "\n"
+	$(ECHO) -n $(BOLD) " ** " $@ " ** \n" $(NBOLD) 
 	ranlib $@
 	
 clean:
