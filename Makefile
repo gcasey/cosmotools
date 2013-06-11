@@ -6,6 +6,16 @@
 ## Get the basedirectory for CosmoTools
 COSMOTOOLS_BASEDIR := $(shell pwd)
 
+
+# Used to get bold text in echo statements
+BOLD		= "\033[1m"
+
+# End bold text
+NBOLD		= "\033[0m"
+
+# Use this macro to print info to the console
+ECHO		= /bin/echo -e
+
 ## Check if an object directory is defined in the environment
 ## in which case cosmotools will be compiled in the specified 
 ## directory.
@@ -30,10 +40,12 @@ include algorithms/include.mk
 #include framework/include.mk
 
 ## Setup the cosmotools includes
-COSMOTOOLS_INCLUDES += ${COMMON_INCLUDES} ${ALGORITHMS_INCLUDES}
+COSMOTOOLS_INCLUDES += ${COMMON_INCLUDES} 
+COSMOTOOLS_INCLUDES += ${ALGORITHMS_INCLUDES}
 
 ## Setup the cosmotools sources
-COSMOTOOLS_SOURCES += ${COMMON_SOURCES} ${ALGORITHMS_SOURCES}
+COSMOTOOLS_SOURCES += ${COMMON_SOURCES} 
+COSMOTOOLS_SOURCES += ${ALGORITHMS_SOURCES}
 
 ## Get list of object targets
 OBJECTS = $(COSMOTOOLS_SOURCES:.cxx=.o)
@@ -51,9 +63,11 @@ $(COSMOTOOLS_OBJDIR):
 	mkdir -p $(COSMOTOOLS_OBJDIR)
 	
 %.o: %.cxx | $(COSMOTOOLS_OBJDIR)
-	${COSMOTOOLS_MPICXX} ${COSMOTOOLS_INCLUDES} ${COSMOTOOLS_CXXFLAGS} -c -o $@ $<
+	$(ECHO) -n $(BOLD) $< $(NBOLD)
+	${COSMOTOOLS_MPICXX} ${COSMOTOOLS_INCLUDES} ${COSMOTOOLS_CXXFLAGS} -c $< -o $@
 	
 $(COSMOTOOLS_OBJDIR)/libcosmotools.a: $(COSMOTOOLS_OBJDIR)/libcosmotools.a($(OBJECTS))
+	$(ECHO) -n $(BOLD) $@ $(NBOLD)
 	ranlib $@
 	
 clean:
