@@ -1,11 +1,10 @@
 ##-----------------------------------------------------------------------------
-# Top Level Makefile for CosmoTools
+# Top level Makefile for CosmoTools
 #
 #------------------------------------------------------------------------------
 
 ## Get the basedirectory for CosmoTools
 COSMOTOOLS_BASEDIR := $(shell pwd)
-
 
 # Used to get bold text in echo statements
 BOLD		= "\033[1m"
@@ -40,8 +39,9 @@ include algorithms/include.mk
 #include framework/include.mk
 
 ## Setup the cosmotools includes
-COSMOTOOLS_INCLUDES += ${COMMON_INCLUDES} 
-COSMOTOOLS_INCLUDES += ${ALGORITHMS_INCLUDES}
+COSMOTOOLS_INCLUDES += -I${GENERIC_IO_INCLUDES}
+COSMOTOOLS_INCLUDES += -I${COMMON_INCLUDES} 
+COSMOTOOLS_INCLUDES += -I${ALGORITHMS_INCLUDES}
 
 ## Setup the cosmotools sources
 COSMOTOOLS_SOURCES += ${COMMON_SOURCES} 
@@ -63,11 +63,11 @@ $(COSMOTOOLS_OBJDIR):
 	mkdir -p $(COSMOTOOLS_OBJDIR)
 	
 %.o: %.cxx | $(COSMOTOOLS_OBJDIR)
-	$(ECHO) -n $(BOLD) $< $(NBOLD)
-	${COSMOTOOLS_MPICXX} -I${COSMOTOOLS_INCLUDES} ${COSMOTOOLS_CXXFLAGS} -c $< -o $@
+	$(ECHO) -n $(BOLD) $< $(NBOLD) "\n"
+	${COSMOTOOLS_MPICXX} ${COSMOTOOLS_INCLUDES} ${COSMOTOOLS_CXXFLAGS} -c $< -o $@
 	
 $(COSMOTOOLS_OBJDIR)/libcosmotools.a: $(COSMOTOOLS_OBJDIR)/libcosmotools.a($(OBJECTS))
-	$(ECHO) -n $(BOLD) $@ $(NBOLD)
+	$(ECHO) -n $(BOLD) $@ $(NBOLD) "\n"
 	ranlib $@
 	
 clean:
