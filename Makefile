@@ -6,6 +6,9 @@
 ## Get the basedirectory for CosmoTools
 COSMOTOOLS_BASEDIR := $(shell pwd)
 
+## Counts the number of files compiled
+COUNT = 0
+
 # Used to get bold text in echo statements
 BOLD		= "\033[1m"
 
@@ -63,7 +66,8 @@ $(COSMOTOOLS_OBJDIR):
 	mkdir -p $(COSMOTOOLS_OBJDIR)
 	
 %.o: %.cxx | $(COSMOTOOLS_OBJDIR)
-	$(ECHO) -n $(BOLD) " ** " $< " ** \n" $(NBOLD) 
+	$(eval $(COUNT)=$(COUNT)+${1})
+	$(ECHO) -n $(BOLD) "[" $(COUNT) "]" $< " ** \n" $(NBOLD) 
 	${COSMOTOOLS_MPICXX} ${COSMOTOOLS_INCLUDES} ${COSMOTOOLS_CXXFLAGS} -c $< -o $@
 	
 $(COSMOTOOLS_OBJDIR)/libcosmotools.a: $(COSMOTOOLS_OBJDIR)/libcosmotools.a($(OBJECTS))
