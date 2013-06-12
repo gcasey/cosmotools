@@ -15,12 +15,6 @@ include $(MAKE_MODULES_PATH)/gmsl
 ## Global counter
 COUNTER=0
 
-# Used to get bold text in echo statements
-BOLD := "\033[1m"
-
-# End bold text
-NBOLD := "\033[0m"
-
 # Use this macro to print info to the console
 ECHO := @/bin/echo 
 
