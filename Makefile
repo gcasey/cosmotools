@@ -45,20 +45,24 @@ endif
 ## include subdirectories
 include common/include.mk
 include algorithms/include.mk
+
+## If there is a user-supplied EXTERNAL_ALGORITHMS directory, use that
 ifdef ${EXTERNAL_ALGORITHMS_DIRECTORY}
   include ${EXTERNAL_ALGORITHMS_DIRECTORY}/include.mk
 endif
 
-#include framework/include.mk
+include framework/include.mk
 
 ## Setup the cosmotools includes
 COSMOTOOLS_INCLUDES += -I${GENERIC_IO_INCLUDES}
 COSMOTOOLS_INCLUDES += -I${COMMON_INCLUDES} 
 COSMOTOOLS_INCLUDES += -I${ALGORITHMS_INCLUDES}
+COSMOTOOLS_INCLUDES += -I${FRAMEWORK_INCLUDES}
 
 ## Setup the cosmotools sources
 COSMOTOOLS_SOURCES += ${COMMON_SOURCES} 
 COSMOTOOLS_SOURCES += ${ALGORITHMS_SOURCES}
+COSMOTOOLS_SOURCES += ${FRAMEWORK_SOURCES}
 
 ## Get list of object targets
 OBJECTS := $(COSMOTOOLS_SOURCES:.cxx=.o)
