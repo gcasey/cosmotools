@@ -6,8 +6,14 @@
 ## Get the basedirectory for CosmoTools
 COSMOTOOLS_BASEDIR := $(shell pwd)
 
-## Counts the number of files compiled
-COUNT := 0
+## Make modules path
+MAKE_MODULES_PATH := $(COSMOTOOLS_BASEDIR)/make
+
+## Load the GNU Make Standard Library (GMSL)
+include $(MAKE_MODULES_PATH)/gmsl
+
+## Global counter
+COUNTER=0
 
 # Used to get bold text in echo statements
 BOLD := "\033[1m"
@@ -71,8 +77,8 @@ $(COSMOTOOLS_OBJDIR):
 	
 %.o: %.cxx | $(COSMOTOOLS_OBJDIR)
 	$(ECHO) "====="
-	$(shell export COUNT=$COUNT+1)
-	$(ECHO) "[" $(COUNT) "]" $<   
+	$(eval COUNTER := $(call plus,$(COUNTER),1))
+	$(ECHO) "[" $(COUNTER) "]" $<   
 	$(ECHO) "====="
 	${COSMOTOOLS_MPICXX} ${COSMOTOOLS_INCLUDES} ${COSMOTOOLS_CXXFLAGS} -c $< -o $@
 	
