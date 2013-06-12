@@ -6,17 +6,23 @@
 ## Get the basedirectory for CosmoTools
 COSMOTOOLS_BASEDIR := $(shell pwd)
 
-## Counts the number of files compiled
-COUNT = 0
+## Make modules path
+MAKE_MODULES_PATH := $(COSMOTOOLS_BASEDIR)/make
+
+## Load the GNU Make Standard Library (GMSL)
+include $(MAKE_MODULES_PATH)/gmsl
+
+## Global counter
+COUNTER=0
 
 # Used to get bold text in echo statements
-BOLD		= "\033[1m"
+BOLD := "\033[1m"
 
 # End bold text
-NBOLD		= "\033[0m"
+NBOLD := "\033[0m"
 
 # Use this macro to print info to the console
-ECHO		= /bin/echo -e
+ECHO := @/bin/echo 
 
 ## Check if an object directory is defined in the environment
 ## in which case cosmotools will be compiled in the specified 
@@ -39,6 +45,10 @@ endif
 ## include subdirectories
 include common/include.mk
 include algorithms/include.mk
+ifdef ${EXTERNAL_ALGORITHMS_DIRECTORY}
+  include ${EXTERNAL_ALGORITHMS_DIRECTORY}/include.mk
+endif
+
 #include framework/include.mk
 
 ## Setup the cosmotools includes
@@ -51,10 +61,11 @@ COSMOTOOLS_SOURCES += ${COMMON_SOURCES}
 COSMOTOOLS_SOURCES += ${ALGORITHMS_SOURCES}
 
 ## Get list of object targets
-OBJECTS = $(COSMOTOOLS_SOURCES:.cxx=.o)
+OBJECTS := $(COSMOTOOLS_SOURCES:.cxx=.o)
+NOBJECTS := $(call length,$(OBJECTS))
 
 ##-----------------------------------------------------------------
-##								T A	R	G	E	T	S
+##				  TARGETS
 ##-----------------------------------------------------------------
 
 default: all
@@ -66,13 +77,13 @@ $(COSMOTOOLS_OBJDIR):
 	mkdir -p $(COSMOTOOLS_OBJDIR)
 	
 %.o: %.cxx | $(COSMOTOOLS_OBJDIR)
-	$(eval $(COUNT)=$(COUNT)+${1})
-	$(ECHO) -n $(BOLD) "[" $(COUNT) "]" $< " ** \n" $(NBOLD) 
-	${COSMOTOOLS_MPICXX} ${COSMOTOOLS_INCLUDES} ${COSMOTOOLS_CXXFLAGS} -c $< -o $@
+	$(eval COUNTER := $(call plus,$(COUNTER),1))
+	$(ECHO) "[" $(COUNTER) "/" $(NOBJECTS) "]" $<   
+	@${COSMOTOOLS_MPICXX} ${COSMOTOOLS_INCLUDES} ${COSMOTOOLS_CXXFLAGS} -c $< -o $@
 	
 $(COSMOTOOLS_OBJDIR)/libcosmotools.a: $(COSMOTOOLS_OBJDIR)/libcosmotools.a($(OBJECTS))
-	$(ECHO) -n $(BOLD) " ** " $@ " ** \n" $(NBOLD) 
-	ranlib $@
+	$(ECHO) " *** " $@   
+	@ranlib $@
 	
 clean:
 	-rm -rf $(COSMOTOOLS_OBJDIR)
