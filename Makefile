@@ -72,7 +72,10 @@ all: ${COSMOTOOLS_OBJDIR}/libcosmotools.a
 
 ## Target to make build directory
 $(COSMOTOOLS_OBJDIR):
-	mkdir -p $(COSMOTOOLS_OBJDIR)
+	$(ECHO) "==============================================================="
+	$(ECHO) "     Building CosmoTools...                                    "
+	$(ECHO) "==============================================================="
+	@mkdir -p $(COSMOTOOLS_OBJDIR)
 	
 %.o: %.cxx | $(COSMOTOOLS_OBJDIR)
 	$(eval COUNTER := $(call plus,$(COUNTER),1))
@@ -82,6 +85,9 @@ $(COSMOTOOLS_OBJDIR):
 $(COSMOTOOLS_OBJDIR)/libcosmotools.a: $(COSMOTOOLS_OBJDIR)/libcosmotools.a($(OBJECTS))
 	$(ECHO) " *** " $@   
 	@ranlib $@
+	$(ECHO) "==============================================================="
+	$(ECHO) "     Finished CosmoTools build                                 "
+	$(ECHO) "==============================================================="
 	
 clean:
 	-rm -rf $(COSMOTOOLS_OBJDIR)
