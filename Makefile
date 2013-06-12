@@ -79,7 +79,7 @@ $(COSMOTOOLS_OBJDIR):
 	
 %.o: %.cxx | $(COSMOTOOLS_OBJDIR)
 	$(eval COUNTER := $(call plus,$(COUNTER),1))
-	$(ECHO) "[" $(COUNTER) "/" $(NOBJECTS) "]" $<   
+	$(ECHO) "["$(COUNTER)"/"$(NOBJECTS)"]" $<   
 	@${COSMOTOOLS_MPICXX} ${COSMOTOOLS_INCLUDES} ${COSMOTOOLS_CXXFLAGS} -c $< -o $@
 	
 $(COSMOTOOLS_OBJDIR)/libcosmotools.a: $(COSMOTOOLS_OBJDIR)/libcosmotools.a($(OBJECTS))
