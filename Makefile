@@ -7,16 +7,16 @@
 COSMOTOOLS_BASEDIR := $(shell pwd)
 
 ## Counts the number of files compiled
-COUNT = 0
+COUNT := 0
 
 # Used to get bold text in echo statements
-BOLD		= "\033[1m"
+BOLD := "\033[1m"
 
 # End bold text
-NBOLD		= "\033[0m"
+NBOLD := "\033[0m"
 
 # Use this macro to print info to the console
-ECHO		= /bin/echo -e
+ECHO := @/bin/echo 
 
 ## Check if an object directory is defined in the environment
 ## in which case cosmotools will be compiled in the specified 
@@ -39,6 +39,10 @@ endif
 ## include subdirectories
 include common/include.mk
 include algorithms/include.mk
+ifdef ${EXTERNAL_ALGORITHMS_DIRECTORY}
+  include ${EXTERNAL_ALGORITHMS_DIRECTORY}/include.mk
+endif
+
 #include framework/include.mk
 
 ## Setup the cosmotools includes
@@ -54,7 +58,7 @@ COSMOTOOLS_SOURCES += ${ALGORITHMS_SOURCES}
 OBJECTS = $(COSMOTOOLS_SOURCES:.cxx=.o)
 
 ##-----------------------------------------------------------------
-##								T A	R	G	E	T	S
+##				  TARGETS
 ##-----------------------------------------------------------------
 
 default: all
@@ -66,12 +70,16 @@ $(COSMOTOOLS_OBJDIR):
 	mkdir -p $(COSMOTOOLS_OBJDIR)
 	
 %.o: %.cxx | $(COSMOTOOLS_OBJDIR)
-	$(eval $(COUNT)=$(COUNT)+${1})
-	$(ECHO) -n $(BOLD) "[" $(COUNT) "]" $< " ** \n" $(NBOLD) 
+	$(ECHO) "====="
+	$(shell export COUNT=$COUNT+1)
+	$(ECHO) "[" $(COUNT) "]" $<   
+	$(ECHO) "====="
 	${COSMOTOOLS_MPICXX} ${COSMOTOOLS_INCLUDES} ${COSMOTOOLS_CXXFLAGS} -c $< -o $@
 	
 $(COSMOTOOLS_OBJDIR)/libcosmotools.a: $(COSMOTOOLS_OBJDIR)/libcosmotools.a($(OBJECTS))
-	$(ECHO) -n $(BOLD) " ** " $@ " ** \n" $(NBOLD) 
+	$(ECHO) "====="
+	$(ECHO) " *** " $@   
+	$(ECHO) "====="
 	ranlib $@
 	
 clean:
