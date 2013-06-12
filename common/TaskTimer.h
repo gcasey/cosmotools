@@ -5,37 +5,37 @@
 #ifndef TASKTIMER_H_
 #define TASKTIMER_H_
 
-#include "CosmologyToolsMacros.h"
+#include "CosmoToolsMacros.h"
 
 namespace cosmotk {
 
 class TaskTimer
 {
 public:
-	TaskTimer();
-	virtual ~TaskTimer();
+  TaskTimer();
+  virtual ~TaskTimer();
 
-	/**
-	 * @brief Starts a timer.
-	 */
-	void StartTimer();
+  /**
+   * @brief Starts a timer.
+   */
+  void StartTimer();
 
-	/**
-	 * @brief Stops the timer.
-	 */
-	void StopTimer();
+  /**
+   * @brief Stops the timer.
+   */
+  void StopTimer();
 
-	/**
-	 * @return ellapsedTime the ellapsed time.
-	 */
-	double GetEllapsedTime();
+  /**
+   * @return ellapsedTime the ellapsed time.
+   */
+  double GetEllapsedTime();
 
 protected:
-	double StartTime;
-	double EndTime;
+  double StartTime;
+  double EndTime;
 
 private:
-	DISABLE_COPY_AND_ASSIGNMENT(TaskTimer);
+  DISABLE_COPY_AND_ASSIGNMENT(TaskTimer);
 };
 
 } /* namespace cosmotk */

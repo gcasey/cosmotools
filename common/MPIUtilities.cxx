@@ -1,7 +1,8 @@
 #include "MPIUtilities.h"
 
-#include <cstdio>
+#include <cassert>
 #include <cstdarg>
+#include <cstdio>
 
 namespace cosmotk {
   namespace MPIUtilities {
