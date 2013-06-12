@@ -61,7 +61,8 @@ COSMOTOOLS_SOURCES += ${COMMON_SOURCES}
 COSMOTOOLS_SOURCES += ${ALGORITHMS_SOURCES}
 
 ## Get list of object targets
-OBJECTS = $(COSMOTOOLS_SOURCES:.cxx=.o)
+OBJECTS := $(COSMOTOOLS_SOURCES:.cxx=.o)
+NOBJECTS := $(call length,$(OBJECTS))
 
 ##-----------------------------------------------------------------
 ##				  TARGETS
@@ -76,17 +77,13 @@ $(COSMOTOOLS_OBJDIR):
 	mkdir -p $(COSMOTOOLS_OBJDIR)
 	
 %.o: %.cxx | $(COSMOTOOLS_OBJDIR)
-	$(ECHO) "====="
 	$(eval COUNTER := $(call plus,$(COUNTER),1))
-	$(ECHO) "[" $(COUNTER) "]" $<   
-	$(ECHO) "====="
-	${COSMOTOOLS_MPICXX} ${COSMOTOOLS_INCLUDES} ${COSMOTOOLS_CXXFLAGS} -c $< -o $@
+	$(ECHO) "[" $(COUNTER) "/" $(NOBJECTS) "]" $<   
+	@${COSMOTOOLS_MPICXX} ${COSMOTOOLS_INCLUDES} ${COSMOTOOLS_CXXFLAGS} -c $< -o $@
 	
 $(COSMOTOOLS_OBJDIR)/libcosmotools.a: $(COSMOTOOLS_OBJDIR)/libcosmotools.a($(OBJECTS))
-	$(ECHO) "====="
 	$(ECHO) " *** " $@   
-	$(ECHO) "====="
-	ranlib $@
+	@ranlib $@
 	
 clean:
 	-rm -rf $(COSMOTOOLS_OBJDIR)
