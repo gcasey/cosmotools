@@ -13,7 +13,7 @@ find_path(QHULL_INCLUDE_DIRS
 ## Try to find the Qhull library
 find_library(QHULL_LIBRARIES
  NAMES qhull
- PATHS /usr/lib65 /usr/lib)
+ PATHS /usr/lib64 /usr/lib)
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(
