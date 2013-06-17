@@ -31,7 +31,7 @@
 #include "vtkUnstructuredGridAlgorithm.h"
 
 // sfprobe includes
-#include "CosmologyToolsMacros.h"
+#include "CosmoToolsMacros.h"
 #include "StructureFormationProbe.h"
 
 // C/C++ includes

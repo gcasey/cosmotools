@@ -52,6 +52,8 @@ if(BUILD_SINGLE_LIBRARY)
     target_link_libraries(cosmotools ${CosmoToolsRequiredLibs})
 endif() # END if Build single library
 
+option(BUILD_PV_PLUGINS "Build paraview plugins" OFF)
+
 if(BUILD_PV_PLUGINS)
   add_subdirectory(pv-plugins)
 endif()

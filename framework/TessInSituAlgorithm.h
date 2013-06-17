@@ -6,7 +6,7 @@
 #ifndef TESSVOIDFINDERANALYSISTOOL_H_
 #define TESSVOIDFINDERANALYSISTOOL_H_
 
-#include "CosmologyToolsMacros.h"
+#include "CosmoToolsMacros.h"
 #include "AnalysisTool.h"
 
 #include <mpi.h>

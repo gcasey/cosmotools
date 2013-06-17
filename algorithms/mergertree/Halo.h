@@ -7,7 +7,7 @@
 #ifndef HALO_H_
 #define HALO_H_
 
-#include "CosmologyToolsMacros.h"
+#include "CosmoToolsMacros.h"
 
 #include <iostream> // For ostream
 #include <set>      // For STL set

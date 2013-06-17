@@ -10,7 +10,7 @@
 #ifndef DISTRIBUTEDHALOEVOLUTIONTREE_H_
 #define DISTRIBUTEDHALOEVOLUTIONTREE_H_
 
-#include "CosmologyToolsMacros.h"
+#include "CosmoToolsMacros.h"
 #include "MergerTreeEvent.h"
 #include "MergerTreeFileFormat.h"
 

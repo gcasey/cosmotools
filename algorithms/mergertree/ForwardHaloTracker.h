@@ -8,7 +8,7 @@
 #ifndef FORWARDHALOTRACKER_H_
 #define FORWARDHALOTRACKER_H_
 
-#include "CosmologyToolsMacros.h"
+#include "CosmoToolsMacros.h"
 #include <mpi.h> // For MPI_Comm definition
 
 // C++ includes

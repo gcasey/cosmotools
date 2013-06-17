@@ -1,7 +1,7 @@
 #ifndef MERGERTREEEVENT_H_
 #define MERGERTREEEVENT_H_
 
-#include "CosmologyToolsMacros.h"
+#include "CosmoToolsMacros.h"
 
 #include <sstream>
 #include <string>

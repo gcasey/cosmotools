@@ -15,6 +15,9 @@ set(PLUGIN_VERSION "1.0")
 include_directories(
     ${PROJECT_SOURCE_DIR}/readers
     ${PROJECT_SOURCE_DIR}/filters
+    ${CMAKE_SOURCE_DIR}/common
+    ${CMAKE_SOURCE_DIR}/algorithms/sfprobe
+    ${CMAKE_SOURCE_DIR}/algorithms/tess/lib
     ${PARAVIEW_INCLUDE_DIRS}
     ${VTK_INCLUDE_DIR}
     )
@@ -45,8 +48,13 @@ set(SMSRC
     filters/vtkPMergeConnected.cxx
     filters/vtkPStructureFormationProbe.cxx
     readers/vtkPCosmo64Reader.cxx
-    readers/vtkPVoronoiReader.cxx
     )
+
+if(${ENABLE_QHULL})
+set(SMSRC
+    ${SMSRC}
+    readers/vtkPVoronoiReader.cxx)
+endif()
 
 ## Set the gui-resource_files
 set(GUIXML

@@ -7,7 +7,7 @@
 #ifndef UNIFORMPROBER_H_
 #define UNIFORMPROBER_H_
 
-#include "CosmologyToolsMacros.h"
+#include "CosmoToolsMacros.h"
 
 namespace cosmologytools {
 

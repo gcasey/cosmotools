@@ -13,7 +13,7 @@
 #ifndef TEMPORALHALOINFORMATION_H_
 #define TEMPORALHALOINFORMATION_H_
 
-#include "CosmologyToolsMacros.h"
+#include "CosmoToolsMacros.h"
 #include <cstdlib> // For NULL
 
 namespace cosmologytools

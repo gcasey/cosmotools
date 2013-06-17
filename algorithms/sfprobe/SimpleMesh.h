@@ -5,7 +5,7 @@
 #ifndef SIMPLEMESH_H_
 #define SIMPLEMESH_H_
 
-#include "CosmologyToolsMacros.h"
+#include "CosmoToolsMacros.h"
 
 // C/C++ includes
 #include <vector>

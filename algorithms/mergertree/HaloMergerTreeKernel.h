@@ -7,7 +7,7 @@
 #define HALOMERGERTREEKERNEL_H_
 
 // CosmologyTools Macros
-#include "CosmologyToolsMacros.h"
+#include "CosmoToolsMacros.h"
 #include "DistributedHaloEvolutionTree.h" // For DistributedHaloEvolutionTree
 #include "Halo.h" // For Halo
 #include "HaloType.h" // For HaloType enum and methods

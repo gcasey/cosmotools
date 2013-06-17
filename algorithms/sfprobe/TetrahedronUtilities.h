@@ -5,7 +5,7 @@
 #ifndef TETRAHEDRONUTILITIES_H_
 #define TETRAHEDRONUTILITIES_H_
 
-#include "CosmologyToolsMacros.h"
+#include "CosmoToolsMacros.h"
 
 namespace cosmologytools
 {

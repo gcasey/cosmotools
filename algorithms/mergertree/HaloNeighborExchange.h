@@ -7,7 +7,7 @@
 #ifndef HALONEIGHBOREXCHANGE_H_
 #define HALONEIGHBOREXCHANGE_H_
 
-#include "CosmologyToolsMacros.h"
+#include "CosmoToolsMacros.h"
 #include "Halo.h" // For Halo
 
 // MPI

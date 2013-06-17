@@ -6,7 +6,7 @@
 #ifndef STRUCTUREFORMATIONPROBE_H_
 #define STRUCTUREFORMATIONPROBE_H_
 
-#include "CosmologyToolsMacros.h"
+#include "CosmoToolsMacros.h"
 #include "LagrangianTesselator.h"
 #include "SimpleMesh.h"
 

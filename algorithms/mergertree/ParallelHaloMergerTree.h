@@ -8,7 +8,7 @@
 
 #include "HaloMergerTreeKernel.h"
 
-#include "CosmologyToolsMacros.h"
+#include "CosmoToolsMacros.h"
 #include "DistributedHaloEvolutionTree.h"
 
 // MPI

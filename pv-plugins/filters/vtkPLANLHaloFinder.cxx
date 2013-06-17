@@ -66,7 +66,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "vtkPLANLHaloFinder.h"
 
 // CosmologyTools includes
-#include "CosmologyToolsMacros.h"
+#include "CosmoToolsMacros.h"
 
 // VTK includes
 #include "vtkCellType.h"

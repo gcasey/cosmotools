@@ -10,7 +10,7 @@
 #include <string>
 
 // CosmologyTools macros
-#include "CosmologyToolsMacros.h"
+#include "CosmoToolsMacros.h"
 #include "StructureFormationProbe.h"
 #include "UniformProber.h"
 

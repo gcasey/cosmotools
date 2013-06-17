@@ -7,7 +7,7 @@
 #define PARALLELSTRUCTUREFORMATIONPROBE_H_
 
 #include "StructureFormationProbe.h"
-#include "CosmologyToolsMacros.h"
+#include "CosmoToolsMacros.h"
 
 #include <mpi.h>
 

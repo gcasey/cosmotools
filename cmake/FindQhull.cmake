@@ -8,12 +8,12 @@
 ## Try to find the include directory
 find_path(QHULL_INCLUDE_DIRS
  NAMES qhull_a.h
- PATHS /usr/include /usr/local/include)
+ PATHS /usr/include /usr/local/include /usr/include/qhull)
 
 ## Try to find the Qhull library
 find_library(QHULL_LIBRARIES
  NAMES qhull
- PATHS /usr/lib)
+ PATHS /usr/lib65 /usr/lib)
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(

@@ -19,7 +19,7 @@
 #define J(ijk) ijk[1]
 #define K(ijk) ijk[2]
 
-#include "CosmologyToolsMacros.h"
+#include "CosmoToolsMacros.h"
 
 namespace cosmologytools
 {

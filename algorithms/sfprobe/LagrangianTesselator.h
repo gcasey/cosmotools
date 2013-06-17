@@ -6,7 +6,7 @@
 #ifndef LagrangianTesselator_H_
 #define LagrangianTesselator_H_
 
-#include "CosmologyToolsMacros.h"
+#include "CosmoToolsMacros.h"
 
 // C/C++ includes
 #include <map>    // For STL map

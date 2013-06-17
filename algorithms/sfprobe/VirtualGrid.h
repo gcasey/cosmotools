@@ -6,7 +6,7 @@
 #ifndef VIRTUALGRID_H_
 #define VIRTUALGRID_H_
 
-#include "CosmologyToolsMacros.h"
+#include "CosmoToolsMacros.h"
 
 // CosmologyTools includes
 #include "ExtentUtilities.h"

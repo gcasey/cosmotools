@@ -5,7 +5,7 @@
 #ifndef EXTENTPARTITIONER_H_
 #define EXTENTPARTITIONER_H_
 
-#include "CosmologyToolsMacros.h"
+#include "CosmoToolsMacros.h"
 #include <vector>
 
 namespace cosmologytools {

@@ -9,7 +9,7 @@
 #ifndef HALODATAINFORMATION_H_
 #define HALODATAINFORMATION_H_
 
-#include "CosmologyToolsMacros.h"
+#include "CosmoToolsMacros.h"
 #include <vector> // For STL vector
 
 #include "Halo.h"
